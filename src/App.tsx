@@ -3,7 +3,16 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { PlanningProvider } from "@/context/PlanningContext";
+import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
+import OperatorsPage from "./pages/OperatorsPage";
+import OperationsPage from "./pages/OperationsPage";
+import ClientsPage from "./pages/ClientsPage";
+import SubcontractorsPage from "./pages/SubcontractorsPage";
+import OrdersPage from "./pages/OrdersPage";
+import StepsPage from "./pages/StepsPage";
+import HolidaysPage from "./pages/HolidaysPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -13,13 +22,23 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <PlanningProvider>
+        <BrowserRouter>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/operators" element={<OperatorsPage />} />
+              <Route path="/operations" element={<OperationsPage />} />
+              <Route path="/clients" element={<ClientsPage />} />
+              <Route path="/subcontractors" element={<SubcontractorsPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/steps" element={<StepsPage />} />
+              <Route path="/holidays" element={<HolidaysPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
+        </BrowserRouter>
+      </PlanningProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
