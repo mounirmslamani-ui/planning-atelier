@@ -6,29 +6,35 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import type { ProductionStep } from '@/types/planning';
+import type { ProductionStep, Holiday } from '@/types/planning';
+import { addWorkMinutes, workMinutesBetween } from '@/lib/workTime';
 
 function computeThirdField(
-  startDate: string, startTime: string, endDate: string, endTime: string, duration: number
+  startDate: string, startTime: string, endDate: string, endTime: string, duration: number, holidays: Holiday[]
 ): { endDate: string; endTime: string; duration: number } {
-  // If start + duration → compute end
+  // If start + duration → compute end (using work-time)
   if (startDate && startTime && duration > 0 && (!endDate || !endTime)) {
     const start = new Date(`${startDate}T${startTime}`);
-    const end = new Date(start.getTime() + duration * 60000);
-    return { endDate: end.toISOString().split('T')[0], endTime: end.toTimeString().slice(0, 5), duration };
+    const end = addWorkMinutes(start, duration, holidays);
+    return {
+      endDate: end.toISOString().split('T')[0],
+      endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`,
+      duration
+    };
   }
-  // If start + end → compute duration
+  // If start + end → compute duration (using work-time)
   if (startDate && startTime && endDate && endTime && duration <= 0) {
     const start = new Date(`${startDate}T${startTime}`);
     const end = new Date(`${endDate}T${endTime}`);
-    return { endDate, endTime, duration: Math.max(0, (end.getTime() - start.getTime()) / 60000) };
+    const workMin = workMinutesBetween(start, end, holidays);
+    return { endDate, endTime, duration: Math.max(0, workMin) };
   }
   // If end + duration → compute start (keep end, return)
   return { endDate, endTime, duration };
 }
 
 const StepsPage: React.FC = () => {
-  const { steps, addStep, updateStep, deleteStep, orders, operators, operations } = usePlanning();
+  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ProductionStep | null>(null);
 
@@ -50,7 +56,7 @@ const StepsPage: React.FC = () => {
   const openEdit = (s: ProductionStep) => { setEditing(s); const { id, ...rest } = s; setForm(rest); setDialogOpen(true); };
 
   const handleSave = () => {
-    const computed = computeThirdField(form.startDate, form.startTime, form.endDate, form.endTime, form.estimatedDuration);
+    const computed = computeThirdField(form.startDate, form.startTime, form.endDate, form.endTime, form.estimatedDuration, holidays);
     const data: ProductionStep = { id: editing?.id || `step-${Date.now()}`, ...form, ...computed, estimatedDuration: computed.duration };
     if (editing) updateStep(data);
     else addStep(data);
@@ -63,14 +69,14 @@ const StepsPage: React.FC = () => {
       // Auto-compute when 2 of 3 fields are set
       if (['startDate', 'startTime', 'estimatedDuration'].includes(key)) {
         if (next.startDate && next.startTime && next.estimatedDuration > 0) {
-          const c = computeThirdField(next.startDate, next.startTime, '', '', next.estimatedDuration);
+          const c = computeThirdField(next.startDate, next.startTime, '', '', next.estimatedDuration, holidays);
           next.endDate = c.endDate;
           next.endTime = c.endTime;
         }
       }
       if (['endDate', 'endTime'].includes(key)) {
         if (next.startDate && next.startTime && next.endDate && next.endTime) {
-          const c = computeThirdField(next.startDate, next.startTime, next.endDate, next.endTime, 0);
+          const c = computeThirdField(next.startDate, next.startTime, next.endDate, next.endTime, 0, holidays);
           next.estimatedDuration = c.duration;
         }
       }

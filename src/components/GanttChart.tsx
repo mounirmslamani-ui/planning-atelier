@@ -1,21 +1,19 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order } from '@/types/planning';
+import {
+  workMinutesFromZero,
+  getWorkSlotsForRange,
+  addWorkMinutes,
+  WORK_MINUTES_PER_DAY,
+  WORK_SEGMENTS,
+  isWorkDay,
+} from '@/lib/workTime';
 
-// Work hours: 8:00-12:00, 12:30-16:00 = 7.5h = 450min per day
-// Work week: Sun-Thu (Fri-Sat weekend)
-
-const HOUR_WIDTH_DAY = 120; // px per hour in day view
-const DAY_WIDTH_WEEK = 160; // px per day in week view
-const DAY_WIDTH_MONTH = 40; // px per day in month view
+const MINUTE_WIDTH_DAY = 2;    // px per work-minute in day view
+const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
+const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
-
-function isWorkDay(date: Date, holidays: { date: string }[]): boolean {
-  const day = date.getDay(); // 0=Sun, 5=Fri, 6=Sat
-  if (day === 5 || day === 6) return false;
-  const dateStr = date.toISOString().split('T')[0];
-  return !holidays.some(h => h.date === dateStr);
-}
 
 function getUrgencyBg(urgency: string): string {
   switch (urgency) {
@@ -57,13 +55,12 @@ interface GanttBlockProps {
   left: number;
   width: number;
   isLast: boolean;
-  allSteps: ProductionStep[];
   onDragStart: (stepId: string, startX: number, startLeft: number) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, left, width, isLast, allSteps, onDragStart, onResizeStart
+  step, order, operationName, clientName, left, width, isLast, onDragStart, onResizeStart
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
@@ -82,7 +79,6 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
         <div className="opacity-80">{operationName}</div>
         <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
       </div>
-      {/* Resize handle */}
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
         onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
@@ -104,7 +100,6 @@ const GanttChart: React.FC = () => {
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startLeft: number } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
 
-  // Sort operators by main function
   const sortedOperators = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
     return [...operators]
@@ -116,7 +111,6 @@ const GanttChart: React.FC = () => {
       });
   }, [operators, selectedOperatorId]);
 
-  // Filter steps
   const filteredSteps = useMemo(() => {
     let result = steps;
     if (selectedOperatorId) result = result.filter(s => s.operatorId === selectedOperatorId);
@@ -124,112 +118,143 @@ const GanttChart: React.FC = () => {
     return result;
   }, [steps, selectedOperatorId, selectedOrderId]);
 
-  // Time calculations
-  const getPixelOffset = useCallback((dateStr: string, timeStr: string): number => {
-    const date = new Date(`${dateStr}T${timeStr || '08:00'}`);
-    const zero = new Date(ganttZeroDate);
-    zero.setHours(8, 0, 0, 0);
-    const diffMs = date.getTime() - zero.getTime();
-
+  // Determine how many work days to show based on view
+  const numWorkDays = useMemo(() => {
     switch (ganttView) {
-      case 'day': {
-        const diffHours = diffMs / (1000 * 60 * 60);
-        return diffHours * HOUR_WIDTH_DAY;
-      }
-      case 'week': {
-        const diffDays = diffMs / (1000 * 60 * 60 * 24);
-        return diffDays * DAY_WIDTH_WEEK;
-      }
-      case 'month': {
-        const diffDays = diffMs / (1000 * 60 * 60 * 24);
-        return diffDays * DAY_WIDTH_MONTH;
-      }
-    }
-  }, [ganttView, ganttZeroDate]);
-
-  const getDurationWidth = useCallback((minutes: number): number => {
-    switch (ganttView) {
-      case 'day': return (minutes / 60) * HOUR_WIDTH_DAY;
-      case 'week': return (minutes / (60 * 24)) * DAY_WIDTH_WEEK;
-      case 'month': return (minutes / (60 * 24)) * DAY_WIDTH_MONTH;
+      case 'day': return 1;
+      case 'week': return 5; // Sun-Thu
+      case 'month': return 22; // ~1 month of work days
     }
   }, [ganttView]);
 
-  // Grid lines
+  const minuteWidth = useMemo(() => {
+    switch (ganttView) {
+      case 'day': return MINUTE_WIDTH_DAY;
+      case 'week': return MINUTE_WIDTH_WEEK;
+      case 'month': return MINUTE_WIDTH_MONTH;
+    }
+  }, [ganttView]);
+
+  // Get work slots for the range
+  const workSlots = useMemo(() => {
+    return getWorkSlotsForRange(ganttZeroDate, numWorkDays, holidays);
+  }, [ganttZeroDate, numWorkDays, holidays]);
+
+  // Total width based on work minutes
+  const totalWidth = useMemo(() => {
+    return numWorkDays * WORK_MINUTES_PER_DAY * minuteWidth;
+  }, [numWorkDays, minuteWidth]);
+
+  // Convert a datetime to pixel offset from zero
+  const getPixelOffset = useCallback((dateStr: string, timeStr: string): number => {
+    const target = new Date(`${dateStr}T${timeStr || '08:00'}`);
+    const zero = new Date(ganttZeroDate);
+    zero.setHours(8, 0, 0, 0);
+    const workMin = workMinutesFromZero(zero, target, holidays);
+    return workMin * minuteWidth;
+  }, [ganttZeroDate, holidays, minuteWidth]);
+
+  // Convert duration in work-minutes to pixels
+  const getDurationWidth = useCallback((minutes: number): number => {
+    return minutes * minuteWidth;
+  }, [minuteWidth]);
+
+  // Grid lines based on work slots
   const gridLines = useMemo(() => {
     const lines: { offset: number; type: 'major' | 'minor' | 'light'; label?: string }[] = [];
-    const zero = new Date(ganttZeroDate);
-    zero.setHours(8, 0, 0, 0);
+    let cumulativeWorkMinutes = 0;
 
-    if (ganttView === 'day') {
-      // 24 hours from the zero point
-      for (let h = 0; h < 24; h++) {
-        const offset = h * HOUR_WIDTH_DAY;
-        lines.push({ offset, type: 'major', label: `${(8 + h) % 24}:00` });
-        lines.push({ offset: offset + HOUR_WIDTH_DAY / 2, type: 'minor' });
-        lines.push({ offset: offset + HOUR_WIDTH_DAY / 4, type: 'light' });
-        lines.push({ offset: offset + (3 * HOUR_WIDTH_DAY) / 4, type: 'light' });
+    workSlots.forEach((slot, dayIndex) => {
+      if (ganttView === 'day') {
+        // Show hour-level detail for single day
+        slot.segments.forEach(seg => {
+          const segStart = seg.startMin;
+          const segEnd = seg.endMin;
+          for (let m = segStart; m < segEnd; m += 60) {
+            const workMinInDay = getWorkMinutesInDay(m, slot.segments);
+            const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
+            const hour = Math.floor(m / 60);
+            const isHourStart = m % 60 === 0;
+            if (isHourStart) {
+              lines.push({ offset, type: 'major', label: `${hour}:00` });
+            }
+          }
+          // Half-hours
+          for (let m = segStart + 30; m < segEnd; m += 60) {
+            const workMinInDay = getWorkMinutesInDay(m, slot.segments);
+            const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
+            lines.push({ offset, type: 'minor' });
+          }
+          // Quarter-hours
+          for (let m = segStart + 15; m < segEnd; m += 30) {
+            if (m % 30 !== 0) {
+              const workMinInDay = getWorkMinutesInDay(m, slot.segments);
+              const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
+              lines.push({ offset, type: 'light' });
+            }
+          }
+        });
+      } else if (ganttView === 'week') {
+        // Day-level with half-day markers
+        const offset = cumulativeWorkMinutes * minuteWidth;
+        lines.push({ offset, type: 'major', label: slot.dayLabel });
+        // Half-day marker (after morning segment = 240 min)
+        const halfOffset = (cumulativeWorkMinutes + 240) * minuteWidth;
+        lines.push({ offset: halfOffset, type: 'minor' });
+      } else {
+        // Month: day-level
+        const offset = cumulativeWorkMinutes * minuteWidth;
+        lines.push({ offset, type: dayIndex % 7 === 0 ? 'major' : 'minor', label: slot.dayLabel });
       }
-    } else if (ganttView === 'week') {
-      const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-      for (let d = 0; d < 7; d++) {
-        const date = new Date(zero.getTime() + d * 24 * 60 * 60 * 1000);
-        const offset = d * DAY_WIDTH_WEEK;
-        const dayName = dayNames[date.getDay()];
-        const isWeekend = date.getDay() === 5 || date.getDay() === 6;
-        lines.push({ offset, type: isWeekend ? 'light' : 'major', label: `${dayName} ${date.getDate()}` });
-        lines.push({ offset: offset + DAY_WIDTH_WEEK / 2, type: 'minor' });
-      }
-    } else {
-      for (let d = 0; d < 35; d++) {
-        const date = new Date(zero.getTime() + d * 24 * 60 * 60 * 1000);
-        const offset = d * DAY_WIDTH_MONTH;
-        const isWeekend = date.getDay() === 5 || date.getDay() === 6;
-        lines.push({ offset, type: isWeekend ? 'light' : (date.getDate() === 1 ? 'major' : 'minor'), label: d % 2 === 0 ? `${date.getDate()}` : undefined });
-      }
+
+      cumulativeWorkMinutes += WORK_MINUTES_PER_DAY;
+    });
+
+    // Lunch break markers (visual gap) for day view
+    if (ganttView === 'day' && workSlots.length > 0) {
+      const lunchWorkMin = 240; // after 4h of morning work
+      const offset = lunchWorkMin * minuteWidth;
+      lines.push({ offset, type: 'major', label: '12:00 | 12:30' });
     }
+
     return lines;
-  }, [ganttView, ganttZeroDate]);
+  }, [workSlots, ganttView, minuteWidth]);
 
-  const totalWidth = useMemo(() => {
-    switch (ganttView) {
-      case 'day': return 24 * HOUR_WIDTH_DAY;
-      case 'week': return 7 * DAY_WIDTH_WEEK;
-      case 'month': return 35 * DAY_WIDTH_MONTH;
+  // Helper: convert absolute minute-of-day to work-minutes elapsed in that day
+  function getWorkMinutesInDay(minuteOfDay: number, segments: { startMin: number; endMin: number }[]): number {
+    let workMin = 0;
+    for (const seg of segments) {
+      if (minuteOfDay <= seg.startMin) break;
+      workMin += Math.min(minuteOfDay, seg.endMin) - seg.startMin;
     }
-  }, [ganttView]);
+    return Math.max(0, workMin);
+  }
 
-  // Mouse handlers for drag/resize
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (dragState) {
-      const dx = e.clientX - dragState.startX;
-      // Preview only - actual update on mouseup
-    }
-    if (resizeState) {
-      // Preview only
-    }
-  }, [dragState, resizeState]);
+  // Convert pixel delta to work-minutes delta
+  const pxToWorkMinutes = useCallback((dx: number): number => {
+    return dx / minuteWidth;
+  }, [minuteWidth]);
+
+  const handleMouseMove = useCallback((_e: React.MouseEvent) => {
+    // Preview only
+  }, []);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (dragState) {
       const dx = e.clientX - dragState.startX;
       const step = steps.find(s => s.id === dragState.stepId);
       if (step && Math.abs(dx) > 5) {
-        let minutesDelta = 0;
-        switch (ganttView) {
-          case 'day': minutesDelta = (dx / HOUR_WIDTH_DAY) * 60; break;
-          case 'week': minutesDelta = (dx / DAY_WIDTH_WEEK) * 24 * 60; break;
-          case 'month': minutesDelta = (dx / DAY_WIDTH_MONTH) * 24 * 60; break;
-        }
+        const minutesDelta = pxToWorkMinutes(dx);
         const start = new Date(`${step.startDate}T${step.startTime}`);
-        start.setMinutes(start.getMinutes() + Math.round(minutesDelta / 15) * 15);
-        const end = new Date(start.getTime() + step.estimatedDuration * 60000);
+        // Use addWorkMinutes for proper scheduling
+        const newStart = addWorkMinutes(start, Math.round(minutesDelta / 15) * 15, holidays);
+        const newEnd = addWorkMinutes(newStart, step.estimatedDuration, holidays);
         updateStep({
           ...step,
-          startDate: start.toISOString().split('T')[0],
-          startTime: start.toTimeString().slice(0, 5),
-          endDate: end.toISOString().split('T')[0],
-          endTime: end.toTimeString().slice(0, 5),
+          startDate: newStart.toISOString().split('T')[0],
+          startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
+          endDate: newEnd.toISOString().split('T')[0],
+          endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
         });
       }
       setDragState(null);
@@ -238,25 +263,20 @@ const GanttChart: React.FC = () => {
       const dx = e.clientX - resizeState.startX;
       const step = steps.find(s => s.id === resizeState.stepId);
       if (step && Math.abs(dx) > 5) {
-        let minutesDelta = 0;
-        switch (ganttView) {
-          case 'day': minutesDelta = (dx / HOUR_WIDTH_DAY) * 60; break;
-          case 'week': minutesDelta = (dx / DAY_WIDTH_WEEK) * 24 * 60; break;
-          case 'month': minutesDelta = (dx / DAY_WIDTH_MONTH) * 24 * 60; break;
-        }
+        const minutesDelta = pxToWorkMinutes(dx);
         const newDuration = Math.max(15, step.estimatedDuration + Math.round(minutesDelta / 15) * 15);
         const start = new Date(`${step.startDate}T${step.startTime}`);
-        const end = new Date(start.getTime() + newDuration * 60000);
+        const newEnd = addWorkMinutes(start, newDuration, holidays);
         updateStep({
           ...step,
           estimatedDuration: newDuration,
-          endDate: end.toISOString().split('T')[0],
-          endTime: end.toTimeString().slice(0, 5),
+          endDate: newEnd.toISOString().split('T')[0],
+          endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
         });
       }
       setResizeState(null);
     }
-  }, [dragState, resizeState, steps, ganttView, updateStep]);
+  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
@@ -373,14 +393,21 @@ const GanttChart: React.FC = () => {
             {/* Now line */}
             {(() => {
               const now = new Date();
-              const nowOffset = getPixelOffset(now.toISOString().split('T')[0], now.toTimeString().slice(0, 5));
-              if (nowOffset > 0 && nowOffset < totalWidth) {
-                return (
-                  <div
-                    className="absolute top-0 w-0.5 bg-gantt-now z-20"
-                    style={{ left: nowOffset, height: sortedOperators.length * ROW_HEIGHT }}
-                  />
+              const zero = new Date(ganttZeroDate);
+              zero.setHours(8, 0, 0, 0);
+              if (isWorkDay(now, holidays)) {
+                const nowOffset = getPixelOffset(
+                  now.toISOString().split('T')[0],
+                  now.toTimeString().slice(0, 5)
                 );
+                if (nowOffset > 0 && nowOffset < totalWidth) {
+                  return (
+                    <div
+                      className="absolute top-0 w-0.5 bg-gantt-now z-20"
+                      style={{ left: nowOffset, height: sortedOperators.length * ROW_HEIGHT }}
+                    />
+                  );
+                }
               }
               return null;
             })()}
@@ -411,7 +438,6 @@ const GanttChart: React.FC = () => {
                           left={left}
                           width={width}
                           isLast={isLast}
-                          allSteps={steps}
                           onDragStart={(id, x, l) => setDragState({ stepId: id, startX: x, startLeft: l })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
                         />
