@@ -1,6 +1,9 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
-import type { GanttView, ProductionStep, Order } from '@/types/planning';
+import type { GanttView, ProductionStep, Order, Holiday } from '@/types/planning';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   workMinutesFromZero,
   getWorkSlotsForRange,
@@ -300,9 +303,67 @@ const GanttChart: React.FC = () => {
     setSelectedOperatorId(selectedOperatorId === opId ? null : opId);
   };
 
-  const handleBlockDoubleClick = (orderId: string) => {
-    setSelectedOperatorId(null);
-    setSelectedOrderId(selectedOrderId === orderId ? null : orderId);
+  // --- Edit step dialog ---
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState<ProductionStep | null>(null);
+
+  function computeThirdField(
+    startDate: string, startTime: string, endDate: string, endTime: string, duration: number, hols: Holiday[]
+  ): { endDate: string; endTime: string; duration: number } {
+    if (startDate && startTime && duration > 0 && (!endDate || !endTime)) {
+      const start = new Date(`${startDate}T${startTime}`);
+      const end = addWorkMinutes(start, duration, hols);
+      return {
+        endDate: end.toISOString().split('T')[0],
+        endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`,
+        duration
+      };
+    }
+    if (startDate && startTime && endDate && endTime && duration <= 0) {
+      const start = new Date(`${startDate}T${startTime}`);
+      const end = new Date(`${endDate}T${endTime}`);
+      const { workMinutesBetween } = require('@/lib/workTime');
+      const workMin = workMinutesBetween(start, end, hols);
+      return { endDate, endTime, duration: Math.max(0, workMin) };
+    }
+    return { endDate, endTime, duration };
+  }
+
+  const handleBlockDoubleClick = (stepId: string) => {
+    const step = steps.find(s => s.id === stepId);
+    if (step) {
+      setEditForm({ ...step });
+      setEditDialogOpen(true);
+    }
+  };
+
+  const updateEditForm = (key: string, value: any) => {
+    setEditForm(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, [key]: value };
+      if (['startDate', 'startTime', 'estimatedDuration'].includes(key)) {
+        if (next.startDate && next.startTime && next.estimatedDuration > 0) {
+          const c = computeThirdField(next.startDate, next.startTime, '', '', next.estimatedDuration, holidays);
+          next.endDate = c.endDate;
+          next.endTime = c.endTime;
+        }
+      }
+      if (['endDate', 'endTime'].includes(key)) {
+        if (next.startDate && next.startTime && next.endDate && next.endTime) {
+          const c = computeThirdField(next.startDate, next.startTime, next.endDate, next.endTime, 0, holidays);
+          next.estimatedDuration = c.duration;
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleEditSave = () => {
+    if (!editForm) return;
+    const computed = computeThirdField(editForm.startDate, editForm.startTime, editForm.endDate, editForm.endTime, editForm.estimatedDuration, holidays);
+    updateStep({ ...editForm, ...computed, estimatedDuration: computed.duration });
+    setEditDialogOpen(false);
+    setEditForm(null);
   };
 
   return (
