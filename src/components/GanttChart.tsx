@@ -10,6 +10,7 @@ import {
   addWorkMinutes,
   WORK_MINUTES_PER_DAY,
   WORK_SEGMENTS,
+  workMinutesBetween,
   isWorkDay,
 } from '@/lib/workTime';
 
@@ -322,8 +323,8 @@ const GanttChart: React.FC = () => {
     if (startDate && startTime && endDate && endTime && duration <= 0) {
       const start = new Date(`${startDate}T${startTime}`);
       const end = new Date(`${endDate}T${endTime}`);
-      const { workMinutesBetween } = require('@/lib/workTime');
-      const workMin = workMinutesBetween(start, end, hols);
+      const { workMinutesBetween: wmb } = await import('@/lib/workTime');
+      const workMin = wmb(start, end, hols);
       return { endDate, endTime, duration: Math.max(0, workMin) };
     }
     return { endDate, endTime, duration };
