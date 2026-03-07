@@ -323,8 +323,7 @@ const GanttChart: React.FC = () => {
     if (startDate && startTime && endDate && endTime && duration <= 0) {
       const start = new Date(`${startDate}T${startTime}`);
       const end = new Date(`${endDate}T${endTime}`);
-      const { workMinutesBetween: wmb } = await import('@/lib/workTime');
-      const workMin = wmb(start, end, hols);
+      const workMin = workMinutesBetween(start, end, hols);
       return { endDate, endTime, duration: Math.max(0, workMin) };
     }
     return { endDate, endTime, duration };
