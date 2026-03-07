@@ -55,7 +55,7 @@ interface GanttBlockProps {
   left: number;
   width: number;
   isLast: boolean;
-  onDragStart: (stepId: string, startX: number, startLeft: number) => void;
+  onDragStart: (stepId: string, startX: number, startLeft: number, startY: number) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
 }
 
@@ -71,7 +71,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
     <div
       className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
-      onMouseDown={e => { e.preventDefault(); onDragStart(step.id, e.clientX, left); }}
+      onMouseDown={e => { e.preventDefault(); onDragStart(step.id, e.clientX, left, e.clientY); }}
       title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}`}
     >
       <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
@@ -97,7 +97,7 @@ const GanttChart: React.FC = () => {
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dragState, setDragState] = useState<{ stepId: string; startX: number; startLeft: number } | null>(null);
+  const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
 
   const sortedOperators = useMemo(() => {
@@ -242,15 +242,23 @@ const GanttChart: React.FC = () => {
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (dragState) {
       const dx = e.clientX - dragState.startX;
+      const dy = e.clientY - dragState.startY;
       const step = steps.find(s => s.id === dragState.stepId);
-      if (step && Math.abs(dx) > 5) {
+      if (step && (Math.abs(dx) > 5 || Math.abs(dy) > ROW_HEIGHT / 2)) {
         const minutesDelta = pxToWorkMinutes(dx);
         const start = new Date(`${step.startDate}T${step.startTime}`);
-        // Use addWorkMinutes for proper scheduling
         const newStart = addWorkMinutes(start, Math.round(minutesDelta / 15) * 15, holidays);
         const newEnd = addWorkMinutes(newStart, step.estimatedDuration, holidays);
+
+        // Determine target operator from vertical movement
+        const rowShift = Math.round(dy / ROW_HEIGHT);
+        const currentRowIndex = sortedOperators.findIndex(op => op.id === step.operatorId);
+        const targetRowIndex = Math.max(0, Math.min(sortedOperators.length - 1, currentRowIndex + rowShift));
+        const targetOperatorId = sortedOperators[targetRowIndex]?.id || step.operatorId;
+
         updateStep({
           ...step,
+          operatorId: targetOperatorId,
           startDate: newStart.toISOString().split('T')[0],
           startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
           endDate: newEnd.toISOString().split('T')[0],
@@ -276,7 +284,7 @@ const GanttChart: React.FC = () => {
       }
       setResizeState(null);
     }
-  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep]);
+  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, sortedOperators]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
@@ -438,7 +446,7 @@ const GanttChart: React.FC = () => {
                           left={left}
                           width={width}
                           isLast={isLast}
-                          onDragStart={(id, x, l) => setDragState({ stepId: id, startX: x, startLeft: l })}
+                          onDragStart={(id, x, l, y) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
                         />
                       </div>
