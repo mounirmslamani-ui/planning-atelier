@@ -95,9 +95,14 @@ export function workMinutesBetween(startDate: Date, endDate: Date, holidays: Hol
   return total;
 }
 
-/** Add work-minutes to a start date, skipping weekends, holidays, and lunch break */
+/** Add work-minutes to a start date, skipping weekends, holidays, and lunch break.
+ *  Supports negative minutes (moving backward in time). */
 export function addWorkMinutes(start: Date, minutes: number, holidays: Holiday[]): Date {
-  if (minutes <= 0) return new Date(start);
+  if (minutes === 0) return new Date(start);
+
+  if (minutes < 0) {
+    return subtractWorkMinutes(start, -minutes, holidays);
+  }
 
   let current = new Date(start);
   let remaining = minutes;
@@ -143,6 +148,57 @@ export function addWorkMinutes(start: Date, minutes: number, holidays: Holiday[]
         current.setDate(current.getDate() + 1);
       }
       current.setHours(8, 0, 0, 0);
+    }
+  }
+
+  return current;
+}
+
+/** Subtract work-minutes from a date, going backward in time */
+function subtractWorkMinutes(start: Date, minutes: number, holidays: Holiday[]): Date {
+  let current = new Date(start);
+  let remaining = minutes;
+
+  // If starting on a non-work day, go back to previous work day end
+  if (!isWorkDay(current, holidays)) {
+    current.setDate(current.getDate() - 1);
+    while (!isWorkDay(current, holidays)) {
+      current.setDate(current.getDate() - 1);
+    }
+    current.setHours(16, 0, 0, 0);
+  }
+
+  // Snap to work time if outside work hours
+  const curMin = current.getHours() * 60 + current.getMinutes();
+  if (curMin >= WORK_AFTERNOON_END) {
+    current.setHours(16, 0, 0, 0);
+  } else if (curMin > WORK_MORNING_END && curMin < WORK_AFTERNOON_START) {
+    current.setHours(12, 0, 0, 0);
+  } else if (curMin <= WORK_MORNING_START) {
+    current.setDate(current.getDate() - 1);
+    while (!isWorkDay(current, holidays)) {
+      current.setDate(current.getDate() - 1);
+    }
+    current.setHours(16, 0, 0, 0);
+  }
+
+  while (remaining > 0) {
+    const curTimeMin = current.getHours() * 60 + current.getMinutes();
+    const workDone = timeOfDayToWorkMinutes(curTimeMin);
+
+    if (remaining <= workDone) {
+      const newWorkMin = workDone - remaining;
+      const newTimeOfDay = workMinutesToTimeOfDay(newWorkMin);
+      current.setHours(Math.floor(newTimeOfDay / 60), newTimeOfDay % 60, 0, 0);
+      remaining = 0;
+    } else {
+      remaining -= workDone;
+      // Move to previous work day end
+      current.setDate(current.getDate() - 1);
+      while (!isWorkDay(current, holidays)) {
+        current.setDate(current.getDate() - 1);
+      }
+      current.setHours(16, 0, 0, 0);
     }
   }
 
