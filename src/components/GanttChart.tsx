@@ -1,12 +1,16 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
-import type { GanttView, ProductionStep, Order } from '@/types/planning';
+import type { GanttView, ProductionStep, Order, Holiday } from '@/types/planning';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   workMinutesFromZero,
   getWorkSlotsForRange,
   addWorkMinutes,
   WORK_MINUTES_PER_DAY,
   WORK_SEGMENTS,
+  workMinutesBetween,
   isWorkDay,
 } from '@/lib/workTime';
 
@@ -300,9 +304,66 @@ const GanttChart: React.FC = () => {
     setSelectedOperatorId(selectedOperatorId === opId ? null : opId);
   };
 
-  const handleBlockDoubleClick = (orderId: string) => {
-    setSelectedOperatorId(null);
-    setSelectedOrderId(selectedOrderId === orderId ? null : orderId);
+  // --- Edit step dialog ---
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState<ProductionStep | null>(null);
+
+  function computeThirdField(
+    startDate: string, startTime: string, endDate: string, endTime: string, duration: number, hols: Holiday[]
+  ): { endDate: string; endTime: string; duration: number } {
+    if (startDate && startTime && duration > 0 && (!endDate || !endTime)) {
+      const start = new Date(`${startDate}T${startTime}`);
+      const end = addWorkMinutes(start, duration, hols);
+      return {
+        endDate: end.toISOString().split('T')[0],
+        endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`,
+        duration
+      };
+    }
+    if (startDate && startTime && endDate && endTime && duration <= 0) {
+      const start = new Date(`${startDate}T${startTime}`);
+      const end = new Date(`${endDate}T${endTime}`);
+      const workMin = workMinutesBetween(start, end, hols);
+      return { endDate, endTime, duration: Math.max(0, workMin) };
+    }
+    return { endDate, endTime, duration };
+  }
+
+  const handleBlockDoubleClick = (stepId: string) => {
+    const step = steps.find(s => s.id === stepId);
+    if (step) {
+      setEditForm({ ...step });
+      setEditDialogOpen(true);
+    }
+  };
+
+  const updateEditForm = (key: string, value: any) => {
+    setEditForm(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, [key]: value };
+      if (['startDate', 'startTime', 'estimatedDuration'].includes(key)) {
+        if (next.startDate && next.startTime && next.estimatedDuration > 0) {
+          const c = computeThirdField(next.startDate, next.startTime, '', '', next.estimatedDuration, holidays);
+          next.endDate = c.endDate;
+          next.endTime = c.endTime;
+        }
+      }
+      if (['endDate', 'endTime'].includes(key)) {
+        if (next.startDate && next.startTime && next.endDate && next.endTime) {
+          const c = computeThirdField(next.startDate, next.startTime, next.endDate, next.endTime, 0, holidays);
+          next.estimatedDuration = c.duration;
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleEditSave = () => {
+    if (!editForm) return;
+    const computed = computeThirdField(editForm.startDate, editForm.startTime, editForm.endDate, editForm.endTime, editForm.estimatedDuration, holidays);
+    updateStep({ ...editForm, ...computed, estimatedDuration: computed.duration });
+    setEditDialogOpen(false);
+    setEditForm(null);
   };
 
   return (
@@ -443,7 +504,7 @@ const GanttChart: React.FC = () => {
                     const isLast = isLastStep(step, steps);
 
                     return (
-                      <div key={step.id} onDoubleClick={() => handleBlockDoubleClick(step.orderId)}>
+                      <div key={step.id} onDoubleClick={() => handleBlockDoubleClick(step.id)}>
                         <GanttBlock
                           step={step}
                           order={order}
@@ -463,6 +524,73 @@ const GanttChart: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Step Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="font-heading">Modifier l'étape</DialogTitle></DialogHeader>
+          {editForm && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Commande</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.orderId} onChange={e => updateEditForm('orderId', e.target.value)}>
+                  {orders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Opérateur</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
+                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Opération</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operationId} onChange={e => updateEditForm('operationId', e.target.value)}>
+                  {operations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Ordre chronologique</label>
+                <Input type="number" min={1} value={editForm.order} onChange={e => updateEditForm('order', parseInt(e.target.value) || 1)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date début</label>
+                <Input type="date" value={editForm.startDate} onChange={e => updateEditForm('startDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Heure début</label>
+                <Input type="time" value={editForm.startTime} onChange={e => updateEditForm('startTime', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Durée estimée (min)</label>
+                <Input type="number" min={0} value={editForm.estimatedDuration} onChange={e => updateEditForm('estimatedDuration', parseInt(e.target.value) || 0)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date fin</label>
+                <Input type="date" value={editForm.endDate} onChange={e => updateEditForm('endDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Heure fin</label>
+                <Input type="time" value={editForm.endTime} onChange={e => updateEditForm('endTime', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Dépend de (étape)</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.dependsOn || ''} onChange={e => updateEditForm('dependsOn', e.target.value || undefined)}>
+                  <option value="">Aucune dépendance</option>
+                  {steps.filter(s => s.id !== editForm.id).map(s => {
+                    const o = orders.find(ord => ord.id === s.orderId);
+                    return <option key={s.id} value={s.id}>#{s.order} — {o?.orderNumber || '—'}</option>;
+                  })}
+                </select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleEditSave}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
