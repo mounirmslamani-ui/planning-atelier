@@ -504,7 +504,7 @@ const GanttChart: React.FC = () => {
                     const isLast = isLastStep(step, steps);
 
                     return (
-                      <div key={step.id} onDoubleClick={() => handleBlockDoubleClick(step.orderId)}>
+                      <div key={step.id} onDoubleClick={() => handleBlockDoubleClick(step.id)}>
                         <GanttBlock
                           step={step}
                           order={order}
@@ -524,6 +524,73 @@ const GanttChart: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Step Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="font-heading">Modifier l'étape</DialogTitle></DialogHeader>
+          {editForm && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Commande</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.orderId} onChange={e => updateEditForm('orderId', e.target.value)}>
+                  {orders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Opérateur</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
+                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Opération</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operationId} onChange={e => updateEditForm('operationId', e.target.value)}>
+                  {operations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Ordre chronologique</label>
+                <Input type="number" min={1} value={editForm.order} onChange={e => updateEditForm('order', parseInt(e.target.value) || 1)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date début</label>
+                <Input type="date" value={editForm.startDate} onChange={e => updateEditForm('startDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Heure début</label>
+                <Input type="time" value={editForm.startTime} onChange={e => updateEditForm('startTime', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Durée estimée (min)</label>
+                <Input type="number" min={0} value={editForm.estimatedDuration} onChange={e => updateEditForm('estimatedDuration', parseInt(e.target.value) || 0)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date fin</label>
+                <Input type="date" value={editForm.endDate} onChange={e => updateEditForm('endDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Heure fin</label>
+                <Input type="time" value={editForm.endTime} onChange={e => updateEditForm('endTime', e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Dépend de (étape)</label>
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.dependsOn || ''} onChange={e => updateEditForm('dependsOn', e.target.value || undefined)}>
+                  <option value="">Aucune dépendance</option>
+                  {steps.filter(s => s.id !== editForm.id).map(s => {
+                    const o = orders.find(ord => ord.id === s.orderId);
+                    return <option key={s.id} value={s.id}>#{s.order} — {o?.orderNumber || '—'}</option>;
+                  })}
+                </select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleEditSave}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
