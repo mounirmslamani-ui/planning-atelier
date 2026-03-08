@@ -541,9 +541,26 @@ const GanttChart: React.FC = () => {
       validatedAt: new Date().toISOString(),
     };
     addProductionRecord(record);
+
+    // If work is to continue, create a new step with remaining duration
+    if (validateWorkDone === 'continue' && validateRemainingDuration > 0 && validateContinueDate) {
+      const remainingMin = Math.round(validateRemainingDuration * 60);
+      const continueStart = new Date(`${validateContinueDate}T${validateContinueTime || '08:00'}`);
+      const continueEnd = addWorkMinutes(continueStart, remainingMin, holidays);
+      addStep({
+        ...step,
+        id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        estimatedDuration: remainingMin,
+        startDate: continueStart.toISOString().split('T')[0],
+        startTime: `${String(continueStart.getHours()).padStart(2, '0')}:${String(continueStart.getMinutes()).padStart(2, '0')}`,
+        endDate: continueEnd.toISOString().split('T')[0],
+        endTime: `${String(continueEnd.getHours()).padStart(2, '0')}:${String(continueEnd.getMinutes()).padStart(2, '0')}`,
+      });
+    }
+
     setValidateDialogOpen(false);
     setValidateStepId(null);
-  }, [validateStepId, validateActualDuration, steps, addProductionRecord]);
+  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, holidays, addProductionRecord, addStep]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
