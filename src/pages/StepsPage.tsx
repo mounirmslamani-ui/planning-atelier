@@ -109,7 +109,7 @@ const StepsPage: React.FC = () => {
             <TableRow>
               <TableHead>#</TableHead>
               <TableHead>Commande</TableHead>
-              <TableHead>Opérateur</TableHead>
+              <TableHead>Assigné à</TableHead>
               <TableHead>Opération</TableHead>
               <TableHead>Durée (min)</TableHead>
               <TableHead>Début</TableHead>
