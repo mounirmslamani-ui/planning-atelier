@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Package, Wrench, Flag, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
+import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
   urgent: 'Urgent',
