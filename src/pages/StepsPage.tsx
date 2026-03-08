@@ -199,8 +199,14 @@ const StepsPage: React.FC = () => {
               <Input type="time" value={form.startTime} onChange={e => updateForm('startTime', e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Durée estimée (h)</label>
-              <Input type="number" min={0} step={0.25} value={parseFloat((form.estimatedDuration / 60).toFixed(2))} onChange={e => updateForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 60))} />
+              <label className="text-sm font-medium mb-1 block">
+                Durée estimée ({assignType === 'subcontractor' ? 'jours' : 'heures'})
+              </label>
+              {assignType === 'subcontractor' ? (
+                <Input type="number" min={0} step={0.5} value={parseFloat((form.estimatedDuration / 450).toFixed(2))} onChange={e => updateForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 450))} />
+              ) : (
+                <Input type="number" min={0} step={0.25} value={parseFloat((form.estimatedDuration / 60).toFixed(2))} onChange={e => updateForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 60))} />
+              )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Date fin (auto-calculée)</label>
