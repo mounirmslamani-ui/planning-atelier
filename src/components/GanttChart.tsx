@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday } from '@/types/planning';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
