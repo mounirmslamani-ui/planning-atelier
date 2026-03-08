@@ -153,10 +153,32 @@ const StepsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Opérateur</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operatorId} onChange={e => updateForm('operatorId', e.target.value)}>
-                {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
+              <label className="text-sm font-medium mb-1 block">Assigner à</label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded transition-colors ${assignType === 'operator' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                  onClick={() => { setAssignType('operator'); updateForm('subcontractorId', undefined); updateForm('operatorId', operators[0]?.id || ''); }}
+                >
+                  Opérateur
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded transition-colors ${assignType === 'subcontractor' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                  onClick={() => { setAssignType('subcontractor'); updateForm('operatorId', ''); updateForm('subcontractorId', subcontractors[0]?.id || ''); }}
+                >
+                  Sous-traitant
+                </button>
+              </div>
+              {assignType === 'operator' ? (
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operatorId} onChange={e => updateForm('operatorId', e.target.value)}>
+                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              ) : (
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.subcontractorId || ''} onChange={e => updateForm('subcontractorId', e.target.value)}>
+                  {subcontractors.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                </select>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Opération</label>
