@@ -276,13 +276,14 @@ const GanttChart: React.FC = () => {
         const newEnd = addWorkMinutes(newStart, step.estimatedDuration, holidays);
 
         const rowShift = Math.round(dy / ROW_HEIGHT);
-        const currentRowIndex = sortedOperators.findIndex(op => op.id === step.operatorId);
-        const targetRowIndex = Math.max(0, Math.min(sortedOperators.length - 1, currentRowIndex + rowShift));
-        const targetOperatorId = sortedOperators[targetRowIndex]?.id || step.operatorId;
-
+        const currentRowIndex = ganttRows.findIndex(row => row.type === 'operator' && row.id === step.operatorId);
+        const targetRowIndex = Math.max(0, Math.min(ganttRows.length - 1, currentRowIndex + rowShift));
+        const targetRow = ganttRows[targetRowIndex];
+        
         const newStepData = {
           ...step,
-          operatorId: targetOperatorId,
+          operatorId: targetRow?.type === 'operator' ? targetRow.id : step.operatorId,
+          subcontractorId: targetRow?.type === 'subcontractor' ? undefined : step.subcontractorId,
           startDate: newStart.toISOString().split('T')[0],
           startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
           endDate: newEnd.toISOString().split('T')[0],
