@@ -91,6 +91,7 @@ const OrdersPage: React.FC = () => {
   const [selectedPriority, setSelectedPriority] = useState<OrderPriority | ''>('');
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '',
