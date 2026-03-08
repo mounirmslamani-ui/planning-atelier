@@ -225,13 +225,19 @@ const OrdersPage: React.FC = () => {
                 <span className="flex items-center gap-1">Client <SortIcon field="client" /></span>
               </TableHead>
               <TableHead>Désignation</TableHead>
-              <TableHead>Qté</TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('quantity')}>
+                <span className="flex items-center gap-1">Qté <SortIcon field="quantity" /></span>
+              </TableHead>
               <TableHead>Urgence</TableHead>
               <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('deadline')}>
                 <span className="flex items-center gap-1">Délai <SortIcon field="deadline" /></span>
               </TableHead>
-              <TableHead>Mat.</TableHead>
-              <TableHead>Out.</TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('material')}>
+                <span className="flex items-center gap-1">Mat. <SortIcon field="material" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('tooling')}>
+                <span className="flex items-center gap-1">Out. <SortIcon field="tooling" /></span>
+              </TableHead>
               <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
