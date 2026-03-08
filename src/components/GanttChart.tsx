@@ -1013,10 +1013,10 @@ const GanttChart: React.FC = () => {
       </Dialog>
 
       {/* Link Dependency Dialog */}
-      <Dialog open={linkDialogOpen} onOpenChange={(open) => { setLinkDialogOpen(open); if (!open) { setLinkSource(null); setLinkTarget(null); } }}>
+      <Dialog open={linkDialogOpen} onOpenChange={(open) => { setLinkDialogOpen(open); if (!open) { setLinkSource(null); setLinkTarget(null); setIsEditingLink(false); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-heading">Lier les blocs</DialogTitle>
+            <DialogTitle className="font-heading">{isEditingLink ? 'Modifier le lien' : 'Lier les blocs'}</DialogTitle>
           </DialogHeader>
           {linkSource && linkTarget && (() => {
             const src = steps.find(s => s.id === linkSource);
@@ -1055,9 +1055,15 @@ const GanttChart: React.FC = () => {
               </div>
             );
           })()}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleLinkSave}>Lier</Button>
+          <DialogFooter className="flex justify-between">
+            {isEditingLink && (
+              <Button variant="destructive" onClick={handleLinkDelete} className="mr-auto">Supprimer le lien</Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleLinkSave}>{isEditingLink ? 'Modifier' : 'Lier'}</Button>
+            </div>
+          </DialogFooter>
           </DialogFooter>
         </DialogContent>
       </Dialog>
