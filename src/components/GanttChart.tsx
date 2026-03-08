@@ -527,6 +527,24 @@ const GanttChart: React.FC = () => {
             Tout afficher
           </button>
         )}
+        {/* Validate production icon - drop zone */}
+        <div
+          ref={validateZoneRef}
+          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed transition-all ${
+            isOverValidateZone
+              ? 'border-primary bg-primary/20 scale-110'
+              : dragState
+                ? 'border-primary/50 bg-primary/5 animate-pulse'
+                : 'border-muted-foreground/30 bg-muted/30'
+          }`}
+          title="Glissez un bloc ici pour valider la production"
+        >
+          <div className="relative w-7 h-7">
+            <Settings className={`w-7 h-7 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} />
+            <Check className={`absolute bottom-0 right-0 w-3.5 h-3.5 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} strokeWidth={3} />
+          </div>
+          <span className={`text-[10px] font-medium ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'}`}>Valider</span>
+        </div>
       </div>
 
       {/* Chart area */}
