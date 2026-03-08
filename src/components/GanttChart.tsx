@@ -210,7 +210,7 @@ const GanttChart: React.FC = () => {
             lines.push({ offset, type: 'major', label: `${hour}:${String(min).padStart(2, '0')}` });
           }
           // Hour marks within segment (skip segment start if already added)
-          for (let m = Math.ceil(segStart / 60) * 60; m < segEnd; m += 60) {
+          for (let m = Math.ceil(segStart / 60) * 60; m <= segEnd; m += 60) {
             if (m <= segStart) continue;
             const workMinInDay = getWorkMinutesInDay(m, slot.segments);
             const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
