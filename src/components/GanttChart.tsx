@@ -198,13 +198,13 @@ const GanttChart: React.FC = () => {
     workSlots.forEach((slot, dayIndex) => {
       if (ganttView === 'day') {
         // Show hour-level detail for single day
-        // Collect all segment start minutes to avoid duplicate labels
-        const segStartSet = new Set(slot.segments.map(s => s.startMin));
-        const segEndSet = new Set(slot.segments.map(s => s.endMin));
+        // Track positions already labeled to avoid overlaps
+        const labeledPositions = new Set<number>();
 
-        slot.segments.forEach(seg => {
+        slot.segments.forEach((seg, segIdx) => {
           const segStart = seg.startMin;
           const segEnd = seg.endMin;
+
           // Show segment start label (e.g. 8:00, 12:30)
           {
             const workMinInDay = getWorkMinutesInDay(segStart, slot.segments);
@@ -212,23 +212,31 @@ const GanttChart: React.FC = () => {
             const hour = Math.floor(segStart / 60);
             const min = segStart % 60;
             lines.push({ offset, type: 'major', label: `${hour}:${String(min).padStart(2, '0')}` });
+            labeledPositions.add(workMinInDay);
           }
-          // Show segment end label (e.g. 12:00, 16:00)
-          {
-            const workMinInDay = getWorkMinutesInDay(segEnd, slot.segments);
-            const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
-            const hour = Math.floor(segEnd / 60);
-            lines.push({ offset, type: 'major', label: `${hour}:00` });
-          }
-          // Hour marks within segment (skip start and end already added)
+
+          // Hour marks within segment (skip segment start)
           for (let m = Math.ceil(segStart / 60) * 60; m < segEnd; m += 60) {
             if (m <= segStart) continue;
-            if (segEndSet.has(m) || segStartSet.has(m)) continue;
             const workMinInDay = getWorkMinutesInDay(m, slot.segments);
+            if (labeledPositions.has(workMinInDay)) continue;
             const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
             const hour = Math.floor(m / 60);
             lines.push({ offset, type: 'major', label: `${hour}:00` });
+            labeledPositions.add(workMinInDay);
           }
+
+          // Show segment end label (e.g. 16:00) only for the LAST segment
+          if (segIdx === slot.segments.length - 1) {
+            const workMinInDay = getWorkMinutesInDay(segEnd, slot.segments);
+            if (!labeledPositions.has(workMinInDay)) {
+              const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
+              const hour = Math.floor(segEnd / 60);
+              lines.push({ offset, type: 'major', label: `${hour}:00` });
+              labeledPositions.add(workMinInDay);
+            }
+          }
+
           // Half-hours
           for (let m = segStart + 30; m < segEnd; m += 60) {
             const workMinInDay = getWorkMinutesInDay(m, slot.segments);
