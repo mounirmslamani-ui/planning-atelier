@@ -149,7 +149,10 @@ const GanttChart: React.FC = () => {
 
   const handleCtrlClick = useCallback((stepId: string) => {
     if (!ctrlSelectedStepId) {
-      // First click: check if this block already has a dependency — open edit directly
+      // First click: always select the block
+      setCtrlSelectedStepId(stepId);
+    } else if (ctrlSelectedStepId === stepId) {
+      // Same block clicked again: if it has a link, open edit; otherwise deselect
       const clickedStep = steps.find(s => s.id === stepId);
       if (clickedStep?.dependsOn) {
         setLinkSource(clickedStep.dependsOn);
@@ -157,30 +160,27 @@ const GanttChart: React.FC = () => {
         setLinkPercentage(clickedStep.dependsOnPercentage ?? 100);
         setIsEditingLink(true);
         setLinkDialogOpen(true);
-        return;
+        setCtrlSelectedStepId(null);
+      } else {
+        setCtrlSelectedStepId(null);
       }
-      setCtrlSelectedStepId(stepId);
-    } else if (ctrlSelectedStepId === stepId) {
-      setCtrlSelectedStepId(null);
     } else {
-      // Check if a link already exists between these two (in either direction)
+      // Second block clicked: check if a link already exists between these two
       const stepA = steps.find(s => s.id === ctrlSelectedStepId);
       const stepB = steps.find(s => s.id === stepId);
 
       if (stepB?.dependsOn === ctrlSelectedStepId) {
-        // B depends on A — edit existing
         setLinkSource(ctrlSelectedStepId);
         setLinkTarget(stepId);
         setLinkPercentage(stepB.dependsOnPercentage ?? 100);
         setIsEditingLink(true);
       } else if (stepA?.dependsOn === stepId) {
-        // A depends on B — edit existing
         setLinkSource(stepId);
         setLinkTarget(ctrlSelectedStepId);
         setLinkPercentage(stepA.dependsOnPercentage ?? 100);
         setIsEditingLink(true);
       } else {
-        // New link
+        // New link: first selected = predecessor, second = successor
         setLinkSource(ctrlSelectedStepId);
         setLinkTarget(stepId);
         setLinkPercentage(100);
