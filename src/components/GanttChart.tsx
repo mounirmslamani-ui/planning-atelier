@@ -749,6 +749,46 @@ const GanttChart: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Validate Production Dialog */}
+      <Dialog open={validateDialogOpen} onOpenChange={setValidateDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Valider la production</DialogTitle>
+          </DialogHeader>
+          {validateStepId && (() => {
+            const step = steps.find(s => s.id === validateStepId);
+            const order = step ? orders.find(o => o.id === step.orderId) : null;
+            const opName = step ? getOperationName(step.operationId) : '';
+            const oprName = step ? operators.find(o => o.id === step.operatorId)?.name : '';
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Commande :</span> <strong>{order?.orderNumber}</strong> — {order?.designation}</p>
+                  <p><span className="text-muted-foreground">Opération :</span> {opName}</p>
+                  <p><span className="text-muted-foreground">Opérateur :</span> {oprName}</p>
+                  <p><span className="text-muted-foreground">Durée estimée :</span> {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Durée réelle (heures)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.25}
+                    value={validateActualDuration}
+                    onChange={e => setValidateActualDuration(parseFloat(e.target.value) || 0)}
+                    autoFocus
+                  />
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleValidateSave}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
