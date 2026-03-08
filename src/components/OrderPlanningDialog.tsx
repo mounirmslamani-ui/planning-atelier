@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 
 interface OperationRow {
   id: string;
+  stepId?: string; // linked to existing ProductionStep
   order: number;
   operationId: string;
   estimatedDuration: number; // stored in minutes
@@ -29,10 +30,38 @@ interface Props {
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
     operators, subcontractors, operations, steps, orders, holidays,
-    addStep, updateStep,
+    addStep, updateStep, deleteStep,
   } = usePlanning();
 
   const [rows, setRows] = useState<OperationRow[]>([]);
+
+  // Pre-populate rows from existing steps when dialog opens
+  useEffect(() => {
+    if (!open) return;
+
+    const existingSteps = steps
+      .filter(s => s.orderId === order.id && s.operationId !== 'op-8')
+      .sort((a, b) => a.order - b.order);
+
+    if (existingSteps.length > 0) {
+      setRows(existingSteps.map((s, i) => {
+        const isSub = !!s.subcontractorId;
+        return {
+          id: `row-${s.id}`,
+          stepId: s.id,
+          order: i + 1,
+          operationId: s.operationId,
+          estimatedDuration: s.estimatedDuration,
+          assignType: isSub ? 'subcontractor' : 'operator',
+          option1: isSub ? s.subcontractorId! : s.operatorId,
+          option2: '',
+          option3: '',
+        };
+      }));
+    } else {
+      setRows([]);
+    }
+  }, [open, order.id, steps]);
 
   const addRow = () => {
     setRows(prev => [...prev, {
@@ -55,7 +84,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     setRows(prev => prev.map(r => {
       if (r.id !== id) return r;
       const updated = { ...r, [field]: value };
-      // Reset options when switching type
       if (field === 'assignType') {
         updated.option1 = '';
         updated.option2 = '';
@@ -75,6 +103,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const handlePlanifier = () => {
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
 
+    // Remove all existing steps for this order (will be re-created by scheduler)
+    const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== 'op-8');
+    existingOrderSteps.forEach(s => deleteStep(s.id));
+
+    // Build operations to schedule from current rows
+    const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === 'op-8');
+
     const opsToSchedule: OperationToSchedule[] = rows.map(row => {
       const isSub = row.assignType === 'subcontractor';
       const options = [row.option1, row.option2, row.option3]
@@ -92,7 +127,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order.id,
       deadline,
       opsToSchedule,
-      steps,
+      stepsWithoutThisOrder,
       orders,
       holidays
     );
@@ -100,7 +135,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     newSteps.forEach(s => addStep(s));
     updatedSteps.forEach(s => updateStep(s));
 
-    setRows([]);
     onOpenChange(false);
   };
 
@@ -129,12 +163,14 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const durationFactor = (type: 'operator' | 'subcontractor') =>
     type === 'subcontractor' ? 450 : 60;
 
+  const hasExistingSteps = steps.some(s => s.orderId === order.id && s.operationId !== 'op-8');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading">
-            Planifier la commande {order.orderNumber}
+            {hasExistingSteps ? 'Modifier' : 'Planifier'} la commande {order.orderNumber}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {order.designation} — Délai : {order.deliveryDeadline || order.plannedDeadline || 'Non défini'}
@@ -223,11 +259,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => { setRows([]); onOpenChange(false); }}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
           <Button onClick={handlePlanifier} disabled={rows.length === 0 || rows.every(r => !r.option1)}>
-            <CalendarCheck className="w-4 h-4 mr-1" /> Planifier
+            <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'Replanifier' : 'Planifier'}
           </Button>
         </DialogFooter>
       </DialogContent>
