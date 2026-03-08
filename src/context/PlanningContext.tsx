@@ -10,6 +10,8 @@ interface PlanningState {
   steps: ProductionStep[];
   holidays: Holiday[];
   productionRecords: ProductionRecord[];
+  qcEntries: QualityControlEntry[];
+  deliveryEntries: DeliveryEntry[];
   ganttView: GanttView;
   ganttZeroDate: Date;
   selectedOperatorId: string | null;
