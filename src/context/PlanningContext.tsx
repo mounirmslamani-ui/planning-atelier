@@ -89,6 +89,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [orders, setOrders] = useState<Order[]>([]);
   const [steps, setSteps] = useState<ProductionStep[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [productionRecords, setProductionRecords] = useState<ProductionRecord[]>([]);
   const [ganttView, setGanttView] = useState<GanttView>('day');
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
@@ -121,6 +122,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addHoliday = useCallback((holiday: Holiday) => setHolidays(prev => [...prev, holiday]), []);
   const deleteHoliday = useCallback((id: string) => setHolidays(prev => prev.filter(h => h.id !== id)), []);
 
+  const addProductionRecord = useCallback((record: ProductionRecord) => setProductionRecords(prev => [...prev, record]), []);
+  const deleteProductionRecord = useCallback((id: string) => setProductionRecords(prev => prev.filter(r => r.id !== id)), []);
+
   return (
     <PlanningContext.Provider value={{
       operators, setOperators, addOperator, updateOperator, deleteOperator,
@@ -130,6 +134,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       orders, setOrders, addOrder, updateOrder, deleteOrder,
       steps, setSteps, addStep, updateStep, deleteStep,
       holidays, setHolidays, addHoliday, deleteHoliday,
+      productionRecords, addProductionRecord, deleteProductionRecord,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
       selectedOperatorId, setSelectedOperatorId,
