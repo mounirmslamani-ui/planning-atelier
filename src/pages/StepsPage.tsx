@@ -124,7 +124,7 @@ const StepsPage: React.FC = () => {
                 <TableCell className="font-heading text-sm">{getOrderNumber(s.orderId)}</TableCell>
                 <TableCell className="text-sm">{getAssigneeName(s)}</TableCell>
                 <TableCell className="text-sm">{getOperationName(s.operationId)}</TableCell>
-                <TableCell className="text-sm">{s.estimatedDuration}</TableCell>
+                <TableCell className="text-sm">{(s.estimatedDuration / 60).toFixed(2)}</TableCell>
                 <TableCell className="text-sm">{s.startDate} {s.startTime}</TableCell>
                 <TableCell className="text-sm">{s.endDate} {s.endTime}</TableCell>
                 <TableCell>
