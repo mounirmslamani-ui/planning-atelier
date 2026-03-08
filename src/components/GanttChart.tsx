@@ -961,6 +961,56 @@ const GanttChart: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Link Dependency Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={(open) => { setLinkDialogOpen(open); if (!open) { setLinkSource(null); setLinkTarget(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Lier les blocs</DialogTitle>
+          </DialogHeader>
+          {linkSource && linkTarget && (() => {
+            const src = steps.find(s => s.id === linkSource);
+            const tgt = steps.find(s => s.id === linkTarget);
+            const srcOrder = src ? orders.find(o => o.id === src.orderId) : null;
+            const tgtOrder = tgt ? orders.find(o => o.id === tgt.orderId) : null;
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Bloc 1 (prédécesseur) :</span> <strong>{srcOrder?.orderNumber}</strong> — {getOperationName(src?.operationId || '')}</p>
+                  <p><span className="text-muted-foreground">Bloc 2 (successeur) :</span> <strong>{tgtOrder?.orderNumber}</strong> — {getOperationName(tgt?.operationId || '')}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Pourcentage d'avancement requis avant de démarrer le bloc 2
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={linkPercentage}
+                      onChange={e => setLinkPercentage(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                      className="w-24"
+                      autoFocus
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {linkPercentage === 0 && "Les deux blocs démarrent simultanément."}
+                    {linkPercentage === 100 && "Le bloc 2 ne démarre qu'après la fin complète du bloc 1."}
+                    {linkPercentage > 0 && linkPercentage < 100 && `Le bloc 2 démarre quand le bloc 1 atteint ${linkPercentage}%.`}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleLinkSave}>Lier</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
