@@ -511,20 +511,21 @@ const GanttChart: React.FC = () => {
             })()}
 
             {/* Operator rows */}
-            {sortedOperators.map((op, rowIndex) => (
+            {ganttRows.map((row, rowIndex) => (
               <div
-                key={op.id}
+                key={row.id}
                 className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
                 style={{ height: ROW_HEIGHT }}
               >
                 {filteredSteps
-                  .filter(s => s.operatorId === op.id)
+                  .filter(s => row.type === 'operator' ? s.operatorId === row.id && !s.subcontractorId : !!s.subcontractorId)
                   .map(step => {
                     const order = orders.find(o => o.id === step.orderId);
                     if (!order) return null;
                     const left = getPixelOffset(step.startDate, step.startTime);
                     const width = getDurationWidth(step.estimatedDuration);
                     const isLast = isLastStep(step, steps);
+                    const subName = step.subcontractorId ? getSubcontractorName(step.subcontractorId) : undefined;
 
                     return (
                       <div key={step.id} onDoubleClick={() => handleBlockDoubleClick(step.id)}>
@@ -533,6 +534,7 @@ const GanttChart: React.FC = () => {
                           order={order}
                           operationName={getOperationName(step.operationId)}
                           clientName={getClientName(order.clientId)}
+                          subcontractorName={subName}
                           left={left}
                           width={width}
                           isLast={isLast}
