@@ -773,6 +773,62 @@ const GanttChart: React.FC = () => {
                   })}
               </div>
             ))}
+
+            {/* SVG arrows for linked blocks */}
+            <svg className="absolute top-0 left-0 w-full pointer-events-none z-30" style={{ height: ganttRows.length * ROW_HEIGHT }}>
+              <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" className="fill-accent" />
+                </marker>
+              </defs>
+              {filteredSteps.filter(s => s.dependsOn).map(targetStep => {
+                const sourceStep = steps.find(s => s.id === targetStep.dependsOn);
+                if (!sourceStep) return null;
+
+                // Find row indices
+                const sourceRowIdx = ganttRows.findIndex(r =>
+                  r.type === 'operator' ? r.id === sourceStep.operatorId && !sourceStep.subcontractorId : !!sourceStep.subcontractorId
+                );
+                const targetRowIdx = ganttRows.findIndex(r =>
+                  r.type === 'operator' ? r.id === targetStep.operatorId && !targetStep.subcontractorId : !!targetStep.subcontractorId
+                );
+                if (sourceRowIdx < 0 || targetRowIdx < 0) return null;
+
+                const pct = targetStep.dependsOnPercentage ?? 100;
+                const sourceLeft = getPixelOffset(sourceStep.startDate, sourceStep.startTime);
+                const sourceWidth = getDurationWidth(sourceStep.estimatedDuration);
+                const targetLeft = getPixelOffset(targetStep.startDate, targetStep.startTime);
+
+                const x1 = sourceLeft + sourceWidth * (pct / 100);
+                const y1 = sourceRowIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+                const x2 = targetLeft;
+                const y2 = targetRowIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+
+                // Curved path
+                const midX = (x1 + x2) / 2;
+
+                return (
+                  <g key={`link-${targetStep.id}`}>
+                    <path
+                      d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
+                      fill="none"
+                      className="stroke-accent"
+                      strokeWidth={2}
+                      strokeDasharray={pct < 100 ? "6 3" : "none"}
+                      markerEnd="url(#arrowhead)"
+                    />
+                    <text
+                      x={(x1 + x2) / 2}
+                      y={(y1 + y2) / 2 - 6}
+                      className="fill-accent text-[9px] font-bold"
+                      textAnchor="middle"
+                    >
+                      {pct}%
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         </div>
       </div>
