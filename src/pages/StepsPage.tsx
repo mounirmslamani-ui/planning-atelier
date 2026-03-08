@@ -111,7 +111,7 @@ const StepsPage: React.FC = () => {
               <TableHead>Commande</TableHead>
               <TableHead>Assigné à</TableHead>
               <TableHead>Opération</TableHead>
-              <TableHead>Durée (h)</TableHead>
+              <TableHead>Durée est.</TableHead>
               <TableHead>Début</TableHead>
               <TableHead>Fin</TableHead>
               <TableHead className="w-24">Actions</TableHead>
