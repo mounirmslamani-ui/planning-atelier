@@ -15,14 +15,21 @@ interface ScheduleCandidate {
   displacedStepIds: string[];
 }
 
-/** Lower score = higher priority. Orders without priority get lowest. */
-function priorityScore(p?: OrderPriority): number {
+/** Lower score = higher priority. Uses displayOrder as primary criterion, then priority level. */
+function orderScore(order?: Order): number {
+  // displayOrder is the primary criterion — lower = higher priority
+  if (order?.displayOrder != null) return order.displayOrder;
+  // Fallback to priority-based score for orders without displayOrder
+  return priorityScoreFromLevel(order?.priority);
+}
+
+function priorityScoreFromLevel(p?: OrderPriority): number {
   const map: Record<string, number> = {
     'P1-A': 1, 'P1-B': 2, 'P1-C': 3,
     'P2-A': 4, 'P2-B': 5, 'P2-C': 6,
     'P3-A': 7, 'P3-B': 8,
   };
-  return p ? (map[p] ?? 99) : 99;
+  return p ? (map[p] ?? 9999) : 9999;
 }
 
 /** An order is "blocked" if material or tooling is unavailable */
@@ -52,7 +59,7 @@ function findEarliestSlot(
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
   );
 
-  const currentPrio = priorityScore(currentOrder.priority);
+  const currentScore = orderScore(currentOrder);
 
   const getOrder = (step: ProductionStep) =>
     allOrders.find(o => o.id === step.orderId);
@@ -80,19 +87,19 @@ function findEarliestSlot(
     }
 
     const existingOrder = existing.order;
-    const existingPrio = priorityScore(existingOrder?.priority);
+    const existingScore = orderScore(existingOrder);
 
     // Can displace if:
     // 1. Current order has strictly higher priority (lower score), OR
-    // 2. Same priority but current deadline is earlier, OR
+    // 2. Same score but current deadline is earlier, OR
     // 3. Existing order is blocked (missing material/tooling)
     const currentDeadline = currentOrder.deliveryDeadline || currentOrder.plannedDeadline || '9999-12-31';
     const existingDeadline = existingOrder?.deliveryDeadline || existingOrder?.plannedDeadline || '9999-12-31';
 
     const canDisplace =
       (existingOrder && isOrderBlocked(existingOrder)) ||
-      currentPrio < existingPrio ||
-      (currentPrio === existingPrio && currentDeadline < existingDeadline);
+      currentScore < existingScore ||
+      (currentScore === existingScore && currentDeadline < existingDeadline);
 
     if (canDisplace) {
       displaced.push(existing.step.id);
