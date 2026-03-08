@@ -114,16 +114,27 @@ const GanttChart: React.FC = () => {
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
 
-  const sortedOperators = useMemo(() => {
+  type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
+
+  const ganttRows = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
-    return [...operators]
+    const opRows: GanttRow[] = [...operators]
       .filter(op => !selectedOperatorId || op.id === selectedOperatorId)
       .sort((a, b) => {
         const ai = functionOrder.indexOf(a.mainFunction);
         const bi = functionOrder.indexOf(b.mainFunction);
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-      });
-  }, [operators, selectedOperatorId]);
+      })
+      .map(op => ({ type: 'operator' as const, id: op.id, label: op.name, sublabel: op.mainFunction }));
+
+    // Add a single subcontractor row if there are subcontractor steps
+    const hasSubSteps = steps.some(s => s.subcontractorId);
+    const subRow: GanttRow[] = (hasSubSteps || subcontractors.length > 0) && !selectedOperatorId
+      ? [{ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' }]
+      : [];
+
+    return [...opRows, ...subRow];
+  }, [operators, selectedOperatorId, steps, subcontractors]);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
