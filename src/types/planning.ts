@@ -73,4 +73,14 @@ export interface Holiday {
   name: string;
 }
 
+export interface ProductionRecord {
+  id: string;
+  stepId: string;
+  orderId: string;
+  operatorId: string;
+  operationId: string;
+  actualDuration: number; // in minutes
+  validatedAt: string; // ISO date-time
+}
+
 export type GanttView = 'day' | 'week' | 'month';

@@ -2,11 +2,12 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Wrench, Building2, ShoppingCart, CalendarDays, 
-  Factory, ListChecks, Truck, LayoutDashboard 
+  Factory, ListChecks, Truck, LayoutDashboard, ClipboardCheck 
 } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Planning', icon: LayoutDashboard },
+  { to: '/production-register', label: 'Registre Production', icon: ClipboardCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/operations', label: 'Opérations', icon: Wrench },
   { to: '/clients', label: 'Clients', icon: Building2 },

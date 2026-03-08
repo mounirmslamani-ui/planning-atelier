@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
-import type { GanttView, ProductionStep, Order, Holiday } from '@/types/planning';
+import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -108,12 +108,17 @@ const GanttChart: React.FC = () => {
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
-    updateStep, addStep,
+    updateStep, addStep, addProductionRecord,
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
+  const [validateDialogOpen, setValidateDialogOpen] = useState(false);
+  const [validateStepId, setValidateStepId] = useState<string | null>(null);
+  const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
+  const [isOverValidateZone, setIsOverValidateZone] = useState(false);
+  const validateZoneRef = useRef<HTMLDivElement>(null);
 
   type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
 
@@ -274,6 +279,22 @@ const GanttChart: React.FC = () => {
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (dragState) {
+      // Check if dropped on validate zone
+      if (validateZoneRef.current) {
+        const rect = validateZoneRef.current.getBoundingClientRect();
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          const step = steps.find(s => s.id === dragState.stepId);
+          if (step) {
+            setValidateStepId(step.id);
+            setValidateActualDuration(parseFloat((step.estimatedDuration / 60).toFixed(2)));
+            setValidateDialogOpen(true);
+          }
+          setDragState(null);
+          setIsOverValidateZone(false);
+          return;
+        }
+      }
+
       const dx = e.clientX - dragState.startX;
       const dy = e.clientY - dragState.startY;
       const step = steps.find(s => s.id === dragState.stepId);
@@ -299,13 +320,13 @@ const GanttChart: React.FC = () => {
         };
 
         if (dragState.altKey) {
-          // Duplicate: create a new step with a new ID
           addStep({ ...newStepData, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
         } else {
           updateStep(newStepData);
         }
       }
       setDragState(null);
+      setIsOverValidateZone(false);
     }
     if (resizeState) {
       const dx = e.clientX - resizeState.startX;
@@ -325,6 +346,33 @@ const GanttChart: React.FC = () => {
       setResizeState(null);
     }
   }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows]);
+
+  // Handle mouse move for validate zone highlight
+  const handleGlobalMouseMove = useCallback((e: React.MouseEvent) => {
+    if (dragState && validateZoneRef.current) {
+      const rect = validateZoneRef.current.getBoundingClientRect();
+      const over = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+      setIsOverValidateZone(over);
+    }
+  }, [dragState]);
+
+  const handleValidateSave = useCallback(() => {
+    if (!validateStepId) return;
+    const step = steps.find(s => s.id === validateStepId);
+    if (!step) return;
+    const record: ProductionRecord = {
+      id: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      stepId: step.id,
+      orderId: step.orderId,
+      operatorId: step.operatorId,
+      operationId: step.operationId,
+      actualDuration: Math.round(validateActualDuration * 60),
+      validatedAt: new Date().toISOString(),
+    };
+    addProductionRecord(record);
+    setValidateDialogOpen(false);
+    setValidateStepId(null);
+  }, [validateStepId, validateActualDuration, steps, addProductionRecord]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
@@ -479,6 +527,24 @@ const GanttChart: React.FC = () => {
             Tout afficher
           </button>
         )}
+        {/* Validate production icon - drop zone */}
+        <div
+          ref={validateZoneRef}
+          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed transition-all ${
+            isOverValidateZone
+              ? 'border-primary bg-primary/20 scale-110'
+              : dragState
+                ? 'border-primary/50 bg-primary/5 animate-pulse'
+                : 'border-muted-foreground/30 bg-muted/30'
+          }`}
+          title="Glissez un bloc ici pour valider la production"
+        >
+          <div className="relative w-7 h-7">
+            <Settings className={`w-7 h-7 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} />
+            <Check className={`absolute bottom-0 right-0 w-3.5 h-3.5 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} strokeWidth={3} />
+          </div>
+          <span className={`text-[10px] font-medium ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'}`}>Valider</span>
+        </div>
       </div>
 
       {/* Chart area */}
@@ -507,9 +573,9 @@ const GanttChart: React.FC = () => {
         <div
           ref={containerRef}
           className="flex-1 overflow-auto relative"
-          onMouseMove={handleMouseMove}
+          onMouseMove={(e) => { handleMouseMove(e); handleGlobalMouseMove(e); }}
           onMouseUp={handleMouseUp}
-          onMouseLeave={() => { setDragState(null); setResizeState(null); }}
+          onMouseLeave={() => { setDragState(null); setResizeState(null); setIsOverValidateZone(false); }}
         >
           {/* Header timeline */}
           <div className="h-8 bg-gantt-header sticky top-0 z-10 relative" style={{ width: totalWidth }}>
@@ -680,6 +746,46 @@ const GanttChart: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
             <Button onClick={handleEditSave}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Validate Production Dialog */}
+      <Dialog open={validateDialogOpen} onOpenChange={setValidateDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Valider la production</DialogTitle>
+          </DialogHeader>
+          {validateStepId && (() => {
+            const step = steps.find(s => s.id === validateStepId);
+            const order = step ? orders.find(o => o.id === step.orderId) : null;
+            const opName = step ? getOperationName(step.operationId) : '';
+            const oprName = step ? operators.find(o => o.id === step.operatorId)?.name : '';
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Commande :</span> <strong>{order?.orderNumber}</strong> — {order?.designation}</p>
+                  <p><span className="text-muted-foreground">Opération :</span> {opName}</p>
+                  <p><span className="text-muted-foreground">Opérateur :</span> {oprName}</p>
+                  <p><span className="text-muted-foreground">Durée estimée :</span> {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Durée réelle (heures)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.25}
+                    value={validateActualDuration}
+                    onChange={e => setValidateActualDuration(parseFloat(e.target.value) || 0)}
+                    autoFocus
+                  />
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleValidateSave}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
