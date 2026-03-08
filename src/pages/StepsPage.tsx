@@ -94,7 +94,9 @@ const StepsPage: React.FC = () => {
 
   const getOrderNumber = (id: string) => orders.find(o => o.id === id)?.orderNumber || '—';
   const getOperatorName = (id: string) => operators.find(o => o.id === id)?.name || '—';
+  const getSubcontractorName = (id: string) => subcontractors.find(s => s.id === id)?.companyName || '—';
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
+  const getAssigneeName = (s: ProductionStep) => s.subcontractorId ? `🏭 ${getSubcontractorName(s.subcontractorId)}` : getOperatorName(s.operatorId);
 
   return (
     <div className="p-6">
