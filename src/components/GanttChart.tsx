@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday } from '@/types/planning';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -400,7 +401,7 @@ const GanttChart: React.FC = () => {
     <div className="flex flex-col h-full">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-2 bg-card border-b">
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1">
           {(['day', 'week', 'month'] as GanttView[]).map(v => (
             <button
               key={v}
@@ -412,6 +413,43 @@ const GanttChart: React.FC = () => {
               {v === 'day' ? 'Jour' : v === 'week' ? 'Semaine' : 'Mois'}
             </button>
           ))}
+          <div className="flex items-center ml-2">
+            <button
+              onClick={() => {
+                const d = new Date(ganttZeroDate);
+                if (ganttView === 'day') d.setDate(d.getDate() - 1);
+                else if (ganttView === 'week') d.setDate(d.getDate() - 7);
+                else d.setMonth(d.getMonth() - 1);
+                setGanttZeroDate(d);
+              }}
+              className="p-1 rounded hover:bg-muted transition-colors"
+              title="Précédent"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setGanttZeroDate(new Date());
+              }}
+              className="px-2 py-1 text-xs font-medium rounded hover:bg-muted transition-colors"
+              title="Aujourd'hui"
+            >
+              Auj.
+            </button>
+            <button
+              onClick={() => {
+                const d = new Date(ganttZeroDate);
+                if (ganttView === 'day') d.setDate(d.getDate() + 1);
+                else if (ganttView === 'week') d.setDate(d.getDate() + 7);
+                else d.setMonth(d.getMonth() + 1);
+                setGanttZeroDate(d);
+              }}
+              className="p-1 rounded hover:bg-muted transition-colors"
+              title="Suivant"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <label className="text-muted-foreground text-xs">Point 0 :</label>
