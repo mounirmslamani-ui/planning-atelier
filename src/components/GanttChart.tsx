@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
-import type { GanttView, ProductionStep, Order, Holiday } from '@/types/planning';
+import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
