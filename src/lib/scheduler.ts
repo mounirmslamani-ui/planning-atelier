@@ -59,7 +59,7 @@ function findEarliestSlot(
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
   );
 
-  const currentPrio = priorityScore(currentOrder.priority);
+  const currentScore = orderScore(currentOrder);
 
   const getOrder = (step: ProductionStep) =>
     allOrders.find(o => o.id === step.orderId);
