@@ -446,7 +446,12 @@ const GanttChart: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      onMouseMove={(e) => { handleMouseMove(e); handleGlobalMouseMove(e); }}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={() => { setDragState(null); setResizeState(null); setIsOverValidateZone(false); }}
+    >
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-2 bg-card border-b">
         <div className="flex items-center gap-1">
@@ -573,9 +578,6 @@ const GanttChart: React.FC = () => {
         <div
           ref={containerRef}
           className="flex-1 overflow-auto relative"
-          onMouseMove={(e) => { handleMouseMove(e); handleGlobalMouseMove(e); }}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={() => { setDragState(null); setResizeState(null); setIsOverValidateZone(false); }}
         >
           {/* Header timeline */}
           <div className="h-8 bg-gantt-header sticky top-0 z-10 relative" style={{ width: totalWidth }}>
