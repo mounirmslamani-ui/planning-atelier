@@ -320,6 +320,7 @@ const GanttChart: React.FC = () => {
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
+  const getSubcontractorName = (id: string) => subcontractors.find(s => s.id === id)?.companyName || '';
 
   const handleOperatorClick = (opId: string) => {
     setSelectedOrderId(null);
