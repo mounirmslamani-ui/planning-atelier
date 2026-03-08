@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Package, Wrench } from 'lucide-react';
-import type { Order, UrgencyLevel } from '@/types/planning';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Pencil, Trash2, Package, Wrench, Flag } from 'lucide-react';
+import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
   urgent: 'Urgent',
@@ -22,10 +24,67 @@ const urgencyColors: Record<UrgencyLevel, string> = {
   'not-urgent': 'bg-muted text-muted-foreground',
 };
 
+const priorityConfig: Record<OrderPriority, { label: string; description: string; level: string }> = {
+  'P1-A': {
+    label: 'P1-A - Urgences contractuelles',
+    description: 'Commandes dont la date d\'expédition est dépassée ou prévue sous 24/48h.',
+    level: 'Niveau 1 : Priorité Critique',
+  },
+  'P1-B': {
+    label: 'P1-B - Commandes en finition (90%)',
+    description: 'Tout ce qui est presque terminé. On finit ces pièces pour les expédier et libérer l\'espace.',
+    level: 'Niveau 1 : Priorité Critique',
+  },
+  'P1-C': {
+    label: 'P1-C - Fort enjeu financier',
+    description: 'Commandes à haute valeur ajoutée à facturer avant la fin de la semaine/du mois.',
+    level: 'Niveau 1 : Priorité Critique',
+  },
+  'P2-A': {
+    label: 'P2-A - Commandes en retard léger',
+    description: 'Celles qui ont glissé de quelques jours et qu\'il faut remettre dans le flux.',
+    level: 'Niveau 2 : Priorité de Rattrapage',
+  },
+  'P2-B': {
+    label: 'P2-B - Urgence modérée',
+    description: 'Commandes dont l\'échéance est à J+5 ou J+7.',
+    level: 'Niveau 2 : Priorité de Rattrapage',
+  },
+  'P2-C': {
+    label: 'P2-C - Commandes groupées',
+    description: 'Optimisation technique (même réglage machine, même couleur) pour gagner du temps.',
+    level: 'Niveau 2 : Priorité de Rattrapage',
+  },
+  'P3-A': {
+    label: 'P3-A - Flux normal',
+    description: 'Commandes avec un délai confortable (2 semaines et plus).',
+    level: 'Niveau 3 : Priorité Standard',
+  },
+  'P3-B': {
+    label: 'P3-B - Travaux internes / Anticipation',
+    description: 'Préparation de sous-ensembles ou stock tampon si la charge le permet.',
+    level: 'Niveau 3 : Priorité Standard',
+  },
+};
+
+const priorityColors: Record<OrderPriority, string> = {
+  'P1-A': 'bg-destructive text-destructive-foreground',
+  'P1-B': 'bg-destructive/80 text-destructive-foreground',
+  'P1-C': 'bg-destructive/60 text-destructive-foreground',
+  'P2-A': 'bg-urgent-moderate text-white',
+  'P2-B': 'bg-urgent-moderate/80 text-white',
+  'P2-C': 'bg-urgent-moderate/60 text-white',
+  'P3-A': 'bg-normal text-white',
+  'P3-B': 'bg-normal/70 text-white',
+};
+
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
+  const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
+  const [priorityOrder, setPriorityOrder] = useState<Order | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState<OrderPriority | ''>('');
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '',
@@ -44,6 +103,22 @@ const OrdersPage: React.FC = () => {
   const openNew = () => { setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
   const openEdit = (o: Order) => { setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
 
+  const openPriorityDialog = (o: Order) => {
+    setPriorityOrder(o);
+    setSelectedPriority(o.priority || '');
+    setPriorityDialogOpen(true);
+  };
+
+  const handleSavePriority = () => {
+    if (priorityOrder && selectedPriority) {
+      updateOrder({ ...priorityOrder, priority: selectedPriority as OrderPriority });
+    } else if (priorityOrder && !selectedPriority) {
+      const { priority, ...rest } = priorityOrder;
+      updateOrder(rest as Order);
+    }
+    setPriorityDialogOpen(false);
+  };
+
   const handleSave = () => {
     const data: Order = { id: editing?.id || `ord-${Date.now()}`, ...form };
     if (editing) updateOrder(data);
@@ -54,6 +129,14 @@ const OrdersPage: React.FC = () => {
   const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
+  // Sort orders by priority
+  const sortedOrders = [...orders].sort((a, b) => {
+    const priorityOrder = ['P1-A', 'P1-B', 'P1-C', 'P2-A', 'P2-B', 'P2-C', 'P3-A', 'P3-B'];
+    const aIndex = a.priority ? priorityOrder.indexOf(a.priority) : 999;
+    const bIndex = b.priority ? priorityOrder.indexOf(b.priority) : 999;
+    return aIndex - bIndex;
+  });
+
   return (
     <div className="p-6">
       <PageHeader title="Commandes" description={`${orders.length} commande(s)`} actions={
@@ -63,6 +146,7 @@ const OrdersPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Priorité</TableHead>
               <TableHead>N° Commande</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Client</TableHead>
@@ -72,12 +156,19 @@ const OrdersPage: React.FC = () => {
               <TableHead>Délai</TableHead>
               <TableHead>Mat.</TableHead>
               <TableHead>Out.</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.map(o => (
+            {sortedOrders.map(o => (
               <TableRow key={o.id}>
+                <TableCell>
+                  {o.priority ? (
+                    <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="font-heading text-sm">{o.orderNumber}</TableCell>
                 <TableCell className="text-sm">{o.orderDate}</TableCell>
                 <TableCell className="text-sm">{getClientName(o.clientId)}</TableCell>
@@ -97,6 +188,9 @@ const OrdersPage: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openPriorityDialog(o)} title="Définir priorité">
+                      <Flag className="w-3.5 h-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(o)}><Pencil className="w-3.5 h-3.5" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => deleteOrder(o.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
@@ -104,11 +198,90 @@ const OrdersPage: React.FC = () => {
               </TableRow>
             ))}
             {orders.length === 0 && (
-              <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Priority Dialog */}
+      <Dialog open={priorityDialogOpen} onOpenChange={setPriorityDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Définir la priorité de la commande</DialogTitle>
+            {priorityOrder && (
+              <p className="text-sm text-muted-foreground">
+                Commande : <span className="font-medium">{priorityOrder.orderNumber}</span> - {priorityOrder.designation}
+              </p>
+            )}
+          </DialogHeader>
+          <RadioGroup value={selectedPriority} onValueChange={(v) => setSelectedPriority(v as OrderPriority)}>
+            <div className="space-y-6">
+              {/* Niveau 1 */}
+              <div>
+                <h3 className="text-sm font-semibold text-destructive mb-2 flex items-center gap-2">
+                  <Flag className="w-4 h-4" /> Niveau 1 : Priorité Critique
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">L'urgence et le "Cash" — Libérer de la place, facturer, respecter les engagements immédiats.</p>
+                <div className="space-y-2 pl-4 border-l-2 border-destructive/30">
+                  {(['P1-A', 'P1-B', 'P1-C'] as OrderPriority[]).map(p => (
+                    <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                      <RadioGroupItem value={p} className="mt-0.5" />
+                      <div>
+                        <span className="font-medium text-sm">{priorityConfig[p].label}</span>
+                        <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Niveau 2 */}
+              <div>
+                <h3 className="text-sm font-semibold text-urgent-moderate mb-2 flex items-center gap-2">
+                  <Flag className="w-4 h-4" /> Niveau 2 : Priorité de Rattrapage et Flux
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">Stabiliser la production pour éviter qu'elles ne basculent en P1.</p>
+                <div className="space-y-2 pl-4 border-l-2 border-urgent-moderate/30">
+                  {(['P2-A', 'P2-B', 'P2-C'] as OrderPriority[]).map(p => (
+                    <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                      <RadioGroupItem value={p} className="mt-0.5" />
+                      <div>
+                        <span className="font-medium text-sm">{priorityConfig[p].label}</span>
+                        <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Niveau 3 */}
+              <div>
+                <h3 className="text-sm font-semibold text-normal mb-2 flex items-center gap-2">
+                  <Flag className="w-4 h-4" /> Niveau 3 : Priorité Standard
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">Le fond de cuve — Occuper les postes de travail de manière fluide.</p>
+                <div className="space-y-2 pl-4 border-l-2 border-normal/30">
+                  {(['P3-A', 'P3-B'] as OrderPriority[]).map(p => (
+                    <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                      <RadioGroupItem value={p} className="mt-0.5" />
+                      <div>
+                        <span className="font-medium text-sm">{priorityConfig[p].label}</span>
+                        <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </RadioGroup>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setSelectedPriority(''); }}>Effacer</Button>
+            <Button variant="outline" onClick={() => setPriorityDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleSavePriority}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">

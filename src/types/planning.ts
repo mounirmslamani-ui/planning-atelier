@@ -40,6 +40,7 @@ export interface Order {
   designation: string;
   quantity: number;
   urgency: UrgencyLevel;
+  priority?: OrderPriority;
   plannedDeadline: string;
   prototypeQuantity?: number;
   prototypeDeadline?: string;
