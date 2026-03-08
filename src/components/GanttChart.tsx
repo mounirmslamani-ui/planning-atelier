@@ -128,6 +128,7 @@ const GanttChart: React.FC = () => {
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
+    deleteStep, addQCEntry,
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -556,11 +557,26 @@ const GanttChart: React.FC = () => {
         endDate: continueEnd.toISOString().split('T')[0],
         endTime: `${String(continueEnd.getHours()).padStart(2, '0')}:${String(continueEnd.getMinutes()).padStart(2, '0')}`,
       });
+    } else {
+      // Check if this was the last step for the order (no other steps remaining on planning after removal)
+      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== 'op-8');
+      if (otherSteps.length === 0 && step.orderId !== 'order-absence') {
+        // Move order to Quality Control
+        addQCEntry({
+          id: `qc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          orderId: step.orderId,
+          controlDate: '',
+          createdAt: new Date().toISOString(),
+        });
+      }
     }
+
+    // Remove the validated step from the planning
+    deleteStep(step.id);
 
     setValidateDialogOpen(false);
     setValidateStepId(null);
-  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, holidays, addProductionRecord, addStep]);
+  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, holidays, addProductionRecord, addStep, deleteStep, addQCEntry]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';

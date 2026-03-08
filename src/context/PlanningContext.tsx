@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'; // v2
-import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord } from '@/types/planning';
+import React, { createContext, useContext, useState, useCallback } from 'react'; // v3
+import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry } from '@/types/planning';
 
 interface PlanningState {
   operators: Operator[];
@@ -10,6 +10,8 @@ interface PlanningState {
   steps: ProductionStep[];
   holidays: Holiday[];
   productionRecords: ProductionRecord[];
+  qcEntries: QualityControlEntry[];
+  deliveryEntries: DeliveryEntry[];
   ganttView: GanttView;
   ganttZeroDate: Date;
   selectedOperatorId: string | null;
@@ -47,6 +49,13 @@ interface PlanningContextType extends PlanningState {
   productionRecords: ProductionRecord[];
   addProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
+  qcEntries: QualityControlEntry[];
+  addQCEntry: (entry: QualityControlEntry) => void;
+  updateQCEntry: (entry: QualityControlEntry) => void;
+  deleteQCEntry: (id: string) => void;
+  deliveryEntries: DeliveryEntry[];
+  addDeliveryEntry: (entry: DeliveryEntry) => void;
+  deleteDeliveryEntry: (id: string) => void;
   setGanttView: (view: GanttView) => void;
   setGanttZeroDate: (date: Date) => void;
   setSelectedOperatorId: (id: string | null) => void;
@@ -92,6 +101,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [steps, setSteps] = useState<ProductionStep[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [productionRecords, setProductionRecords] = useState<ProductionRecord[]>([]);
+  const [qcEntries, setQCEntries] = useState<QualityControlEntry[]>([]);
+  const [deliveryEntries, setDeliveryEntries] = useState<DeliveryEntry[]>([]);
   const [ganttView, setGanttView] = useState<GanttView>('day');
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
@@ -127,6 +138,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addProductionRecord = useCallback((record: ProductionRecord) => setProductionRecords(prev => [...prev, record]), []);
   const deleteProductionRecord = useCallback((id: string) => setProductionRecords(prev => prev.filter(r => r.id !== id)), []);
 
+  const addQCEntry = useCallback((entry: QualityControlEntry) => setQCEntries(prev => [...prev, entry]), []);
+  const updateQCEntry = useCallback((entry: QualityControlEntry) => setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)), []);
+  const deleteQCEntry = useCallback((id: string) => setQCEntries(prev => prev.filter(e => e.id !== id)), []);
+
+  const addDeliveryEntry = useCallback((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]), []);
+  const deleteDeliveryEntry = useCallback((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)), []);
+
   return (
     <PlanningContext.Provider value={{
       operators, setOperators, addOperator, updateOperator, deleteOperator,
@@ -137,6 +155,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       steps, setSteps, addStep, updateStep, deleteStep,
       holidays, setHolidays, addHoliday, deleteHoliday,
       productionRecords, addProductionRecord, deleteProductionRecord,
+      qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
+      deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
       selectedOperatorId, setSelectedOperatorId,

@@ -85,3 +85,22 @@ export interface ProductionRecord {
 }
 
 export type GanttView = 'day' | 'week' | 'month';
+
+export type QCDecision = 'conforme' | 'reprise-retouche' | 'conforme-derogation' | 'non-conforme';
+
+export interface QualityControlEntry {
+  id: string;
+  orderId: string;
+  controlDate: string; // manually entered
+  decision?: QCDecision;
+  reworkNotes?: string; // notes for reprise/retouche
+  createdAt: string;
+}
+
+export interface DeliveryEntry {
+  id: string;
+  orderId: string;
+  controlDate: string;
+  decision: 'conforme' | 'conforme-derogation';
+  movedAt: string;
+}
