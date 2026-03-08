@@ -502,7 +502,7 @@ const GanttChart: React.FC = () => {
                   return (
                     <div
                       className="absolute top-0 w-0.5 bg-gantt-now z-20"
-                      style={{ left: nowOffset, height: sortedOperators.length * ROW_HEIGHT }}
+                      style={{ left: nowOffset, height: ganttRows.length * ROW_HEIGHT }}
                     />
                   );
                 }
