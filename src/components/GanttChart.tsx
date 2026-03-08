@@ -61,8 +61,11 @@ interface GanttBlockProps {
   left: number;
   width: number;
   isLast: boolean;
+  isCtrlSelected: boolean;
+  hasLink: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
+  onCtrlClick: (stepId: string) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
