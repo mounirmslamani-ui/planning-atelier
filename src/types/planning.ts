@@ -43,6 +43,7 @@ export interface Order {
   quantity: number;
   urgency: UrgencyLevel;
   priority?: OrderPriority;
+  displayOrder?: number;
   plannedDeadline: string;
   prototypeQuantity?: number;
   prototypeDeadline?: string;

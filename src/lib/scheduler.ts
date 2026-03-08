@@ -15,14 +15,21 @@ interface ScheduleCandidate {
   displacedStepIds: string[];
 }
 
-/** Lower score = higher priority. Orders without priority get lowest. */
-function priorityScore(p?: OrderPriority): number {
+/** Lower score = higher priority. Uses displayOrder as primary criterion, then priority level. */
+function orderScore(order?: Order): number {
+  // displayOrder is the primary criterion — lower = higher priority
+  if (order?.displayOrder != null) return order.displayOrder;
+  // Fallback to priority-based score for orders without displayOrder
+  return priorityScoreFromLevel(order?.priority);
+}
+
+function priorityScoreFromLevel(p?: OrderPriority): number {
   const map: Record<string, number> = {
     'P1-A': 1, 'P1-B': 2, 'P1-C': 3,
     'P2-A': 4, 'P2-B': 5, 'P2-C': 6,
     'P3-A': 7, 'P3-B': 8,
   };
-  return p ? (map[p] ?? 99) : 99;
+  return p ? (map[p] ?? 9999) : 9999;
 }
 
 /** An order is "blocked" if material or tooling is unavailable */
