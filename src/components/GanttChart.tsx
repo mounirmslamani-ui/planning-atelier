@@ -145,23 +145,51 @@ const GanttChart: React.FC = () => {
   const [linkSource, setLinkSource] = useState<string | null>(null);
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [linkPercentage, setLinkPercentage] = useState<number>(100);
+  const [isEditingLink, setIsEditingLink] = useState(false);
 
   const handleCtrlClick = useCallback((stepId: string) => {
     if (!ctrlSelectedStepId) {
-      // First click: select source
+      // First click: check if this block already has a dependency — open edit directly
+      const clickedStep = steps.find(s => s.id === stepId);
+      if (clickedStep?.dependsOn) {
+        setLinkSource(clickedStep.dependsOn);
+        setLinkTarget(stepId);
+        setLinkPercentage(clickedStep.dependsOnPercentage ?? 100);
+        setIsEditingLink(true);
+        setLinkDialogOpen(true);
+        return;
+      }
       setCtrlSelectedStepId(stepId);
     } else if (ctrlSelectedStepId === stepId) {
-      // Deselect
       setCtrlSelectedStepId(null);
     } else {
-      // Second click: open dialog to set percentage
-      setLinkSource(ctrlSelectedStepId);
-      setLinkTarget(stepId);
-      setLinkPercentage(100);
+      // Check if a link already exists between these two (in either direction)
+      const stepA = steps.find(s => s.id === ctrlSelectedStepId);
+      const stepB = steps.find(s => s.id === stepId);
+
+      if (stepB?.dependsOn === ctrlSelectedStepId) {
+        // B depends on A — edit existing
+        setLinkSource(ctrlSelectedStepId);
+        setLinkTarget(stepId);
+        setLinkPercentage(stepB.dependsOnPercentage ?? 100);
+        setIsEditingLink(true);
+      } else if (stepA?.dependsOn === stepId) {
+        // A depends on B — edit existing
+        setLinkSource(stepId);
+        setLinkTarget(ctrlSelectedStepId);
+        setLinkPercentage(stepA.dependsOnPercentage ?? 100);
+        setIsEditingLink(true);
+      } else {
+        // New link
+        setLinkSource(ctrlSelectedStepId);
+        setLinkTarget(stepId);
+        setLinkPercentage(100);
+        setIsEditingLink(false);
+      }
       setLinkDialogOpen(true);
       setCtrlSelectedStepId(null);
     }
-  }, [ctrlSelectedStepId]);
+  }, [ctrlSelectedStepId, steps]);
 
   const handleLinkSave = useCallback(() => {
     if (!linkSource || !linkTarget) return;
@@ -169,7 +197,6 @@ const GanttChart: React.FC = () => {
     const sourceStep = steps.find(s => s.id === linkSource);
     if (!targetStep || !sourceStep) return;
 
-    // Calculate the start of target based on percentage of source
     const sourceStart = new Date(`${sourceStep.startDate}T${sourceStep.startTime}`);
     const minutesOffset = Math.round(sourceStep.estimatedDuration * (linkPercentage / 100));
     const newTargetStart = addWorkMinutes(sourceStart, minutesOffset, holidays);
@@ -188,7 +215,25 @@ const GanttChart: React.FC = () => {
     setLinkDialogOpen(false);
     setLinkSource(null);
     setLinkTarget(null);
+    setIsEditingLink(false);
   }, [linkSource, linkTarget, linkPercentage, steps, holidays, updateStep]);
+
+  const handleLinkDelete = useCallback(() => {
+    if (!linkTarget) return;
+    const targetStep = steps.find(s => s.id === linkTarget);
+    if (!targetStep) return;
+
+    updateStep({
+      ...targetStep,
+      dependsOn: undefined,
+      dependsOnPercentage: undefined,
+    });
+
+    setLinkDialogOpen(false);
+    setLinkSource(null);
+    setLinkTarget(null);
+    setIsEditingLink(false);
+  }, [linkTarget, steps, updateStep]);
 
   // Propagate dependent steps when a step moves/resizes
   const propagateDependents = useCallback((changedStepId: string) => {
