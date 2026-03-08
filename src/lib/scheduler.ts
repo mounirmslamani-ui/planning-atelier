@@ -87,19 +87,19 @@ function findEarliestSlot(
     }
 
     const existingOrder = existing.order;
-    const existingPrio = priorityScore(existingOrder?.priority);
+    const existingScore = orderScore(existingOrder);
 
     // Can displace if:
     // 1. Current order has strictly higher priority (lower score), OR
-    // 2. Same priority but current deadline is earlier, OR
+    // 2. Same score but current deadline is earlier, OR
     // 3. Existing order is blocked (missing material/tooling)
     const currentDeadline = currentOrder.deliveryDeadline || currentOrder.plannedDeadline || '9999-12-31';
     const existingDeadline = existingOrder?.deliveryDeadline || existingOrder?.plannedDeadline || '9999-12-31';
 
     const canDisplace =
       (existingOrder && isOrderBlocked(existingOrder)) ||
-      currentPrio < existingPrio ||
-      (currentPrio === existingPrio && currentDeadline < existingDeadline);
+      currentScore < existingScore ||
+      (currentScore === existingScore && currentDeadline < existingDeadline);
 
     if (canDisplace) {
       displaced.push(existing.step.id);
