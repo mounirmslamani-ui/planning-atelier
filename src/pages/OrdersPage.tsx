@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Package, Wrench, Flag, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 
@@ -26,46 +26,14 @@ const urgencyColors: Record<UrgencyLevel, string> = {
 };
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; level: string }> = {
-  'P1-A': {
-    label: 'P1-A - Urgences contractuelles',
-    description: 'Commandes dont la date d\'expédition est dépassée ou prévue sous 24/48h.',
-    level: 'Niveau 1 : Priorité Critique',
-  },
-  'P1-B': {
-    label: 'P1-B - Commandes en finition (90%)',
-    description: 'Tout ce qui est presque terminé. On finit ces pièces pour les expédier et libérer l\'espace.',
-    level: 'Niveau 1 : Priorité Critique',
-  },
-  'P1-C': {
-    label: 'P1-C - Fort enjeu financier',
-    description: 'Commandes à haute valeur ajoutée à facturer avant la fin de la semaine/du mois.',
-    level: 'Niveau 1 : Priorité Critique',
-  },
-  'P2-A': {
-    label: 'P2-A - Commandes en retard léger',
-    description: 'Celles qui ont glissé de quelques jours et qu\'il faut remettre dans le flux.',
-    level: 'Niveau 2 : Priorité de Rattrapage',
-  },
-  'P2-B': {
-    label: 'P2-B - Urgence modérée',
-    description: 'Commandes dont l\'échéance est à J+5 ou J+7.',
-    level: 'Niveau 2 : Priorité de Rattrapage',
-  },
-  'P2-C': {
-    label: 'P2-C - Commandes groupées',
-    description: 'Optimisation technique (même réglage machine, même couleur) pour gagner du temps.',
-    level: 'Niveau 2 : Priorité de Rattrapage',
-  },
-  'P3-A': {
-    label: 'P3-A - Flux normal',
-    description: 'Commandes avec un délai confortable (2 semaines et plus).',
-    level: 'Niveau 3 : Priorité Standard',
-  },
-  'P3-B': {
-    label: 'P3-B - Travaux internes / Anticipation',
-    description: 'Préparation de sous-ensembles ou stock tampon si la charge le permet.',
-    level: 'Niveau 3 : Priorité Standard',
-  },
+  'P1-A': { label: 'P1-A - Urgences contractuelles', description: 'Commandes dont la date d\'expédition est dépassée ou prévue sous 24/48h.', level: 'Niveau 1 : Priorité Critique' },
+  'P1-B': { label: 'P1-B - Commandes en finition (90%)', description: 'Tout ce qui est presque terminé. On finit ces pièces pour les expédier et libérer l\'espace.', level: 'Niveau 1 : Priorité Critique' },
+  'P1-C': { label: 'P1-C - Fort enjeu financier', description: 'Commandes à haute valeur ajoutée à facturer avant la fin de la semaine/du mois.', level: 'Niveau 1 : Priorité Critique' },
+  'P2-A': { label: 'P2-A - Commandes en retard léger', description: 'Celles qui ont glissé de quelques jours et qu\'il faut remettre dans le flux.', level: 'Niveau 2 : Priorité de Rattrapage' },
+  'P2-B': { label: 'P2-B - Urgence modérée', description: 'Commandes dont l\'échéance est à J+5 ou J+7.', level: 'Niveau 2 : Priorité de Rattrapage' },
+  'P2-C': { label: 'P2-C - Commandes groupées', description: 'Optimisation technique (même réglage machine, même couleur) pour gagner du temps.', level: 'Niveau 2 : Priorité de Rattrapage' },
+  'P3-A': { label: 'P3-A - Flux normal', description: 'Commandes avec un délai confortable (2 semaines et plus).', level: 'Niveau 3 : Priorité Standard' },
+  'P3-B': { label: 'P3-B - Travaux internes / Anticipation', description: 'Préparation de sous-ensembles ou stock tampon si la charge le permet.', level: 'Niveau 3 : Priorité Standard' },
 };
 
 const priorityColors: Record<OrderPriority, string> = {
@@ -79,19 +47,37 @@ const priorityColors: Record<OrderPriority, string> = {
   'P3-B': 'bg-normal/70 text-white',
 };
 
-type SortField = 'priority' | 'client' | 'deadline' | 'orderNumber' | 'orderDate' | 'quantity' | 'material' | 'tooling';
-type SortDirection = 'asc' | 'desc';
-
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
   const [priorityOrder, setPriorityOrder] = useState<Order | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<OrderPriority | ''>('');
-  const [sortField, setSortField] = useState<SortField>('priority');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Orders sorted by displayOrder
+  const sortedOrders = useMemo(() => {
+    const realOrders = orders.filter(o => o.id !== 'order-absence');
+    return [...realOrders].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+  }, [orders]);
+
+  // Ensure all orders have a displayOrder
+  const ensureDisplayOrders = useCallback(() => {
+    const realOrders = orders.filter(o => o.id !== 'order-absence');
+    const needsUpdate = realOrders.some(o => o.displayOrder == null);
+    if (needsUpdate) {
+      const sorted = [...realOrders].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+      const absenceOrder = orders.find(o => o.id === 'order-absence');
+      const updated = sorted.map((o, i) => ({ ...o, displayOrder: i + 1 }));
+      setOrders([...(absenceOrder ? [absenceOrder] : []), ...updated]);
+    }
+  }, [orders, setOrders]);
+
+  // Run once on mount-ish
+  React.useEffect(() => { ensureDisplayOrders(); }, []);
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '',
@@ -103,6 +89,7 @@ const OrdersPage: React.FC = () => {
     plannedDeadline: '',
     materialAvailable: true,
     toolingAvailable: true,
+    displayOrder: sortedOrders.length + 1,
   });
 
   const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
@@ -136,77 +123,52 @@ const OrdersPage: React.FC = () => {
   const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
     }
+
+    const newList = [...sortedOrders];
+    const [moved] = newList.splice(dragIndex, 1);
+    newList.splice(dropIndex, 0, moved);
+
+    // Reassign displayOrder
+    const absenceOrder = orders.find(o => o.id === 'order-absence');
+    const updated = newList.map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    setOrders([...(absenceOrder ? [absenceOrder] : []), ...updated]);
+
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 opacity-50" />;
-    return sortDirection === 'asc' 
-      ? <ArrowUp className="w-3.5 h-3.5 ml-1" /> 
-      : <ArrowDown className="w-3.5 h-3.5 ml-1" />;
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
-
-  // Sort orders
-  const sortedOrders = useMemo(() => {
-    const priorityRank = ['P1-A', 'P1-B', 'P1-C', 'P2-A', 'P2-B', 'P2-C', 'P3-A', 'P3-B'];
-    
-    return [...orders].sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortField) {
-        case 'priority': {
-          const aIndex = a.priority ? priorityRank.indexOf(a.priority) : 999;
-          const bIndex = b.priority ? priorityRank.indexOf(b.priority) : 999;
-          comparison = aIndex - bIndex;
-          break;
-        }
-        case 'client': {
-          const aName = getClientName(a.clientId);
-          const bName = getClientName(b.clientId);
-          comparison = aName.localeCompare(bName);
-          break;
-        }
-        case 'deadline': {
-          const aDate = a.plannedDeadline || '9999-12-31';
-          const bDate = b.plannedDeadline || '9999-12-31';
-          comparison = aDate.localeCompare(bDate);
-          break;
-        }
-        case 'orderNumber': {
-          comparison = a.orderNumber.localeCompare(b.orderNumber);
-          break;
-        }
-        case 'orderDate': {
-          comparison = a.orderDate.localeCompare(b.orderDate);
-          break;
-        }
-        case 'quantity': {
-          comparison = a.quantity - b.quantity;
-          break;
-        }
-        case 'material': {
-          comparison = (a.materialAvailable === b.materialAvailable) ? 0 : a.materialAvailable ? -1 : 1;
-          break;
-        }
-        case 'tooling': {
-          comparison = (a.toolingAvailable === b.toolingAvailable) ? 0 : a.toolingAvailable ? -1 : 1;
-          break;
-        }
-      }
-      
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  }, [orders, sortField, sortDirection, clients]);
 
   return (
     <div className="p-6">
-      <PageHeader title="Commandes en cours" description={`${orders.length} commande(s)`} actions={
+      <PageHeader title="Commandes en cours" description={`${sortedOrders.length} commande(s)`} actions={
         <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       
@@ -214,44 +176,40 @@ const OrdersPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('priority')}>
-                <span className="flex items-center gap-1">Priorité <SortIcon field="priority" /></span>
-              </TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('orderNumber')}>
-                <span className="flex items-center gap-1">N° Commande <SortIcon field="orderNumber" /></span>
-              </TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('orderDate')}>
-                <span className="flex items-center gap-1">Date <SortIcon field="orderDate" /></span>
-              </TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('client')}>
-                <span className="flex items-center gap-1">Client <SortIcon field="client" /></span>
-              </TableHead>
+              <TableHead className="w-16 text-center">Ordre</TableHead>
+              <TableHead>N° Commande</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Client</TableHead>
               <TableHead>Désignation</TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('quantity')}>
-                <span className="flex items-center gap-1">Qté <SortIcon field="quantity" /></span>
-              </TableHead>
+              <TableHead>Qté</TableHead>
               <TableHead>Urgence</TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('deadline')}>
-                <span className="flex items-center gap-1">Délai <SortIcon field="deadline" /></span>
-              </TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('material')}>
-                <span className="flex items-center gap-1">Mat. <SortIcon field="material" /></span>
-              </TableHead>
-              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('tooling')}>
-                <span className="flex items-center gap-1">Out. <SortIcon field="tooling" /></span>
-              </TableHead>
+              <TableHead>Priorité</TableHead>
+              <TableHead>Délai</TableHead>
+              <TableHead>Mat.</TableHead>
+              <TableHead>Out.</TableHead>
               <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedOrders.map(o => (
-              <TableRow key={o.id} className="cursor-pointer" onClick={() => setPlanningOrder(o)}>
-                <TableCell>
-                  {o.priority ? (
-                    <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
-                  )}
+            {sortedOrders.map((o, index) => (
+              <TableRow
+                key={o.id}
+                draggable
+                onDragStart={e => handleDragStart(e, index)}
+                onDragOver={e => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={e => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`cursor-grab active:cursor-grabbing transition-colors ${
+                  dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
+                } ${dragIndex === index ? 'opacity-40' : ''}`}
+                onClick={() => setPlanningOrder(o)}
+              >
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>
+                  </div>
                 </TableCell>
                 <TableCell className="font-heading text-sm">{o.orderNumber}</TableCell>
                 <TableCell className="text-sm">{o.orderDate}</TableCell>
@@ -262,6 +220,13 @@ const OrdersPage: React.FC = () => {
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${urgencyColors[o.urgency]}`}>
                     {urgencyLabels[o.urgency]}
                   </span>
+                </TableCell>
+                <TableCell>
+                  {o.priority ? (
+                    <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm">{o.plannedDeadline}</TableCell>
                 <TableCell>
@@ -281,8 +246,8 @@ const OrdersPage: React.FC = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {orders.length === 0 && (
-              <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+            {sortedOrders.length === 0 && (
+              <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -301,7 +266,6 @@ const OrdersPage: React.FC = () => {
           </DialogHeader>
           <RadioGroup value={selectedPriority} onValueChange={(v) => setSelectedPriority(v as OrderPriority)}>
             <div className="space-y-6">
-              {/* Niveau 1 */}
               <div>
                 <h3 className="text-sm font-semibold text-destructive mb-2 flex items-center gap-2">
                   <Flag className="w-4 h-4" /> Niveau 1 : Priorité Critique
@@ -319,8 +283,6 @@ const OrdersPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              
-              {/* Niveau 2 */}
               <div>
                 <h3 className="text-sm font-semibold text-urgent-moderate mb-2 flex items-center gap-2">
                   <Flag className="w-4 h-4" /> Niveau 2 : Priorité de Rattrapage et Flux
@@ -338,8 +300,6 @@ const OrdersPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              
-              {/* Niveau 3 */}
               <div>
                 <h3 className="text-sm font-semibold text-normal mb-2 flex items-center gap-2">
                   <Flag className="w-4 h-4" /> Niveau 3 : Priorité Standard
@@ -437,7 +397,6 @@ const OrdersPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Planning Dialog */}
       {planningOrder && (
         <OrderPlanningDialog
           order={planningOrder}
