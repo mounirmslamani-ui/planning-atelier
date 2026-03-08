@@ -758,8 +758,11 @@ const GanttChart: React.FC = () => {
                           left={left}
                           width={width}
                           isLast={isLast}
+                          isCtrlSelected={ctrlSelectedStepId === step.id}
+                          hasLink={!!step.dependsOn}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
+                          onCtrlClick={handleCtrlClick}
                         />
                       </div>
                     );
