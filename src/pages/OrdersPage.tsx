@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Package, Wrench, Flag, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
+import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
   urgent: 'Urgent',
@@ -90,6 +91,7 @@ const OrdersPage: React.FC = () => {
   const [selectedPriority, setSelectedPriority] = useState<OrderPriority | ''>('');
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '',
@@ -243,7 +245,7 @@ const OrdersPage: React.FC = () => {
           </TableHeader>
           <TableBody>
             {sortedOrders.map(o => (
-              <TableRow key={o.id}>
+              <TableRow key={o.id} className="cursor-pointer" onClick={() => setPlanningOrder(o)}>
                 <TableCell>
                   {o.priority ? (
                     <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
@@ -269,7 +271,7 @@ const OrdersPage: React.FC = () => {
                   <Wrench className={`w-4 h-4 ${o.toolingAvailable ? 'text-normal' : 'text-destructive'}`} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" onClick={() => openPriorityDialog(o)} title="Définir priorité">
                       <Flag className="w-3.5 h-3.5" />
                     </Button>
@@ -434,6 +436,15 @@ const OrdersPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Planning Dialog */}
+      {planningOrder && (
+        <OrderPlanningDialog
+          order={planningOrder}
+          open={!!planningOrder}
+          onOpenChange={(open) => { if (!open) setPlanningOrder(null); }}
+        />
+      )}
     </div>
   );
 };

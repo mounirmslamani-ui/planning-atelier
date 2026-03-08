@@ -14,7 +14,6 @@ import { addWorkMinutes, workMinutesBetween } from '@/lib/workTime';
 const navItems = [
   { to: '/', label: 'Planning', icon: LayoutDashboard },
   { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart },
-  { to: '/steps', label: 'Affectations', icon: ListChecks },
   { to: '/production-register', label: 'Registre Production', icon: ClipboardCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/clients', label: 'Clients', icon: Building2 },
@@ -117,8 +116,8 @@ const AppSidebar: React.FC = () => {
                 <Icon className="w-4 h-4" />
                 {item.label}
               </NavLink>
-              {/* Absence button after Affectations */}
-              {item.to === '/steps' && (
+              {/* Absence button after Commandes */}
+              {item.to === '/orders' && (
                 <button
                   onClick={openAbsenceDialog}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
