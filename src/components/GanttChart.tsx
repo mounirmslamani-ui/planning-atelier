@@ -643,6 +643,11 @@ const GanttChart: React.FC = () => {
             Tout afficher
           </button>
         )}
+        {ctrlSelectedStepId && (
+          <div className="px-3 py-1 text-xs rounded bg-primary/10 text-primary border border-primary/30 animate-pulse">
+            Bloc sélectionné — Ctrl+Clic sur un 2ème bloc pour lier
+          </div>
+        )}
         {/* Validate production icon - drop zone */}
         <div
           ref={validateZoneRef}
