@@ -69,19 +69,32 @@ interface GanttBlockProps {
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, onDragStart, onResizeStart
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, onDragStart, onResizeStart, onCtrlClick
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
   const textColor = getDeadlineTextColor(order, step);
-  const borderClass = isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
+  const borderClass = isCtrlSelected
+    ? 'border-2 border-primary ring-2 ring-primary/40'
+    : hasLink
+      ? 'border-2 border-accent'
+      : isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
 
   return (
     <div
       className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
-      onMouseDown={e => { e.preventDefault(); onDragStart(step.id, e.clientX, left, e.clientY, e.altKey); }}
-      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}`}
+      onMouseDown={e => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          onCtrlClick(step.id);
+          return;
+        }
+        e.preventDefault();
+        onDragStart(step.id, e.clientX, left, e.clientY, e.altKey);
+      }}
+      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}`}
     >
       <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
         {subcontractorName ? (
@@ -97,6 +110,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
           </>
         )}
       </div>
+      {hasLink && (
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
+      )}
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
         onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
