@@ -1,4 +1,4 @@
-import type { ProductionStep, Order, Holiday } from '@/types/planning';
+import type { ProductionStep, Order, Holiday, OrderPriority } from '@/types/planning';
 import { addWorkMinutes } from './workTime';
 
 export interface OperationToSchedule {
@@ -13,6 +13,21 @@ interface ScheduleCandidate {
   start: Date;
   end: Date;
   displacedStepIds: string[];
+}
+
+/** Lower score = higher priority. Orders without priority get lowest. */
+function priorityScore(p?: OrderPriority): number {
+  const map: Record<string, number> = {
+    'P1-A': 1, 'P1-B': 2, 'P1-C': 3,
+    'P2-A': 4, 'P2-B': 5, 'P2-C': 6,
+    'P3-A': 7, 'P3-B': 8,
+  };
+  return p ? (map[p] ?? 99) : 99;
+}
+
+/** An order is "blocked" if material or tooling is unavailable */
+function isOrderBlocked(order: Order): boolean {
+  return !order.materialAvailable || !order.toolingAvailable;
 }
 
 function formatDate(d: Date): string {
