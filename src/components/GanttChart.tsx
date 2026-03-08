@@ -173,7 +173,7 @@ const GanttChart: React.FC = () => {
 
   // Total width based on work minutes
   const totalWidth = useMemo(() => {
-    return numWorkDays * WORK_MINUTES_PER_DAY * minuteWidth;
+    return numWorkDays * WORK_MINUTES_PER_DAY * minuteWidth + 40; // +40px so last label (16:00) isn't clipped
   }, [numWorkDays, minuteWidth]);
 
   // Convert a datetime to pixel offset from zero
