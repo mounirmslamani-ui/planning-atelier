@@ -436,6 +436,15 @@ const OrdersPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Planning Dialog */}
+      {planningOrder && (
+        <OrderPlanningDialog
+          order={planningOrder}
+          open={!!planningOrder}
+          onOpenChange={(open) => { if (!open) setPlanningOrder(null); }}
+        />
+      )}
     </div>
   );
 };
