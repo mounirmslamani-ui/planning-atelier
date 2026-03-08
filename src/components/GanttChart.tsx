@@ -316,7 +316,7 @@ const GanttChart: React.FC = () => {
       }
       setResizeState(null);
     }
-  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, sortedOperators]);
+  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
