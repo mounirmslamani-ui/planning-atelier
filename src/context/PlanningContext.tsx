@@ -49,6 +49,13 @@ interface PlanningContextType extends PlanningState {
   productionRecords: ProductionRecord[];
   addProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
+  qcEntries: QualityControlEntry[];
+  addQCEntry: (entry: QualityControlEntry) => void;
+  updateQCEntry: (entry: QualityControlEntry) => void;
+  deleteQCEntry: (id: string) => void;
+  deliveryEntries: DeliveryEntry[];
+  addDeliveryEntry: (entry: DeliveryEntry) => void;
+  deleteDeliveryEntry: (id: string) => void;
   setGanttView: (view: GanttView) => void;
   setGanttZeroDate: (date: Date) => void;
   setSelectedOperatorId: (id: string | null) => void;
