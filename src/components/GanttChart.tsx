@@ -138,6 +138,10 @@ const GanttChart: React.FC = () => {
   const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
   const [isOverValidateZone, setIsOverValidateZone] = useState(false);
   const validateZoneRef = useRef<HTMLDivElement>(null);
+  const [validateWorkDone, setValidateWorkDone] = useState<'done' | 'continue'>('done');
+  const [validateRemainingDuration, setValidateRemainingDuration] = useState<number>(0);
+  const [validateContinueDate, setValidateContinueDate] = useState<string>('');
+  const [validateContinueTime, setValidateContinueTime] = useState<string>('08:00');
 
   // Ctrl+Click linking state
   const [ctrlSelectedStepId, setCtrlSelectedStepId] = useState<string | null>(null);
