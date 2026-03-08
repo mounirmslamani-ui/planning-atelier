@@ -56,6 +56,7 @@ interface GanttBlockProps {
   order: Order;
   operationName: string;
   clientName: string;
+  subcontractorName?: string;
   left: number;
   width: number;
   isLast: boolean;
@@ -64,7 +65,7 @@ interface GanttBlockProps {
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, left, width, isLast, onDragStart, onResizeStart
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, onDragStart, onResizeStart
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
@@ -76,12 +77,21 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => { e.preventDefault(); onDragStart(step.id, e.clientX, left, e.clientY, e.altKey); }}
-      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}`}
+      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}`}
     >
       <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
-        <div className="font-heading">{order.orderNumber}</div>
-        <div className="opacity-80">{operationName}</div>
-        <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+        {subcontractorName ? (
+          <>
+            <div className="font-heading">{order.orderNumber} — {subcontractorName}</div>
+            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+          </>
+        ) : (
+          <>
+            <div className="font-heading">{order.orderNumber}</div>
+            <div className="opacity-80">{operationName}</div>
+            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+          </>
+        )}
       </div>
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
