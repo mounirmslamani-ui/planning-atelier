@@ -116,7 +116,11 @@ const AppSidebar: React.FC = () => {
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                {(item as any).image ? (
+                  <img src={(item as any).image} alt="" className="w-4 h-4 dark:invert" />
+                ) : Icon ? (
+                  <Icon className="w-4 h-4" />
+                ) : null}
                 {item.label}
               </NavLink>
               {/* Absence button after Commandes */}
