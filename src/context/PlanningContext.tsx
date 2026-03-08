@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView } from '@/types/planning';
+import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord } from '@/types/planning';
 
 interface PlanningState {
   operators: Operator[];
