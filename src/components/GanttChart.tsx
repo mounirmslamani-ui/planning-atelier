@@ -195,14 +195,21 @@ const GanttChart: React.FC = () => {
         slot.segments.forEach(seg => {
           const segStart = seg.startMin;
           const segEnd = seg.endMin;
-          for (let m = segStart; m < segEnd; m += 60) {
+          // Show segment start label (e.g. 12:30)
+          {
+            const workMinInDay = getWorkMinutesInDay(segStart, slot.segments);
+            const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
+            const hour = Math.floor(segStart / 60);
+            const min = segStart % 60;
+            lines.push({ offset, type: 'major', label: `${hour}:${String(min).padStart(2, '0')}` });
+          }
+          // Hour marks within segment (skip segment start if already added)
+          for (let m = Math.ceil(segStart / 60) * 60; m < segEnd; m += 60) {
+            if (m <= segStart) continue;
             const workMinInDay = getWorkMinutesInDay(m, slot.segments);
             const offset = (cumulativeWorkMinutes + workMinInDay) * minuteWidth;
             const hour = Math.floor(m / 60);
-            const isHourStart = m % 60 === 0;
-            if (isHourStart) {
-              lines.push({ offset, type: 'major', label: `${hour}:00` });
-            }
+            lines.push({ offset, type: 'major', label: `${hour}:00` });
           }
           // Half-hours
           for (let m = segStart + 30; m < segEnd; m += 60) {
