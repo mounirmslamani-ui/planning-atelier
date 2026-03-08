@@ -1064,7 +1064,6 @@ const GanttChart: React.FC = () => {
               <Button onClick={handleLinkSave}>{isEditingLink ? 'Modifier' : 'Lier'}</Button>
             </div>
           </DialogFooter>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
