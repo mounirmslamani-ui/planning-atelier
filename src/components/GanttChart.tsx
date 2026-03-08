@@ -563,10 +563,32 @@ const GanttChart: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Opérateur</label>
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
-                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <label className="text-sm font-medium mb-1 block">Assigner à</label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded transition-colors ${!editForm.subcontractorId ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => { updateEditForm('subcontractorId', undefined); updateEditForm('operatorId', operators[0]?.id || ''); }}
+                  >
+                    Opérateur
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded transition-colors ${editForm.subcontractorId ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => { updateEditForm('operatorId', ''); updateEditForm('subcontractorId', subcontractors[0]?.id || ''); }}
+                  >
+                    Sous-traitant
+                  </button>
+                </div>
+                {!editForm.subcontractorId ? (
+                  <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
+                    {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </select>
+                ) : (
+                  <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.subcontractorId} onChange={e => updateEditForm('subcontractorId', e.target.value)}>
+                    {subcontractors.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Opération</label>
