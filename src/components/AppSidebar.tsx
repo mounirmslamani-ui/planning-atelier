@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Building2, ShoppingCart, CalendarDays, 
-  Factory, Truck, LayoutDashboard, ClipboardCheck,
+  Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck
 } from 'lucide-react';
+import subcontractorIcon from '@/assets/subcontractor-icon.png';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
