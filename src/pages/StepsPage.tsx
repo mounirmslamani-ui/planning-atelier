@@ -34,13 +34,15 @@ function computeThirdField(
 }
 
 const StepsPage: React.FC = () => {
-  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays } = usePlanning();
+  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays, subcontractors } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ProductionStep | null>(null);
+  const [assignType, setAssignType] = useState<'operator' | 'subcontractor'>('operator');
 
   const emptyStep = (): Omit<ProductionStep, 'id'> => ({
     orderId: orders[0]?.id || '',
     operatorId: operators[0]?.id || '',
+    subcontractorId: undefined,
     operationId: operations[0]?.id || '',
     estimatedDuration: 60,
     startDate: new Date().toISOString().split('T')[0],
@@ -52,8 +54,14 @@ const StepsPage: React.FC = () => {
 
   const [form, setForm] = useState<Omit<ProductionStep, 'id'>>(emptyStep());
 
-  const openNew = () => { setEditing(null); setForm(emptyStep()); setDialogOpen(true); };
-  const openEdit = (s: ProductionStep) => { setEditing(s); const { id, ...rest } = s; setForm(rest); setDialogOpen(true); };
+  const openNew = () => { setEditing(null); setForm(emptyStep()); setAssignType('operator'); setDialogOpen(true); };
+  const openEdit = (s: ProductionStep) => {
+    setEditing(s);
+    const { id, ...rest } = s;
+    setForm(rest);
+    setAssignType(s.subcontractorId ? 'subcontractor' : 'operator');
+    setDialogOpen(true);
+  };
 
   const handleSave = () => {
     const computed = computeThirdField(form.startDate, form.startTime, form.endDate, form.endTime, form.estimatedDuration, holidays);
@@ -86,7 +94,9 @@ const StepsPage: React.FC = () => {
 
   const getOrderNumber = (id: string) => orders.find(o => o.id === id)?.orderNumber || '—';
   const getOperatorName = (id: string) => operators.find(o => o.id === id)?.name || '—';
+  const getSubcontractorName = (id: string) => subcontractors.find(s => s.id === id)?.companyName || '—';
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
+  const getAssigneeName = (s: ProductionStep) => s.subcontractorId ? `🏭 ${getSubcontractorName(s.subcontractorId)}` : getOperatorName(s.operatorId);
 
   return (
     <div className="p-6">
@@ -99,7 +109,7 @@ const StepsPage: React.FC = () => {
             <TableRow>
               <TableHead>#</TableHead>
               <TableHead>Commande</TableHead>
-              <TableHead>Opérateur</TableHead>
+              <TableHead>Assigné à</TableHead>
               <TableHead>Opération</TableHead>
               <TableHead>Durée (min)</TableHead>
               <TableHead>Début</TableHead>
@@ -112,7 +122,7 @@ const StepsPage: React.FC = () => {
               <TableRow key={s.id}>
                 <TableCell className="text-sm">{s.order}</TableCell>
                 <TableCell className="font-heading text-sm">{getOrderNumber(s.orderId)}</TableCell>
-                <TableCell className="text-sm">{getOperatorName(s.operatorId)}</TableCell>
+                <TableCell className="text-sm">{getAssigneeName(s)}</TableCell>
                 <TableCell className="text-sm">{getOperationName(s.operationId)}</TableCell>
                 <TableCell className="text-sm">{s.estimatedDuration}</TableCell>
                 <TableCell className="text-sm">{s.startDate} {s.startTime}</TableCell>
@@ -143,10 +153,32 @@ const StepsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Opérateur</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operatorId} onChange={e => updateForm('operatorId', e.target.value)}>
-                {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
+              <label className="text-sm font-medium mb-1 block">Assigner à</label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded transition-colors ${assignType === 'operator' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                  onClick={() => { setAssignType('operator'); updateForm('subcontractorId', undefined); updateForm('operatorId', operators[0]?.id || ''); }}
+                >
+                  Opérateur
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-xs rounded transition-colors ${assignType === 'subcontractor' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                  onClick={() => { setAssignType('subcontractor'); updateForm('operatorId', ''); updateForm('subcontractorId', subcontractors[0]?.id || ''); }}
+                >
+                  Sous-traitant
+                </button>
+              </div>
+              {assignType === 'operator' ? (
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operatorId} onChange={e => updateForm('operatorId', e.target.value)}>
+                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              ) : (
+                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.subcontractorId || ''} onChange={e => updateForm('subcontractorId', e.target.value)}>
+                  {subcontractors.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                </select>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Opération</label>
@@ -190,7 +222,7 @@ const StepsPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!form.orderId || !form.operatorId}>Enregistrer</Button>
+            <Button onClick={handleSave} disabled={!form.orderId || (!form.operatorId && !form.subcontractorId)}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

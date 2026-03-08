@@ -56,6 +56,7 @@ interface GanttBlockProps {
   order: Order;
   operationName: string;
   clientName: string;
+  subcontractorName?: string;
   left: number;
   width: number;
   isLast: boolean;
@@ -64,7 +65,7 @@ interface GanttBlockProps {
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, left, width, isLast, onDragStart, onResizeStart
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, onDragStart, onResizeStart
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
@@ -76,12 +77,21 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => { e.preventDefault(); onDragStart(step.id, e.clientX, left, e.clientY, e.altKey); }}
-      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}`}
+      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}`}
     >
       <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
-        <div className="font-heading">{order.orderNumber}</div>
-        <div className="opacity-80">{operationName}</div>
-        <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+        {subcontractorName ? (
+          <>
+            <div className="font-heading">{order.orderNumber} — {subcontractorName}</div>
+            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+          </>
+        ) : (
+          <>
+            <div className="font-heading">{order.orderNumber}</div>
+            <div className="opacity-80">{operationName}</div>
+            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+          </>
+        )}
       </div>
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
@@ -93,7 +103,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
 
 const GanttChart: React.FC = () => {
   const {
-    operators, operations, orders, steps, holidays, clients,
+    operators, operations, orders, steps, holidays, clients, subcontractors,
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
@@ -104,16 +114,27 @@ const GanttChart: React.FC = () => {
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
 
-  const sortedOperators = useMemo(() => {
+  type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
+
+  const ganttRows = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
-    return [...operators]
+    const opRows: GanttRow[] = [...operators]
       .filter(op => !selectedOperatorId || op.id === selectedOperatorId)
       .sort((a, b) => {
         const ai = functionOrder.indexOf(a.mainFunction);
         const bi = functionOrder.indexOf(b.mainFunction);
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-      });
-  }, [operators, selectedOperatorId]);
+      })
+      .map(op => ({ type: 'operator' as const, id: op.id, label: op.name, sublabel: op.mainFunction }));
+
+    // Add a single subcontractor row if there are subcontractor steps
+    const hasSubSteps = steps.some(s => s.subcontractorId);
+    const subRow: GanttRow[] = (hasSubSteps || subcontractors.length > 0) && !selectedOperatorId
+      ? [{ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' }]
+      : [];
+
+    return [...opRows, ...subRow];
+  }, [operators, selectedOperatorId, steps, subcontractors]);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
@@ -255,13 +276,14 @@ const GanttChart: React.FC = () => {
         const newEnd = addWorkMinutes(newStart, step.estimatedDuration, holidays);
 
         const rowShift = Math.round(dy / ROW_HEIGHT);
-        const currentRowIndex = sortedOperators.findIndex(op => op.id === step.operatorId);
-        const targetRowIndex = Math.max(0, Math.min(sortedOperators.length - 1, currentRowIndex + rowShift));
-        const targetOperatorId = sortedOperators[targetRowIndex]?.id || step.operatorId;
-
+        const currentRowIndex = ganttRows.findIndex(row => row.type === 'operator' && row.id === step.operatorId);
+        const targetRowIndex = Math.max(0, Math.min(ganttRows.length - 1, currentRowIndex + rowShift));
+        const targetRow = ganttRows[targetRowIndex];
+        
         const newStepData = {
           ...step,
-          operatorId: targetOperatorId,
+          operatorId: targetRow?.type === 'operator' ? targetRow.id : step.operatorId,
+          subcontractorId: targetRow?.type === 'subcontractor' ? undefined : step.subcontractorId,
           startDate: newStart.toISOString().split('T')[0],
           startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
           endDate: newEnd.toISOString().split('T')[0],
@@ -294,10 +316,11 @@ const GanttChart: React.FC = () => {
       }
       setResizeState(null);
     }
-  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, sortedOperators]);
+  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
+  const getSubcontractorName = (id: string) => subcontractors.find(s => s.id === id)?.companyName || '';
 
   const handleOperatorClick = (opId: string) => {
     setSelectedOrderId(null);
@@ -418,18 +441,18 @@ const GanttChart: React.FC = () => {
         {/* Operator labels */}
         <div className="w-36 flex-shrink-0 border-r bg-card">
           <div className="h-8 border-b bg-gantt-header flex items-center px-2">
-            <span className="text-xs font-heading text-gantt-header-foreground">Opérateurs</span>
+            <span className="text-xs font-heading text-gantt-header-foreground">Ressources</span>
           </div>
-          {sortedOperators.map(op => (
+          {ganttRows.map(row => (
             <div
-              key={op.id}
-              onClick={() => handleOperatorClick(op.id)}
-              className="flex items-center px-2 border-b cursor-pointer hover:bg-muted/50 transition-colors"
+              key={row.id}
+              onClick={() => row.type === 'operator' ? handleOperatorClick(row.id) : undefined}
+              className={`flex items-center px-2 border-b transition-colors ${row.type === 'operator' ? 'cursor-pointer hover:bg-muted/50' : 'bg-muted/20'}`}
               style={{ height: ROW_HEIGHT }}
             >
               <div>
-                <div className="text-xs font-medium truncate">{op.name}</div>
-                <div className="text-[10px] text-muted-foreground">{op.mainFunction}</div>
+                <div className={`text-xs font-medium truncate ${row.type === 'subcontractor' ? 'text-primary' : ''}`}>{row.label}</div>
+                {row.sublabel && <div className="text-[10px] text-muted-foreground">{row.sublabel}</div>}
               </div>
             </div>
           ))}
@@ -461,7 +484,7 @@ const GanttChart: React.FC = () => {
                 className={`absolute top-0 w-px ${
                   l.type === 'major' ? 'bg-gantt-line' : l.type === 'minor' ? 'bg-gantt-line/50' : 'bg-gantt-line-light/40'
                 }`}
-                style={{ left: l.offset, height: sortedOperators.length * ROW_HEIGHT }}
+                style={{ left: l.offset, height: ganttRows.length * ROW_HEIGHT }}
               />
             ))}
 
@@ -479,7 +502,7 @@ const GanttChart: React.FC = () => {
                   return (
                     <div
                       className="absolute top-0 w-0.5 bg-gantt-now z-20"
-                      style={{ left: nowOffset, height: sortedOperators.length * ROW_HEIGHT }}
+                      style={{ left: nowOffset, height: ganttRows.length * ROW_HEIGHT }}
                     />
                   );
                 }
@@ -488,20 +511,21 @@ const GanttChart: React.FC = () => {
             })()}
 
             {/* Operator rows */}
-            {sortedOperators.map((op, rowIndex) => (
+            {ganttRows.map((row, rowIndex) => (
               <div
-                key={op.id}
+                key={row.id}
                 className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
                 style={{ height: ROW_HEIGHT }}
               >
                 {filteredSteps
-                  .filter(s => s.operatorId === op.id)
+                  .filter(s => row.type === 'operator' ? s.operatorId === row.id && !s.subcontractorId : !!s.subcontractorId)
                   .map(step => {
                     const order = orders.find(o => o.id === step.orderId);
                     if (!order) return null;
                     const left = getPixelOffset(step.startDate, step.startTime);
                     const width = getDurationWidth(step.estimatedDuration);
                     const isLast = isLastStep(step, steps);
+                    const subName = step.subcontractorId ? getSubcontractorName(step.subcontractorId) : undefined;
 
                     return (
                       <div key={step.id} onDoubleClick={() => handleBlockDoubleClick(step.id)}>
@@ -510,6 +534,7 @@ const GanttChart: React.FC = () => {
                           order={order}
                           operationName={getOperationName(step.operationId)}
                           clientName={getClientName(order.clientId)}
+                          subcontractorName={subName}
                           left={left}
                           width={width}
                           isLast={isLast}
@@ -538,10 +563,32 @@ const GanttChart: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Opérateur</label>
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
-                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <label className="text-sm font-medium mb-1 block">Assigner à</label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded transition-colors ${!editForm.subcontractorId ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => { updateEditForm('subcontractorId', undefined); updateEditForm('operatorId', operators[0]?.id || ''); }}
+                  >
+                    Opérateur
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded transition-colors ${editForm.subcontractorId ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    onClick={() => { updateEditForm('operatorId', ''); updateEditForm('subcontractorId', subcontractors[0]?.id || ''); }}
+                  >
+                    Sous-traitant
+                  </button>
+                </div>
+                {!editForm.subcontractorId ? (
+                  <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
+                    {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </select>
+                ) : (
+                  <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.subcontractorId} onChange={e => updateEditForm('subcontractorId', e.target.value)}>
+                    {subcontractors.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Opération</label>

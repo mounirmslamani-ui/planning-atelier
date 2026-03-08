@@ -56,6 +56,7 @@ export interface ProductionStep {
   id: string;
   orderId: string;
   operatorId: string;
+  subcontractorId?: string;
   operationId: string;
   estimatedDuration: number; // in minutes
   startDate: string;
