@@ -271,7 +271,7 @@ const OrdersPage: React.FC = () => {
                   <Wrench className={`w-4 h-4 ${o.toolingAvailable ? 'text-normal' : 'text-destructive'}`} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" onClick={() => openPriorityDialog(o)} title="Définir priorité">
                       <Flag className="w-3.5 h-3.5" />
                     </Button>
