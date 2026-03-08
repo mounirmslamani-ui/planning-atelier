@@ -13,13 +13,12 @@ import { addWorkMinutes, workMinutesBetween } from '@/lib/workTime';
 
 const navItems = [
   { to: '/', label: 'Planning', icon: LayoutDashboard },
+  { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart },
+  { to: '/steps', label: 'Affectations', icon: ListChecks },
   { to: '/production-register', label: 'Registre Production', icon: ClipboardCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
-  { to: '/operations', label: 'Opérations', icon: Wrench },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Truck },
-  { to: '/orders', label: 'Commandes', icon: ShoppingCart },
-  { to: '/steps', label: 'Affectations', icon: ListChecks },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
