@@ -115,13 +115,7 @@ const AppSidebar: React.FC = () => {
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                 }`}
               >
-                {item.icon === 'caliper' ? (
-                  <img src={caliperIcon} alt="Contrôle Qualité" className="w-4 h-4 dark:invert" />
-                ) : item.icon === 'delivery' ? (
-                  <img src={deliveryIcon} alt="Commandes à livrer" className="w-4 h-4 dark:invert" />
-                ) : (
-                  <Icon className="w-4 h-4" />
-                )}
+                <Icon className="w-4 h-4" />
                 {item.label}
               </NavLink>
               {/* Absence button after Commandes */}
