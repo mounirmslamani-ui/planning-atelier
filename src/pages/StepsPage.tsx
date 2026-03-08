@@ -111,7 +111,7 @@ const StepsPage: React.FC = () => {
               <TableHead>Commande</TableHead>
               <TableHead>Assigné à</TableHead>
               <TableHead>Opération</TableHead>
-              <TableHead>Durée (h)</TableHead>
+              <TableHead>Durée est.</TableHead>
               <TableHead>Début</TableHead>
               <TableHead>Fin</TableHead>
               <TableHead className="w-24">Actions</TableHead>
@@ -124,7 +124,7 @@ const StepsPage: React.FC = () => {
                 <TableCell className="font-heading text-sm">{getOrderNumber(s.orderId)}</TableCell>
                 <TableCell className="text-sm">{getAssigneeName(s)}</TableCell>
                 <TableCell className="text-sm">{getOperationName(s.operationId)}</TableCell>
-                <TableCell className="text-sm">{(s.estimatedDuration / 60).toFixed(2)}</TableCell>
+                <TableCell className="text-sm">{s.subcontractorId ? `${(s.estimatedDuration / 450).toFixed(1)}j` : `${(s.estimatedDuration / 60).toFixed(2)}h`}</TableCell>
                 <TableCell className="text-sm">{s.startDate} {s.startTime}</TableCell>
                 <TableCell className="text-sm">{s.endDate} {s.endTime}</TableCell>
                 <TableCell>
@@ -199,8 +199,14 @@ const StepsPage: React.FC = () => {
               <Input type="time" value={form.startTime} onChange={e => updateForm('startTime', e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Durée estimée (h)</label>
-              <Input type="number" min={0} step={0.25} value={parseFloat((form.estimatedDuration / 60).toFixed(2))} onChange={e => updateForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 60))} />
+              <label className="text-sm font-medium mb-1 block">
+                Durée estimée ({assignType === 'subcontractor' ? 'jours' : 'heures'})
+              </label>
+              {assignType === 'subcontractor' ? (
+                <Input type="number" min={0} step={0.5} value={parseFloat((form.estimatedDuration / 450).toFixed(2))} onChange={e => updateForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 450))} />
+              ) : (
+                <Input type="number" min={0} step={0.25} value={parseFloat((form.estimatedDuration / 60).toFixed(2))} onChange={e => updateForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 60))} />
+              )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Date fin (auto-calculée)</label>
