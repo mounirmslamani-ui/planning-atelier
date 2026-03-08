@@ -451,6 +451,8 @@ const GanttChart: React.FC = () => {
           endDate: newEnd.toISOString().split('T')[0],
           endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
         });
+        // Propagate to dependent steps
+        setTimeout(() => propagateDependents(step.id), 0);
       }
       setResizeState(null);
     }
