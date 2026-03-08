@@ -3,15 +3,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, Truck, LayoutDashboard, ClipboardCheck,
-  UserX
+  UserX, SearchCheck, PackageCheck
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePlanning } from '@/context/PlanningContext';
 import { addWorkMinutes, workMinutesBetween } from '@/lib/workTime';
-import caliperIcon from '@/assets/caliper-icon.png';
-import deliveryIcon from '@/assets/delivery-icon.png';
 
 const navItems = [
   { to: '/', label: 'Planning', icon: LayoutDashboard },
