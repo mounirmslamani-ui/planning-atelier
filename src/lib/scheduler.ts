@@ -140,7 +140,7 @@ export function scheduleOrder(
         previousOpEnd,
         workingSteps,
         allOrders,
-        orderDeadline,
+        currentOrder,
         holidays
       );
 
