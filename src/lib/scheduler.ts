@@ -45,24 +45,24 @@ function findEarliestSlot(
   earliestStart: Date,
   allSteps: ProductionStep[],
   allOrders: Order[],
-  currentOrderDeadline: string,
+  currentOrder: Order,
   holidays: Holiday[]
 ): ScheduleCandidate {
   const assigneeSteps = allSteps.filter(s =>
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
   );
 
-  const getDeadline = (step: ProductionStep) => {
-    const order = allOrders.find(o => o.id === step.orderId);
-    return order?.deliveryDeadline || order?.plannedDeadline || '9999-12-31';
-  };
+  const currentPrio = priorityScore(currentOrder.priority);
+
+  const getOrder = (step: ProductionStep) =>
+    allOrders.find(o => o.id === step.orderId);
 
   const sorted = assigneeSteps
     .map(s => ({
       step: s,
       start: new Date(`${s.startDate}T${s.startTime}`),
       end: new Date(`${s.endDate}T${s.endTime}`),
-      deadline: getDeadline(s),
+      order: getOrder(s),
     }))
     .sort((a, b) => a.start.getTime() - b.start.getTime());
 
@@ -73,8 +73,28 @@ function findEarliestSlot(
     const candidateEnd = addWorkMinutes(candidate, duration, holidays);
     if (candidateEnd <= existing.start) break;
 
-    // Can displace steps from orders with later deadlines (not absences)
-    if (existing.deadline > currentOrderDeadline && existing.step.operationId !== 'op-8') {
+    // Never displace absences
+    if (existing.step.operationId === 'op-8') {
+      if (candidate < existing.end) candidate = new Date(existing.end);
+      continue;
+    }
+
+    const existingOrder = existing.order;
+    const existingPrio = priorityScore(existingOrder?.priority);
+
+    // Can displace if:
+    // 1. Current order has strictly higher priority (lower score), OR
+    // 2. Same priority but current deadline is earlier, OR
+    // 3. Existing order is blocked (missing material/tooling)
+    const currentDeadline = currentOrder.deliveryDeadline || currentOrder.plannedDeadline || '9999-12-31';
+    const existingDeadline = existingOrder?.deliveryDeadline || existingOrder?.plannedDeadline || '9999-12-31';
+
+    const canDisplace =
+      (existingOrder && isOrderBlocked(existingOrder)) ||
+      currentPrio < existingPrio ||
+      (currentPrio === existingPrio && currentDeadline < existingDeadline);
+
+    if (canDisplace) {
       displaced.push(existing.step.id);
       continue;
     }
@@ -101,10 +121,8 @@ export function scheduleOrder(
   const updatedSteps: ProductionStep[] = [];
   let workingSteps = [...existingSteps];
 
-  const getOrderDeadline = (oId: string) => {
-    const o = allOrders.find(x => x.id === oId);
-    return o?.deliveryDeadline || o?.plannedDeadline || '9999-12-31';
-  };
+  const currentOrder = allOrders.find(o => o.id === orderId);
+  if (!currentOrder) return { newSteps, updatedSteps };
 
   let previousOpEnd = new Date();
 
