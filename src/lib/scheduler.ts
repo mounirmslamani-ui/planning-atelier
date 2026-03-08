@@ -182,7 +182,7 @@ export function scheduleOrder(
           bestCandidate.end,
           workingSteps.filter(s => s.id !== displacedId),
           allOrders,
-          getOrderDeadline(displaced.orderId),
+          allOrders.find(o => o.id === displaced.orderId) || currentOrder,
           holidays
         );
 
