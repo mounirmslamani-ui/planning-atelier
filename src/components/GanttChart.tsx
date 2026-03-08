@@ -268,12 +268,6 @@ const GanttChart: React.FC = () => {
       cumulativeWorkMinutes += WORK_MINUTES_PER_DAY;
     });
 
-    // Lunch break markers (visual gap) for day view
-    if (ganttView === 'day' && workSlots.length > 0) {
-      const lunchWorkMin = 240; // after 4h of morning work
-      const offset = lunchWorkMin * minuteWidth;
-      lines.push({ offset, type: 'major', label: '12:00 | 12:30' });
-    }
 
     return lines;
   }, [workSlots, ganttView, minuteWidth]);
