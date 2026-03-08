@@ -184,6 +184,18 @@ const OrdersPage: React.FC = () => {
           comparison = a.orderDate.localeCompare(b.orderDate);
           break;
         }
+        case 'quantity': {
+          comparison = a.quantity - b.quantity;
+          break;
+        }
+        case 'material': {
+          comparison = (a.materialAvailable === b.materialAvailable) ? 0 : a.materialAvailable ? -1 : 1;
+          break;
+        }
+        case 'tooling': {
+          comparison = (a.toolingAvailable === b.toolingAvailable) ? 0 : a.toolingAvailable ? -1 : 1;
+          break;
+        }
       }
       
       return sortDirection === 'asc' ? comparison : -comparison;
