@@ -77,7 +77,9 @@ const PlanningContext = createContext<PlanningContextType | undefined>(undefined
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [operators, setOperators] = useState<Operator[]>(defaultOperators);
-  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([
+    { id: 'sub-1', companyName: 'Traitements SA', mainActivity: 'Traitement thermique', secondaryActivities: [] },
+  ]);
   const [operations, setOperations] = useState<Operation[]>(defaultOperations);
   const [clients, setClients] = useState<Client[]>(defaultClients);
   const [orders, setOrders] = useState<Order[]>([]);
