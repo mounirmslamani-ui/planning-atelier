@@ -78,7 +78,7 @@ const priorityColors: Record<OrderPriority, string> = {
   'P3-B': 'bg-normal/70 text-white',
 };
 
-type SortField = 'priority' | 'client' | 'deadline' | 'orderNumber' | 'orderDate';
+type SortField = 'priority' | 'client' | 'deadline' | 'orderNumber' | 'orderDate' | 'quantity' | 'material' | 'tooling';
 type SortDirection = 'asc' | 'desc';
 
 const OrdersPage: React.FC = () => {
