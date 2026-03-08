@@ -609,8 +609,8 @@ const GanttChart: React.FC = () => {
                 <Input type="time" value={editForm.startTime} onChange={e => updateEditForm('startTime', e.target.value)} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Durée estimée (min)</label>
-                <Input type="number" min={0} value={editForm.estimatedDuration} onChange={e => updateEditForm('estimatedDuration', parseInt(e.target.value) || 0)} />
+                <label className="text-sm font-medium mb-1 block">Durée estimée (h)</label>
+                <Input type="number" min={0} step={0.25} value={parseFloat((editForm.estimatedDuration / 60).toFixed(2))} onChange={e => updateEditForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 60))} />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Date fin</label>
