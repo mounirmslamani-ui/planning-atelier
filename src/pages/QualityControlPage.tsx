@@ -48,7 +48,7 @@ const decisionColors: Record<QCDecision, string> = {
 const QualityControlPage: React.FC = () => {
   const {
     qcEntries, updateQCEntry, orders, clients,
-    addDeliveryEntry, deleteQCEntry,
+    addDeliveryEntry, deleteQCEntry, deleteOrder,
     addStep, steps, holidays, operations, operators,
   } = usePlanning();
 
