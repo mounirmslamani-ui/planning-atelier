@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  Users, Wrench, Building2, ShoppingCart, CalendarDays, 
-  Factory, ListChecks, Truck, LayoutDashboard, ClipboardCheck,
+  Users, Building2, ShoppingCart, CalendarDays, 
+  Factory, Truck, LayoutDashboard, ClipboardCheck,
   UserX
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -10,11 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePlanning } from '@/context/PlanningContext';
 import { addWorkMinutes, workMinutesBetween } from '@/lib/workTime';
+import caliperIcon from '@/assets/caliper-icon.png';
+import deliveryIcon from '@/assets/delivery-icon.png';
 
 const navItems = [
   { to: '/', label: 'Planning', icon: LayoutDashboard },
   { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart },
   { to: '/production-register', label: 'Registre Production', icon: ClipboardCheck },
+  { to: '/quality-control', label: 'Contrôle Qualité', icon: 'caliper' as any },
+  { to: '/delivery', label: 'Commandes à livrer', icon: 'delivery' as any },
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Truck },
