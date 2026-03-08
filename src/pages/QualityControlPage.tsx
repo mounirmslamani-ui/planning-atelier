@@ -77,6 +77,7 @@ const QualityControlPage: React.FC = () => {
         movedAt: new Date().toISOString(),
       });
       deleteQCEntry(entry.id);
+      deleteOrder(entry.orderId);
       return;
     }
 
