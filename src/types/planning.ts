@@ -17,9 +17,12 @@ export interface Operation {
   name: string;
 }
 
+export type ClientClass = 'A' | 'B' | 'C' | 'D' | 'E';
+
 export interface Client {
   id: string;
   name: string;
+  clientClass?: ClientClass;
 }
 
 export type UrgencyLevel = 'urgent' | 'moderate' | 'normal' | 'not-urgent';
