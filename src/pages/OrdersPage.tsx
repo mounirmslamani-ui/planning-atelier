@@ -245,7 +245,7 @@ const OrdersPage: React.FC = () => {
           </TableHeader>
           <TableBody>
             {sortedOrders.map(o => (
-              <TableRow key={o.id}>
+              <TableRow key={o.id} className="cursor-pointer" onClick={() => setPlanningOrder(o)}>
                 <TableCell>
                   {o.priority ? (
                     <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
