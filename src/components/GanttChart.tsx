@@ -442,7 +442,18 @@ const GanttChart: React.FC = () => {
           const step = steps.find(s => s.id === dragState.stepId);
           if (step) {
             setValidateStepId(step.id);
-            setValidateActualDuration(parseFloat((step.estimatedDuration / 60).toFixed(2)));
+            const actualH = parseFloat((step.estimatedDuration / 60).toFixed(2));
+            setValidateActualDuration(actualH);
+            setValidateWorkDone('done');
+            setValidateRemainingDuration(0);
+            // Default continue date: next work day at 08:00
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            while (!isWorkDay(tomorrow, holidays)) {
+              tomorrow.setDate(tomorrow.getDate() + 1);
+            }
+            setValidateContinueDate(tomorrow.toISOString().split('T')[0]);
+            setValidateContinueTime('08:00');
             setValidateDialogOpen(true);
           }
           setDragState(null);
