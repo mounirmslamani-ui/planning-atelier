@@ -484,7 +484,7 @@ const GanttChart: React.FC = () => {
                 className={`absolute top-0 w-px ${
                   l.type === 'major' ? 'bg-gantt-line' : l.type === 'minor' ? 'bg-gantt-line/50' : 'bg-gantt-line-light/40'
                 }`}
-                style={{ left: l.offset, height: sortedOperators.length * ROW_HEIGHT }}
+                style={{ left: l.offset, height: ganttRows.length * ROW_HEIGHT }}
               />
             ))}
 
