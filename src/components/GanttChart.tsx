@@ -61,24 +61,40 @@ interface GanttBlockProps {
   left: number;
   width: number;
   isLast: boolean;
+  isCtrlSelected: boolean;
+  hasLink: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
+  onCtrlClick: (stepId: string) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, onDragStart, onResizeStart
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, onDragStart, onResizeStart, onCtrlClick
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
   const textColor = getDeadlineTextColor(order, step);
-  const borderClass = isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
+  const borderClass = isCtrlSelected
+    ? 'border-2 border-primary ring-2 ring-primary/40'
+    : hasLink
+      ? 'border-2 border-accent'
+      : isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
 
   return (
     <div
       className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
-      onMouseDown={e => { e.preventDefault(); onDragStart(step.id, e.clientX, left, e.clientY, e.altKey); }}
-      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}`}
+      onMouseDown={e => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          onCtrlClick(step.id);
+          return;
+        }
+        e.preventDefault();
+        onDragStart(step.id, e.clientX, left, e.clientY, e.altKey);
+      }}
+      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}`}
     >
       <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
         {subcontractorName ? (
@@ -94,6 +110,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
           </>
         )}
       </div>
+      {hasLink && (
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
+      )}
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
         onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
@@ -119,6 +138,80 @@ const GanttChart: React.FC = () => {
   const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
   const [isOverValidateZone, setIsOverValidateZone] = useState(false);
   const validateZoneRef = useRef<HTMLDivElement>(null);
+
+  // Ctrl+Click linking state
+  const [ctrlSelectedStepId, setCtrlSelectedStepId] = useState<string | null>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkSource, setLinkSource] = useState<string | null>(null);
+  const [linkTarget, setLinkTarget] = useState<string | null>(null);
+  const [linkPercentage, setLinkPercentage] = useState<number>(100);
+
+  const handleCtrlClick = useCallback((stepId: string) => {
+    if (!ctrlSelectedStepId) {
+      // First click: select source
+      setCtrlSelectedStepId(stepId);
+    } else if (ctrlSelectedStepId === stepId) {
+      // Deselect
+      setCtrlSelectedStepId(null);
+    } else {
+      // Second click: open dialog to set percentage
+      setLinkSource(ctrlSelectedStepId);
+      setLinkTarget(stepId);
+      setLinkPercentage(100);
+      setLinkDialogOpen(true);
+      setCtrlSelectedStepId(null);
+    }
+  }, [ctrlSelectedStepId]);
+
+  const handleLinkSave = useCallback(() => {
+    if (!linkSource || !linkTarget) return;
+    const targetStep = steps.find(s => s.id === linkTarget);
+    const sourceStep = steps.find(s => s.id === linkSource);
+    if (!targetStep || !sourceStep) return;
+
+    // Calculate the start of target based on percentage of source
+    const sourceStart = new Date(`${sourceStep.startDate}T${sourceStep.startTime}`);
+    const minutesOffset = Math.round(sourceStep.estimatedDuration * (linkPercentage / 100));
+    const newTargetStart = addWorkMinutes(sourceStart, minutesOffset, holidays);
+    const newTargetEnd = addWorkMinutes(newTargetStart, targetStep.estimatedDuration, holidays);
+
+    updateStep({
+      ...targetStep,
+      dependsOn: linkSource,
+      dependsOnPercentage: linkPercentage,
+      startDate: newTargetStart.toISOString().split('T')[0],
+      startTime: `${String(newTargetStart.getHours()).padStart(2, '0')}:${String(newTargetStart.getMinutes()).padStart(2, '0')}`,
+      endDate: newTargetEnd.toISOString().split('T')[0],
+      endTime: `${String(newTargetEnd.getHours()).padStart(2, '0')}:${String(newTargetEnd.getMinutes()).padStart(2, '0')}`,
+    });
+
+    setLinkDialogOpen(false);
+    setLinkSource(null);
+    setLinkTarget(null);
+  }, [linkSource, linkTarget, linkPercentage, steps, holidays, updateStep]);
+
+  // Propagate dependent steps when a step moves/resizes
+  const propagateDependents = useCallback((changedStepId: string) => {
+    const dependents = steps.filter(s => s.dependsOn === changedStepId);
+    const sourceStep = steps.find(s => s.id === changedStepId);
+    if (!sourceStep) return;
+
+    dependents.forEach(dep => {
+      const pct = dep.dependsOnPercentage ?? 100;
+      const sourceStart = new Date(`${sourceStep.startDate}T${sourceStep.startTime}`);
+      const minutesOffset = Math.round(sourceStep.estimatedDuration * (pct / 100));
+      const newStart = addWorkMinutes(sourceStart, minutesOffset, holidays);
+      const newEnd = addWorkMinutes(newStart, dep.estimatedDuration, holidays);
+
+      updateStep({
+        ...dep,
+        startDate: newStart.toISOString().split('T')[0],
+        startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
+        endDate: newEnd.toISOString().split('T')[0],
+        endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
+      });
+    });
+  }, [steps, holidays, updateStep]);
 
   type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
 
@@ -337,6 +430,8 @@ const GanttChart: React.FC = () => {
           addStep({ ...newStepData, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
         } else {
           updateStep(newStepData);
+          // Propagate to dependent steps
+          setTimeout(() => propagateDependents(newStepData.id), 0);
         }
       }
       setDragState(null);
@@ -356,10 +451,12 @@ const GanttChart: React.FC = () => {
           endDate: newEnd.toISOString().split('T')[0],
           endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
         });
+        // Propagate to dependent steps
+        setTimeout(() => propagateDependents(step.id), 0);
       }
       setResizeState(null);
     }
-  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows]);
+  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows, propagateDependents]);
 
   // Handle mouse move for validate zone highlight
   const handleGlobalMouseMove = useCallback((e: React.MouseEvent) => {
@@ -546,6 +643,11 @@ const GanttChart: React.FC = () => {
             Tout afficher
           </button>
         )}
+        {ctrlSelectedStepId && (
+          <div className="px-3 py-1 text-xs rounded bg-primary/10 text-primary border border-primary/30 animate-pulse">
+            Bloc sélectionné — Ctrl+Clic sur un 2ème bloc pour lier
+          </div>
+        )}
         {/* Validate production icon - drop zone */}
         <div
           ref={validateZoneRef}
@@ -665,14 +767,73 @@ const GanttChart: React.FC = () => {
                           left={left}
                           width={width}
                           isLast={isLast}
+                          isCtrlSelected={ctrlSelectedStepId === step.id}
+                          hasLink={!!step.dependsOn}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
+                          onCtrlClick={handleCtrlClick}
                         />
                       </div>
                     );
                   })}
               </div>
             ))}
+
+            {/* SVG arrows for linked blocks */}
+            <svg className="absolute top-0 left-0 w-full pointer-events-none z-30" style={{ height: ganttRows.length * ROW_HEIGHT }}>
+              <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" className="fill-accent" />
+                </marker>
+              </defs>
+              {filteredSteps.filter(s => s.dependsOn).map(targetStep => {
+                const sourceStep = steps.find(s => s.id === targetStep.dependsOn);
+                if (!sourceStep) return null;
+
+                // Find row indices
+                const sourceRowIdx = ganttRows.findIndex(r =>
+                  r.type === 'operator' ? r.id === sourceStep.operatorId && !sourceStep.subcontractorId : !!sourceStep.subcontractorId
+                );
+                const targetRowIdx = ganttRows.findIndex(r =>
+                  r.type === 'operator' ? r.id === targetStep.operatorId && !targetStep.subcontractorId : !!targetStep.subcontractorId
+                );
+                if (sourceRowIdx < 0 || targetRowIdx < 0) return null;
+
+                const pct = targetStep.dependsOnPercentage ?? 100;
+                const sourceLeft = getPixelOffset(sourceStep.startDate, sourceStep.startTime);
+                const sourceWidth = getDurationWidth(sourceStep.estimatedDuration);
+                const targetLeft = getPixelOffset(targetStep.startDate, targetStep.startTime);
+
+                const x1 = sourceLeft + sourceWidth * (pct / 100);
+                const y1 = sourceRowIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+                const x2 = targetLeft;
+                const y2 = targetRowIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+
+                // Curved path
+                const midX = (x1 + x2) / 2;
+
+                return (
+                  <g key={`link-${targetStep.id}`}>
+                    <path
+                      d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
+                      fill="none"
+                      className="stroke-accent"
+                      strokeWidth={2}
+                      strokeDasharray={pct < 100 ? "6 3" : "none"}
+                      markerEnd="url(#arrowhead)"
+                    />
+                    <text
+                      x={(x1 + x2) / 2}
+                      y={(y1 + y2) / 2 - 6}
+                      className="fill-accent text-[9px] font-bold"
+                      textAnchor="middle"
+                    >
+                      {pct}%
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         </div>
       </div>
@@ -802,6 +963,56 @@ const GanttChart: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
             <Button onClick={handleValidateSave}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Dependency Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={(open) => { setLinkDialogOpen(open); if (!open) { setLinkSource(null); setLinkTarget(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Lier les blocs</DialogTitle>
+          </DialogHeader>
+          {linkSource && linkTarget && (() => {
+            const src = steps.find(s => s.id === linkSource);
+            const tgt = steps.find(s => s.id === linkTarget);
+            const srcOrder = src ? orders.find(o => o.id === src.orderId) : null;
+            const tgtOrder = tgt ? orders.find(o => o.id === tgt.orderId) : null;
+            return (
+              <div className="space-y-4">
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Bloc 1 (prédécesseur) :</span> <strong>{srcOrder?.orderNumber}</strong> — {getOperationName(src?.operationId || '')}</p>
+                  <p><span className="text-muted-foreground">Bloc 2 (successeur) :</span> <strong>{tgtOrder?.orderNumber}</strong> — {getOperationName(tgt?.operationId || '')}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Pourcentage d'avancement requis avant de démarrer le bloc 2
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={linkPercentage}
+                      onChange={e => setLinkPercentage(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                      className="w-24"
+                      autoFocus
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {linkPercentage === 0 && "Les deux blocs démarrent simultanément."}
+                    {linkPercentage === 100 && "Le bloc 2 ne démarre qu'après la fin complète du bloc 1."}
+                    {linkPercentage > 0 && linkPercentage < 100 && `Le bloc 2 démarre quand le bloc 1 atteint ${linkPercentage}%.`}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleLinkSave}>Lier</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
