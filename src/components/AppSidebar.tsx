@@ -101,33 +101,35 @@ const AppSidebar: React.FC = () => {
         </h1>
       </div>
       <nav className="flex-1 p-2 space-y-0.5">
-        {navItems.map(item => {
+        {navItems.map((item, idx) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
           return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-                isActive 
-                  ? 'bg-sidebar-accent text-sidebar-primary font-medium' 
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {item.label}
-            </NavLink>
+            <React.Fragment key={item.to}>
+              <NavLink
+                to={item.to}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                  isActive 
+                    ? 'bg-sidebar-accent text-sidebar-primary font-medium' 
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </NavLink>
+              {/* Absence button after Affectations */}
+              {item.to === '/steps' && (
+                <button
+                  onClick={openAbsenceDialog}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                >
+                  <UserX className="w-4 h-4" />
+                  Absences
+                </button>
+              )}
+            </React.Fragment>
           );
         })}
-
-        {/* Absence button - under Opérateurs */}
-        <button
-          onClick={openAbsenceDialog}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors w-full text-left text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-        >
-          <UserX className="w-4 h-4" />
-          Absence
-        </button>
       </nav>
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — Atelier</p>
