@@ -19,7 +19,7 @@ const navItems = [
   { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/clients', label: 'Clients', icon: Building2 },
-  { to: '/subcontractors', label: 'Sous-traitants', icon: null, image: subcontractorIcon },
+  { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
