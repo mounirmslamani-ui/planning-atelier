@@ -456,7 +456,7 @@ const GanttChart: React.FC = () => {
       }
       setResizeState(null);
     }
-  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows]);
+  }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows, propagateDependents]);
 
   // Handle mouse move for validate zone highlight
   const handleGlobalMouseMove = useCallback((e: React.MouseEvent) => {
