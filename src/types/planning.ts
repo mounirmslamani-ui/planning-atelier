@@ -27,6 +27,11 @@ export interface Client {
 
 export type UrgencyLevel = 'urgent' | 'moderate' | 'normal' | 'not-urgent';
 
+export type OrderPriority = 
+  | 'P1-A' | 'P1-B' | 'P1-C' 
+  | 'P2-A' | 'P2-B' | 'P2-C' 
+  | 'P3-A' | 'P3-B';
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -35,6 +40,7 @@ export interface Order {
   designation: string;
   quantity: number;
   urgency: UrgencyLevel;
+  priority?: OrderPriority;
   plannedDeadline: string;
   prototypeQuantity?: number;
   prototypeDeadline?: string;
