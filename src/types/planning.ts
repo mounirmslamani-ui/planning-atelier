@@ -64,6 +64,7 @@ export interface ProductionStep {
   endDate: string;
   endTime: string;
   dependsOn?: string; // ID of another step
+  dependsOnPercentage?: number; // 0-100: % of predecessor that must complete before this can start
   order: number; // chronological order
 }
 
