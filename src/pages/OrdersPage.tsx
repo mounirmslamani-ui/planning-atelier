@@ -196,63 +196,28 @@ const OrdersPage: React.FC = () => {
         <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       
-      {/* Sorting buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <span className="text-sm text-muted-foreground self-center mr-2">Trier par :</span>
-        <Button 
-          variant={sortField === 'priority' ? 'default' : 'outline'} 
-          size="sm" 
-          onClick={() => handleSort('priority')}
-          className="gap-1"
-        >
-          Priorité <SortIcon field="priority" />
-        </Button>
-        <Button 
-          variant={sortField === 'client' ? 'default' : 'outline'} 
-          size="sm" 
-          onClick={() => handleSort('client')}
-          className="gap-1"
-        >
-          Client <SortIcon field="client" />
-        </Button>
-        <Button 
-          variant={sortField === 'deadline' ? 'default' : 'outline'} 
-          size="sm" 
-          onClick={() => handleSort('deadline')}
-          className="gap-1"
-        >
-          Délai <SortIcon field="deadline" />
-        </Button>
-        <Button 
-          variant={sortField === 'orderNumber' ? 'default' : 'outline'} 
-          size="sm" 
-          onClick={() => handleSort('orderNumber')}
-          className="gap-1"
-        >
-          N° Commande <SortIcon field="orderNumber" />
-        </Button>
-        <Button 
-          variant={sortField === 'orderDate' ? 'default' : 'outline'} 
-          size="sm" 
-          onClick={() => handleSort('orderDate')}
-          className="gap-1"
-        >
-          Date réception <SortIcon field="orderDate" />
-        </Button>
-      </div>
-
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Priorité</TableHead>
-              <TableHead>N° Commande</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('priority')}>
+                <span className="flex items-center gap-1">Priorité <SortIcon field="priority" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('orderNumber')}>
+                <span className="flex items-center gap-1">N° Commande <SortIcon field="orderNumber" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('orderDate')}>
+                <span className="flex items-center gap-1">Date <SortIcon field="orderDate" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('client')}>
+                <span className="flex items-center gap-1">Client <SortIcon field="client" /></span>
+              </TableHead>
               <TableHead>Désignation</TableHead>
               <TableHead>Qté</TableHead>
               <TableHead>Urgence</TableHead>
-              <TableHead>Délai</TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('deadline')}>
+                <span className="flex items-center gap-1">Délai <SortIcon field="deadline" /></span>
+              </TableHead>
               <TableHead>Mat.</TableHead>
               <TableHead>Out.</TableHead>
               <TableHead className="w-28">Actions</TableHead>
