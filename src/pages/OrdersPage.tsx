@@ -78,7 +78,7 @@ const priorityColors: Record<OrderPriority, string> = {
   'P3-B': 'bg-normal/70 text-white',
 };
 
-type SortField = 'priority' | 'client' | 'deadline' | 'orderNumber' | 'orderDate';
+type SortField = 'priority' | 'client' | 'deadline' | 'orderNumber' | 'orderDate' | 'quantity' | 'material' | 'tooling';
 type SortDirection = 'asc' | 'desc';
 
 const OrdersPage: React.FC = () => {
@@ -184,6 +184,18 @@ const OrdersPage: React.FC = () => {
           comparison = a.orderDate.localeCompare(b.orderDate);
           break;
         }
+        case 'quantity': {
+          comparison = a.quantity - b.quantity;
+          break;
+        }
+        case 'material': {
+          comparison = (a.materialAvailable === b.materialAvailable) ? 0 : a.materialAvailable ? -1 : 1;
+          break;
+        }
+        case 'tooling': {
+          comparison = (a.toolingAvailable === b.toolingAvailable) ? 0 : a.toolingAvailable ? -1 : 1;
+          break;
+        }
       }
       
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -213,13 +225,19 @@ const OrdersPage: React.FC = () => {
                 <span className="flex items-center gap-1">Client <SortIcon field="client" /></span>
               </TableHead>
               <TableHead>Désignation</TableHead>
-              <TableHead>Qté</TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('quantity')}>
+                <span className="flex items-center gap-1">Qté <SortIcon field="quantity" /></span>
+              </TableHead>
               <TableHead>Urgence</TableHead>
               <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('deadline')}>
                 <span className="flex items-center gap-1">Délai <SortIcon field="deadline" /></span>
               </TableHead>
-              <TableHead>Mat.</TableHead>
-              <TableHead>Out.</TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('material')}>
+                <span className="flex items-center gap-1">Mat. <SortIcon field="material" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:bg-muted/50" onClick={() => handleSort('tooling')}>
+                <span className="flex items-center gap-1">Out. <SortIcon field="tooling" /></span>
+              </TableHead>
               <TableHead className="w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
