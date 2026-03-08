@@ -108,12 +108,17 @@ const GanttChart: React.FC = () => {
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
-    updateStep, addStep,
+    updateStep, addStep, addProductionRecord,
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
+  const [validateDialogOpen, setValidateDialogOpen] = useState(false);
+  const [validateStepId, setValidateStepId] = useState<string | null>(null);
+  const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
+  const [isOverValidateZone, setIsOverValidateZone] = useState(false);
+  const validateZoneRef = useRef<HTMLDivElement>(null);
 
   type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
 
