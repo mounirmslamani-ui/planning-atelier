@@ -573,9 +573,9 @@ const GanttChart: React.FC = () => {
         <div
           ref={containerRef}
           className="flex-1 overflow-auto relative"
-          onMouseMove={handleMouseMove}
+          onMouseMove={(e) => { handleMouseMove(e); handleGlobalMouseMove(e); }}
           onMouseUp={handleMouseUp}
-          onMouseLeave={() => { setDragState(null); setResizeState(null); }}
+          onMouseLeave={() => { setDragState(null); setResizeState(null); setIsOverValidateZone(false); }}
         >
           {/* Header timeline */}
           <div className="h-8 bg-gantt-header sticky top-0 z-10 relative" style={{ width: totalWidth }}>
