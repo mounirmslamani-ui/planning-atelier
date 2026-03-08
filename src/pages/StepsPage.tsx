@@ -222,7 +222,7 @@ const StepsPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!form.orderId || !form.operatorId}>Enregistrer</Button>
+            <Button onClick={handleSave} disabled={!form.orderId || (!form.operatorId && !form.subcontractorId)}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
