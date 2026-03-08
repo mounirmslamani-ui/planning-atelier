@@ -446,7 +446,12 @@ const GanttChart: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full"
+      onMouseMove={(e) => { handleMouseMove(e); handleGlobalMouseMove(e); }}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={() => { setDragState(null); setResizeState(null); setIsOverValidateZone(false); }}
+    >
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-2 bg-card border-b">
         <div className="flex items-center gap-1">
