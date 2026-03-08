@@ -3,9 +3,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
-  UserX, SearchCheck, PackageCheck
+  UserX, SearchCheck, PackageCheck, Handshake
 } from 'lucide-react';
-import subcontractorIcon from '@/assets/subcontractor-icon.png';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +19,7 @@ const navItems = [
   { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/clients', label: 'Clients', icon: Building2 },
-  { to: '/subcontractors', label: 'Sous-traitants', icon: null, image: subcontractorIcon },
+  { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
@@ -116,11 +115,7 @@ const AppSidebar: React.FC = () => {
                     : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
                 }`}
               >
-                {(item as any).image ? (
-                  <img src={(item as any).image} alt="" className="w-4 h-4 dark:invert" />
-                ) : Icon ? (
-                  <Icon className="w-4 h-4" />
-                ) : null}
+                <Icon className="w-4 h-4" />
                 {item.label}
               </NavLink>
               {/* Absence button after Commandes */}
