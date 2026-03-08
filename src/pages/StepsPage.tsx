@@ -122,7 +122,7 @@ const StepsPage: React.FC = () => {
               <TableRow key={s.id}>
                 <TableCell className="text-sm">{s.order}</TableCell>
                 <TableCell className="font-heading text-sm">{getOrderNumber(s.orderId)}</TableCell>
-                <TableCell className="text-sm">{getOperatorName(s.operatorId)}</TableCell>
+                <TableCell className="text-sm">{getAssigneeName(s)}</TableCell>
                 <TableCell className="text-sm">{getOperationName(s.operationId)}</TableCell>
                 <TableCell className="text-sm">{s.estimatedDuration}</TableCell>
                 <TableCell className="text-sm">{s.startDate} {s.startTime}</TableCell>
