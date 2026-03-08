@@ -279,6 +279,22 @@ const GanttChart: React.FC = () => {
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (dragState) {
+      // Check if dropped on validate zone
+      if (validateZoneRef.current) {
+        const rect = validateZoneRef.current.getBoundingClientRect();
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          const step = steps.find(s => s.id === dragState.stepId);
+          if (step) {
+            setValidateStepId(step.id);
+            setValidateActualDuration(parseFloat((step.estimatedDuration / 60).toFixed(2)));
+            setValidateDialogOpen(true);
+          }
+          setDragState(null);
+          setIsOverValidateZone(false);
+          return;
+        }
+      }
+
       const dx = e.clientX - dragState.startX;
       const dy = e.clientY - dragState.startY;
       const step = steps.find(s => s.id === dragState.stepId);
@@ -304,13 +320,13 @@ const GanttChart: React.FC = () => {
         };
 
         if (dragState.altKey) {
-          // Duplicate: create a new step with a new ID
           addStep({ ...newStepData, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
         } else {
           updateStep(newStepData);
         }
       }
       setDragState(null);
+      setIsOverValidateZone(false);
     }
     if (resizeState) {
       const dx = e.clientX - resizeState.startX;
@@ -330,6 +346,33 @@ const GanttChart: React.FC = () => {
       setResizeState(null);
     }
   }, [dragState, resizeState, steps, holidays, pxToWorkMinutes, updateStep, ganttRows]);
+
+  // Handle mouse move for validate zone highlight
+  const handleGlobalMouseMove = useCallback((e: React.MouseEvent) => {
+    if (dragState && validateZoneRef.current) {
+      const rect = validateZoneRef.current.getBoundingClientRect();
+      const over = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+      setIsOverValidateZone(over);
+    }
+  }, [dragState]);
+
+  const handleValidateSave = useCallback(() => {
+    if (!validateStepId) return;
+    const step = steps.find(s => s.id === validateStepId);
+    if (!step) return;
+    const record: ProductionRecord = {
+      id: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      stepId: step.id,
+      orderId: step.orderId,
+      operatorId: step.operatorId,
+      operationId: step.operationId,
+      actualDuration: Math.round(validateActualDuration * 60),
+      validatedAt: new Date().toISOString(),
+    };
+    addProductionRecord(record);
+    setValidateDialogOpen(false);
+    setValidateStepId(null);
+  }, [validateStepId, validateActualDuration, steps, addProductionRecord]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
