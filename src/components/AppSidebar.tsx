@@ -12,7 +12,7 @@ const navItems = [
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Truck },
   { to: '/orders', label: 'Commandes', icon: ShoppingCart },
-  { to: '/steps', label: 'Étapes', icon: ListChecks },
+  { to: '/steps', label: 'Affectations', icon: ListChecks },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
