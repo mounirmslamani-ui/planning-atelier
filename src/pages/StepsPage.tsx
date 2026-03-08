@@ -44,7 +44,7 @@ const StepsPage: React.FC = () => {
     operatorId: operators[0]?.id || '',
     subcontractorId: undefined,
     operationId: operations[0]?.id || '',
-    estimatedDuration: 60,
+    estimatedDuration: 60, // stored in minutes
     startDate: new Date().toISOString().split('T')[0],
     startTime: '08:00',
     endDate: '',
