@@ -138,6 +138,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addProductionRecord = useCallback((record: ProductionRecord) => setProductionRecords(prev => [...prev, record]), []);
   const deleteProductionRecord = useCallback((id: string) => setProductionRecords(prev => prev.filter(r => r.id !== id)), []);
 
+  const addQCEntry = useCallback((entry: QualityControlEntry) => setQCEntries(prev => [...prev, entry]), []);
+  const updateQCEntry = useCallback((entry: QualityControlEntry) => setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)), []);
+  const deleteQCEntry = useCallback((id: string) => setQCEntries(prev => prev.filter(e => e.id !== id)), []);
+
+  const addDeliveryEntry = useCallback((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]), []);
+  const deleteDeliveryEntry = useCallback((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)), []);
+
   return (
     <PlanningContext.Provider value={{
       operators, setOperators, addOperator, updateOperator, deleteOperator,
