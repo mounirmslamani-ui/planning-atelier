@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Package, Wrench, Flag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Wrench, Flag, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
@@ -78,6 +78,9 @@ const priorityColors: Record<OrderPriority, string> = {
   'P3-B': 'bg-normal/70 text-white',
 };
 
+type SortField = 'priority' | 'client' | 'deadline' | 'orderNumber' | 'orderDate';
+type SortDirection = 'asc' | 'desc';
+
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,6 +88,8 @@ const OrdersPage: React.FC = () => {
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
   const [priorityOrder, setPriorityOrder] = useState<Order | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<OrderPriority | ''>('');
+  const [sortField, setSortField] = useState<SortField>('priority');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '',
@@ -129,19 +134,113 @@ const OrdersPage: React.FC = () => {
   const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
-  // Sort orders by priority
-  const sortedOrders = [...orders].sort((a, b) => {
-    const priorityOrder = ['P1-A', 'P1-B', 'P1-C', 'P2-A', 'P2-B', 'P2-C', 'P3-A', 'P3-B'];
-    const aIndex = a.priority ? priorityOrder.indexOf(a.priority) : 999;
-    const bIndex = b.priority ? priorityOrder.indexOf(b.priority) : 999;
-    return aIndex - bIndex;
-  });
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 opacity-50" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="w-3.5 h-3.5 ml-1" /> 
+      : <ArrowDown className="w-3.5 h-3.5 ml-1" />;
+  };
+
+  // Sort orders
+  const sortedOrders = useMemo(() => {
+    const priorityRank = ['P1-A', 'P1-B', 'P1-C', 'P2-A', 'P2-B', 'P2-C', 'P3-A', 'P3-B'];
+    
+    return [...orders].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case 'priority': {
+          const aIndex = a.priority ? priorityRank.indexOf(a.priority) : 999;
+          const bIndex = b.priority ? priorityRank.indexOf(b.priority) : 999;
+          comparison = aIndex - bIndex;
+          break;
+        }
+        case 'client': {
+          const aName = getClientName(a.clientId);
+          const bName = getClientName(b.clientId);
+          comparison = aName.localeCompare(bName);
+          break;
+        }
+        case 'deadline': {
+          const aDate = a.plannedDeadline || '9999-12-31';
+          const bDate = b.plannedDeadline || '9999-12-31';
+          comparison = aDate.localeCompare(bDate);
+          break;
+        }
+        case 'orderNumber': {
+          comparison = a.orderNumber.localeCompare(b.orderNumber);
+          break;
+        }
+        case 'orderDate': {
+          comparison = a.orderDate.localeCompare(b.orderDate);
+          break;
+        }
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [orders, sortField, sortDirection, clients]);
 
   return (
     <div className="p-6">
       <PageHeader title="Commandes" description={`${orders.length} commande(s)`} actions={
         <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
+      
+      {/* Sorting buttons */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <span className="text-sm text-muted-foreground self-center mr-2">Trier par :</span>
+        <Button 
+          variant={sortField === 'priority' ? 'default' : 'outline'} 
+          size="sm" 
+          onClick={() => handleSort('priority')}
+          className="gap-1"
+        >
+          Priorité <SortIcon field="priority" />
+        </Button>
+        <Button 
+          variant={sortField === 'client' ? 'default' : 'outline'} 
+          size="sm" 
+          onClick={() => handleSort('client')}
+          className="gap-1"
+        >
+          Client <SortIcon field="client" />
+        </Button>
+        <Button 
+          variant={sortField === 'deadline' ? 'default' : 'outline'} 
+          size="sm" 
+          onClick={() => handleSort('deadline')}
+          className="gap-1"
+        >
+          Délai <SortIcon field="deadline" />
+        </Button>
+        <Button 
+          variant={sortField === 'orderNumber' ? 'default' : 'outline'} 
+          size="sm" 
+          onClick={() => handleSort('orderNumber')}
+          className="gap-1"
+        >
+          N° Commande <SortIcon field="orderNumber" />
+        </Button>
+        <Button 
+          variant={sortField === 'orderDate' ? 'default' : 'outline'} 
+          size="sm" 
+          onClick={() => handleSort('orderDate')}
+          className="gap-1"
+        >
+          Date réception <SortIcon field="orderDate" />
+        </Button>
+      </div>
+
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
