@@ -9,6 +9,7 @@ interface PlanningState {
   orders: Order[];
   steps: ProductionStep[];
   holidays: Holiday[];
+  productionRecords: ProductionRecord[];
   ganttView: GanttView;
   ganttZeroDate: Date;
   selectedOperatorId: string | null;
