@@ -44,6 +44,9 @@ interface PlanningContextType extends PlanningState {
   setHolidays: (holidays: Holiday[]) => void;
   addHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
+  productionRecords: ProductionRecord[];
+  addProductionRecord: (record: ProductionRecord) => void;
+  deleteProductionRecord: (id: string) => void;
   setGanttView: (view: GanttView) => void;
   setGanttZeroDate: (date: Date) => void;
   setSelectedOperatorId: (id: string | null) => void;
