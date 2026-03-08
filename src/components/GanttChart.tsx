@@ -139,6 +139,80 @@ const GanttChart: React.FC = () => {
   const [isOverValidateZone, setIsOverValidateZone] = useState(false);
   const validateZoneRef = useRef<HTMLDivElement>(null);
 
+  // Ctrl+Click linking state
+  const [ctrlSelectedStepId, setCtrlSelectedStepId] = useState<string | null>(null);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkSource, setLinkSource] = useState<string | null>(null);
+  const [linkTarget, setLinkTarget] = useState<string | null>(null);
+  const [linkPercentage, setLinkPercentage] = useState<number>(100);
+
+  const handleCtrlClick = useCallback((stepId: string) => {
+    if (!ctrlSelectedStepId) {
+      // First click: select source
+      setCtrlSelectedStepId(stepId);
+    } else if (ctrlSelectedStepId === stepId) {
+      // Deselect
+      setCtrlSelectedStepId(null);
+    } else {
+      // Second click: open dialog to set percentage
+      setLinkSource(ctrlSelectedStepId);
+      setLinkTarget(stepId);
+      setLinkPercentage(100);
+      setLinkDialogOpen(true);
+      setCtrlSelectedStepId(null);
+    }
+  }, [ctrlSelectedStepId]);
+
+  const handleLinkSave = useCallback(() => {
+    if (!linkSource || !linkTarget) return;
+    const targetStep = steps.find(s => s.id === linkTarget);
+    const sourceStep = steps.find(s => s.id === linkSource);
+    if (!targetStep || !sourceStep) return;
+
+    // Calculate the start of target based on percentage of source
+    const sourceStart = new Date(`${sourceStep.startDate}T${sourceStep.startTime}`);
+    const minutesOffset = Math.round(sourceStep.estimatedDuration * (linkPercentage / 100));
+    const newTargetStart = addWorkMinutes(sourceStart, minutesOffset, holidays);
+    const newTargetEnd = addWorkMinutes(newTargetStart, targetStep.estimatedDuration, holidays);
+
+    updateStep({
+      ...targetStep,
+      dependsOn: linkSource,
+      dependsOnPercentage: linkPercentage,
+      startDate: newTargetStart.toISOString().split('T')[0],
+      startTime: `${String(newTargetStart.getHours()).padStart(2, '0')}:${String(newTargetStart.getMinutes()).padStart(2, '0')}`,
+      endDate: newTargetEnd.toISOString().split('T')[0],
+      endTime: `${String(newTargetEnd.getHours()).padStart(2, '0')}:${String(newTargetEnd.getMinutes()).padStart(2, '0')}`,
+    });
+
+    setLinkDialogOpen(false);
+    setLinkSource(null);
+    setLinkTarget(null);
+  }, [linkSource, linkTarget, linkPercentage, steps, holidays, updateStep]);
+
+  // Propagate dependent steps when a step moves/resizes
+  const propagateDependents = useCallback((changedStepId: string) => {
+    const dependents = steps.filter(s => s.dependsOn === changedStepId);
+    const sourceStep = steps.find(s => s.id === changedStepId);
+    if (!sourceStep) return;
+
+    dependents.forEach(dep => {
+      const pct = dep.dependsOnPercentage ?? 100;
+      const sourceStart = new Date(`${sourceStep.startDate}T${sourceStep.startTime}`);
+      const minutesOffset = Math.round(sourceStep.estimatedDuration * (pct / 100));
+      const newStart = addWorkMinutes(sourceStart, minutesOffset, holidays);
+      const newEnd = addWorkMinutes(newStart, dep.estimatedDuration, holidays);
+
+      updateStep({
+        ...dep,
+        startDate: newStart.toISOString().split('T')[0],
+        startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
+        endDate: newEnd.toISOString().split('T')[0],
+        endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
+      });
+    });
+  }, [steps, holidays, updateStep]);
+
   type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
 
   const ganttRows = useMemo(() => {
