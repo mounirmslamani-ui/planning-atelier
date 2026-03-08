@@ -430,6 +430,8 @@ const GanttChart: React.FC = () => {
           addStep({ ...newStepData, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
         } else {
           updateStep(newStepData);
+          // Propagate to dependent steps
+          setTimeout(() => propagateDependents(newStepData.id), 0);
         }
       }
       setDragState(null);
