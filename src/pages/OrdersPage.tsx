@@ -206,7 +206,7 @@ const OrdersPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <PageHeader title="Commandes" description={`${orders.length} commande(s)`} actions={
+      <PageHeader title="Commandes en cours" description={`${orders.length} commande(s)`} actions={
         <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       
