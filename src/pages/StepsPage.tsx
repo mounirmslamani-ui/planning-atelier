@@ -54,8 +54,14 @@ const StepsPage: React.FC = () => {
 
   const [form, setForm] = useState<Omit<ProductionStep, 'id'>>(emptyStep());
 
-  const openNew = () => { setEditing(null); setForm(emptyStep()); setDialogOpen(true); };
-  const openEdit = (s: ProductionStep) => { setEditing(s); const { id, ...rest } = s; setForm(rest); setDialogOpen(true); };
+  const openNew = () => { setEditing(null); setForm(emptyStep()); setAssignType('operator'); setDialogOpen(true); };
+  const openEdit = (s: ProductionStep) => {
+    setEditing(s);
+    const { id, ...rest } = s;
+    setForm(rest);
+    setAssignType(s.subcontractorId ? 'subcontractor' : 'operator');
+    setDialogOpen(true);
+  };
 
   const handleSave = () => {
     const computed = computeThirdField(form.startDate, form.startTime, form.endDate, form.endTime, form.estimatedDuration, holidays);
