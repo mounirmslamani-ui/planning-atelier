@@ -138,6 +138,10 @@ const GanttChart: React.FC = () => {
   const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
   const [isOverValidateZone, setIsOverValidateZone] = useState(false);
   const validateZoneRef = useRef<HTMLDivElement>(null);
+  const [validateWorkDone, setValidateWorkDone] = useState<'done' | 'continue'>('done');
+  const [validateRemainingDuration, setValidateRemainingDuration] = useState<number>(0);
+  const [validateContinueDate, setValidateContinueDate] = useState<string>('');
+  const [validateContinueTime, setValidateContinueTime] = useState<string>('08:00');
 
   // Ctrl+Click linking state
   const [ctrlSelectedStepId, setCtrlSelectedStepId] = useState<string | null>(null);
@@ -438,7 +442,18 @@ const GanttChart: React.FC = () => {
           const step = steps.find(s => s.id === dragState.stepId);
           if (step) {
             setValidateStepId(step.id);
-            setValidateActualDuration(parseFloat((step.estimatedDuration / 60).toFixed(2)));
+            const actualH = parseFloat((step.estimatedDuration / 60).toFixed(2));
+            setValidateActualDuration(actualH);
+            setValidateWorkDone('done');
+            setValidateRemainingDuration(0);
+            // Default continue date: next work day at 08:00
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            while (!isWorkDay(tomorrow, holidays)) {
+              tomorrow.setDate(tomorrow.getDate() + 1);
+            }
+            setValidateContinueDate(tomorrow.toISOString().split('T')[0]);
+            setValidateContinueTime('08:00');
             setValidateDialogOpen(true);
           }
           setDragState(null);
@@ -526,9 +541,26 @@ const GanttChart: React.FC = () => {
       validatedAt: new Date().toISOString(),
     };
     addProductionRecord(record);
+
+    // If work is to continue, create a new step with remaining duration
+    if (validateWorkDone === 'continue' && validateRemainingDuration > 0 && validateContinueDate) {
+      const remainingMin = Math.round(validateRemainingDuration * 60);
+      const continueStart = new Date(`${validateContinueDate}T${validateContinueTime || '08:00'}`);
+      const continueEnd = addWorkMinutes(continueStart, remainingMin, holidays);
+      addStep({
+        ...step,
+        id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        estimatedDuration: remainingMin,
+        startDate: continueStart.toISOString().split('T')[0],
+        startTime: `${String(continueStart.getHours()).padStart(2, '0')}:${String(continueStart.getMinutes()).padStart(2, '0')}`,
+        endDate: continueEnd.toISOString().split('T')[0],
+        endTime: `${String(continueEnd.getHours()).padStart(2, '0')}:${String(continueEnd.getMinutes()).padStart(2, '0')}`,
+      });
+    }
+
     setValidateDialogOpen(false);
     setValidateStepId(null);
-  }, [validateStepId, validateActualDuration, steps, addProductionRecord]);
+  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, holidays, addProductionRecord, addStep]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
@@ -998,10 +1030,76 @@ const GanttChart: React.FC = () => {
                     min={0}
                     step={0.25}
                     value={validateActualDuration}
-                    onChange={e => setValidateActualDuration(parseFloat(e.target.value) || 0)}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setValidateActualDuration(val);
+                      // Auto-update remaining duration
+                      if (step) {
+                        const remaining = Math.max(0, parseFloat((step.estimatedDuration / 60).toFixed(2)) - val);
+                        setValidateRemainingDuration(parseFloat(remaining.toFixed(2)));
+                      }
+                    }}
                     autoFocus
                   />
                 </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">État du travail</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${validateWorkDone === 'done' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border'}`}
+                      onClick={() => setValidateWorkDone('done')}
+                    >
+                      ✓ Terminé
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex-1 px-3 py-2 text-sm rounded-md border transition-colors ${validateWorkDone === 'continue' ? 'bg-accent text-accent-foreground border-accent' : 'bg-muted text-muted-foreground border-border'}`}
+                      onClick={() => {
+                        setValidateWorkDone('continue');
+                        if (step) {
+                          const remaining = Math.max(0, parseFloat((step.estimatedDuration / 60).toFixed(2)) - validateActualDuration);
+                          setValidateRemainingDuration(parseFloat(remaining.toFixed(2)));
+                        }
+                      }}
+                    >
+                      ⏩ À poursuivre
+                    </button>
+                  </div>
+                </div>
+                {validateWorkDone === 'continue' && (
+                  <div className="space-y-3 p-3 rounded-md border border-accent/30 bg-accent/5">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Durée restante (heures)</label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.25}
+                        value={validateRemainingDuration}
+                        onChange={e => setValidateRemainingDuration(parseFloat(e.target.value) || 0)}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Estimée initiale: {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h — Passée: {validateActualDuration}h
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Date de reprise</label>
+                      <Input
+                        type="date"
+                        value={validateContinueDate}
+                        onChange={e => setValidateContinueDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Heure de reprise</label>
+                      <Input
+                        type="time"
+                        value={validateContinueTime}
+                        onChange={e => setValidateContinueTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
