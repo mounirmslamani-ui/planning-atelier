@@ -10,6 +10,8 @@ export interface Operator {
 export interface Subcontractor {
   id: string;
   companyName: string;
+  mainActivity: string;
+  secondaryActivities: string[];
 }
 
 export interface Operation {
