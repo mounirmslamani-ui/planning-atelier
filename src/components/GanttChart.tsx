@@ -441,18 +441,18 @@ const GanttChart: React.FC = () => {
         {/* Operator labels */}
         <div className="w-36 flex-shrink-0 border-r bg-card">
           <div className="h-8 border-b bg-gantt-header flex items-center px-2">
-            <span className="text-xs font-heading text-gantt-header-foreground">Opérateurs</span>
+            <span className="text-xs font-heading text-gantt-header-foreground">Ressources</span>
           </div>
-          {sortedOperators.map(op => (
+          {ganttRows.map(row => (
             <div
-              key={op.id}
-              onClick={() => handleOperatorClick(op.id)}
-              className="flex items-center px-2 border-b cursor-pointer hover:bg-muted/50 transition-colors"
+              key={row.id}
+              onClick={() => row.type === 'operator' ? handleOperatorClick(row.id) : undefined}
+              className={`flex items-center px-2 border-b transition-colors ${row.type === 'operator' ? 'cursor-pointer hover:bg-muted/50' : 'bg-muted/20'}`}
               style={{ height: ROW_HEIGHT }}
             >
               <div>
-                <div className="text-xs font-medium truncate">{op.name}</div>
-                <div className="text-[10px] text-muted-foreground">{op.mainFunction}</div>
+                <div className={`text-xs font-medium truncate ${row.type === 'subcontractor' ? 'text-primary' : ''}`}>{row.label}</div>
+                {row.sublabel && <div className="text-[10px] text-muted-foreground">{row.sublabel}</div>}
               </div>
             </div>
           ))}
