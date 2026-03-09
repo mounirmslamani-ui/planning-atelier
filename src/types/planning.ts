@@ -14,9 +14,12 @@ export interface Subcontractor {
   secondaryActivities: string[];
 }
 
+export type OperationCategory = 'operator' | 'subcontractor';
+
 export interface Operation {
   id: string;
   name: string;
+  category: OperationCategory;
 }
 
 export type ClientClass = 'A' | 'B' | 'C' | 'D' | 'E';

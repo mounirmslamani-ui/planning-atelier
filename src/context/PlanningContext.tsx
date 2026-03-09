@@ -63,14 +63,14 @@ interface PlanningContextType extends PlanningState {
 }
 
 const defaultOperations: Operation[] = [
-  { id: 'op-1', name: 'Tournage' },
-  { id: 'op-2', name: 'Fraisage' },
-  { id: 'op-3', name: 'Perçage' },
-  { id: 'op-4', name: 'Rectification' },
-  { id: 'op-5', name: 'Soudure' },
-  { id: 'op-6', name: 'Traitement thermique' },
-  { id: 'op-7', name: 'Contrôle qualité' },
-  { id: 'op-8', name: 'Absence' },
+  { id: 'op-1', name: 'Tournage', category: 'operator' },
+  { id: 'op-2', name: 'Fraisage', category: 'operator' },
+  { id: 'op-3', name: 'Perçage', category: 'operator' },
+  { id: 'op-4', name: 'Rectification', category: 'operator' },
+  { id: 'op-5', name: 'Soudure', category: 'operator' },
+  { id: 'op-6', name: 'Traitement thermique', category: 'subcontractor' },
+  { id: 'op-7', name: 'Contrôle qualité', category: 'operator' },
+  { id: 'op-8', name: 'Absence', category: 'operator' },
 ];
 
 const defaultOperators: Operator[] = [
