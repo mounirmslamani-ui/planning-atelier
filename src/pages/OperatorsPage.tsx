@@ -136,7 +136,7 @@ const OperatorsPage: React.FC = () => {
                 value={mainFunction} 
                 onChange={e => setMainFunction(e.target.value)}
               >
-                {operations.filter(o => o.name !== 'Absence').map(o => (
+                {operations.filter(o => o.category === 'operator' && o.name !== 'Absence').map(o => (
                   <option key={o.id} value={o.name}>{o.name}</option>
                 ))}
               </select>
