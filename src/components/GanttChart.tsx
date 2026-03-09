@@ -76,6 +76,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
   const textColor = getDeadlineTextColor(order, step);
+  const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
   const borderClass = isCtrlSelected
     ? 'border-2 border-primary ring-2 ring-primary/40'
     : hasLink
