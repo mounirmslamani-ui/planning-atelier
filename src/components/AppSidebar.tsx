@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
-  UserX, SearchCheck, PackageCheck, Handshake
+  UserX, SearchCheck, PackageCheck, Handshake, Drill
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ const navItems = [
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
+  { to: '/operations', label: 'Opérations', icon: Drill },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 

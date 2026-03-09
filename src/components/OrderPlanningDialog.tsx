@@ -201,9 +201,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       value={row.operationId}
                       onChange={e => updateRow(row.id, 'operationId', e.target.value)}
                     >
-                      {operations.filter(o => o.id !== 'op-8').map(o => (
-                        <option key={o.id} value={o.id}>{o.name}</option>
-                      ))}
+                      {operations
+                        .filter(o => o.id !== 'op-8' && o.category === row.assignType)
+                        .map(o => (
+                          <option key={o.id} value={o.id}>{o.name}</option>
+                        ))}
                     </select>
                   </TableCell>
                   <TableCell>
