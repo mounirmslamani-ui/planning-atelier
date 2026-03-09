@@ -515,6 +515,7 @@ const GanttChart: React.FC = () => {
         const newEnd = addWorkMinutes(start, newDuration, holidays);
         updateStep({
           ...step,
+          frozen: true, // Mark as frozen after manual resize
           estimatedDuration: newDuration,
           endDate: newEnd.toISOString().split('T')[0],
           endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
