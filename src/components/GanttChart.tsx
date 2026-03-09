@@ -134,7 +134,7 @@ const GanttChart: React.FC = () => {
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
-    deleteStep, addQCEntry,
+    deleteStep, addQCEntry, setSteps,
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
