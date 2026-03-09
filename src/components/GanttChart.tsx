@@ -116,6 +116,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
+      {step.frozen && (
+        <Lock className="absolute top-0.5 right-3 w-2.5 h-2.5 text-blue-500/80" />
+      )}
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
         onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
