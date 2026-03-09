@@ -59,6 +59,8 @@ function findEarliestSlot(
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
   );
 
+  // Frozen steps are immovable obstacles — never displaced
+
   const currentScore = orderScore(currentOrder);
 
   const getOrder = (step: ProductionStep) =>
@@ -80,8 +82,8 @@ function findEarliestSlot(
     const candidateEnd = addWorkMinutes(candidate, duration, holidays);
     if (candidateEnd <= existing.start) break;
 
-    // Never displace absences
-    if (existing.step.operationId === 'op-8') {
+    // Never displace absences or frozen steps
+    if (existing.step.operationId === 'op-8' || existing.step.frozen) {
       if (candidate < existing.end) candidate = new Date(existing.end);
       continue;
     }

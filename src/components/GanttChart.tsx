@@ -1,7 +1,9 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
+import { scheduleOrder } from '@/lib/scheduler';
+import type { OperationToSchedule } from '@/lib/scheduler';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +76,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
   const textColor = getDeadlineTextColor(order, step);
+  const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
   const borderClass = isCtrlSelected
     ? 'border-2 border-primary ring-2 ring-primary/40'
     : hasLink
@@ -82,7 +85,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
 
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass}`}
+      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass} ${frozenClass}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => {
         if (e.ctrlKey || e.metaKey) {
@@ -113,6 +116,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
+      {step.frozen && (
+        <Lock className="absolute top-0.5 right-3 w-2.5 h-2.5 text-blue-500/80" />
+      )}
       <div
         className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
         onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
@@ -128,7 +134,7 @@ const GanttChart: React.FC = () => {
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
-    deleteStep, addQCEntry,
+    deleteStep, addQCEntry, setSteps,
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -262,6 +268,52 @@ const GanttChart: React.FC = () => {
       });
     });
   }, [steps, holidays, updateStep]);
+
+  // Replanifier: reschedule all non-frozen orders
+  const handleReplanifier = useCallback(() => {
+    // Group non-frozen steps by order, sorted by displayOrder
+    const orderIds = [...new Set(steps.filter(s => !s.frozen && s.operationId !== 'op-8').map(s => s.orderId))];
+    const sortedOrders = orderIds
+      .map(id => orders.find(o => o.id === id))
+      .filter(Boolean)
+      .sort((a, b) => (a!.displayOrder ?? 9999) - (b!.displayOrder ?? 9999)) as Order[];
+
+    // Keep frozen steps and absence steps untouched
+    let workingSteps = steps.filter(s => s.frozen || s.operationId === 'op-8');
+
+    for (const order of sortedOrders) {
+      const orderSteps = steps.filter(s => s.orderId === order.id && !s.frozen && s.operationId !== 'op-8')
+        .sort((a, b) => a.order - b.order);
+
+      if (orderSteps.length === 0) continue;
+
+      // Delete non-frozen steps for this order
+      orderSteps.forEach(s => deleteStep(s.id));
+
+      const opsToSchedule: OperationToSchedule[] = orderSteps.map(s => {
+        const isSub = !!s.subcontractorId;
+        return {
+          operationId: s.operationId,
+          estimatedDuration: s.estimatedDuration,
+          options: [{ id: isSub ? s.subcontractorId! : s.operatorId, isSub }],
+        };
+      });
+
+      const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
+      const { newSteps, updatedSteps } = scheduleOrder(
+        order.id,
+        deadline,
+        opsToSchedule,
+        workingSteps,
+        orders,
+        holidays
+      );
+
+      newSteps.forEach(s => addStep(s));
+      updatedSteps.forEach(s => updateStep(s));
+      workingSteps = [...workingSteps, ...newSteps];
+    }
+  }, [steps, orders, holidays, deleteStep, addStep, updateStep]);
 
   type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
 
@@ -479,6 +531,7 @@ const GanttChart: React.FC = () => {
         
         const newStepData = {
           ...step,
+          frozen: true, // Mark as frozen after manual move
           operatorId: targetRow?.type === 'operator' ? targetRow.id : step.operatorId,
           subcontractorId: targetRow?.type === 'subcontractor' ? undefined : step.subcontractorId,
           startDate: newStart.toISOString().split('T')[0],
@@ -508,6 +561,7 @@ const GanttChart: React.FC = () => {
         const newEnd = addWorkMinutes(start, newDuration, holidays);
         updateStep({
           ...step,
+          frozen: true, // Mark as frozen after manual resize
           estimatedDuration: newDuration,
           endDate: newEnd.toISOString().split('T')[0],
           endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
@@ -728,6 +782,9 @@ const GanttChart: React.FC = () => {
             }}
           />
         </div>
+        <Button variant="outline" size="sm" onClick={handleReplanifier} className="ml-2">
+          <CalendarCheck className="w-4 h-4 mr-1" /> Replanifier
+        </Button>
         {(selectedOperatorId || selectedOrderId) && (
           <button
             onClick={() => { setSelectedOperatorId(null); setSelectedOrderId(null); }}
@@ -1013,9 +1070,21 @@ const GanttChart: React.FC = () => {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleEditSave}>Enregistrer</Button>
+          <DialogFooter className="flex justify-between">
+            {editForm?.frozen && (
+              <Button variant="outline" className="mr-auto" onClick={() => {
+                if (editForm) {
+                  updateStep({ ...editForm, frozen: false });
+                  setEditForm({ ...editForm, frozen: false });
+                }
+              }}>
+                <Unlock className="w-4 h-4 mr-1" /> Libérer
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleEditSave}>Enregistrer</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
