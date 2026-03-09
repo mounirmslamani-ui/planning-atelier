@@ -59,6 +59,8 @@ function findEarliestSlot(
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
   );
 
+  // Frozen steps are immovable obstacles — never displaced
+
   const currentScore = orderScore(currentOrder);
 
   const getOrder = (step: ProductionStep) =>
