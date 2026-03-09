@@ -207,7 +207,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                           <option key={o.id} value={o.id}>{o.name}</option>
                         ))}
                     </select>
-                    </select>
                   </TableCell>
                   <TableCell>
                     <select
