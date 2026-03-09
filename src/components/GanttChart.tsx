@@ -1070,9 +1070,21 @@ const GanttChart: React.FC = () => {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleEditSave}>Enregistrer</Button>
+          <DialogFooter className="flex justify-between">
+            {editForm?.frozen && (
+              <Button variant="outline" className="mr-auto" onClick={() => {
+                if (editForm) {
+                  updateStep({ ...editForm, frozen: false });
+                  setEditForm({ ...editForm, frozen: false });
+                }
+              }}>
+                <Unlock className="w-4 h-4 mr-1" /> Libérer
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleEditSave}>Enregistrer</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
