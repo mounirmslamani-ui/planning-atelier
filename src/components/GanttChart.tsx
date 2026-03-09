@@ -782,6 +782,9 @@ const GanttChart: React.FC = () => {
             }}
           />
         </div>
+        <Button variant="outline" size="sm" onClick={handleReplanifier} className="ml-2">
+          <CalendarCheck className="w-4 h-4 mr-1" /> Replanifier
+        </Button>
         {(selectedOperatorId || selectedOrderId) && (
           <button
             onClick={() => { setSelectedOperatorId(null); setSelectedOrderId(null); }}
