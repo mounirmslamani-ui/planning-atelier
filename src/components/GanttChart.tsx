@@ -269,6 +269,52 @@ const GanttChart: React.FC = () => {
     });
   }, [steps, holidays, updateStep]);
 
+  // Replanifier: reschedule all non-frozen orders
+  const handleReplanifier = useCallback(() => {
+    // Group non-frozen steps by order, sorted by displayOrder
+    const orderIds = [...new Set(steps.filter(s => !s.frozen && s.operationId !== 'op-8').map(s => s.orderId))];
+    const sortedOrders = orderIds
+      .map(id => orders.find(o => o.id === id))
+      .filter(Boolean)
+      .sort((a, b) => (a!.displayOrder ?? 9999) - (b!.displayOrder ?? 9999)) as Order[];
+
+    // Keep frozen steps and absence steps untouched
+    let workingSteps = steps.filter(s => s.frozen || s.operationId === 'op-8');
+
+    for (const order of sortedOrders) {
+      const orderSteps = steps.filter(s => s.orderId === order.id && !s.frozen && s.operationId !== 'op-8')
+        .sort((a, b) => a.order - b.order);
+
+      if (orderSteps.length === 0) continue;
+
+      // Delete non-frozen steps for this order
+      orderSteps.forEach(s => deleteStep(s.id));
+
+      const opsToSchedule: OperationToSchedule[] = orderSteps.map(s => {
+        const isSub = !!s.subcontractorId;
+        return {
+          operationId: s.operationId,
+          estimatedDuration: s.estimatedDuration,
+          options: [{ id: isSub ? s.subcontractorId! : s.operatorId, isSub }],
+        };
+      });
+
+      const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
+      const { newSteps, updatedSteps } = scheduleOrder(
+        order.id,
+        deadline,
+        opsToSchedule,
+        workingSteps,
+        orders,
+        holidays
+      );
+
+      newSteps.forEach(s => addStep(s));
+      updatedSteps.forEach(s => updateStep(s));
+      workingSteps = [...workingSteps, ...newSteps];
+    }
+  }, [steps, orders, holidays, deleteStep, addStep, updateStep]);
+
   type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
 
   const ganttRows = useMemo(() => {
