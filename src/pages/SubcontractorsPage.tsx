@@ -136,7 +136,7 @@ const SubcontractorsPage: React.FC = () => {
                 value={mainActivity}
                 onChange={e => setMainActivity(e.target.value)}
               >
-                {operations.filter(o => o.name !== 'Absence').map(o => (
+                {operations.filter(o => o.category === 'subcontractor').map(o => (
                   <option key={o.id} value={o.name}>{o.name}</option>
                 ))}
               </select>
