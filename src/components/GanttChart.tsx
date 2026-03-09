@@ -1,7 +1,9 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
+import { scheduleOrder } from '@/lib/scheduler';
+import type { OperationToSchedule } from '@/lib/scheduler';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
