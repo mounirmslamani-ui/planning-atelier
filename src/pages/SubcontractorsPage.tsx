@@ -158,7 +158,7 @@ const SubcontractorsPage: React.FC = () => {
                   onChange={e => setNewSecondary(e.target.value)}
                 >
                   <option value="">Sélectionner...</option>
-                  {operations.filter(o => o.name !== 'Absence' && o.name !== mainActivity && !secondaryActivities.includes(o.name)).map(o => (
+                  {operations.filter(o => o.category === 'subcontractor' && o.name !== mainActivity && !secondaryActivities.includes(o.name)).map(o => (
                     <option key={o.id} value={o.name}>{o.name}</option>
                   ))}
                 </select>

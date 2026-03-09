@@ -20,6 +20,7 @@ const navItems = [
   { to: '/operators', label: 'Opérateurs', icon: Users },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
+  { to: '/operations', label: 'Opérations', icon: Drill },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
