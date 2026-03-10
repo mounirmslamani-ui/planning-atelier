@@ -31,13 +31,26 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
 
   const handleParse = () => {
     const lines = rawText.trim().split('\n').filter(l => l.trim());
-    const rows = lines.map(line => line.split('\t').map(cell => cell.trim()));
+    let rows = lines.map(line => line.split('\t').map(cell => cell.trim()));
     // Skip header row if it looks like headers
     const first = rows[0];
     const isHeader = first && first.some(c => 
       EXPECTED_COLUMNS.some(col => c.toLowerCase().includes(col.toLowerCase().substring(0, 4)))
     );
-    setParsedRows(isHeader ? rows.slice(1) : rows);
+    if (isHeader) rows = rows.slice(1);
+    // Detect leading index column (all first cells are sequential integers)
+    const firstCols = rows.map(r => r[0]);
+    const allNumeric = firstCols.length > 0 && firstCols.every(c => /^\d+$/.test(c));
+    if (allNumeric) {
+      rows = rows.map(r => r.slice(1));
+    }
+    // Trim trailing empty columns
+    rows = rows.map(r => {
+      let end = r.length;
+      while (end > 0 && r[end - 1] === '') end--;
+      return r.slice(0, Math.max(end, EXPECTED_COLUMNS.length));
+    });
+    setParsedRows(rows);
     setStep('preview');
   };
 
