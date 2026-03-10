@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -7,45 +7,41 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical, ClipboardPaste } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
+import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
+import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
-  urgent: 'Urgent',
-  moderate: 'Modéré',
-  normal: 'Normal',
-  'not-urgent': 'Pas urgent',
+  urgent: 'Urgent', moderate: 'Modéré', normal: 'Normal', 'not-urgent': 'Pas urgent',
 };
-
 const urgencyColors: Record<UrgencyLevel, string> = {
-  urgent: 'bg-urgent/15 text-urgent',
-  moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
-  normal: 'bg-normal/15 text-normal',
-  'not-urgent': 'bg-muted text-muted-foreground',
+  urgent: 'bg-urgent/15 text-urgent', moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
+  normal: 'bg-normal/15 text-normal', 'not-urgent': 'bg-muted text-muted-foreground',
 };
-
 const priorityConfig: Record<OrderPriority, { label: string; description: string; level: string }> = {
   'P1-A': { label: 'P1-A - Urgences contractuelles', description: 'Commandes dont la date d\'expédition est dépassée ou prévue sous 24/48h.', level: 'Niveau 1 : Priorité Critique' },
-  'P1-B': { label: 'P1-B - Commandes en finition (90%)', description: 'Tout ce qui est presque terminé. On finit ces pièces pour les expédier et libérer l\'espace.', level: 'Niveau 1 : Priorité Critique' },
-  'P1-C': { label: 'P1-C - Fort enjeu financier', description: 'Commandes à haute valeur ajoutée à facturer avant la fin de la semaine/du mois.', level: 'Niveau 1 : Priorité Critique' },
-  'P2-A': { label: 'P2-A - Commandes en retard léger', description: 'Celles qui ont glissé de quelques jours et qu\'il faut remettre dans le flux.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P2-B': { label: 'P2-B - Urgence modérée', description: 'Commandes dont l\'échéance est à J+5 ou J+7.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P2-C': { label: 'P2-C - Commandes groupées', description: 'Optimisation technique (même réglage machine, même couleur) pour gagner du temps.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P3-A': { label: 'P3-A - Flux normal', description: 'Commandes avec un délai confortable (2 semaines et plus).', level: 'Niveau 3 : Priorité Standard' },
-  'P3-B': { label: 'P3-B - Travaux internes / Anticipation', description: 'Préparation de sous-ensembles ou stock tampon si la charge le permet.', level: 'Niveau 3 : Priorité Standard' },
+  'P1-B': { label: 'P1-B - Commandes en finition (90%)', description: 'Tout ce qui est presque terminé.', level: 'Niveau 1 : Priorité Critique' },
+  'P1-C': { label: 'P1-C - Fort enjeu financier', description: 'Commandes à haute valeur ajoutée.', level: 'Niveau 1 : Priorité Critique' },
+  'P2-A': { label: 'P2-A - Commandes en retard léger', description: 'Celles qui ont glissé de quelques jours.', level: 'Niveau 2 : Priorité de Rattrapage' },
+  'P2-B': { label: 'P2-B - Urgence modérée', description: 'Échéance à J+5 ou J+7.', level: 'Niveau 2 : Priorité de Rattrapage' },
+  'P2-C': { label: 'P2-C - Commandes groupées', description: 'Optimisation technique.', level: 'Niveau 2 : Priorité de Rattrapage' },
+  'P3-A': { label: 'P3-A - Flux normal', description: 'Délai confortable (2 semaines+).', level: 'Niveau 3 : Priorité Standard' },
+  'P3-B': { label: 'P3-B - Travaux internes', description: 'Préparation de sous-ensembles.', level: 'Niveau 3 : Priorité Standard' },
+};
+const priorityColors: Record<OrderPriority, string> = {
+  'P1-A': 'bg-destructive text-destructive-foreground', 'P1-B': 'bg-destructive/80 text-destructive-foreground',
+  'P1-C': 'bg-destructive/60 text-destructive-foreground', 'P2-A': 'bg-urgent-moderate text-white',
+  'P2-B': 'bg-urgent-moderate/80 text-white', 'P2-C': 'bg-urgent-moderate/60 text-white',
+  'P3-A': 'bg-normal text-white', 'P3-B': 'bg-normal/70 text-white',
 };
 
-const priorityColors: Record<OrderPriority, string> = {
-  'P1-A': 'bg-destructive text-destructive-foreground',
-  'P1-B': 'bg-destructive/80 text-destructive-foreground',
-  'P1-C': 'bg-destructive/60 text-destructive-foreground',
-  'P2-A': 'bg-urgent-moderate text-white',
-  'P2-B': 'bg-urgent-moderate/80 text-white',
-  'P2-C': 'bg-urgent-moderate/60 text-white',
-  'P3-A': 'bg-normal text-white',
-  'P3-B': 'bg-normal/70 text-white',
-};
+const urgencyRank: Record<UrgencyLevel, number> = { urgent: 0, moderate: 1, normal: 2, 'not-urgent': 3 };
+
+// Column definitions for filter/sort
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'urgency' | 'priority' | 'plannedDeadline' | 'materialAvailable' | 'toolingAvailable';
 
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders } = usePlanning();
@@ -55,77 +51,145 @@ const OrdersPage: React.FC = () => {
   const [priorityOrder, setPriorityOrder] = useState<Order | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<OrderPriority | ''>('');
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+
+  // Multi-select
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Sort & Filter state
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDirection>(null);
+  const [filters, setFilters] = useState<Record<string, string>>({});
+
+  // Drag state
+  const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Orders sorted by displayOrder
-  const sortedOrders = useMemo(() => {
-    const realOrders = orders.filter(o => o.id !== 'order-absence');
-    return [...realOrders].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+  const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+
+  // Base sorted orders by displayOrder
+  const baseSorted = useMemo(() => {
+    const real = orders.filter(o => o.id !== 'order-absence');
+    return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
   }, [orders]);
 
-  // Ensure all orders have a displayOrder
-  const ensureDisplayOrders = useCallback(() => {
-    const realOrders = orders.filter(o => o.id !== 'order-absence');
-    const needsUpdate = realOrders.some(o => o.displayOrder == null);
-    if (needsUpdate) {
-      const sorted = [...realOrders].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-      const absenceOrder = orders.find(o => o.id === 'order-absence');
-      const updated = sorted.map((o, i) => ({ ...o, displayOrder: i + 1 }));
-      setOrders([...(absenceOrder ? [absenceOrder] : []), ...updated]);
+  // Ensure displayOrders
+  React.useEffect(() => {
+    const real = orders.filter(o => o.id !== 'order-absence');
+    if (real.some(o => o.displayOrder == null)) {
+      const sorted = [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+      const absence = orders.find(o => o.id === 'order-absence');
+      setOrders([...(absence ? [absence] : []), ...sorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
     }
-  }, [orders, setOrders]);
+  }, []);
 
-  // Run once on mount-ish
-  React.useEffect(() => { ensureDisplayOrders(); }, []);
+  // Get column value for sort/filter
+  const getColValue = useCallback((o: Order, key: ColumnKey): string => {
+    switch (key) {
+      case 'orderNumber': return o.orderNumber;
+      case 'orderDate': return o.orderDate;
+      case 'client': return getClientName(o.clientId);
+      case 'designation': return o.designation;
+      case 'quantity': return String(o.quantity);
+      case 'urgency': return urgencyLabels[o.urgency];
+      case 'priority': return o.priority || '';
+      case 'plannedDeadline': return o.plannedDeadline;
+      case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
+      case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
+      default: return '';
+    }
+  }, [getClientName]);
 
+  // Filtered + sorted orders
+  const displayOrders = useMemo(() => {
+    let list = [...baseSorted];
+
+    // Apply filters
+    for (const [key, val] of Object.entries(filters)) {
+      if (!val) continue;
+      const lower = val.toLowerCase();
+      list = list.filter(o => getColValue(o, key as ColumnKey).toLowerCase().includes(lower));
+    }
+
+    // Apply sort (overrides displayOrder temporarily for viewing)
+    if (sortKey && sortDir) {
+      list.sort((a, b) => {
+        const va = getColValue(a, sortKey as ColumnKey);
+        const vb = getColValue(b, sortKey as ColumnKey);
+        // Numeric sort for quantity
+        if (sortKey === 'quantity') {
+          const diff = Number(va) - Number(vb);
+          return sortDir === 'asc' ? diff : -diff;
+        }
+        // Urgency sort by rank
+        if (sortKey === 'urgency') {
+          const diff = urgencyRank[a.urgency] - urgencyRank[b.urgency];
+          return sortDir === 'asc' ? diff : -diff;
+        }
+        const cmp = va.localeCompare(vb, 'fr', { numeric: true });
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+
+    return list;
+  }, [baseSorted, filters, sortKey, sortDir, getColValue]);
+
+  const handleSort = (key: string, dir: SortDirection) => { setSortKey(dir ? key : null); setSortDir(dir); };
+  const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
+
+  // Selection
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === displayOrders.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(displayOrders.map(o => o.id)));
+  };
+
+  // Order form
   const emptyOrder = (): Omit<Order, 'id'> => ({
-    orderNumber: '',
-    orderDate: new Date().toISOString().split('T')[0],
-    clientId: clients[0]?.id || '',
-    designation: '',
-    quantity: 1,
-    urgency: 'normal',
-    plannedDeadline: '',
-    materialAvailable: true,
-    toolingAvailable: true,
-    displayOrder: sortedOrders.length + 1,
+    orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
+    designation: '', quantity: 1, urgency: 'normal', plannedDeadline: '', materialAvailable: true,
+    toolingAvailable: true, displayOrder: baseSorted.length + 1,
   });
-
   const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
 
   const openNew = () => { setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
   const openEdit = (o: Order) => { setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
-
-  const openPriorityDialog = (o: Order) => {
-    setPriorityOrder(o);
-    setSelectedPriority(o.priority || '');
-    setPriorityDialogOpen(true);
+  const handleSave = () => {
+    const data: Order = { id: editing?.id || `ord-${Date.now()}`, ...form };
+    if (editing) updateOrder(data); else addOrder(data);
+    setDialogOpen(false);
   };
+  const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
 
+  // Priority
+  const openPriorityDialog = (o: Order) => { setPriorityOrder(o); setSelectedPriority(o.priority || ''); setPriorityDialogOpen(true); };
   const handleSavePriority = () => {
-    if (priorityOrder && selectedPriority) {
-      updateOrder({ ...priorityOrder, priority: selectedPriority as OrderPriority });
-    } else if (priorityOrder && !selectedPriority) {
-      const { priority, ...rest } = priorityOrder;
-      updateOrder(rest as Order);
-    }
+    if (priorityOrder && selectedPriority) updateOrder({ ...priorityOrder, priority: selectedPriority as OrderPriority });
+    else if (priorityOrder) { const { priority, ...rest } = priorityOrder; updateOrder(rest as Order); }
     setPriorityDialogOpen(false);
   };
 
-  const handleSave = () => {
-    const data: Order = { id: editing?.id || `ord-${Date.now()}`, ...form };
-    if (editing) updateOrder(data);
-    else addOrder(data);
-    setDialogOpen(false);
+  // Excel paste import
+  const handleExcelImport = (imported: Omit<Order, 'id'>[]) => {
+    imported.forEach((o, i) => addOrder({ id: `ord-${Date.now()}-${i}`, ...o } as Order));
   };
 
-  const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
-  const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
-
-  // Drag and drop handlers
+  // Drag & drop (supports multi-select)
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDragIndex(index);
+    const orderId = displayOrders[index].id;
+    // If dragging a selected item, drag all selected; otherwise drag just this one
+    if (selectedIds.has(orderId) && selectedIds.size > 1) {
+      const indices = displayOrders.map((o, i) => selectedIds.has(o.id) ? i : -1).filter(i => i >= 0);
+      setDragIndices(indices);
+    } else {
+      setDragIndices([index]);
+    }
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(index));
   };
@@ -136,79 +200,127 @@ const OrdersPage: React.FC = () => {
     setDragOverIndex(index);
   };
 
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
-
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
-    if (dragIndex === null || dragIndex === dropIndex) {
-      setDragIndex(null);
-      setDragOverIndex(null);
-      return;
+    if (!dragIndices || dragIndices.length === 0) { setDragIndices(null); setDragOverIndex(null); return; }
+
+    // Only allow reorder when no sort/filter active
+    if (sortKey || Object.values(filters).some(v => v)) {
+      setDragIndices(null); setDragOverIndex(null); return;
     }
 
-    const newList = [...sortedOrders];
-    const [moved] = newList.splice(dragIndex, 1);
-    newList.splice(dropIndex, 0, moved);
+    const items = [...baseSorted];
+    // Extract dragged items
+    const draggedItems = dragIndices.map(i => items[i]).filter(Boolean);
+    const remaining = items.filter(o => !draggedItems.some(d => d.id === o.id));
 
-    // Reassign displayOrder
-    const absenceOrder = orders.find(o => o.id === 'order-absence');
-    const updated = newList.map((o, i) => ({ ...o, displayOrder: i + 1 }));
-    setOrders([...(absenceOrder ? [absenceOrder] : []), ...updated]);
+    // Insert at drop position (adjusted for removed items)
+    let insertAt = dropIndex;
+    // Count how many dragged items were before dropIndex
+    const beforeCount = dragIndices.filter(i => i < dropIndex).length;
+    insertAt = insertAt - beforeCount;
+    if (insertAt < 0) insertAt = 0;
 
-    setDragIndex(null);
+    remaining.splice(insertAt, 0, ...draggedItems);
+
+    const absence = orders.find(o => o.id === 'order-absence');
+    setOrders([...(absence ? [absence] : []), ...remaining.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
+    setDragIndices(null);
     setDragOverIndex(null);
   };
 
-  const handleDragEnd = () => {
-    setDragIndex(null);
-    setDragOverIndex(null);
-  };
+  const handleDragEnd = () => { setDragIndices(null); setDragOverIndex(null); };
+
+  const isDragging = (index: number) => dragIndices?.includes(index) ?? false;
+  const hasActiveFilters = sortKey !== null || Object.values(filters).some(v => v);
+
+  const columns: { key: ColumnKey; label: string }[] = [
+    { key: 'orderNumber', label: 'N° Commande' },
+    { key: 'orderDate', label: 'Date' },
+    { key: 'client', label: 'Client' },
+    { key: 'designation', label: 'Désignation' },
+    { key: 'quantity', label: 'Qté' },
+    { key: 'urgency', label: 'Urgence' },
+    { key: 'priority', label: 'Priorité' },
+    { key: 'plannedDeadline', label: 'Délai' },
+    { key: 'materialAvailable', label: 'Mat.' },
+    { key: 'toolingAvailable', label: 'Out.' },
+  ];
 
   return (
     <div className="p-6">
-      <PageHeader title="Commandes en cours" description={`${sortedOrders.length} commande(s)`} actions={
-        <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
+      <PageHeader title="Commandes en cours" description={`${displayOrders.length} commande(s)`} actions={
+        <div className="flex gap-2">
+          <Button onClick={() => setPasteDialogOpen(true)} variant="outline" size="sm">
+            <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
+          </Button>
+          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
+        </div>
       } />
-      
+
+      {hasActiveFilters && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Tri/filtre actif — le glisser-déposer est désactivé.</span>
+          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setSortKey(null); setSortDir(null); setFilters({}); }}>
+            Réinitialiser
+          </Button>
+        </div>
+      )}
+
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16 text-center">Ordre</TableHead>
-              <TableHead>N° Commande</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Désignation</TableHead>
-              <TableHead>Qté</TableHead>
-              <TableHead>Urgence</TableHead>
-              <TableHead>Priorité</TableHead>
-              <TableHead>Délai</TableHead>
-              <TableHead>Mat.</TableHead>
-              <TableHead>Out.</TableHead>
-              <TableHead className="w-28">Actions</TableHead>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={selectedIds.size === displayOrders.length && displayOrders.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
+              <TableHead className="w-16 text-center text-xs">Ordre</TableHead>
+              {columns.map(col => (
+                <TableHead key={col.key}>
+                  <ColumnHeader
+                    label={col.label}
+                    columnKey={col.key}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    filterValue={filters[col.key] || ''}
+                    onFilter={handleFilter}
+                  />
+                </TableHead>
+              ))}
+              <TableHead className="w-28 text-xs">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedOrders.map((o, index) => (
+            {displayOrders.map((o, index) => (
               <TableRow
                 key={o.id}
-                draggable
+                draggable={!hasActiveFilters}
                 onDragStart={e => handleDragStart(e, index)}
                 onDragOver={e => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
+                onDragLeave={() => setDragOverIndex(null)}
                 onDrop={e => handleDrop(e, index)}
                 onDragEnd={handleDragEnd}
-                className={`cursor-grab active:cursor-grabbing transition-colors ${
-                  dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
-                } ${dragIndex === index ? 'opacity-40' : ''}`}
+                className={`transition-colors ${
+                  !hasActiveFilters ? 'cursor-grab active:cursor-grabbing' : ''
+                } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
+                } ${isDragging(index) ? 'opacity-40' : ''
+                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''}`}
                 onClick={() => setPlanningOrder(o)}
               >
+                <TableCell onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedIds.has(o.id)}
+                    onCheckedChange={() => toggleSelect(o.id)}
+                  />
+                </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">{index + 1}</span>
+                    {!hasActiveFilters && <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />}
+                    <span className="text-sm font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                   </div>
                 </TableCell>
                 <TableCell className="font-heading text-sm">{o.orderNumber}</TableCell>
@@ -246,8 +358,8 @@ const OrdersPage: React.FC = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {sortedOrders.length === 0 && (
-              <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+            {displayOrders.length === 0 && (
+              <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -257,7 +369,7 @@ const OrdersPage: React.FC = () => {
       <Dialog open={priorityDialogOpen} onOpenChange={setPriorityDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">Définir la priorité de la commande</DialogTitle>
+            <DialogTitle className="font-heading">Définir la priorité</DialogTitle>
             {priorityOrder && (
               <p className="text-sm text-muted-foreground">
                 Commande : <span className="font-medium">{priorityOrder.orderNumber}</span> - {priorityOrder.designation}
@@ -266,67 +378,39 @@ const OrdersPage: React.FC = () => {
           </DialogHeader>
           <RadioGroup value={selectedPriority} onValueChange={(v) => setSelectedPriority(v as OrderPriority)}>
             <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold text-destructive mb-2 flex items-center gap-2">
-                  <Flag className="w-4 h-4" /> Niveau 1 : Priorité Critique
-                </h3>
-                <p className="text-xs text-muted-foreground mb-3">L'urgence et le "Cash" — Libérer de la place, facturer, respecter les engagements immédiats.</p>
-                <div className="space-y-2 pl-4 border-l-2 border-destructive/30">
-                  {(['P1-A', 'P1-B', 'P1-C'] as OrderPriority[]).map(p => (
-                    <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value={p} className="mt-0.5" />
-                      <div>
-                        <span className="font-medium text-sm">{priorityConfig[p].label}</span>
-                        <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
-                      </div>
-                    </label>
-                  ))}
+              {[
+                { level: 'Niveau 1 : Priorité Critique', keys: ['P1-A', 'P1-B', 'P1-C'] as OrderPriority[], color: 'text-destructive', border: 'border-destructive/30' },
+                { level: 'Niveau 2 : Priorité de Rattrapage', keys: ['P2-A', 'P2-B', 'P2-C'] as OrderPriority[], color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
+                { level: 'Niveau 3 : Priorité Standard', keys: ['P3-A', 'P3-B'] as OrderPriority[], color: 'text-normal', border: 'border-normal/30' },
+              ].map(group => (
+                <div key={group.level}>
+                  <h3 className={`text-sm font-semibold ${group.color} mb-2 flex items-center gap-2`}>
+                    <Flag className="w-4 h-4" /> {group.level}
+                  </h3>
+                  <div className={`space-y-2 pl-4 border-l-2 ${group.border}`}>
+                    {group.keys.map(p => (
+                      <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+                        <RadioGroupItem value={p} className="mt-0.5" />
+                        <div>
+                          <span className="font-medium text-sm">{priorityConfig[p].label}</span>
+                          <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-urgent-moderate mb-2 flex items-center gap-2">
-                  <Flag className="w-4 h-4" /> Niveau 2 : Priorité de Rattrapage et Flux
-                </h3>
-                <p className="text-xs text-muted-foreground mb-3">Stabiliser la production pour éviter qu'elles ne basculent en P1.</p>
-                <div className="space-y-2 pl-4 border-l-2 border-urgent-moderate/30">
-                  {(['P2-A', 'P2-B', 'P2-C'] as OrderPriority[]).map(p => (
-                    <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value={p} className="mt-0.5" />
-                      <div>
-                        <span className="font-medium text-sm">{priorityConfig[p].label}</span>
-                        <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-normal mb-2 flex items-center gap-2">
-                  <Flag className="w-4 h-4" /> Niveau 3 : Priorité Standard
-                </h3>
-                <p className="text-xs text-muted-foreground mb-3">Le fond de cuve — Occuper les postes de travail de manière fluide.</p>
-                <div className="space-y-2 pl-4 border-l-2 border-normal/30">
-                  {(['P3-A', 'P3-B'] as OrderPriority[]).map(p => (
-                    <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
-                      <RadioGroupItem value={p} className="mt-0.5" />
-                      <div>
-                        <span className="font-medium text-sm">{priorityConfig[p].label}</span>
-                        <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </RadioGroup>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setSelectedPriority(''); }}>Effacer</Button>
+            <Button variant="outline" onClick={() => setSelectedPriority('')}>Effacer</Button>
             <Button variant="outline" onClick={() => setPriorityDialogOpen(false)}>Annuler</Button>
             <Button onClick={handleSavePriority}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} une commande</DialogTitle></DialogHeader>
@@ -396,6 +480,15 @@ const OrdersPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Excel Paste Dialog */}
+      <ExcelPasteDialog
+        open={pasteDialogOpen}
+        onOpenChange={setPasteDialogOpen}
+        onImport={handleExcelImport}
+        clients={clients}
+        nextDisplayOrder={baseSorted.length + 1}
+      />
 
       {planningOrder && (
         <OrderPlanningDialog
