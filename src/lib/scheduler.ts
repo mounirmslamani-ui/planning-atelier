@@ -52,7 +52,9 @@ function findEarliestSlot(
   allSteps: ProductionStep[],
   allOrders: Order[],
   currentOrder: Order,
-  holidays: Holiday[]
+  holidays: Holiday[],
+  requiredEquipmentIds?: string[],
+  equipments?: Equipment[]
 ): ScheduleCandidate {
   const assigneeSteps = allSteps.filter(s =>
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
