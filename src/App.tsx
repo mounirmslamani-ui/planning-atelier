@@ -19,6 +19,7 @@ import DeliveryPage from "./pages/DeliveryPage";
 import MaterialPurchasesPage from "./pages/MaterialPurchasesPage";
 import ToolingPurchasesPage from "./pages/ToolingPurchasesPage";
 import StudyPage from "./pages/StudyPage";
+import EquipmentPage from "./pages/EquipmentPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
