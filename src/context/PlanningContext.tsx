@@ -152,7 +152,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     productionRecords: [...productionRecords],
     qcEntries: [...qcEntries],
     deliveryEntries: [...deliveryEntries],
-  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries]);
+    equipments: [...equipments],
+  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, equipments]);
 
   const pushUndo = useCallback(() => {
     const snap = takeSnapshot();
