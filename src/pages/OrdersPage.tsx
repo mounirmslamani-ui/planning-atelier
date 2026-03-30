@@ -472,6 +472,10 @@ const OrdersPage: React.FC = () => {
                 <input type="checkbox" checked={form.toolingAvailable} onChange={e => updateForm('toolingAvailable', e.target.checked)} className="rounded" />
                 <Wrench className="w-4 h-4" /> Outillage disponible
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.studyReady} onChange={e => updateForm('studyReady', e.target.checked)} className="rounded" />
+                <FileCheck className="w-4 h-4" /> Étude faite
+              </label>
             </div>
           </div>
           <DialogFooter>

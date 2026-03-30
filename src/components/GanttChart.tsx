@@ -22,12 +22,20 @@ const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
 const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
 
-function getUrgencyBg(urgency: string): string {
-  switch (urgency) {
-    case 'urgent': return 'bg-urgent/80';
+function getUrgencyBg(order: Order): string {
+  const p = order.priority;
+  if (p === 'P1') return 'bg-urgent/80';
+  if (p === 'P2') return 'bg-urgent-moderate/80';
+  if (p === 'P3') return 'bg-priority-p3/80';
+  if (p === 'P4') return 'bg-priority-p4/80';
+  if (p === 'P5') return 'bg-priority-p5/80';
+  // Fallback by urgency
+  switch (order.urgency) {
+    case 'critical': return 'bg-urgent/80';
     case 'moderate': return 'bg-urgent-moderate/80';
-    case 'normal': return 'bg-normal/80';
-    case 'not-urgent': return 'bg-not-urgent';
+    case 'low': return 'bg-priority-p3/80';
+    case 'pending': return 'bg-priority-p4/80';
+    case 'waiting': return 'bg-priority-p5/80';
     default: return 'bg-muted';
   }
 }
