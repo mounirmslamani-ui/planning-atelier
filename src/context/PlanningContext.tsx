@@ -130,6 +130,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [productionRecords, setProductionRecords] = useState<ProductionRecord[]>([]);
   const [qcEntries, setQCEntries] = useState<QualityControlEntry[]>([]);
   const [deliveryEntries, setDeliveryEntries] = useState<DeliveryEntry[]>([]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [ganttView, setGanttView] = useState<GanttView>('day');
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
