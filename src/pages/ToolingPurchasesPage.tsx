@@ -5,7 +5,7 @@ import PendingOrdersTable from '@/components/PendingOrdersTable';
 const ToolingPurchasesPage: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
-      <PageHeader title="Achats Outillage" subtitle="Commandes dont l'outillage n'est pas encore disponible" />
+      <PageHeader title="Achats Outillage" description="Commandes dont l'outillage n'est pas encore disponible" />
       <PendingOrdersTable
         filterFn={order => !order.toolingAvailable}
         emptyMessage="Tout l'outillage est disponible ✓"

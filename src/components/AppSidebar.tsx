@@ -22,6 +22,9 @@ const navItems = [
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
   { to: '/operations', label: 'Opérations', icon: Drill },
+  { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus },
+  { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer },
+  { to: '/study', label: 'Étude', icon: FileSearch },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
