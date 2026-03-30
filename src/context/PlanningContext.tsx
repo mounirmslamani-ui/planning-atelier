@@ -269,6 +269,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       productionRecords, addProductionRecord, deleteProductionRecord,
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
+      equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
       selectedOperatorId, setSelectedOperatorId,
