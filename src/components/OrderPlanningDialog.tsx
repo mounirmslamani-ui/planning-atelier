@@ -11,14 +11,15 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 
 interface OperationRow {
   id: string;
-  stepId?: string; // linked to existing ProductionStep
+  stepId?: string;
   order: number;
   operationId: string;
-  estimatedDuration: number; // stored in minutes
+  estimatedDuration: number;
   assignType: 'operator' | 'subcontractor';
   option1: string;
   option2: string;
   option3: string;
+  equipmentIds: string[];
 }
 
 interface Props {
