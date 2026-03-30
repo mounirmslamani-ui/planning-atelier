@@ -133,7 +133,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       opsToSchedule,
       stepsWithoutThisOrder,
       orders,
-      holidays
+      holidays,
+      equipments
     );
 
     newSteps.forEach(s => addStep(s));
