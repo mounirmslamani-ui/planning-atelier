@@ -12,6 +12,7 @@ interface PlanningState {
   productionRecords: ProductionRecord[];
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
+  equipments: Equipment[];
   ganttView: GanttView;
   ganttZeroDate: Date;
   selectedOperatorId: string | null;
