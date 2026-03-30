@@ -1,10 +1,11 @@
-import type { ProductionStep, Order, Holiday, OrderPriority } from '@/types/planning';
+import type { ProductionStep, Order, Holiday, OrderPriority, Equipment } from '@/types/planning';
 import { addWorkMinutes } from './workTime';
 
 export interface OperationToSchedule {
   operationId: string;
   estimatedDuration: number; // in minutes
   options: { id: string; isSub: boolean }[];
+  equipmentIds?: string[];
 }
 
 interface ScheduleCandidate {
