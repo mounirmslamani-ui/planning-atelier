@@ -162,7 +162,9 @@ export function scheduleOrder(
         workingSteps,
         allOrders,
         currentOrder,
-        holidays
+        holidays,
+        requiredEqIds,
+        equipments
       );
 
       if (!bestCandidate || candidate.end < bestCandidate.end) {
