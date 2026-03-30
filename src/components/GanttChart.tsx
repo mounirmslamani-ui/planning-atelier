@@ -1316,6 +1316,11 @@ const GanttChart: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Special row dialogs */}
+      <SubcontractorTableDialog open={subDialogOpen} onOpenChange={setSubDialogOpen} />
+      <PurchaseRowDialog open={materialDialogOpen} onOpenChange={setMaterialDialogOpen} title="Achats matières programmés" type="material" />
+      <PurchaseRowDialog open={toolingDialogOpen} onOpenChange={setToolingDialogOpen} title="Achats outillage programmés" type="tooling" />
     </div>
   );
 };
