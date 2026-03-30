@@ -40,10 +40,12 @@ function getUrgencyBg(order: Order): string {
   }
 }
 
-function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean): string {
-  if (!materialAvailable && !toolingAvailable) return 'hatch-cross';
+function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {
+  const blocked = [!materialAvailable, !toolingAvailable, !studyReady].filter(Boolean).length;
+  if (blocked >= 2) return 'hatch-cross';
   if (!materialAvailable) return 'hatch-right';
   if (!toolingAvailable) return 'hatch-left';
+  if (!studyReady) return 'hatch-right';
   return '';
 }
 
