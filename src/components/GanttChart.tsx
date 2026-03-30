@@ -337,7 +337,8 @@ const GanttChart: React.FC = () => {
         opsToSchedule,
         workingSteps,
         orders,
-        holidays
+        holidays,
+        equipments
       );
 
       newSteps.forEach(s => addStep(s));
