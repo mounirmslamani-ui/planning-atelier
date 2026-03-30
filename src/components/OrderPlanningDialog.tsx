@@ -57,6 +57,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           option1: isSub ? s.subcontractorId! : s.operatorId,
           option2: '',
           option3: '',
+          equipmentIds: s.equipmentIds || [],
         };
       }));
     } else {
