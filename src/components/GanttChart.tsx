@@ -95,9 +95,18 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       ? 'border-2 border-accent'
       : isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
 
+  // Determine if order is missing prerequisites
+  const missingItems: string[] = [];
+  if (!order.materialAvailable) missingItems.push('Matière');
+  if (!order.toolingAvailable) missingItems.push('Outillage');
+  if (!order.studyReady) missingItems.push('Étude');
+  const isBlocked = missingItems.length > 0 && step.operationId !== 'op-8';
+  const blockedTextClass = isBlocked ? 'opacity-40' : '';
+  const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
+
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass} ${frozenClass}`}
+      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass} ${frozenClass} group`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => {
         if (e.ctrlKey || e.metaKey) {
@@ -109,9 +118,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
         e.preventDefault();
         onDragStart(step.id, e.clientX, left, e.clientY, e.altKey);
       }}
-      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}`}
+      title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
+      <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor} ${blockedTextClass}`}>
         {subcontractorName ? (
           <>
             <div className="font-heading">{order.orderNumber} — {subcontractorName}</div>
@@ -125,6 +134,11 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
           </>
         )}
       </div>
+      {isBlocked && (
+        <div className="absolute bottom-0 left-0 right-0 hidden group-hover:flex bg-foreground/90 text-background text-[9px] px-1 py-0.5 leading-tight z-50">
+          ⚠ {missingItems.join(' + ')}
+        </div>
+      )}
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
