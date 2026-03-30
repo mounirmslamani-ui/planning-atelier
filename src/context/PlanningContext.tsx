@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'; // v3
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'; // v4
 import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry } from '@/types/planning';
 
 interface PlanningState {
@@ -60,6 +60,10 @@ interface PlanningContextType extends PlanningState {
   setGanttZeroDate: (date: Date) => void;
   setSelectedOperatorId: (id: string | null) => void;
   setSelectedOrderId: (id: string | null) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const defaultOperations: Operation[] = [
@@ -86,6 +90,22 @@ const defaultClients: Client[] = [
   { id: 'cl-2', name: 'SARL Mécanique Plus' },
 ];
 
+// Snapshot type for undo/redo (only data that matters)
+interface Snapshot {
+  operators: Operator[];
+  subcontractors: Subcontractor[];
+  operations: Operation[];
+  clients: Client[];
+  orders: Order[];
+  steps: ProductionStep[];
+  holidays: Holiday[];
+  productionRecords: ProductionRecord[];
+  qcEntries: QualityControlEntry[];
+  deliveryEntries: DeliveryEntry[];
+}
+
+const MAX_HISTORY = 50;
+
 const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -108,42 +128,120 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  const addOperator = useCallback((op: Operator) => setOperators(prev => [...prev, op]), []);
-  const updateOperator = useCallback((op: Operator) => setOperators(prev => prev.map(o => o.id === op.id ? op : o)), []);
-  const deleteOperator = useCallback((id: string) => setOperators(prev => prev.filter(o => o.id !== id)), []);
+  // Undo/Redo history
+  const undoStack = useRef<Snapshot[]>([]);
+  const redoStack = useRef<Snapshot[]>([]);
+  const [historyTrigger, setHistoryTrigger] = useState(0); // force re-render for canUndo/canRedo
 
-  const addSubcontractor = useCallback((sub: Subcontractor) => setSubcontractors(prev => [...prev, sub]), []);
-  const updateSubcontractor = useCallback((sub: Subcontractor) => setSubcontractors(prev => prev.map(s => s.id === sub.id ? sub : s)), []);
-  const deleteSubcontractor = useCallback((id: string) => setSubcontractors(prev => prev.filter(s => s.id !== id)), []);
+  const takeSnapshot = useCallback((): Snapshot => ({
+    operators: [...operators],
+    subcontractors: [...subcontractors],
+    operations: [...operations],
+    clients: [...clients],
+    orders: [...orders],
+    steps: [...steps],
+    holidays: [...holidays],
+    productionRecords: [...productionRecords],
+    qcEntries: [...qcEntries],
+    deliveryEntries: [...deliveryEntries],
+  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries]);
 
-  const addOperation = useCallback((op: Operation) => setOperations(prev => [...prev, op]), []);
-  const updateOperation = useCallback((op: Operation) => setOperations(prev => prev.map(o => o.id === op.id ? op : o)), []);
-  const deleteOperation = useCallback((id: string) => setOperations(prev => prev.filter(o => o.id !== id)), []);
+  const pushUndo = useCallback(() => {
+    const snap = takeSnapshot();
+    undoStack.current = [...undoStack.current.slice(-(MAX_HISTORY - 1)), snap];
+    redoStack.current = [];
+    setHistoryTrigger(t => t + 1);
+  }, [takeSnapshot]);
 
-  const addClient = useCallback((client: Client) => setClients(prev => [...prev, client]), []);
-  const updateClient = useCallback((client: Client) => setClients(prev => prev.map(c => c.id === client.id ? client : c)), []);
-  const deleteClient = useCallback((id: string) => setClients(prev => prev.filter(c => c.id !== id)), []);
+  const restoreSnapshot = useCallback((snap: Snapshot) => {
+    setOperators(snap.operators);
+    setSubcontractors(snap.subcontractors);
+    setOperations(snap.operations);
+    setClients(snap.clients);
+    setOrders(snap.orders);
+    setSteps(snap.steps);
+    setHolidays(snap.holidays);
+    setProductionRecords(snap.productionRecords);
+    setQCEntries(snap.qcEntries);
+    setDeliveryEntries(snap.deliveryEntries);
+  }, []);
 
-  const addOrder = useCallback((order: Order) => setOrders(prev => [...prev, order]), []);
-  const updateOrder = useCallback((order: Order) => setOrders(prev => prev.map(o => o.id === order.id ? order : o)), []);
-  const deleteOrder = useCallback((id: string) => setOrders(prev => prev.filter(o => o.id !== id)), []);
+  const undo = useCallback(() => {
+    if (undoStack.current.length === 0) return;
+    const currentSnap = takeSnapshot();
+    redoStack.current = [...redoStack.current, currentSnap];
+    const prev = undoStack.current[undoStack.current.length - 1];
+    undoStack.current = undoStack.current.slice(0, -1);
+    restoreSnapshot(prev);
+    setHistoryTrigger(t => t + 1);
+  }, [takeSnapshot, restoreSnapshot]);
 
-  const addStep = useCallback((step: ProductionStep) => setSteps(prev => [...prev, step]), []);
-  const updateStep = useCallback((step: ProductionStep) => setSteps(prev => prev.map(s => s.id === step.id ? step : s)), []);
-  const deleteStep = useCallback((id: string) => setSteps(prev => prev.filter(s => s.id !== id)), []);
+  const redo = useCallback(() => {
+    if (redoStack.current.length === 0) return;
+    const currentSnap = takeSnapshot();
+    undoStack.current = [...undoStack.current, currentSnap];
+    const next = redoStack.current[redoStack.current.length - 1];
+    redoStack.current = redoStack.current.slice(0, -1);
+    restoreSnapshot(next);
+    setHistoryTrigger(t => t + 1);
+  }, [takeSnapshot, restoreSnapshot]);
 
-  const addHoliday = useCallback((holiday: Holiday) => setHolidays(prev => [...prev, holiday]), []);
-  const deleteHoliday = useCallback((id: string) => setHolidays(prev => prev.filter(h => h.id !== id)), []);
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo]);
 
-  const addProductionRecord = useCallback((record: ProductionRecord) => setProductionRecords(prev => [...prev, record]), []);
-  const deleteProductionRecord = useCallback((id: string) => setProductionRecords(prev => prev.filter(r => r.id !== id)), []);
+  // Wrapped setters that push undo before mutating
+  const wrap = <T extends any[]>(fn: (...args: T) => void) =>
+    useCallback((...args: T) => { pushUndo(); fn(...args); }, [pushUndo, fn]);
 
-  const addQCEntry = useCallback((entry: QualityControlEntry) => setQCEntries(prev => [...prev, entry]), []);
-  const updateQCEntry = useCallback((entry: QualityControlEntry) => setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)), []);
-  const deleteQCEntry = useCallback((id: string) => setQCEntries(prev => prev.filter(e => e.id !== id)), []);
+  const addOperator = wrap((op: Operator) => setOperators(prev => [...prev, op]));
+  const updateOperator = wrap((op: Operator) => setOperators(prev => prev.map(o => o.id === op.id ? op : o)));
+  const deleteOperator = wrap((id: string) => setOperators(prev => prev.filter(o => o.id !== id)));
 
-  const addDeliveryEntry = useCallback((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]), []);
-  const deleteDeliveryEntry = useCallback((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)), []);
+  const addSubcontractor = wrap((sub: Subcontractor) => setSubcontractors(prev => [...prev, sub]));
+  const updateSubcontractor = wrap((sub: Subcontractor) => setSubcontractors(prev => prev.map(s => s.id === sub.id ? sub : s)));
+  const deleteSubcontractor = wrap((id: string) => setSubcontractors(prev => prev.filter(s => s.id !== id)));
+
+  const addOperation = wrap((op: Operation) => setOperations(prev => [...prev, op]));
+  const updateOperation = wrap((op: Operation) => setOperations(prev => prev.map(o => o.id === op.id ? op : o)));
+  const deleteOperation = wrap((id: string) => setOperations(prev => prev.filter(o => o.id !== id)));
+
+  const addClient = wrap((client: Client) => setClients(prev => [...prev, client]));
+  const updateClient = wrap((client: Client) => setClients(prev => prev.map(c => c.id === client.id ? client : c)));
+  const deleteClient = wrap((id: string) => setClients(prev => prev.filter(c => c.id !== id)));
+
+  const addOrder = wrap((order: Order) => setOrders(prev => [...prev, order]));
+  const updateOrder = wrap((order: Order) => setOrders(prev => prev.map(o => o.id === order.id ? order : o)));
+  const deleteOrder = wrap((id: string) => setOrders(prev => prev.filter(o => o.id !== id)));
+
+  const addStep = wrap((step: ProductionStep) => setSteps(prev => [...prev, step]));
+  const updateStep = wrap((step: ProductionStep) => setSteps(prev => prev.map(s => s.id === step.id ? step : s)));
+  const deleteStep = wrap((id: string) => setSteps(prev => prev.filter(s => s.id !== id)));
+
+  const addHoliday = wrap((holiday: Holiday) => setHolidays(prev => [...prev, holiday]));
+  const deleteHoliday = wrap((id: string) => setHolidays(prev => prev.filter(h => h.id !== id)));
+
+  const addProductionRecord = wrap((record: ProductionRecord) => setProductionRecords(prev => [...prev, record]));
+  const deleteProductionRecord = wrap((id: string) => setProductionRecords(prev => prev.filter(r => r.id !== id)));
+
+  const addQCEntry = wrap((entry: QualityControlEntry) => setQCEntries(prev => [...prev, entry]));
+  const updateQCEntry = wrap((entry: QualityControlEntry) => setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)));
+  const deleteQCEntry = wrap((id: string) => setQCEntries(prev => prev.filter(e => e.id !== id)));
+
+  const addDeliveryEntry = wrap((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]));
+  const deleteDeliveryEntry = wrap((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)));
 
   return (
     <PlanningContext.Provider value={{
@@ -161,6 +259,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ganttZeroDate, setGanttZeroDate,
       selectedOperatorId, setSelectedOperatorId,
       selectedOrderId, setSelectedOrderId,
+      undo, redo,
+      canUndo: undoStack.current.length > 0,
+      canRedo: redoStack.current.length > 0,
     }}>
       {children}
     </PlanningContext.Provider>
