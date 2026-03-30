@@ -30,7 +30,7 @@ interface Props {
 
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
-    operators, subcontractors, operations, steps, orders, holidays,
+    operators, subcontractors, operations, steps, orders, holidays, equipments,
     addStep, updateStep, deleteStep,
   } = usePlanning();
 
