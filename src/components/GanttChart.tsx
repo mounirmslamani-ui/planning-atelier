@@ -341,7 +341,12 @@ const GanttChart: React.FC = () => {
     }
   }, [steps, orders, holidays, deleteStep, addStep, updateStep]);
 
-  type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
+  type GanttRow = { type: 'operator' | 'subcontractor' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
+
+  // Dialog states for special row clicks
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [toolingDialogOpen, setToolingDialogOpen] = useState(false);
 
   const ganttRows = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
@@ -354,14 +359,25 @@ const GanttChart: React.FC = () => {
       })
       .map(op => ({ type: 'operator' as const, id: op.id, label: op.name, sublabel: op.mainFunction }));
 
-    // Add a single subcontractor row if there are subcontractor steps
-    const hasSubSteps = steps.some(s => s.subcontractorId);
-    const subRow: GanttRow[] = (hasSubSteps || subcontractors.length > 0) && !selectedOperatorId
-      ? [{ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' }]
-      : [];
+    // Add special rows
+    const specialRows: GanttRow[] = [];
+    if (!selectedOperatorId) {
+      const hasSubSteps = steps.some(s => s.subcontractorId);
+      if (hasSubSteps || subcontractors.length > 0) {
+        specialRows.push({ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' });
+      }
+      const hasMaterialPending = orders.some(o => o.id !== 'order-absence' && !o.materialAvailable);
+      if (hasMaterialPending) {
+        specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
+      }
+      const hasToolingPending = orders.some(o => o.id !== 'order-absence' && !o.toolingAvailable);
+      if (hasToolingPending) {
+        specialRows.push({ type: 'tooling' as const, id: '__tooling__', label: 'Achat outillage', sublabel: '' });
+      }
+    }
 
-    return [...opRows, ...subRow];
-  }, [operators, selectedOperatorId, steps, subcontractors]);
+    return [...opRows, ...specialRows];
+  }, [operators, selectedOperatorId, steps, subcontractors, orders]);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
