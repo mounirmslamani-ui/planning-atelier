@@ -345,7 +345,7 @@ const GanttChart: React.FC = () => {
       updatedSteps.forEach(s => updateStep(s));
       workingSteps = [...workingSteps, ...newSteps];
     }
-  }, [steps, orders, holidays, deleteStep, addStep, updateStep]);
+  }, [steps, orders, holidays, equipments, deleteStep, addStep, updateStep]);
 
   type GanttRow = { type: 'operator' | 'subcontractor' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
 
