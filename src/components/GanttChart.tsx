@@ -81,7 +81,7 @@ interface GanttBlockProps {
 const GanttBlock: React.FC<GanttBlockProps> = ({
   step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
+  const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
   const textColor = getDeadlineTextColor(order, step);
   const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
