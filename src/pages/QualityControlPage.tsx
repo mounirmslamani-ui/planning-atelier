@@ -28,8 +28,6 @@ const priorityColors: Record<string, string> = {
   'P4': 'bg-priority-p4 text-foreground',
   'P5': 'bg-muted text-muted-foreground',
 };
-  'P3-B': 'bg-normal/70 text-white',
-};
 
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'Conforme',
