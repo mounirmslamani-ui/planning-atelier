@@ -108,6 +108,7 @@ interface Snapshot {
   productionRecords: ProductionRecord[];
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
+  equipments: Equipment[];
 }
 
 const MAX_HISTORY = 50;
