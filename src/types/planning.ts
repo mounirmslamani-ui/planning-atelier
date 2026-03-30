@@ -88,6 +88,7 @@ export interface ProductionStep {
   dependsOnPercentage?: number; // 0-100: % of predecessor that must complete before this can start
   order: number; // chronological order
   frozen?: boolean; // true if manually placed – excluded from auto-scheduling
+  equipmentIds?: string[]; // required equipment for this step
 }
 
 export interface Holiday {
