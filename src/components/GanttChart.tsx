@@ -158,7 +158,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
 
 const GanttChart: React.FC = () => {
   const {
-    operators, operations, orders, steps, holidays, clients, subcontractors,
+    operators, operations, orders, steps, holidays, clients, subcontractors, equipments,
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
@@ -326,6 +326,7 @@ const GanttChart: React.FC = () => {
           operationId: s.operationId,
           estimatedDuration: s.estimatedDuration,
           options: [{ id: isSub ? s.subcontractorId! : s.operatorId, isSub }],
+          equipmentIds: s.equipmentIds,
         };
       });
 
@@ -336,14 +337,15 @@ const GanttChart: React.FC = () => {
         opsToSchedule,
         workingSteps,
         orders,
-        holidays
+        holidays,
+        equipments
       );
 
       newSteps.forEach(s => addStep(s));
       updatedSteps.forEach(s => updateStep(s));
       workingSteps = [...workingSteps, ...newSteps];
     }
-  }, [steps, orders, holidays, deleteStep, addStep, updateStep]);
+  }, [steps, orders, holidays, equipments, deleteStep, addStep, updateStep]);
 
   type GanttRow = { type: 'operator' | 'subcontractor' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
 

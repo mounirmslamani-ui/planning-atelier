@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'; // v4
-import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry } from '@/types/planning';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'; // v5
+import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment } from '@/types/planning';
 
 interface PlanningState {
   operators: Operator[];
@@ -12,6 +12,7 @@ interface PlanningState {
   productionRecords: ProductionRecord[];
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
+  equipments: Equipment[];
   ganttView: GanttView;
   ganttZeroDate: Date;
   selectedOperatorId: string | null;
@@ -56,6 +57,11 @@ interface PlanningContextType extends PlanningState {
   deliveryEntries: DeliveryEntry[];
   addDeliveryEntry: (entry: DeliveryEntry) => void;
   deleteDeliveryEntry: (id: string) => void;
+  equipments: Equipment[];
+  setEquipments: (eqs: Equipment[]) => void;
+  addEquipment: (eq: Equipment) => void;
+  updateEquipment: (eq: Equipment) => void;
+  deleteEquipment: (id: string) => void;
   setGanttView: (view: GanttView) => void;
   setGanttZeroDate: (date: Date) => void;
   setSelectedOperatorId: (id: string | null) => void;
@@ -102,6 +108,7 @@ interface Snapshot {
   productionRecords: ProductionRecord[];
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
+  equipments: Equipment[];
 }
 
 const MAX_HISTORY = 50;
@@ -123,6 +130,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [productionRecords, setProductionRecords] = useState<ProductionRecord[]>([]);
   const [qcEntries, setQCEntries] = useState<QualityControlEntry[]>([]);
   const [deliveryEntries, setDeliveryEntries] = useState<DeliveryEntry[]>([]);
+  const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [ganttView, setGanttView] = useState<GanttView>('day');
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
@@ -144,7 +152,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     productionRecords: [...productionRecords],
     qcEntries: [...qcEntries],
     deliveryEntries: [...deliveryEntries],
-  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries]);
+    equipments: [...equipments],
+  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, equipments]);
 
   const pushUndo = useCallback(() => {
     const snap = takeSnapshot();
@@ -164,6 +173,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setProductionRecords(snap.productionRecords);
     setQCEntries(snap.qcEntries);
     setDeliveryEntries(snap.deliveryEntries);
+    setEquipments(snap.equipments);
   }, []);
 
   const undo = useCallback(() => {
@@ -243,6 +253,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addDeliveryEntry = wrap((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]));
   const deleteDeliveryEntry = wrap((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)));
 
+  const addEquipment = wrap((eq: Equipment) => setEquipments(prev => [...prev, eq]));
+  const updateEquipment = wrap((eq: Equipment) => setEquipments(prev => prev.map(e => e.id === eq.id ? eq : e)));
+  const deleteEquipment = wrap((id: string) => setEquipments(prev => prev.filter(e => e.id !== id)));
+
   return (
     <PlanningContext.Provider value={{
       operators, setOperators, addOperator, updateOperator, deleteOperator,
@@ -255,6 +269,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       productionRecords, addProductionRecord, deleteProductionRecord,
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
+      equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
       selectedOperatorId, setSelectedOperatorId,

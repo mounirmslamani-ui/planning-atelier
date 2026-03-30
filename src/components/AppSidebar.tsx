@@ -4,7 +4,7 @@ import {
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
-  PackagePlus, Hammer, FileSearch
+  PackagePlus, Hammer, FileSearch, Cog
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ const navItems = [
   { to: '/quality-control', label: 'Contrôle Qualité', icon: SearchCheck },
   { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
+  { to: '/equipment', label: 'Équipements', icon: Cog },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
   { to: '/operations', label: 'Opérations', icon: Drill },

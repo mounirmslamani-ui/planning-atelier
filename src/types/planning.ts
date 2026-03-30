@@ -1,10 +1,29 @@
 // Types for the workshop planning application
 
+export type EquipmentState = 'En marche' | 'Mode dégradé' | 'Maintenance/réparation' | 'En panne';
+
+export type EquipmentType =
+  | 'Fraiseuse conventionnelle' | 'Tour conventionnel' | 'Tour CNC'
+  | 'Rectifieuse plane' | 'Rectifieuse cylindrique' | 'Étau limeur'
+  | 'Perceuse à colonne' | 'Four' | 'Touret' | 'Scie mécanique'
+  | 'Scie circulaire' | 'Autres (Visseuse, meuleuse, perceuse, ...)'
+  | 'Plateau diviseur' | 'Plateau circulaire' | 'Tête taraudeuse';
+
+export interface Equipment {
+  id: string;
+  designation: string;
+  type: EquipmentType;
+  capacity: string;
+  state: EquipmentState;
+}
+
 export interface Operator {
   id: string;
   name: string;
   mainFunction: string;
   secondaryFunctions: string[];
+  mainEquipment?: string;
+  secondaryEquipments?: string[];
 }
 
 export interface Subcontractor {
@@ -69,6 +88,7 @@ export interface ProductionStep {
   dependsOnPercentage?: number; // 0-100: % of predecessor that must complete before this can start
   order: number; // chronological order
   frozen?: boolean; // true if manually placed – excluded from auto-scheduling
+  equipmentIds?: string[]; // required equipment for this step
 }
 
 export interface Holiday {

@@ -11,14 +11,15 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 
 interface OperationRow {
   id: string;
-  stepId?: string; // linked to existing ProductionStep
+  stepId?: string;
   order: number;
   operationId: string;
-  estimatedDuration: number; // stored in minutes
+  estimatedDuration: number;
   assignType: 'operator' | 'subcontractor';
   option1: string;
   option2: string;
   option3: string;
+  equipmentIds: string[];
 }
 
 interface Props {
@@ -29,7 +30,7 @@ interface Props {
 
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
-    operators, subcontractors, operations, steps, orders, holidays,
+    operators, subcontractors, operations, steps, orders, holidays, equipments,
     addStep, updateStep, deleteStep,
   } = usePlanning();
 
@@ -56,6 +57,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           option1: isSub ? s.subcontractorId! : s.operatorId,
           option2: '',
           option3: '',
+          equipmentIds: s.equipmentIds || [],
         };
       }));
     } else {
@@ -73,6 +75,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       option1: '',
       option2: '',
       option3: '',
+      equipmentIds: [],
     }]);
   };
 
@@ -120,6 +123,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         operationId: row.operationId,
         estimatedDuration: row.estimatedDuration,
         options,
+        equipmentIds: row.equipmentIds,
       };
     });
 
@@ -129,7 +133,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       opsToSchedule,
       stepsWithoutThisOrder,
       orders,
-      holidays
+      holidays,
+      equipments
     );
 
     newSteps.forEach(s => addStep(s));
@@ -188,6 +193,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 <TableHead>Option 1</TableHead>
                 <TableHead>Option 2</TableHead>
                 <TableHead>Option 3</TableHead>
+                <TableHead>Équipements</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -237,6 +243,22 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                   <TableCell>{renderAssigneeSelect(row, 'option2')}</TableCell>
                   <TableCell>{renderAssigneeSelect(row, 'option3')}</TableCell>
                   <TableCell>
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                      multiple
+                      size={2}
+                      value={row.equipmentIds}
+                      onChange={e => {
+                        const selected = Array.from(e.target.selectedOptions, o => o.value);
+                        updateRow(row.id, 'equipmentIds', selected);
+                      }}
+                    >
+                      {equipments.filter(eq => eq.state !== 'En panne').map(eq => (
+                        <option key={eq.id} value={eq.id}>{eq.designation}</option>
+                      ))}
+                    </select>
+                  </TableCell>
+                  <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => removeRow(row.id)}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
@@ -245,7 +267,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
               ))}
               {rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
                     Ajoutez des opérations pour cette commande.
                   </TableCell>
                 </TableRow>

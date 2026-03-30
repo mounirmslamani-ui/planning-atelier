@@ -1,10 +1,11 @@
-import type { ProductionStep, Order, Holiday, OrderPriority } from '@/types/planning';
+import type { ProductionStep, Order, Holiday, OrderPriority, Equipment } from '@/types/planning';
 import { addWorkMinutes } from './workTime';
 
 export interface OperationToSchedule {
   operationId: string;
   estimatedDuration: number; // in minutes
   options: { id: string; isSub: boolean }[];
+  equipmentIds?: string[];
 }
 
 interface ScheduleCandidate {
@@ -51,7 +52,9 @@ function findEarliestSlot(
   allSteps: ProductionStep[],
   allOrders: Order[],
   currentOrder: Order,
-  holidays: Holiday[]
+  holidays: Holiday[],
+  requiredEquipmentIds?: string[],
+  equipments?: Equipment[]
 ): ScheduleCandidate {
   const assigneeSteps = allSteps.filter(s =>
     isSub ? s.subcontractorId === assigneeId : (s.operatorId === assigneeId && !s.subcontractorId)
@@ -122,7 +125,8 @@ export function scheduleOrder(
   operationsToSchedule: OperationToSchedule[],
   existingSteps: ProductionStep[],
   allOrders: Order[],
-  holidays: Holiday[]
+  holidays: Holiday[],
+  equipments?: Equipment[]
 ): { newSteps: ProductionStep[]; updatedSteps: ProductionStep[] } {
   const newSteps: ProductionStep[] = [];
   const updatedSteps: ProductionStep[] = [];
@@ -137,6 +141,16 @@ export function scheduleOrder(
     const op = operationsToSchedule[i];
     if (op.options.length === 0) continue;
 
+    // Check equipment availability — skip if any required equipment is "En panne"
+    const requiredEqIds = op.equipmentIds || [];
+    if (equipments && requiredEqIds.length > 0) {
+      const allAvailable = requiredEqIds.every(eqId => {
+        const eq = equipments.find(e => e.id === eqId);
+        return eq && eq.state !== 'En panne';
+      });
+      if (!allAvailable) continue; // skip this operation — equipment unavailable
+    }
+
     let bestCandidate: ScheduleCandidate | null = null;
 
     for (const option of op.options) {
@@ -148,7 +162,9 @@ export function scheduleOrder(
         workingSteps,
         allOrders,
         currentOrder,
-        holidays
+        holidays,
+        requiredEqIds,
+        equipments
       );
 
       if (!bestCandidate || candidate.end < bestCandidate.end) {
@@ -169,6 +185,7 @@ export function scheduleOrder(
         endDate: formatDate(bestCandidate.end),
         endTime: formatTime(bestCandidate.end),
         order: i + 1,
+        equipmentIds: requiredEqIds.length > 0 ? requiredEqIds : undefined,
       };
 
       newSteps.push(step);
