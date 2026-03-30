@@ -3,7 +3,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
-  UserX, SearchCheck, PackageCheck, Handshake, Drill
+  UserX, SearchCheck, PackageCheck, Handshake, Drill,
+  PackagePlus, Hammer, FileSearch
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
