@@ -16,6 +16,9 @@ import HolidaysPage from "./pages/HolidaysPage";
 import ProductionRegisterPage from "./pages/ProductionRegisterPage";
 import QualityControlPage from "./pages/QualityControlPage";
 import DeliveryPage from "./pages/DeliveryPage";
+import MaterialPurchasesPage from "./pages/MaterialPurchasesPage";
+import ToolingPurchasesPage from "./pages/ToolingPurchasesPage";
+import StudyPage from "./pages/StudyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,9 @@ const App = () => (
               <Route path="/production-register" element={<ProductionRegisterPage />} />
               <Route path="/quality-control" element={<QualityControlPage />} />
               <Route path="/delivery" element={<DeliveryPage />} />
+              <Route path="/material-purchases" element={<MaterialPurchasesPage />} />
+              <Route path="/tooling-purchases" element={<ToolingPurchasesPage />} />
+              <Route path="/study" element={<StudyPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

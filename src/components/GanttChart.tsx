@@ -7,6 +7,8 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SubcontractorTableDialog from '@/components/SubcontractorTableDialog';
+import PurchaseRowDialog from '@/components/PurchaseRowDialog';
 import {
   workMinutesFromZero,
   getWorkSlotsForRange,
@@ -93,9 +95,18 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       ? 'border-2 border-accent'
       : isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
 
+  // Determine if order is missing prerequisites
+  const missingItems: string[] = [];
+  if (!order.materialAvailable) missingItems.push('Matière');
+  if (!order.toolingAvailable) missingItems.push('Outillage');
+  if (!order.studyReady) missingItems.push('Étude');
+  const isBlocked = missingItems.length > 0 && step.operationId !== 'op-8';
+  const blockedTextClass = isBlocked ? 'opacity-40' : '';
+  const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
+
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass} ${frozenClass}`}
+      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass} ${frozenClass} group`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => {
         if (e.ctrlKey || e.metaKey) {
@@ -107,9 +118,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
         e.preventDefault();
         onDragStart(step.id, e.clientX, left, e.clientY, e.altKey);
       }}
-      title={`${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}`}
+      title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor}`}>
+      <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor} ${blockedTextClass}`}>
         {subcontractorName ? (
           <>
             <div className="font-heading">{order.orderNumber} — {subcontractorName}</div>
@@ -123,6 +134,11 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
           </>
         )}
       </div>
+      {isBlocked && (
+        <div className="absolute bottom-0 left-0 right-0 hidden group-hover:flex bg-foreground/90 text-background text-[9px] px-1 py-0.5 leading-tight z-50">
+          ⚠ {missingItems.join(' + ')}
+        </div>
+      )}
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
@@ -325,7 +341,12 @@ const GanttChart: React.FC = () => {
     }
   }, [steps, orders, holidays, deleteStep, addStep, updateStep]);
 
-  type GanttRow = { type: 'operator'; id: string; label: string; sublabel: string } | { type: 'subcontractor'; id: string; label: string; sublabel: string };
+  type GanttRow = { type: 'operator' | 'subcontractor' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
+
+  // Dialog states for special row clicks
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [toolingDialogOpen, setToolingDialogOpen] = useState(false);
 
   const ganttRows = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
@@ -338,14 +359,25 @@ const GanttChart: React.FC = () => {
       })
       .map(op => ({ type: 'operator' as const, id: op.id, label: op.name, sublabel: op.mainFunction }));
 
-    // Add a single subcontractor row if there are subcontractor steps
-    const hasSubSteps = steps.some(s => s.subcontractorId);
-    const subRow: GanttRow[] = (hasSubSteps || subcontractors.length > 0) && !selectedOperatorId
-      ? [{ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' }]
-      : [];
+    // Add special rows
+    const specialRows: GanttRow[] = [];
+    if (!selectedOperatorId) {
+      const hasSubSteps = steps.some(s => s.subcontractorId);
+      if (hasSubSteps || subcontractors.length > 0) {
+        specialRows.push({ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' });
+      }
+      const hasMaterialPending = orders.some(o => o.id !== 'order-absence' && !o.materialAvailable);
+      if (hasMaterialPending) {
+        specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
+      }
+      const hasToolingPending = orders.some(o => o.id !== 'order-absence' && !o.toolingAvailable);
+      if (hasToolingPending) {
+        specialRows.push({ type: 'tooling' as const, id: '__tooling__', label: 'Achat outillage', sublabel: '' });
+      }
+    }
 
-    return [...opRows, ...subRow];
-  }, [operators, selectedOperatorId, steps, subcontractors]);
+    return [...opRows, ...specialRows];
+  }, [operators, selectedOperatorId, steps, subcontractors, orders]);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
@@ -838,12 +870,17 @@ const GanttChart: React.FC = () => {
           {ganttRows.map(row => (
             <div
               key={row.id}
-              onClick={() => row.type === 'operator' ? handleOperatorClick(row.id) : undefined}
-              className={`flex items-center px-2 border-b transition-colors ${row.type === 'operator' ? 'cursor-pointer hover:bg-muted/50' : 'bg-muted/20'}`}
+              onClick={() => {
+                if (row.type === 'operator') handleOperatorClick(row.id);
+                else if (row.type === 'subcontractor') setSubDialogOpen(true);
+                else if (row.type === 'material') setMaterialDialogOpen(true);
+                else if (row.type === 'tooling') setToolingDialogOpen(true);
+              }}
+              className={`flex items-center px-2 border-b transition-colors cursor-pointer hover:bg-muted/50 ${row.type !== 'operator' ? 'bg-muted/20' : ''}`}
               style={{ height: ROW_HEIGHT }}
             >
               <div>
-                <div className={`text-xs font-medium truncate ${row.type === 'subcontractor' ? 'text-primary' : ''}`}>{row.label}</div>
+                <div className={`text-xs font-medium truncate ${row.type !== 'operator' ? 'text-primary' : ''}`}>{row.label}</div>
                 {row.sublabel && <div className="text-[10px] text-muted-foreground">{row.sublabel}</div>}
               </div>
             </div>
@@ -899,16 +936,35 @@ const GanttChart: React.FC = () => {
               return null;
             })()}
 
-            {/* Operator rows */}
-            {ganttRows.map((row, rowIndex) => (
-              <div
-                key={row.id}
-                className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
-                style={{ height: ROW_HEIGHT }}
-              >
-                {filteredSteps
-                  .filter(s => row.type === 'operator' ? s.operatorId === row.id && !s.subcontractorId : !!s.subcontractorId)
-                  .map(step => {
+            {/* Rows */}
+            {ganttRows.map((row, rowIndex) => {
+              // Determine which steps to show in this row
+              const rowSteps = filteredSteps.filter(s => {
+                if (row.type === 'operator') return s.operatorId === row.id && !s.subcontractorId;
+                if (row.type === 'subcontractor') return !!s.subcontractorId;
+                if (row.type === 'material') {
+                  const order = orders.find(o => o.id === s.orderId);
+                  return order && !order.materialAvailable && s.operationId !== 'op-8';
+                }
+                if (row.type === 'tooling') {
+                  const order = orders.find(o => o.id === s.orderId);
+                  return order && !order.toolingAvailable && s.operationId !== 'op-8';
+                }
+                return false;
+              });
+
+              return (
+                <div
+                  key={row.id}
+                  className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
+                  style={{ height: ROW_HEIGHT }}
+                  onClick={() => {
+                    if (row.type === 'subcontractor') setSubDialogOpen(true);
+                    else if (row.type === 'material') setMaterialDialogOpen(true);
+                    else if (row.type === 'tooling') setToolingDialogOpen(true);
+                  }}
+                >
+                  {rowSteps.map(step => {
                     const order = orders.find(o => o.id === step.orderId);
                     if (!order) return null;
                     const left = getPixelOffset(step.startDate, step.startTime);
@@ -936,8 +992,9 @@ const GanttChart: React.FC = () => {
                       </div>
                     );
                   })}
-              </div>
-            ))}
+                </div>
+              );
+            })}
 
             {/* SVG arrows for linked blocks */}
             <svg className="absolute top-0 left-0 w-full pointer-events-none z-30" style={{ height: ganttRows.length * ROW_HEIGHT }}>
@@ -1259,6 +1316,11 @@ const GanttChart: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Special row dialogs */}
+      <SubcontractorTableDialog open={subDialogOpen} onOpenChange={setSubDialogOpen} />
+      <PurchaseRowDialog open={materialDialogOpen} onOpenChange={setMaterialDialogOpen} title="Achats matières programmés" type="material" />
+      <PurchaseRowDialog open={toolingDialogOpen} onOpenChange={setToolingDialogOpen} title="Achats outillage programmés" type="tooling" />
     </div>
   );
 };

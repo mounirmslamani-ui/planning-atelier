@@ -3,7 +3,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
-  UserX, SearchCheck, PackageCheck, Handshake, Drill
+  UserX, SearchCheck, PackageCheck, Handshake, Drill,
+  PackagePlus, Hammer, FileSearch
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,9 @@ const navItems = [
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
   { to: '/operations', label: 'Opérations', icon: Drill },
+  { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus },
+  { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer },
+  { to: '/study', label: 'Étude', icon: FileSearch },
   { to: '/holidays', label: 'Jours fériés', icon: CalendarDays },
 ];
 
