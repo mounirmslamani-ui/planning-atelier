@@ -173,6 +173,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setProductionRecords(snap.productionRecords);
     setQCEntries(snap.qcEntries);
     setDeliveryEntries(snap.deliveryEntries);
+    setEquipments(snap.equipments);
   }, []);
 
   const undo = useCallback(() => {
