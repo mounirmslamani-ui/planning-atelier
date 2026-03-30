@@ -387,29 +387,19 @@ const OrdersPage: React.FC = () => {
             )}
           </DialogHeader>
           <RadioGroup value={selectedPriority} onValueChange={(v) => setSelectedPriority(v as OrderPriority)}>
-            <div className="space-y-6">
-              {[
-                { level: 'Niveau 1 : Priorité Critique', keys: ['P1-A', 'P1-B', 'P1-C'] as OrderPriority[], color: 'text-destructive', border: 'border-destructive/30' },
-                { level: 'Niveau 2 : Priorité de Rattrapage', keys: ['P2-A', 'P2-B', 'P2-C'] as OrderPriority[], color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
-                { level: 'Niveau 3 : Priorité Standard', keys: ['P3-A', 'P3-B'] as OrderPriority[], color: 'text-normal', border: 'border-normal/30' },
-              ].map(group => (
-                <div key={group.level}>
-                  <h3 className={`text-sm font-semibold ${group.color} mb-2 flex items-center gap-2`}>
-                    <Flag className="w-4 h-4" /> {group.level}
-                  </h3>
-                  <div className={`space-y-2 pl-4 border-l-2 ${group.border}`}>
-                    {group.keys.map(p => (
-                      <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
-                        <RadioGroupItem value={p} className="mt-0.5" />
-                        <div>
-                          <span className="font-medium text-sm">{priorityConfig[p].label}</span>
-                          <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="space-y-4">
+              {(['P1', 'P2', 'P3', 'P4', 'P5'] as OrderPriority[]).map(p => {
+                const cfg = priorityConfig[p];
+                return (
+                  <label key={p} className={`flex items-start gap-3 p-3 rounded-md hover:bg-muted/50 cursor-pointer border-l-4 ${cfg.border}`}>
+                    <RadioGroupItem value={p} className="mt-0.5" />
+                    <div>
+                      <span className={`font-medium text-sm ${cfg.color}`}>{cfg.label}</span>
+                      <p className="text-xs text-muted-foreground">{cfg.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </RadioGroup>
           <DialogFooter className="gap-2">

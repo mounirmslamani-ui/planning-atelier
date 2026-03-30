@@ -69,6 +69,7 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
         plannedDeadline: row[6] || '',
         materialAvailable: true,
         toolingAvailable: true,
+        studyReady: true,
         displayOrder: nextDisplayOrder + i,
       };
     });
