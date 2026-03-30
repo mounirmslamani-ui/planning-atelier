@@ -185,6 +185,7 @@ export function scheduleOrder(
         endDate: formatDate(bestCandidate.end),
         endTime: formatTime(bestCandidate.end),
         order: i + 1,
+        equipmentIds: requiredEqIds.length > 0 ? requiredEqIds : undefined,
       };
 
       newSteps.push(step);
