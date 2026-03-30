@@ -19,6 +19,7 @@ const navItems = [
   { to: '/quality-control', label: 'Contrôle Qualité', icon: SearchCheck },
   { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck },
   { to: '/operators', label: 'Opérateurs', icon: Users },
+  { to: '/equipment', label: 'Équipements', icon: Cog },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
   { to: '/operations', label: 'Opérations', icon: Drill },
