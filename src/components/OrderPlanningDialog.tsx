@@ -123,6 +123,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         operationId: row.operationId,
         estimatedDuration: row.estimatedDuration,
         options,
+        equipmentIds: row.equipmentIds,
       };
     });
 
