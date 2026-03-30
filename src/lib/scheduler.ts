@@ -125,7 +125,8 @@ export function scheduleOrder(
   operationsToSchedule: OperationToSchedule[],
   existingSteps: ProductionStep[],
   allOrders: Order[],
-  holidays: Holiday[]
+  holidays: Holiday[],
+  equipments?: Equipment[]
 ): { newSteps: ProductionStep[]; updatedSteps: ProductionStep[] } {
   const newSteps: ProductionStep[] = [];
   const updatedSteps: ProductionStep[] = [];
