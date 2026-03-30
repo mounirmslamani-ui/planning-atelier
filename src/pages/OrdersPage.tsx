@@ -159,8 +159,8 @@ const OrdersPage: React.FC = () => {
   // Order form
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
-    designation: '', quantity: 1, urgency: 'normal', plannedDeadline: '', materialAvailable: true,
-    toolingAvailable: true, displayOrder: baseSorted.length + 1,
+    designation: '', quantity: 1, urgency: 'low', plannedDeadline: '', materialAvailable: true,
+    toolingAvailable: true, studyReady: true, displayOrder: baseSorted.length + 1,
   });
   const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
 
