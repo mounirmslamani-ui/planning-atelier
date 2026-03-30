@@ -57,6 +57,11 @@ interface PlanningContextType extends PlanningState {
   deliveryEntries: DeliveryEntry[];
   addDeliveryEntry: (entry: DeliveryEntry) => void;
   deleteDeliveryEntry: (id: string) => void;
+  equipments: Equipment[];
+  setEquipments: (eqs: Equipment[]) => void;
+  addEquipment: (eq: Equipment) => void;
+  updateEquipment: (eq: Equipment) => void;
+  deleteEquipment: (id: string) => void;
   setGanttView: (view: GanttView) => void;
   setGanttZeroDate: (date: Date) => void;
   setSelectedOperatorId: (id: string | null) => void;
