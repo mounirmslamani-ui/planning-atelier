@@ -101,6 +101,7 @@ const OrdersPage: React.FC = () => {
       case 'plannedDeadline': return o.plannedDeadline;
       case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
       case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
+      case 'studyReady': return o.studyReady ? 'Oui' : 'Non';
       default: return '';
     }
   }, [getClientName]);
