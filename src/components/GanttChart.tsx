@@ -7,6 +7,10 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SubcontractorTableDialog from '@/components/SubcontractorTableDialog';
+import PurchaseRowDialog from '@/components/PurchaseRowDialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   workMinutesFromZero,
   getWorkSlotsForRange,
