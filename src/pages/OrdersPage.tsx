@@ -8,40 +8,45 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical, ClipboardPaste } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical, ClipboardPaste, FileCheck } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
-  urgent: 'Urgent', moderate: 'Modéré', normal: 'Normal', 'not-urgent': 'Pas urgent',
+  critical: 'مستعجل-أولوية قصوى',
+  moderate: 'مستعجل نسبيا',
+  low: 'غير مستعجل',
+  pending: 'قيد التعليق',
+  waiting: '',
 };
 const urgencyColors: Record<UrgencyLevel, string> = {
-  urgent: 'bg-urgent/15 text-urgent', moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
-  normal: 'bg-normal/15 text-normal', 'not-urgent': 'bg-muted text-muted-foreground',
+  critical: 'bg-urgent/15 text-urgent',
+  moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
+  low: 'bg-priority-p3/15 text-priority-p3',
+  pending: 'bg-priority-p4/15 text-muted-foreground',
+  waiting: 'bg-muted text-muted-foreground',
 };
-const priorityConfig: Record<OrderPriority, { label: string; description: string; level: string }> = {
-  'P1-A': { label: 'P1-A - Urgences contractuelles', description: 'Commandes dont la date d\'expédition est dépassée ou prévue sous 24/48h.', level: 'Niveau 1 : Priorité Critique' },
-  'P1-B': { label: 'P1-B - Commandes en finition (90%)', description: 'Tout ce qui est presque terminé.', level: 'Niveau 1 : Priorité Critique' },
-  'P1-C': { label: 'P1-C - Fort enjeu financier', description: 'Commandes à haute valeur ajoutée.', level: 'Niveau 1 : Priorité Critique' },
-  'P2-A': { label: 'P2-A - Commandes en retard léger', description: 'Celles qui ont glissé de quelques jours.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P2-B': { label: 'P2-B - Urgence modérée', description: 'Échéance à J+5 ou J+7.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P2-C': { label: 'P2-C - Commandes groupées', description: 'Optimisation technique.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P3-A': { label: 'P3-A - Flux normal', description: 'Délai confortable (2 semaines+).', level: 'Niveau 3 : Priorité Standard' },
-  'P3-B': { label: 'P3-B - Travaux internes', description: 'Préparation de sous-ensembles.', level: 'Niveau 3 : Priorité Standard' },
+const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
+  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation. Lancement immédiat dès que matière, outillage, études prêts.', color: 'text-urgent', border: 'border-urgent/30' },
+  'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines, en avance sur le délai ou légèrement en retard CR<2.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
+  'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert, large avance sur les délais.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
+  'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre de la part du client. Statut provisoire, programmer en dernier.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
+  'P5': { label: 'P5 - قيد الانتظار', description: 'En attente. Aucune urgence associée.', color: 'text-muted-foreground', border: 'border-muted/30' },
 };
 const priorityColors: Record<OrderPriority, string> = {
-  'P1-A': 'bg-destructive text-destructive-foreground', 'P1-B': 'bg-destructive/80 text-destructive-foreground',
-  'P1-C': 'bg-destructive/60 text-destructive-foreground', 'P2-A': 'bg-urgent-moderate text-white',
-  'P2-B': 'bg-urgent-moderate/80 text-white', 'P2-C': 'bg-urgent-moderate/60 text-white',
-  'P3-A': 'bg-normal text-white', 'P3-B': 'bg-normal/70 text-white',
+  'P1': 'bg-urgent text-white',
+  'P2': 'bg-urgent-moderate text-white',
+  'P3': 'bg-priority-p3 text-foreground',
+  'P4': 'bg-priority-p4 text-foreground',
+  'P5': 'bg-muted text-muted-foreground',
 };
 
-const urgencyRank: Record<UrgencyLevel, number> = { urgent: 0, moderate: 1, normal: 2, 'not-urgent': 3 };
+const urgencyRank: Record<UrgencyLevel, number> = { critical: 0, moderate: 1, low: 2, pending: 3, waiting: 4 };
 
 // Column definitions for filter/sort
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'urgency' | 'priority' | 'plannedDeadline' | 'materialAvailable' | 'toolingAvailable';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'urgency' | 'priority' | 'plannedDeadline' | 'materialAvailable' | 'toolingAvailable' | 'studyReady';
 
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders } = usePlanning();
