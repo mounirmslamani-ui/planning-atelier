@@ -326,6 +326,7 @@ const GanttChart: React.FC = () => {
           operationId: s.operationId,
           estimatedDuration: s.estimatedDuration,
           options: [{ id: isSub ? s.subcontractorId! : s.operatorId, isSub }],
+          equipmentIds: s.equipmentIds,
         };
       });
 
