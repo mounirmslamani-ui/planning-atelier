@@ -253,6 +253,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addDeliveryEntry = wrap((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]));
   const deleteDeliveryEntry = wrap((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)));
 
+  const addEquipment = wrap((eq: Equipment) => setEquipments(prev => [...prev, eq]));
+  const updateEquipment = wrap((eq: Equipment) => setEquipments(prev => prev.map(e => e.id === eq.id ? eq : e)));
+  const deleteEquipment = wrap((id: string) => setEquipments(prev => prev.filter(e => e.id !== id)));
+
   return (
     <PlanningContext.Provider value={{
       operators, setOperators, addOperator, updateOperator, deleteOperator,
