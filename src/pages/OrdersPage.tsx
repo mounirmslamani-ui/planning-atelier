@@ -369,7 +369,7 @@ const OrdersPage: React.FC = () => {
               </TableRow>
             ))}
             {displayOrders.length === 0 && (
-              <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
