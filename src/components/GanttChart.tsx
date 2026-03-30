@@ -870,12 +870,17 @@ const GanttChart: React.FC = () => {
           {ganttRows.map(row => (
             <div
               key={row.id}
-              onClick={() => row.type === 'operator' ? handleOperatorClick(row.id) : undefined}
-              className={`flex items-center px-2 border-b transition-colors ${row.type === 'operator' ? 'cursor-pointer hover:bg-muted/50' : 'bg-muted/20'}`}
+              onClick={() => {
+                if (row.type === 'operator') handleOperatorClick(row.id);
+                else if (row.type === 'subcontractor') setSubDialogOpen(true);
+                else if (row.type === 'material') setMaterialDialogOpen(true);
+                else if (row.type === 'tooling') setToolingDialogOpen(true);
+              }}
+              className={`flex items-center px-2 border-b transition-colors cursor-pointer hover:bg-muted/50 ${row.type !== 'operator' ? 'bg-muted/20' : ''}`}
               style={{ height: ROW_HEIGHT }}
             >
               <div>
-                <div className={`text-xs font-medium truncate ${row.type === 'subcontractor' ? 'text-primary' : ''}`}>{row.label}</div>
+                <div className={`text-xs font-medium truncate ${row.type !== 'operator' ? 'text-primary' : ''}`}>{row.label}</div>
                 {row.sublabel && <div className="text-[10px] text-muted-foreground">{row.sublabel}</div>}
               </div>
             </div>
