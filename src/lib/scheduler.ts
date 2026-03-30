@@ -141,6 +141,16 @@ export function scheduleOrder(
     const op = operationsToSchedule[i];
     if (op.options.length === 0) continue;
 
+    // Check equipment availability — skip if any required equipment is "En panne"
+    const requiredEqIds = op.equipmentIds || [];
+    if (equipments && requiredEqIds.length > 0) {
+      const allAvailable = requiredEqIds.every(eqId => {
+        const eq = equipments.find(e => e.id === eqId);
+        return eq && eq.state !== 'En panne';
+      });
+      if (!allAvailable) continue; // skip this operation — equipment unavailable
+    }
+
     let bestCandidate: ScheduleCandidate | null = null;
 
     for (const option of op.options) {
