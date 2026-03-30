@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock, Flag, Undo2, Redo2 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import { scheduleOrder } from '@/lib/scheduler';
@@ -142,6 +142,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
+      {isLast && step.operationId !== 'op-8' && (
+        <Flag className="absolute top-0.5 right-[18px] w-3 h-3 text-foreground/70" />
+      )}
       {step.frozen && (
         <Lock className="absolute top-0.5 right-3 w-2.5 h-2.5 text-blue-500/80" />
       )}
@@ -161,6 +164,7 @@ const GanttChart: React.FC = () => {
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
     deleteStep, addQCEntry, setSteps,
+    undo, redo, canUndo, canRedo,
   } = usePlanning();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -826,6 +830,12 @@ const GanttChart: React.FC = () => {
         </div>
         <Button variant="outline" size="sm" onClick={handleReplanifier} className="ml-2">
           <CalendarCheck className="w-4 h-4 mr-1" /> Replanifier
+        </Button>
+        <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)" className="ml-1">
+          <Undo2 className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
+          <Redo2 className="w-4 h-4" />
         </Button>
         {(selectedOperatorId || selectedOrderId) && (
           <button
