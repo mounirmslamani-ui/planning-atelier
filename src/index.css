@@ -38,13 +38,13 @@
 
     /* Custom tokens */
     --urgent: 0 72% 51%;
-    --urgent-moderate: 30 90% 52%;
+    --urgent-moderate: 48 90% 50%;
     --normal: 142 60% 42%;
     --not-urgent: 215 15% 93%;
     --absence: 215 10% 70%;
-    --priority-p3: 48 90% 50%;
-    --priority-p4: 215 10% 75%;
-    --priority-p5: 215 15% 85%;
+    --priority-p3: 120 40% 78%;
+    --priority-p4: 215 10% 80%;
+    --priority-p5: 215 10% 80%;
 
     --gantt-header: 215 30% 18%;
     --gantt-header-foreground: 0 0% 95%;
