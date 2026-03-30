@@ -158,7 +158,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
 
 const GanttChart: React.FC = () => {
   const {
-    operators, operations, orders, steps, holidays, clients, subcontractors,
+    operators, operations, orders, steps, holidays, clients, subcontractors, equipments,
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
