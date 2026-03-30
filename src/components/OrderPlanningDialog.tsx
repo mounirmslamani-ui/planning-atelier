@@ -75,6 +75,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       option1: '',
       option2: '',
       option3: '',
+      equipmentIds: [],
     }]);
   };
 
