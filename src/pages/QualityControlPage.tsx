@@ -10,25 +10,23 @@ import { Textarea } from '@/components/ui/textarea';
 import type { QCDecision, QualityControlEntry } from '@/types/planning';
 
 const urgencyLabels: Record<string, string> = {
-  urgent: 'Urgent', moderate: 'Modéré', normal: 'Normal', 'not-urgent': 'Pas urgent',
+  critical: 'مستعجل-أولوية قصوى', moderate: 'مستعجل نسبيا', low: 'غير مستعجل', pending: 'قيد التعليق', waiting: '',
 };
 
 const urgencyColors: Record<string, string> = {
-  urgent: 'bg-urgent/15 text-urgent',
+  critical: 'bg-urgent/15 text-urgent',
   moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
-  normal: 'bg-normal/15 text-normal',
-  'not-urgent': 'bg-muted text-muted-foreground',
+  low: 'bg-priority-p3/15 text-priority-p3',
+  pending: 'bg-priority-p4/15 text-muted-foreground',
+  waiting: 'bg-muted text-muted-foreground',
 };
 
 const priorityColors: Record<string, string> = {
-  'P1-A': 'bg-destructive text-destructive-foreground',
-  'P1-B': 'bg-destructive/80 text-destructive-foreground',
-  'P1-C': 'bg-destructive/60 text-destructive-foreground',
-  'P2-A': 'bg-urgent-moderate text-white',
-  'P2-B': 'bg-urgent-moderate/80 text-white',
-  'P2-C': 'bg-urgent-moderate/60 text-white',
-  'P3-A': 'bg-normal text-white',
-  'P3-B': 'bg-normal/70 text-white',
+  'P1': 'bg-urgent text-white',
+  'P2': 'bg-urgent-moderate text-white',
+  'P3': 'bg-priority-p3 text-foreground',
+  'P4': 'bg-priority-p4 text-foreground',
+  'P5': 'bg-muted text-muted-foreground',
 };
 
 const decisionLabels: Record<QCDecision, string> = {

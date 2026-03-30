@@ -30,12 +30,9 @@ export interface Client {
   clientClass?: ClientClass;
 }
 
-export type UrgencyLevel = 'urgent' | 'moderate' | 'normal' | 'not-urgent';
+export type UrgencyLevel = 'critical' | 'moderate' | 'low' | 'pending' | 'waiting';
 
-export type OrderPriority = 
-  | 'P1-A' | 'P1-B' | 'P1-C' 
-  | 'P2-A' | 'P2-B' | 'P2-C' 
-  | 'P3-A' | 'P3-B';
+export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'P5';
 
 export interface Order {
   id: string;
@@ -54,6 +51,7 @@ export interface Order {
   complementaryQuantity?: number;
   materialAvailable: boolean;
   toolingAvailable: boolean;
+  studyReady: boolean;
 }
 
 export interface ProductionStep {

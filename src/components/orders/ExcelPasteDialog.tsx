@@ -18,10 +18,11 @@ const EXPECTED_COLUMNS = ['N° Commande', 'Date', 'Client', 'Désignation', 'Qua
 
 const parseUrgency = (val: string): UrgencyLevel => {
   const lower = val.toLowerCase().trim();
-  if (lower === 'urgent') return 'urgent';
-  if (lower === 'modéré' || lower === 'modere' || lower === 'moderate') return 'moderate';
-  if (lower === 'pas urgent' || lower === 'not-urgent' || lower === 'not urgent') return 'not-urgent';
-  return 'normal';
+  if (lower.includes('قصوى') || lower === 'critical' || lower === 'p1') return 'critical';
+  if (lower.includes('نسبيا') || lower === 'moderate' || lower === 'p2') return 'moderate';
+  if (lower.includes('تعليق') || lower === 'pending' || lower === 'p4') return 'pending';
+  if (lower.includes('انتظار') || lower === 'waiting' || lower === 'p5') return 'waiting';
+  return 'low';
 };
 
 const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange, onImport, clients, nextDisplayOrder }) => {
@@ -68,6 +69,7 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
         plannedDeadline: row[6] || '',
         materialAvailable: true,
         toolingAvailable: true,
+        studyReady: true,
         displayOrder: nextDisplayOrder + i,
       };
     });

@@ -25,16 +25,14 @@ function orderScore(order?: Order): number {
 
 function priorityScoreFromLevel(p?: OrderPriority): number {
   const map: Record<string, number> = {
-    'P1-A': 1, 'P1-B': 2, 'P1-C': 3,
-    'P2-A': 4, 'P2-B': 5, 'P2-C': 6,
-    'P3-A': 7, 'P3-B': 8,
+    'P1': 1, 'P2': 2, 'P3': 3, 'P4': 4, 'P5': 5,
   };
   return p ? (map[p] ?? 9999) : 9999;
 }
 
-/** An order is "blocked" if material or tooling is unavailable */
+/** An order is "blocked" if material, tooling, or study is unavailable */
 function isOrderBlocked(order: Order): boolean {
-  return !order.materialAvailable || !order.toolingAvailable;
+  return !order.materialAvailable || !order.toolingAvailable || !order.studyReady;
 }
 
 function formatDate(d: Date): string {

@@ -8,40 +8,45 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical, ClipboardPaste } from 'lucide-react';
+import { Plus, Pencil, Trash2, Package, Wrench, Flag, GripVertical, ClipboardPaste, FileCheck } from 'lucide-react';
 import type { Order, UrgencyLevel, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 
 const urgencyLabels: Record<UrgencyLevel, string> = {
-  urgent: 'Urgent', moderate: 'Modéré', normal: 'Normal', 'not-urgent': 'Pas urgent',
+  critical: 'مستعجل-أولوية قصوى',
+  moderate: 'مستعجل نسبيا',
+  low: 'غير مستعجل',
+  pending: 'قيد التعليق',
+  waiting: '',
 };
 const urgencyColors: Record<UrgencyLevel, string> = {
-  urgent: 'bg-urgent/15 text-urgent', moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
-  normal: 'bg-normal/15 text-normal', 'not-urgent': 'bg-muted text-muted-foreground',
+  critical: 'bg-urgent/15 text-urgent',
+  moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
+  low: 'bg-priority-p3/15 text-priority-p3',
+  pending: 'bg-priority-p4/15 text-muted-foreground',
+  waiting: 'bg-muted text-muted-foreground',
 };
-const priorityConfig: Record<OrderPriority, { label: string; description: string; level: string }> = {
-  'P1-A': { label: 'P1-A - Urgences contractuelles', description: 'Commandes dont la date d\'expédition est dépassée ou prévue sous 24/48h.', level: 'Niveau 1 : Priorité Critique' },
-  'P1-B': { label: 'P1-B - Commandes en finition (90%)', description: 'Tout ce qui est presque terminé.', level: 'Niveau 1 : Priorité Critique' },
-  'P1-C': { label: 'P1-C - Fort enjeu financier', description: 'Commandes à haute valeur ajoutée.', level: 'Niveau 1 : Priorité Critique' },
-  'P2-A': { label: 'P2-A - Commandes en retard léger', description: 'Celles qui ont glissé de quelques jours.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P2-B': { label: 'P2-B - Urgence modérée', description: 'Échéance à J+5 ou J+7.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P2-C': { label: 'P2-C - Commandes groupées', description: 'Optimisation technique.', level: 'Niveau 2 : Priorité de Rattrapage' },
-  'P3-A': { label: 'P3-A - Flux normal', description: 'Délai confortable (2 semaines+).', level: 'Niveau 3 : Priorité Standard' },
-  'P3-B': { label: 'P3-B - Travaux internes', description: 'Préparation de sous-ensembles.', level: 'Niveau 3 : Priorité Standard' },
+const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
+  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation. Lancement immédiat dès que matière, outillage, études prêts.', color: 'text-urgent', border: 'border-urgent/30' },
+  'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines, en avance sur le délai ou légèrement en retard CR<2.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
+  'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert, large avance sur les délais.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
+  'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre de la part du client. Statut provisoire, programmer en dernier.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
+  'P5': { label: 'P5 - قيد الانتظار', description: 'En attente. Aucune urgence associée.', color: 'text-muted-foreground', border: 'border-muted/30' },
 };
 const priorityColors: Record<OrderPriority, string> = {
-  'P1-A': 'bg-destructive text-destructive-foreground', 'P1-B': 'bg-destructive/80 text-destructive-foreground',
-  'P1-C': 'bg-destructive/60 text-destructive-foreground', 'P2-A': 'bg-urgent-moderate text-white',
-  'P2-B': 'bg-urgent-moderate/80 text-white', 'P2-C': 'bg-urgent-moderate/60 text-white',
-  'P3-A': 'bg-normal text-white', 'P3-B': 'bg-normal/70 text-white',
+  'P1': 'bg-urgent text-white',
+  'P2': 'bg-urgent-moderate text-white',
+  'P3': 'bg-priority-p3 text-foreground',
+  'P4': 'bg-priority-p4 text-foreground',
+  'P5': 'bg-muted text-muted-foreground',
 };
 
-const urgencyRank: Record<UrgencyLevel, number> = { urgent: 0, moderate: 1, normal: 2, 'not-urgent': 3 };
+const urgencyRank: Record<UrgencyLevel, number> = { critical: 0, moderate: 1, low: 2, pending: 3, waiting: 4 };
 
 // Column definitions for filter/sort
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'urgency' | 'priority' | 'plannedDeadline' | 'materialAvailable' | 'toolingAvailable';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'urgency' | 'priority' | 'plannedDeadline' | 'materialAvailable' | 'toolingAvailable' | 'studyReady';
 
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders } = usePlanning();
@@ -96,6 +101,7 @@ const OrdersPage: React.FC = () => {
       case 'plannedDeadline': return o.plannedDeadline;
       case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
       case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
+      case 'studyReady': return o.studyReady ? 'Oui' : 'Non';
       default: return '';
     }
   }, [getClientName]);
@@ -153,8 +159,8 @@ const OrdersPage: React.FC = () => {
   // Order form
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
-    designation: '', quantity: 1, urgency: 'normal', plannedDeadline: '', materialAvailable: true,
-    toolingAvailable: true, displayOrder: baseSorted.length + 1,
+    designation: '', quantity: 1, urgency: 'low', plannedDeadline: '', materialAvailable: true,
+    toolingAvailable: true, studyReady: true, displayOrder: baseSorted.length + 1,
   });
   const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
 
@@ -245,6 +251,7 @@ const OrdersPage: React.FC = () => {
     { key: 'plannedDeadline', label: 'Délai' },
     { key: 'materialAvailable', label: 'Mat.' },
     { key: 'toolingAvailable', label: 'Out.' },
+    { key: 'studyReady', label: 'Étude' },
   ];
 
   return (
@@ -348,6 +355,9 @@ const OrdersPage: React.FC = () => {
                   <Wrench className={`w-4 h-4 ${o.toolingAvailable ? 'text-normal' : 'text-destructive'}`} />
                 </TableCell>
                 <TableCell>
+                  <FileCheck className={`w-4 h-4 ${o.studyReady ? 'text-normal' : 'text-destructive'}`} />
+                </TableCell>
+                <TableCell>
                   <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" onClick={() => openPriorityDialog(o)} title="Définir priorité">
                       <Flag className="w-3.5 h-3.5" />
@@ -359,7 +369,7 @@ const OrdersPage: React.FC = () => {
               </TableRow>
             ))}
             {displayOrders.length === 0 && (
-              <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -377,29 +387,19 @@ const OrdersPage: React.FC = () => {
             )}
           </DialogHeader>
           <RadioGroup value={selectedPriority} onValueChange={(v) => setSelectedPriority(v as OrderPriority)}>
-            <div className="space-y-6">
-              {[
-                { level: 'Niveau 1 : Priorité Critique', keys: ['P1-A', 'P1-B', 'P1-C'] as OrderPriority[], color: 'text-destructive', border: 'border-destructive/30' },
-                { level: 'Niveau 2 : Priorité de Rattrapage', keys: ['P2-A', 'P2-B', 'P2-C'] as OrderPriority[], color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
-                { level: 'Niveau 3 : Priorité Standard', keys: ['P3-A', 'P3-B'] as OrderPriority[], color: 'text-normal', border: 'border-normal/30' },
-              ].map(group => (
-                <div key={group.level}>
-                  <h3 className={`text-sm font-semibold ${group.color} mb-2 flex items-center gap-2`}>
-                    <Flag className="w-4 h-4" /> {group.level}
-                  </h3>
-                  <div className={`space-y-2 pl-4 border-l-2 ${group.border}`}>
-                    {group.keys.map(p => (
-                      <label key={p} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer">
-                        <RadioGroupItem value={p} className="mt-0.5" />
-                        <div>
-                          <span className="font-medium text-sm">{priorityConfig[p].label}</span>
-                          <p className="text-xs text-muted-foreground">{priorityConfig[p].description}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="space-y-4">
+              {(['P1', 'P2', 'P3', 'P4', 'P5'] as OrderPriority[]).map(p => {
+                const cfg = priorityConfig[p];
+                return (
+                  <label key={p} className={`flex items-start gap-3 p-3 rounded-md hover:bg-muted/50 cursor-pointer border-l-4 ${cfg.border}`}>
+                    <RadioGroupItem value={p} className="mt-0.5" />
+                    <div>
+                      <span className={`font-medium text-sm ${cfg.color}`}>{cfg.label}</span>
+                      <p className="text-xs text-muted-foreground">{cfg.description}</p>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </RadioGroup>
           <DialogFooter className="gap-2">
@@ -471,6 +471,10 @@ const OrdersPage: React.FC = () => {
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={form.toolingAvailable} onChange={e => updateForm('toolingAvailable', e.target.checked)} className="rounded" />
                 <Wrench className="w-4 h-4" /> Outillage disponible
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.studyReady} onChange={e => updateForm('studyReady', e.target.checked)} className="rounded" />
+                <FileCheck className="w-4 h-4" /> Étude faite
               </label>
             </div>
           </div>

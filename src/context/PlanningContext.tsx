@@ -96,7 +96,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [operations, setOperations] = useState<Operation[]>(defaultOperations);
   const [clients, setClients] = useState<Client[]>(defaultClients);
   const [orders, setOrders] = useState<Order[]>([
-    { id: 'order-absence', orderNumber: 'ABS', orderDate: '', clientId: '', designation: 'Absence', quantity: 0, urgency: 'normal', plannedDeadline: '', materialAvailable: true, toolingAvailable: true },
+    { id: 'order-absence', orderNumber: 'ABS', orderDate: '', clientId: '', designation: 'Absence', quantity: 0, urgency: 'low', plannedDeadline: '', materialAvailable: true, toolingAvailable: true, studyReady: true },
   ]);
   const [steps, setSteps] = useState<ProductionStep[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);

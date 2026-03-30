@@ -66,6 +66,9 @@ export default {
         normal: "hsl(var(--normal))",
         "not-urgent": "hsl(var(--not-urgent))",
         absence: "hsl(var(--absence))",
+        "priority-p3": "hsl(var(--priority-p3))",
+        "priority-p4": "hsl(var(--priority-p4))",
+        "priority-p5": "hsl(var(--priority-p5))",
         gantt: {
           header: "hsl(var(--gantt-header))",
           "header-foreground": "hsl(var(--gantt-header-foreground))",

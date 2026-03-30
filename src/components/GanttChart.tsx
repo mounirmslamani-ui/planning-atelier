@@ -22,20 +22,30 @@ const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
 const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
 
-function getUrgencyBg(urgency: string): string {
-  switch (urgency) {
-    case 'urgent': return 'bg-urgent/80';
+function getUrgencyBg(order: Order): string {
+  const p = order.priority;
+  if (p === 'P1') return 'bg-urgent/80';
+  if (p === 'P2') return 'bg-urgent-moderate/80';
+  if (p === 'P3') return 'bg-priority-p3/80';
+  if (p === 'P4') return 'bg-priority-p4/80';
+  if (p === 'P5') return 'bg-priority-p5/80';
+  // Fallback by urgency
+  switch (order.urgency) {
+    case 'critical': return 'bg-urgent/80';
     case 'moderate': return 'bg-urgent-moderate/80';
-    case 'normal': return 'bg-normal/80';
-    case 'not-urgent': return 'bg-not-urgent';
+    case 'low': return 'bg-priority-p3/80';
+    case 'pending': return 'bg-priority-p4/80';
+    case 'waiting': return 'bg-priority-p5/80';
     default: return 'bg-muted';
   }
 }
 
-function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean): string {
-  if (!materialAvailable && !toolingAvailable) return 'hatch-cross';
+function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {
+  const blocked = [!materialAvailable, !toolingAvailable, !studyReady].filter(Boolean).length;
+  if (blocked >= 2) return 'hatch-cross';
   if (!materialAvailable) return 'hatch-right';
   if (!toolingAvailable) return 'hatch-left';
+  if (!studyReady) return 'hatch-right';
   return '';
 }
 
@@ -73,8 +83,8 @@ interface GanttBlockProps {
 const GanttBlock: React.FC<GanttBlockProps> = ({
   step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order.urgency);
-  const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable);
+  const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order);
+  const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
   const textColor = getDeadlineTextColor(order, step);
   const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
   const borderClass = isCtrlSelected
