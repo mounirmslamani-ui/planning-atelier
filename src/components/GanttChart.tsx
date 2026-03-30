@@ -936,16 +936,35 @@ const GanttChart: React.FC = () => {
               return null;
             })()}
 
-            {/* Operator rows */}
-            {ganttRows.map((row, rowIndex) => (
-              <div
-                key={row.id}
-                className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
-                style={{ height: ROW_HEIGHT }}
-              >
-                {filteredSteps
-                  .filter(s => row.type === 'operator' ? s.operatorId === row.id && !s.subcontractorId : !!s.subcontractorId)
-                  .map(step => {
+            {/* Rows */}
+            {ganttRows.map((row, rowIndex) => {
+              // Determine which steps to show in this row
+              const rowSteps = filteredSteps.filter(s => {
+                if (row.type === 'operator') return s.operatorId === row.id && !s.subcontractorId;
+                if (row.type === 'subcontractor') return !!s.subcontractorId;
+                if (row.type === 'material') {
+                  const order = orders.find(o => o.id === s.orderId);
+                  return order && !order.materialAvailable && s.operationId !== 'op-8';
+                }
+                if (row.type === 'tooling') {
+                  const order = orders.find(o => o.id === s.orderId);
+                  return order && !order.toolingAvailable && s.operationId !== 'op-8';
+                }
+                return false;
+              });
+
+              return (
+                <div
+                  key={row.id}
+                  className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
+                  style={{ height: ROW_HEIGHT }}
+                  onClick={() => {
+                    if (row.type === 'subcontractor') setSubDialogOpen(true);
+                    else if (row.type === 'material') setMaterialDialogOpen(true);
+                    else if (row.type === 'tooling') setToolingDialogOpen(true);
+                  }}
+                >
+                  {rowSteps.map(step => {
                     const order = orders.find(o => o.id === step.orderId);
                     if (!order) return null;
                     const left = getPixelOffset(step.startDate, step.startTime);
@@ -973,8 +992,9 @@ const GanttChart: React.FC = () => {
                       </div>
                     );
                   })}
-              </div>
-            ))}
+                </div>
+              );
+            })}
 
             {/* SVG arrows for linked blocks */}
             <svg className="absolute top-0 left-0 w-full pointer-events-none z-30" style={{ height: ganttRows.length * ROW_HEIGHT }}>
