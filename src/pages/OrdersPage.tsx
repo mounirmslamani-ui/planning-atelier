@@ -136,7 +136,7 @@ const OrdersPage: React.FC = () => {
       map.set(o.id, computeCR(o, steps, productionRecords, holidays, absenceOperationId));
     });
     return map;
-  }, [orders, steps, productionRecords, holidays]);
+  }, [orders, steps, productionRecords, holidays, absenceOrderId, absenceOperationId]);
 
   // Default sort: priority desc (P1 first) then CR asc (smallest first)
   const baseSorted = useMemo(() => {
