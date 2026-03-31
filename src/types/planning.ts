@@ -87,6 +87,8 @@ export interface ProductionStep {
   order: number; // chronological order
   frozen?: boolean; // true if manually placed – excluded from auto-scheduling
   equipmentIds?: string[]; // required equipment for this step
+  subcontractingDone?: boolean; // true when subcontracting is completed
+  subcontractingDeadline?: string; // deadline for subcontracting (date string)
 }
 
 export interface Holiday {
