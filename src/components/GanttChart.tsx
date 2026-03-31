@@ -93,7 +93,8 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   if (!order.materialAvailable) missingItems.push('Matière');
   if (!order.toolingAvailable) missingItems.push('Outillage');
   if (!order.studyReady) missingItems.push('Étude');
-  const isBlocked = missingItems.length > 0 && step.operationId !== 'op-8';
+  if (subcontractingPending) missingItems.push('Sous-traitance en cours');
+  const isBlocked = (missingItems.length > 0) && step.operationId !== 'op-8';
   const blockedTextClass = isBlocked ? 'opacity-40' : '';
   const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
