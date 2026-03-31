@@ -238,7 +238,7 @@ export function getWorkSlotsForRange(
     if (isWorkDay(d, holidays)) {
       result.push({
         date: d,
-        dayLabel: `${dayNames[d.getDay()]} ${d.getDate()}`,
+        dayLabel: `${dayNames[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
         segments: WORK_SEGMENTS.map(s => ({ startMin: s.start, endMin: s.end })),
       });
       found++;
