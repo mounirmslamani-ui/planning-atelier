@@ -69,13 +69,14 @@ interface GanttBlockProps {
   isLast: boolean;
   isCtrlSelected: boolean;
   hasLink: boolean;
+  subcontractingPending: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
   onCtrlClick: (stepId: string) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, onDragStart, onResizeStart, onCtrlClick
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, onDragStart, onResizeStart, onCtrlClick
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
@@ -92,7 +93,8 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   if (!order.materialAvailable) missingItems.push('Matière');
   if (!order.toolingAvailable) missingItems.push('Outillage');
   if (!order.studyReady) missingItems.push('Étude');
-  const isBlocked = missingItems.length > 0 && step.operationId !== 'op-8';
+  if (subcontractingPending) missingItems.push('Sous-traitance en cours');
+  const isBlocked = (missingItems.length > 0) && step.operationId !== 'op-8';
   const blockedTextClass = isBlocked ? 'opacity-40' : '';
   const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
@@ -158,6 +160,18 @@ const GanttChart: React.FC = () => {
     deleteStep, addQCEntry, setSteps,
     undo, redo, canUndo, canRedo,
   } = usePlanning();
+
+  // Compute which orders have pending subcontracting (subcontractor op steps not done)
+  const subcontractorOpIds = useMemo(() => new Set(operations.filter(op => op.category === 'subcontractor').map(op => op.id)), [operations]);
+  const ordersWithPendingSubcontracting = useMemo(() => {
+    const pending = new Set<string>();
+    steps.forEach(s => {
+      if (subcontractorOpIds.has(s.operationId) && !(s.subcontractingDone)) {
+        pending.add(s.orderId);
+      }
+    });
+    return pending;
+  }, [steps, subcontractorOpIds]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
@@ -989,6 +1003,7 @@ const GanttChart: React.FC = () => {
                           isLast={isLast}
                           isCtrlSelected={ctrlSelectedStepId === step.id}
                           hasLink={!!step.dependsOn}
+                          subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
                           onCtrlClick={handleCtrlClick}

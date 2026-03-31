@@ -22,6 +22,7 @@ const navItems = [
   { to: '/equipment', label: 'Équipements', icon: Cog },
   { to: '/clients', label: 'Clients', icon: Building2 },
   { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake },
+  { to: '/subcontracting', label: 'Sous-traitance', icon: Factory },
   { to: '/operations', label: 'Opérations', icon: Drill },
   { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus },
   { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer },
