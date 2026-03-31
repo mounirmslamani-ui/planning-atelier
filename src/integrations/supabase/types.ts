@@ -14,7 +14,481 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          client_class: Database["public"]["Enums"]["client_class"] | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          client_class?: Database["public"]["Enums"]["client_class"] | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          client_class?: Database["public"]["Enums"]["client_class"] | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_entries: {
+        Row: {
+          control_date: string
+          created_at: string
+          decision: Database["public"]["Enums"]["delivery_decision"]
+          id: string
+          moved_at: string
+          order_id: string
+        }
+        Insert: {
+          control_date?: string
+          created_at?: string
+          decision: Database["public"]["Enums"]["delivery_decision"]
+          id?: string
+          moved_at?: string
+          order_id: string
+        }
+        Update: {
+          control_date?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["delivery_decision"]
+          id?: string
+          moved_at?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_entries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipments: {
+        Row: {
+          capacity: string
+          created_at: string
+          designation: string
+          id: string
+          state: Database["public"]["Enums"]["equipment_state"]
+          type: Database["public"]["Enums"]["equipment_type"]
+          updated_at: string
+        }
+        Insert: {
+          capacity?: string
+          created_at?: string
+          designation: string
+          id?: string
+          state?: Database["public"]["Enums"]["equipment_state"]
+          type: Database["public"]["Enums"]["equipment_type"]
+          updated_at?: string
+        }
+        Update: {
+          capacity?: string
+          created_at?: string
+          designation?: string
+          id?: string
+          state?: Database["public"]["Enums"]["equipment_state"]
+          type?: Database["public"]["Enums"]["equipment_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      holidays: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      operations: {
+        Row: {
+          category: Database["public"]["Enums"]["operation_category"]
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["operation_category"]
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["operation_category"]
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      operators: {
+        Row: {
+          created_at: string
+          id: string
+          main_equipment: string | null
+          main_function: string
+          name: string
+          secondary_equipments: string[]
+          secondary_functions: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          main_equipment?: string | null
+          main_function: string
+          name: string
+          secondary_equipments?: string[]
+          secondary_functions?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          main_equipment?: string | null
+          main_function?: string
+          name?: string
+          secondary_equipments?: string[]
+          secondary_functions?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operators_main_equipment_fkey"
+            columns: ["main_equipment"]
+            isOneToOne: false
+            referencedRelation: "equipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          client_id: string | null
+          complementary_quantity: number | null
+          created_at: string
+          delivery_deadline: string | null
+          designation: string
+          display_order: number | null
+          frozen_order: boolean
+          id: string
+          material_available: boolean
+          order_date: string
+          order_number: string
+          planned_deadline: string
+          priority: Database["public"]["Enums"]["order_priority"]
+          prototype_deadline: string | null
+          prototype_quantity: number | null
+          quantity: number
+          study_ready: boolean
+          tooling_available: boolean
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          complementary_quantity?: number | null
+          created_at?: string
+          delivery_deadline?: string | null
+          designation: string
+          display_order?: number | null
+          frozen_order?: boolean
+          id?: string
+          material_available?: boolean
+          order_date?: string
+          order_number: string
+          planned_deadline?: string
+          priority?: Database["public"]["Enums"]["order_priority"]
+          prototype_deadline?: string | null
+          prototype_quantity?: number | null
+          quantity?: number
+          study_ready?: boolean
+          tooling_available?: boolean
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          complementary_quantity?: number | null
+          created_at?: string
+          delivery_deadline?: string | null
+          designation?: string
+          display_order?: number | null
+          frozen_order?: boolean
+          id?: string
+          material_available?: boolean
+          order_date?: string
+          order_number?: string
+          planned_deadline?: string
+          priority?: Database["public"]["Enums"]["order_priority"]
+          prototype_deadline?: string | null
+          prototype_quantity?: number | null
+          quantity?: number
+          study_ready?: boolean
+          tooling_available?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_records: {
+        Row: {
+          actual_duration: number
+          created_at: string
+          id: string
+          operation_id: string
+          operator_id: string
+          order_id: string
+          step_id: string
+          validated_at: string
+        }
+        Insert: {
+          actual_duration?: number
+          created_at?: string
+          id?: string
+          operation_id: string
+          operator_id: string
+          order_id: string
+          step_id: string
+          validated_at?: string
+        }
+        Update: {
+          actual_duration?: number
+          created_at?: string
+          id?: string
+          operation_id?: string
+          operator_id?: string
+          order_id?: string
+          step_id?: string
+          validated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_records_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_records_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_records_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_records_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "production_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_steps: {
+        Row: {
+          created_at: string
+          depends_on: string | null
+          depends_on_percentage: number | null
+          end_date: string | null
+          end_time: string | null
+          equipment_ids: string[]
+          estimated_duration: number
+          frozen: boolean
+          id: string
+          operation_id: string
+          operator_id: string | null
+          order_id: string
+          start_date: string | null
+          start_time: string | null
+          step_order: number
+          subcontracting_deadline: string | null
+          subcontracting_done: boolean
+          subcontractor_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on?: string | null
+          depends_on_percentage?: number | null
+          end_date?: string | null
+          end_time?: string | null
+          equipment_ids?: string[]
+          estimated_duration?: number
+          frozen?: boolean
+          id?: string
+          operation_id: string
+          operator_id?: string | null
+          order_id: string
+          start_date?: string | null
+          start_time?: string | null
+          step_order?: number
+          subcontracting_deadline?: string | null
+          subcontracting_done?: boolean
+          subcontractor_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          depends_on?: string | null
+          depends_on_percentage?: number | null
+          end_date?: string | null
+          end_time?: string | null
+          equipment_ids?: string[]
+          estimated_duration?: number
+          frozen?: boolean
+          id?: string
+          operation_id?: string
+          operator_id?: string | null
+          order_id?: string
+          start_date?: string | null
+          start_time?: string | null
+          step_order?: number
+          subcontracting_deadline?: string | null
+          subcontracting_done?: boolean
+          subcontractor_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_steps_depends_on_fkey"
+            columns: ["depends_on"]
+            isOneToOne: false
+            referencedRelation: "production_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_steps_operation_id_fkey"
+            columns: ["operation_id"]
+            isOneToOne: false
+            referencedRelation: "operations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_steps_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_steps_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_steps_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_control_entries: {
+        Row: {
+          control_date: string
+          created_at: string
+          decision: Database["public"]["Enums"]["qc_decision"] | null
+          id: string
+          order_id: string
+          rework_notes: string | null
+        }
+        Insert: {
+          control_date?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["qc_decision"] | null
+          id?: string
+          order_id: string
+          rework_notes?: string | null
+        }
+        Update: {
+          control_date?: string
+          created_at?: string
+          decision?: Database["public"]["Enums"]["qc_decision"] | null
+          id?: string
+          order_id?: string
+          rework_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_control_entries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subcontractors: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          main_activity: string
+          secondary_activities: string[]
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          main_activity: string
+          secondary_activities?: string[]
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          main_activity?: string
+          secondary_activities?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +497,36 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      client_class: "A" | "B" | "C" | "D" | "E"
+      delivery_decision: "conforme" | "conforme-derogation"
+      equipment_state:
+        | "En marche"
+        | "Mode dégradé"
+        | "Maintenance/réparation"
+        | "En panne"
+      equipment_type:
+        | "Fraiseuse conventionnelle"
+        | "Tour conventionnel"
+        | "Tour CNC"
+        | "Rectifieuse plane"
+        | "Rectifieuse cylindrique"
+        | "Étau limeur"
+        | "Perceuse à colonne"
+        | "Four"
+        | "Touret"
+        | "Scie mécanique"
+        | "Scie circulaire"
+        | "Autres (Visseuse, meuleuse, perceuse, ...)"
+        | "Plateau diviseur"
+        | "Plateau circulaire"
+        | "Tête taraudeuse"
+      operation_category: "operator" | "subcontractor"
+      order_priority: "P1" | "P2" | "P3" | "P4" | "P5"
+      qc_decision:
+        | "conforme"
+        | "reprise-retouche"
+        | "conforme-derogation"
+        | "non-conforme"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +653,40 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      client_class: ["A", "B", "C", "D", "E"],
+      delivery_decision: ["conforme", "conforme-derogation"],
+      equipment_state: [
+        "En marche",
+        "Mode dégradé",
+        "Maintenance/réparation",
+        "En panne",
+      ],
+      equipment_type: [
+        "Fraiseuse conventionnelle",
+        "Tour conventionnel",
+        "Tour CNC",
+        "Rectifieuse plane",
+        "Rectifieuse cylindrique",
+        "Étau limeur",
+        "Perceuse à colonne",
+        "Four",
+        "Touret",
+        "Scie mécanique",
+        "Scie circulaire",
+        "Autres (Visseuse, meuleuse, perceuse, ...)",
+        "Plateau diviseur",
+        "Plateau circulaire",
+        "Tête taraudeuse",
+      ],
+      operation_category: ["operator", "subcontractor"],
+      order_priority: ["P1", "P2", "P3", "P4", "P5"],
+      qc_decision: [
+        "conforme",
+        "reprise-retouche",
+        "conforme-derogation",
+        "non-conforme",
+      ],
+    },
   },
 } as const
