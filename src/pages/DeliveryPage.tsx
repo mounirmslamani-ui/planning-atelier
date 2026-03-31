@@ -49,7 +49,7 @@ const DeliveryPage: React.FC = () => {
                     ) : <span className="text-muted-foreground text-xs">—</span>}
                   </TableCell>
                   <TableCell className="font-heading text-sm">{order.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{order.orderDate}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(order.orderDate)}</TableCell>
                   <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
                   <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
