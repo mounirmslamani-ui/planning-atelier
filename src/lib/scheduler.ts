@@ -89,7 +89,7 @@ function findEarliestSlot(
     if (candidateEnd <= existing.start) break;
 
     // Never displace absences or frozen steps
-    if (existing.step.operationId === 'op-8' || existing.step.frozen) {
+    if (existing.step.operationId === _absenceOpId || existing.step.frozen) {
       if (candidate < existing.end) candidate = new Date(existing.end);
       continue;
     }
