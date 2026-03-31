@@ -8,6 +8,11 @@ export interface OperationToSchedule {
   equipmentIds?: string[];
 }
 
+// Module-level absence operation ID — set by context after initial load
+let _absenceOpId = '';
+export function setAbsenceOpId(id: string) { _absenceOpId = id; }
+export function getAbsenceOpId() { return _absenceOpId; }
+
 interface ScheduleCandidate {
   assigneeId: string;
   isSub: boolean;
