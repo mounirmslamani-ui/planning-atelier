@@ -380,11 +380,11 @@ const GanttChart: React.FC = () => {
       if (hasSubSteps || subcontractors.length > 0) {
         specialRows.push({ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' });
       }
-      const hasMaterialPending = orders.some(o => o.id !== 'order-absence' && !o.materialAvailable);
+      const hasMaterialPending = orders.some(o => o.id !== absenceOrderId && !o.materialAvailable);
       if (hasMaterialPending) {
         specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
       }
-      const hasToolingPending = orders.some(o => o.id !== 'order-absence' && !o.toolingAvailable);
+      const hasToolingPending = orders.some(o => o.id !== absenceOrderId && !o.toolingAvailable);
       if (hasToolingPending) {
         specialRows.push({ type: 'tooling' as const, id: '__tooling__', label: 'Achat outillage', sublabel: '' });
       }
