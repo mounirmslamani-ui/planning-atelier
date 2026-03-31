@@ -443,7 +443,7 @@ const OrdersPage: React.FC = () => {
                   </div>
                 </TableCell>
                 <TableCell className="font-heading text-sm">{o.orderNumber}</TableCell>
-                <TableCell className="text-sm">{o.orderDate}</TableCell>
+                <TableCell className="text-sm">{formatDateFR(o.orderDate)}</TableCell>
                 <TableCell className="text-sm">{getClientName(o.clientId)}</TableCell>
                 <TableCell className="text-sm max-w-48 truncate">{o.designation}</TableCell>
                 <TableCell className="text-sm">{o.quantity}</TableCell>
