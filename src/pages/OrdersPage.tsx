@@ -255,7 +255,7 @@ const OrdersPage: React.FC = () => {
   const openNew = () => { setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
   const openEdit = (o: Order) => { setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
   const handleSave = () => {
-    const data: Order = { id: editing?.id || `ord-${Date.now()}`, ...form };
+    const data: Order = { id: editing?.id || crypto.randomUUID(), ...form };
     if (editing) updateOrder(data); else addOrder(data);
     setDialogOpen(false);
   };
