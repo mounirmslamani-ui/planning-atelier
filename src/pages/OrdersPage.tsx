@@ -33,7 +33,7 @@ const priorityColors: Record<OrderPriority, string> = {
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'materialAvailable' | 'toolingAvailable' | 'studyReady' | 'cr';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'materialAvailable' | 'toolingAvailable' | 'studyReady' | 'cr';
 
 /** Calculate CR = remaining allocated time / remaining available time */
 function computeCR(
@@ -190,7 +190,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
-      case 'plannedDeadline': return o.plannedDeadline;
+      case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
       case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
       case 'studyReady': return o.studyReady ? 'Oui' : 'Non';
@@ -338,7 +338,7 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'Désignation' },
     { key: 'quantity', label: 'Qté' },
     { key: 'priority', label: 'Priorité' },
-    { key: 'plannedDeadline', label: 'Délai' },
+    { key: 'deliveryDeadline', label: 'Délai' },
     { key: 'cr', label: 'CR' },
     { key: 'materialAvailable', label: 'Mat.' },
     { key: 'toolingAvailable', label: 'Out.' },
@@ -450,7 +450,7 @@ const OrdersPage: React.FC = () => {
                 <TableCell>
                   <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
                 </TableCell>
-                <TableCell className="text-sm">{o.plannedDeadline}</TableCell>
+                <TableCell className="text-sm">{o.deliveryDeadline || o.plannedDeadline}</TableCell>
                 <TableCell className="text-center">{formatCR(o.id)}</TableCell>
                 <TableCell>
                   <Package className={`w-4 h-4 ${o.materialAvailable ? 'text-normal' : 'text-destructive'}`} />
