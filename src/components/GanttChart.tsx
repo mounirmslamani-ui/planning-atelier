@@ -643,7 +643,7 @@ const GanttChart: React.FC = () => {
     const step = steps.find(s => s.id === validateStepId);
     if (!step) return;
     const record: ProductionRecord = {
-      id: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: crypto.randomUUID(),
       stepId: step.id,
       orderId: step.orderId,
       operatorId: step.operatorId,
