@@ -31,15 +31,7 @@ function getUrgencyBg(order: Order): string {
   if (p === 'P3') return 'bg-priority-p3/80';
   if (p === 'P4') return 'bg-priority-p4/80';
   if (p === 'P5') return 'bg-priority-p5/80';
-  // Fallback by urgency
-  switch (order.urgency) {
-    case 'critical': return 'bg-urgent/80';
-    case 'moderate': return 'bg-urgent-moderate/80';
-    case 'low': return 'bg-priority-p3/80';
-    case 'pending': return 'bg-priority-p4/80';
-    case 'waiting': return 'bg-priority-p5/80';
-    default: return 'bg-muted';
-  }
+  return 'bg-muted';
 }
 
 function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {

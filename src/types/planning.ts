@@ -49,8 +49,6 @@ export interface Client {
   clientClass?: ClientClass;
 }
 
-export type UrgencyLevel = 'critical' | 'moderate' | 'low' | 'pending' | 'waiting';
-
 export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'P5';
 
 export interface Order {
@@ -60,9 +58,9 @@ export interface Order {
   clientId: string;
   designation: string;
   quantity: number;
-  urgency: UrgencyLevel;
-  priority?: OrderPriority;
+  priority: OrderPriority;
   displayOrder?: number;
+  frozenOrder?: boolean;
   plannedDeadline: string;
   prototypeQuantity?: number;
   prototypeDeadline?: string;

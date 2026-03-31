@@ -9,18 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import type { QCDecision, QualityControlEntry } from '@/types/planning';
 
-const urgencyLabels: Record<string, string> = {
-  critical: 'مستعجل-أولوية قصوى', moderate: 'مستعجل نسبيا', low: 'غير مستعجل', pending: 'قيد التعليق', waiting: '',
-};
-
-const urgencyColors: Record<string, string> = {
-  critical: 'bg-urgent/15 text-urgent',
-  moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
-  low: 'bg-priority-p3/15 text-priority-p3',
-  pending: 'bg-priority-p4/15 text-muted-foreground',
-  waiting: 'bg-muted text-muted-foreground',
-};
-
 const priorityColors: Record<string, string> = {
   'P1': 'bg-urgent text-white',
   'P2': 'bg-urgent-moderate text-white',
@@ -66,7 +54,6 @@ const QualityControlPage: React.FC = () => {
     }
 
     if (decision === 'conforme' || decision === 'conforme-derogation') {
-      // Move to delivery
       addDeliveryEntry({
         id: `del-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         orderId: entry.orderId,
@@ -79,15 +66,12 @@ const QualityControlPage: React.FC = () => {
       return;
     }
 
-    // Non conforme - just update decision
     updateQCEntry({ ...entry, decision });
   };
 
   const handleReworkSave = () => {
     if (!reworkEntry) return;
-    // Update QC entry with decision
     updateQCEntry({ ...reworkEntry, decision: 'reprise-retouche', reworkNotes });
-    // Remove from QC - order goes back to production
     deleteQCEntry(reworkEntry.id);
     setReworkDialogOpen(false);
     setReworkEntry(null);
@@ -107,7 +91,6 @@ const QualityControlPage: React.FC = () => {
               <TableHead>Client</TableHead>
               <TableHead>Désignation</TableHead>
               <TableHead>Quantité</TableHead>
-              <TableHead>Urgence</TableHead>
               <TableHead>Délais</TableHead>
               <TableHead>Date Contrôle</TableHead>
               <TableHead>Décision</TableHead>
@@ -129,11 +112,6 @@ const QualityControlPage: React.FC = () => {
                   <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
                   <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
-                  <TableCell>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${urgencyColors[order.urgency] || ''}`}>
-                      {urgencyLabels[order.urgency] || order.urgency}
-                    </span>
-                  </TableCell>
                   <TableCell className="text-sm">{order.plannedDeadline}</TableCell>
                   <TableCell>
                     <Input
@@ -166,7 +144,7 @@ const QualityControlPage: React.FC = () => {
             })}
             {qcEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucune commande en contrôle qualité.
                 </TableCell>
               </TableRow>
