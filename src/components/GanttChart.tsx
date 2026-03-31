@@ -597,7 +597,7 @@ const GanttChart: React.FC = () => {
         };
 
         if (dragState.altKey) {
-          addStep({ ...newStepData, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
+          addStep({ ...newStepData, id: crypto.randomUUID() });
         } else {
           updateStep(newStepData);
           // Propagate to dependent steps
