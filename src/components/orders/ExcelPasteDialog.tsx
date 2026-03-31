@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClipboardPaste, AlertCircle } from 'lucide-react';
-import type { Order, UrgencyLevel } from '@/types/planning';
+import type { Order, OrderPriority } from '@/types/planning';
 
 interface ExcelPasteDialogProps {
   open: boolean;
@@ -14,15 +14,15 @@ interface ExcelPasteDialogProps {
   nextDisplayOrder: number;
 }
 
-const EXPECTED_COLUMNS = ['N° Commande', 'Date', 'Client', 'Désignation', 'Quantité', 'Urgence', 'Délai'];
+const EXPECTED_COLUMNS = ['N° Commande', 'Date', 'Client', 'Désignation', 'Quantité', 'Priorité', 'Délai'];
 
-const parseUrgency = (val: string): UrgencyLevel => {
+const parsePriority = (val: string): OrderPriority => {
   const lower = val.toLowerCase().trim();
-  if (lower.includes('قصوى') || lower === 'critical' || lower === 'p1') return 'critical';
-  if (lower.includes('نسبيا') || lower === 'moderate' || lower === 'p2') return 'moderate';
-  if (lower.includes('تعليق') || lower === 'pending' || lower === 'p4') return 'pending';
-  if (lower.includes('انتظار') || lower === 'waiting' || lower === 'p5') return 'waiting';
-  return 'low';
+  if (lower.includes('قصوى') || lower === 'p1' || lower === 'critical') return 'P1';
+  if (lower.includes('نسبيا') || lower === 'p2' || lower === 'moderate') return 'P2';
+  if (lower.includes('تعليق') || lower === 'p4' || lower === 'pending') return 'P4';
+  if (lower.includes('انتظار') || lower === 'p5' || lower === 'waiting') return 'P5';
+  return 'P3';
 };
 
 const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange, onImport, clients, nextDisplayOrder }) => {
@@ -33,19 +33,16 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
   const handleParse = () => {
     const lines = rawText.trim().split('\n').filter(l => l.trim());
     let rows = lines.map(line => line.split('\t').map(cell => cell.trim()));
-    // Skip header row if it looks like headers
     const first = rows[0];
-    const isHeader = first && first.some(c => 
+    const isHeader = first && first.some(c =>
       EXPECTED_COLUMNS.some(col => c.toLowerCase().includes(col.toLowerCase().substring(0, 4)))
     );
     if (isHeader) rows = rows.slice(1);
-    // Detect leading index column (all first cells are sequential integers)
     const firstCols = rows.map(r => r[0]);
     const allNumeric = firstCols.length > 0 && firstCols.every(c => /^\d+$/.test(c));
     if (allNumeric) {
       rows = rows.map(r => r.slice(1));
     }
-    // Trim trailing empty columns
     rows = rows.map(r => {
       let end = r.length;
       while (end > 0 && r[end - 1] === '') end--;
@@ -65,7 +62,7 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
         clientId: matchedClient?.id || clients[0]?.id || '',
         designation: row[3] || '',
         quantity: parseInt(row[4]) || 1,
-        urgency: parseUrgency(row[5] || ''),
+        priority: parsePriority(row[5] || ''),
         plannedDeadline: row[6] || '',
         materialAvailable: true,
         toolingAvailable: true,

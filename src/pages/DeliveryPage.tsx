@@ -4,16 +4,6 @@ import { usePlanning } from '@/context/PlanningContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
-const urgencyLabels: Record<string, string> = {
-  critical: 'مستعجل-أولوية قصوى', moderate: 'مستعجل نسبيا', low: 'غير مستعجل', pending: 'قيد التعليق', waiting: '',
-};
-const urgencyColors: Record<string, string> = {
-  critical: 'bg-urgent/15 text-urgent',
-  moderate: 'bg-urgent-moderate/15 text-urgent-moderate',
-  low: 'bg-priority-p3/15 text-priority-p3',
-  pending: 'bg-priority-p4/15 text-muted-foreground',
-  waiting: 'bg-muted text-muted-foreground',
-};
 const priorityColors: Record<string, string> = {
   'P1': 'bg-urgent text-white',
   'P2': 'bg-urgent-moderate text-white',
@@ -41,7 +31,6 @@ const DeliveryPage: React.FC = () => {
               <TableHead>Client</TableHead>
               <TableHead>Désignation</TableHead>
               <TableHead>Quantité</TableHead>
-              <TableHead>Urgence</TableHead>
               <TableHead>Délais</TableHead>
               <TableHead>Date Contrôle</TableHead>
               <TableHead>Décision</TableHead>
@@ -63,11 +52,6 @@ const DeliveryPage: React.FC = () => {
                   <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
                   <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
-                  <TableCell>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${urgencyColors[order.urgency] || ''}`}>
-                      {urgencyLabels[order.urgency] || order.urgency}
-                    </span>
-                  </TableCell>
                   <TableCell className="text-sm">{order.plannedDeadline}</TableCell>
                   <TableCell className="text-sm">{entry.controlDate}</TableCell>
                   <TableCell>
@@ -80,7 +64,7 @@ const DeliveryPage: React.FC = () => {
             })}
             {deliveryEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
                 </TableCell>
               </TableRow>
