@@ -190,7 +190,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
-      case 'plannedDeadline': return o.plannedDeadline;
+      case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
       case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
       case 'studyReady': return o.studyReady ? 'Oui' : 'Non';
