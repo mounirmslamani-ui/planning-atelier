@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
