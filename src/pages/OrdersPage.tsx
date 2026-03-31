@@ -140,7 +140,7 @@ const OrdersPage: React.FC = () => {
 
   // Default sort: priority desc (P1 first) then CR asc (smallest first)
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== 'order-absence');
+    const real = orders.filter(o => o.id !== absenceOrderId);
     // If any have displayOrder set and frozen, respect that
     // Separate frozen and non-frozen
     const frozen = real.filter(o => o.frozenOrder);
