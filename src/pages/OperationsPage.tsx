@@ -9,7 +9,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Operation, OperationCategory } from '@/types/planning';
 
 const OperationsPage: React.FC = () => {
-  const { operations, addOperation, updateOperation, deleteOperation } = usePlanning();
+  const { operations, addOperation, updateOperation, deleteOperation, absenceOperationId } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Operation | null>(null);
   const [name, setName] = useState('');

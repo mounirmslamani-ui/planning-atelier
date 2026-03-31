@@ -112,7 +112,7 @@ function computeCR(
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
