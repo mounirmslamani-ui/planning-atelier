@@ -20,7 +20,7 @@ interface SubcontractorTableDialogProps {
 }
 
 const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ open, onOpenChange }) => {
-  const { steps, orders, clients, operations, subcontractors } = usePlanning();
+  const { steps, orders, clients, operations, subcontractors, absenceOperationId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});

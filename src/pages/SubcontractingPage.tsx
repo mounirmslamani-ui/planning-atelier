@@ -19,7 +19,7 @@ const priorityColors: Record<OrderPriority, string> = {
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline';
 
 const SubcontractingPage: React.FC = () => {
-  const { orders, clients, steps, operations, updateStep } = usePlanning();
+  const { orders, clients, steps, operations, updateStep, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
