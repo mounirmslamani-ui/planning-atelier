@@ -107,7 +107,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
                   <TableCell className="text-sm">{o.designation}</TableCell>
                   <TableCell className="text-center text-sm">{o.quantity}</TableCell>
                   <TableCell>{o.priority ? <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge> : '—'}</TableCell>
-                  <TableCell className="text-sm">{o.plannedDeadline || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(o.plannedDeadline)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -53,8 +53,8 @@ const DeliveryPage: React.FC = () => {
                   <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
                   <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
-                  <TableCell className="text-sm">{order.plannedDeadline}</TableCell>
-                  <TableCell className="text-sm">{entry.controlDate}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(entry.controlDate)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="bg-normal/15 text-normal">
                       {entry.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation'}

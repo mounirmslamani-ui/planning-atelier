@@ -113,7 +113,7 @@ const QualityControlPage: React.FC = () => {
                   <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
                   <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
-                  <TableCell className="text-sm">{order.plannedDeadline}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
                   <TableCell>
                     <Input
                       type="date"

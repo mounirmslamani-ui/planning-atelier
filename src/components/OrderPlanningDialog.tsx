@@ -179,7 +179,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             {hasExistingSteps ? 'Modifier' : 'Planifier'} la commande {order.orderNumber}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {order.designation} — Délai : {order.deliveryDeadline || order.plannedDeadline || 'Non défini'}
+            {order.designation} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
           </p>
         </DialogHeader>
 
