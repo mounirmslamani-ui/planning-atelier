@@ -76,7 +76,7 @@ const AppSidebar: React.FC = () => {
 
     // Shift overlapping steps for this operator
     const operatorSteps = steps.filter(
-      s => s.operatorId === absOperatorId && s.operationId !== 'op-8'
+      s => s.operatorId === absOperatorId && s.operationId !== absenceOperationId
     );
 
     operatorSteps.forEach(s => {
