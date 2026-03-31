@@ -161,6 +161,18 @@ const GanttChart: React.FC = () => {
     undo, redo, canUndo, canRedo,
   } = usePlanning();
 
+  // Compute which orders have pending subcontracting (subcontractor op steps not done)
+  const subcontractorOpIds = useMemo(() => new Set(operations.filter(op => op.category === 'subcontractor').map(op => op.id)), [operations]);
+  const ordersWithPendingSubcontracting = useMemo(() => {
+    const pending = new Set<string>();
+    steps.forEach(s => {
+      if (subcontractorOpIds.has(s.operationId) && !(s.subcontractingDone)) {
+        pending.add(s.orderId);
+      }
+    });
+    return pending;
+  }, [steps, subcontractorOpIds]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
