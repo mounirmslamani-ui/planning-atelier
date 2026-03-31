@@ -15,7 +15,7 @@ const OperationsPage: React.FC = () => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<OperationCategory>('operator');
 
-  const operatorOps = operations.filter(o => o.category === 'operator' && o.id !== 'op-8');
+  const operatorOps = operations.filter(o => o.category === 'operator' && o.id !== absenceOperationId);
   const subcontractorOps = operations.filter(o => o.category === 'subcontractor');
 
   const openNew = (cat: OperationCategory) => {
