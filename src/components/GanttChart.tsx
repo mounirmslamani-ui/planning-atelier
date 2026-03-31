@@ -669,11 +669,11 @@ const GanttChart: React.FC = () => {
       });
     } else {
       // Check if this was the last step for the order (no other steps remaining on planning after removal)
-      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== 'op-8');
-      if (otherSteps.length === 0 && step.orderId !== 'order-absence') {
+      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== absenceOperationId);
+      if (otherSteps.length === 0 && step.orderId !== absenceOrderId) {
         // Move order to Quality Control
         addQCEntry({
-          id: `qc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          id: crypto.randomUUID(),
           orderId: step.orderId,
           controlDate: '',
           createdAt: new Date().toISOString(),
