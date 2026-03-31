@@ -310,17 +310,17 @@ const GanttChart: React.FC = () => {
   // Replanifier: reschedule all non-frozen orders
   const handleReplanifier = useCallback(() => {
     // Group non-frozen steps by order, sorted by displayOrder
-    const orderIds = [...new Set(steps.filter(s => !s.frozen && s.operationId !== 'op-8').map(s => s.orderId))];
+    const orderIds = [...new Set(steps.filter(s => !s.frozen && s.operationId !== absenceOperationId).map(s => s.orderId))];
     const sortedOrders = orderIds
       .map(id => orders.find(o => o.id === id))
       .filter(Boolean)
       .sort((a, b) => (a!.displayOrder ?? 9999) - (b!.displayOrder ?? 9999)) as Order[];
 
     // Keep frozen steps and absence steps untouched
-    let workingSteps = steps.filter(s => s.frozen || s.operationId === 'op-8');
+    let workingSteps = steps.filter(s => s.frozen || s.operationId === absenceOperationId);
 
     for (const order of sortedOrders) {
-      const orderSteps = steps.filter(s => s.orderId === order.id && !s.frozen && s.operationId !== 'op-8')
+      const orderSteps = steps.filter(s => s.orderId === order.id && !s.frozen && s.operationId !== absenceOperationId)
         .sort((a, b) => a.order - b.order);
 
       if (orderSteps.length === 0) continue;
