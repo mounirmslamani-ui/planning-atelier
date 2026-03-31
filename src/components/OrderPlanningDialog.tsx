@@ -32,7 +32,7 @@ interface Props {
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments,
-    addStep, updateStep, deleteStep,
+    addStep, updateStep, deleteStep, absenceOperationId,
   } = usePlanning();
 
   const [rows, setRows] = useState<OperationRow[]>([]);
