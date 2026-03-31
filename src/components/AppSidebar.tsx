@@ -61,10 +61,10 @@ const AppSidebar: React.FC = () => {
 
     // Create absence block (yellow block on Gantt)
     const absenceStep: import('@/types/planning').ProductionStep = {
-      id: `step-abs-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      orderId: 'order-absence',
+      id: crypto.randomUUID(),
+      orderId: absenceOrderId,
       operatorId: absOperatorId,
-      operationId: 'op-8',
+      operationId: absenceOperationId,
       estimatedDuration: absDurationMin,
       startDate: absStartDate,
       startTime: absStartTime,

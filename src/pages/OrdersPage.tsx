@@ -173,13 +173,13 @@ const OrdersPage: React.FC = () => {
 
   // Assign displayOrders
   React.useEffect(() => {
-    const real = orders.filter(o => o.id !== 'order-absence');
+    const real = orders.filter(o => o.id !== absenceOrderId);
     const needsUpdate = real.some((o, i) => {
       const sorted = baseSorted[i];
       return sorted && o.id === sorted.id && o.displayOrder !== i + 1;
     });
     if (baseSorted.length > 0 && needsUpdate) {
-      const absence = orders.find(o => o.id === 'order-absence');
+      const absence = orders.find(o => o.id === absenceOrderId);
       setOrders([...(absence ? [absence] : []), ...baseSorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
     }
   }, []);
@@ -306,7 +306,7 @@ const OrdersPage: React.FC = () => {
     if (insertAt < 0) insertAt = 0;
     remaining.splice(insertAt, 0, ...draggedItems);
 
-    const absence = orders.find(o => o.id === 'order-absence');
+    const absence = orders.find(o => o.id === absenceOrderId);
     // Mark dragged orders as frozen
     setOrders([
       ...(absence ? [absence] : []),
@@ -326,12 +326,12 @@ const OrdersPage: React.FC = () => {
 
   const unlockOrder = (o: Order) => updateOrder({ ...o, frozenOrder: false });
   const unlockAll = () => {
-    const absence = orders.find(o => o.id === 'order-absence');
-    const real = orders.filter(o => o.id !== 'order-absence').map(o => ({ ...o, frozenOrder: false }));
+    const absence = orders.find(o => o.id === absenceOrderId);
+    const real = orders.filter(o => o.id !== absenceOrderId).map(o => ({ ...o, frozenOrder: false }));
     setOrders([...(absence ? [absence] : []), ...real]);
   };
 
-  const hasFrozenOrders = orders.some(o => o.id !== 'order-absence' && o.frozenOrder);
+  const hasFrozenOrders = orders.some(o => o.id !== absenceOrderId && o.frozenOrder);
 
   const columns: { key: ColumnKey; label: string }[] = [
     { key: 'orderNumber', label: 'N° Commande' },
