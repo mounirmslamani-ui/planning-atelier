@@ -30,7 +30,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
 
   const pendingOrders = useMemo(() => {
     let result = orders
-      .filter(o => o.id !== 'order-absence')
+      .filter(o => o.id !== absenceOrderId)
       .filter(o => type === 'material' ? !o.materialAvailable : !o.toolingAvailable)
       .map(o => {
         const client = clients.find(c => c.id === o.clientId);

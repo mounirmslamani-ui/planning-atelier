@@ -32,7 +32,7 @@ const navItems = [
 
 const AppSidebar: React.FC = () => {
   const location = useLocation();
-  const { operators, steps, holidays, addStep, updateStep } = usePlanning();
+  const { operators, steps, holidays, addStep, updateStep, absenceOperationId, absenceOrderId } = usePlanning();
   
   const [absenceOpen, setAbsenceOpen] = useState(false);
   const [absOperatorId, setAbsOperatorId] = useState('');

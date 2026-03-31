@@ -58,7 +58,7 @@ const SubcontractingPage: React.FC = () => {
 
     return Array.from(orderMap.entries()).map(([orderId, info]) => {
       const order = orders.find(o => o.id === orderId);
-      if (!order || order.id === 'order-absence') return null;
+      if (!order || order.id === absenceOrderId) return null;
       return { order, ...info };
     }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[] }[];
   }, [steps, orders, subcontractorOpIds]);

@@ -27,7 +27,7 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
 
   const subSteps = useMemo(() => {
     let result = steps
-      .filter(s => s.subcontractorId && s.operationId !== 'op-8')
+      .filter(s => s.subcontractorId && s.operationId !== absenceOperationId)
       .map(s => {
         const order = orders.find(o => o.id === s.orderId);
         const client = order ? clients.find(c => c.id === order.clientId) : null;
