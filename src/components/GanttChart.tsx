@@ -70,6 +70,7 @@ interface GanttBlockProps {
   isCtrlSelected: boolean;
   hasLink: boolean;
   subcontractingPending: boolean;
+  isAbsence: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
   onCtrlClick: (stepId: string) => void;
