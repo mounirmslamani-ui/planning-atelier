@@ -268,7 +268,7 @@ const OrdersPage: React.FC = () => {
   };
 
   const handleExcelImport = (imported: Omit<Order, 'id'>[]) => {
-    imported.forEach((o, i) => addOrder({ id: `ord-${Date.now()}-${i}`, ...o } as Order));
+    imported.forEach((o, i) => addOrder({ id: crypto.randomUUID(), ...o } as Order));
   };
 
   // Drag & drop
