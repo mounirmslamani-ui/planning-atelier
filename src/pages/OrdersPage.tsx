@@ -41,7 +41,8 @@ function computeCR(
   order: Order,
   steps: { orderId: string; operationId: string; estimatedDuration: number }[],
   productionRecords: { orderId: string; actualDuration: number }[],
-  holidays: { date: string; name: string }[]
+  holidays: { date: string; name: string }[],
+  absenceOpId: string,
 ): number | null {
   const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOpId);
   const totalAllocated = orderSteps.reduce((sum, s) => sum + s.estimatedDuration, 0);
