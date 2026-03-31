@@ -964,11 +964,11 @@ const GanttChart: React.FC = () => {
                 if (row.type === 'subcontractor') return !!s.subcontractorId;
                 if (row.type === 'material') {
                   const order = orders.find(o => o.id === s.orderId);
-                  return order && !order.materialAvailable && s.operationId !== 'op-8';
+                   return order && !order.materialAvailable && s.operationId !== absenceOperationId;
                 }
                 if (row.type === 'tooling') {
                   const order = orders.find(o => o.id === s.orderId);
-                  return order && !order.toolingAvailable && s.operationId !== 'op-8';
+                  return order && !order.toolingAvailable && s.operationId !== absenceOperationId;
                 }
                 return false;
               });
