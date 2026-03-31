@@ -137,7 +137,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
-      {isLast && step.operationId !== 'op-8' && (
+      {isLast && !isAbsence && (
         <Flag className="absolute top-0.5 right-[18px] w-3 h-3 text-foreground/70" />
       )}
       {step.frozen && (
