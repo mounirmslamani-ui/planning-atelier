@@ -21,7 +21,7 @@ interface PendingOrdersTableProps {
 }
 
 const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, emptyMessage }) => {
-  const { orders, clients } = usePlanning();
+  const { orders, clients, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
