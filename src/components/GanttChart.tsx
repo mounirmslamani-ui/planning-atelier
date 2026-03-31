@@ -160,6 +160,7 @@ const GanttChart: React.FC = () => {
     updateStep, addStep, addProductionRecord,
     deleteStep, addQCEntry, setSteps,
     undo, redo, canUndo, canRedo,
+    absenceOperationId, absenceOrderId, loading,
   } = usePlanning();
 
   // Compute which orders have pending subcontracting (subcontractor op steps not done)
