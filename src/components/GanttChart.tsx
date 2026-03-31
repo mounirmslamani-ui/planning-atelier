@@ -69,13 +69,14 @@ interface GanttBlockProps {
   isLast: boolean;
   isCtrlSelected: boolean;
   hasLink: boolean;
+  subcontractingPending: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
   onCtrlClick: (stepId: string) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, onDragStart, onResizeStart, onCtrlClick
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, onDragStart, onResizeStart, onCtrlClick
 }) => {
   const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
