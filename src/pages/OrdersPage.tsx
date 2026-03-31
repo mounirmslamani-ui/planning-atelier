@@ -132,8 +132,8 @@ const OrdersPage: React.FC = () => {
   // CR map
   const crMap = useMemo(() => {
     const map = new Map<string, number | null>();
-    orders.filter(o => o.id !== 'order-absence').forEach(o => {
-      map.set(o.id, computeCR(o, steps, productionRecords, holidays));
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      map.set(o.id, computeCR(o, steps, productionRecords, holidays, absenceOperationId));
     });
     return map;
   }, [orders, steps, productionRecords, holidays]);
