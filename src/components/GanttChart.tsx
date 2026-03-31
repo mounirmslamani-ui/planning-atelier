@@ -77,9 +77,9 @@ interface GanttBlockProps {
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, onDragStart, onResizeStart, onCtrlClick
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order);
+  const urgencyBg = isAbsence ? 'bg-absence' : getUrgencyBg(order);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
   const textColor = getDeadlineTextColor(order, step);
   const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
@@ -95,7 +95,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   if (!order.toolingAvailable) missingItems.push('Outillage');
   if (!order.studyReady) missingItems.push('Étude');
   if (subcontractingPending) missingItems.push('Sous-traitance en cours');
-  const isBlocked = (missingItems.length > 0) && step.operationId !== 'op-8';
+  const isBlocked = (missingItems.length > 0) && !isAbsence;
   const blockedTextClass = isBlocked ? 'opacity-40' : '';
   const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
