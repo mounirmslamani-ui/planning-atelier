@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -443,14 +444,14 @@ const OrdersPage: React.FC = () => {
                   </div>
                 </TableCell>
                 <TableCell className="font-heading text-sm">{o.orderNumber}</TableCell>
-                <TableCell className="text-sm">{o.orderDate}</TableCell>
+                <TableCell className="text-sm">{formatDateFR(o.orderDate)}</TableCell>
                 <TableCell className="text-sm">{getClientName(o.clientId)}</TableCell>
                 <TableCell className="text-sm max-w-48 truncate">{o.designation}</TableCell>
                 <TableCell className="text-sm">{o.quantity}</TableCell>
                 <TableCell>
                   <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
                 </TableCell>
-                <TableCell className="text-sm">{o.deliveryDeadline || o.plannedDeadline}</TableCell>
+                <TableCell className="text-sm">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</TableCell>
                 <TableCell className="text-center">{formatCR(o.id)}</TableCell>
                 <TableCell>
                   <Package className={`w-4 h-4 ${o.materialAvailable ? 'text-normal' : 'text-destructive'}`} />

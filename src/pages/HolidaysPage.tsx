@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ const HolidaysPage: React.FC = () => {
           <TableBody>
             {holidays.sort((a, b) => a.date.localeCompare(b.date)).map(h => (
               <TableRow key={h.id}>
-                <TableCell className="font-heading text-sm">{h.date}</TableCell>
+                <TableCell className="font-heading text-sm">{formatDateFR(h.date)}</TableCell>
                 <TableCell className="text-sm">{h.name}</TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon" onClick={() => deleteHoliday(h.id)}>

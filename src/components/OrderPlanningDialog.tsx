@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateFR } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -178,7 +179,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             {hasExistingSteps ? 'Modifier' : 'Planifier'} la commande {order.orderNumber}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {order.designation} — Délai : {order.deliveryDeadline || order.plannedDeadline || 'Non défini'}
+            {order.designation} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
           </p>
         </DialogHeader>
 

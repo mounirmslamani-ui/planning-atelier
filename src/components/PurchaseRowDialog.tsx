@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { formatDateFR } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -101,12 +102,12 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
               ) : pendingOrders.map((o, idx) => (
                 <TableRow key={o.id}>
                   <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
-                  <TableCell className="text-sm">{o.orderDate || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(o.orderDate)}</TableCell>
                   <TableCell className="text-sm font-medium">{o.clientName}</TableCell>
                   <TableCell className="text-sm">{o.designation}</TableCell>
                   <TableCell className="text-center text-sm">{o.quantity}</TableCell>
                   <TableCell>{o.priority ? <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge> : '—'}</TableCell>
-                  <TableCell className="text-sm">{o.plannedDeadline || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(o.plannedDeadline)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -108,11 +109,11 @@ const QualityControlPage: React.FC = () => {
                     ) : <span className="text-muted-foreground text-xs">—</span>}
                   </TableCell>
                   <TableCell className="font-heading text-sm">{order.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{order.orderDate}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(order.orderDate)}</TableCell>
                   <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
                   <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
-                  <TableCell className="text-sm">{order.plannedDeadline}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
                   <TableCell>
                     <Input
                       type="date"
