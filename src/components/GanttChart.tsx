@@ -660,7 +660,7 @@ const GanttChart: React.FC = () => {
       const continueEnd = addWorkMinutes(continueStart, remainingMin, holidays);
       addStep({
         ...step,
-        id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: crypto.randomUUID(),
         estimatedDuration: remainingMin,
         startDate: continueStart.toISOString().split('T')[0],
         startTime: `${String(continueStart.getHours()).padStart(2, '0')}:${String(continueStart.getMinutes()).padStart(2, '0')}`,
