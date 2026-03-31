@@ -450,7 +450,7 @@ const OrdersPage: React.FC = () => {
                 <TableCell>
                   <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>
                 </TableCell>
-                <TableCell className="text-sm">{o.deliveryDeadline || o.plannedDeadline}</TableCell>
+                <TableCell className="text-sm">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</TableCell>
                 <TableCell className="text-center">{formatCR(o.id)}</TableCell>
                 <TableCell>
                   <Package className={`w-4 h-4 ${o.materialAvailable ? 'text-normal' : 'text-destructive'}`} />
