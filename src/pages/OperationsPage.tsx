@@ -9,13 +9,13 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Operation, OperationCategory } from '@/types/planning';
 
 const OperationsPage: React.FC = () => {
-  const { operations, addOperation, updateOperation, deleteOperation } = usePlanning();
+  const { operations, addOperation, updateOperation, deleteOperation, absenceOperationId } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Operation | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<OperationCategory>('operator');
 
-  const operatorOps = operations.filter(o => o.category === 'operator' && o.id !== 'op-8');
+  const operatorOps = operations.filter(o => o.category === 'operator' && o.id !== absenceOperationId);
   const subcontractorOps = operations.filter(o => o.category === 'subcontractor');
 
   const openNew = (cat: OperationCategory) => {
@@ -36,7 +36,7 @@ const OperationsPage: React.FC = () => {
     if (editing) {
       updateOperation({ ...editing, name, category });
     } else {
-      addOperation({ id: `op-${Date.now()}`, name, category });
+      addOperation({ id: crypto.randomUUID(), name, category });
     }
     setDialogOpen(false);
   };

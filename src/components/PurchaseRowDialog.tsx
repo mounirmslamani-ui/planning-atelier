@@ -23,14 +23,14 @@ interface PurchaseRowDialogProps {
 }
 
 const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChange, title, type }) => {
-  const { orders, clients } = usePlanning();
+  const { orders, clients, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const pendingOrders = useMemo(() => {
     let result = orders
-      .filter(o => o.id !== 'order-absence')
+      .filter(o => o.id !== absenceOrderId)
       .filter(o => type === 'material' ? !o.materialAvailable : !o.toolingAvailable)
       .map(o => {
         const client = clients.find(c => c.id === o.clientId);

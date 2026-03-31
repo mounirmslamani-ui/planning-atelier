@@ -65,7 +65,7 @@ const StepsPage: React.FC = () => {
 
   const handleSave = () => {
     const computed = computeThirdField(form.startDate, form.startTime, form.endDate, form.endTime, form.estimatedDuration, holidays);
-    const data: ProductionStep = { id: editing?.id || `step-${Date.now()}`, ...form, ...computed, estimatedDuration: computed.duration };
+    const data: ProductionStep = { id: editing?.id || crypto.randomUUID(), ...form, ...computed, estimatedDuration: computed.duration };
     if (editing) updateStep(data);
     else addStep(data);
     setDialogOpen(false);

@@ -14,7 +14,7 @@ const HolidaysPage: React.FC = () => {
 
   const handleAdd = () => {
     if (date && name) {
-      addHoliday({ id: `hol-${Date.now()}`, date, name });
+      addHoliday({ id: crypto.randomUUID(), date, name });
       setDate('');
       setName('');
     }

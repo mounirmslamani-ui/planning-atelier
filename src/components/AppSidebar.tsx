@@ -32,7 +32,7 @@ const navItems = [
 
 const AppSidebar: React.FC = () => {
   const location = useLocation();
-  const { operators, steps, holidays, addStep, updateStep } = usePlanning();
+  const { operators, steps, holidays, addStep, updateStep, absenceOperationId, absenceOrderId } = usePlanning();
   
   const [absenceOpen, setAbsenceOpen] = useState(false);
   const [absOperatorId, setAbsOperatorId] = useState('');
@@ -61,10 +61,10 @@ const AppSidebar: React.FC = () => {
 
     // Create absence block (yellow block on Gantt)
     const absenceStep: import('@/types/planning').ProductionStep = {
-      id: `step-abs-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      orderId: 'order-absence',
+      id: crypto.randomUUID(),
+      orderId: absenceOrderId,
       operatorId: absOperatorId,
-      operationId: 'op-8',
+      operationId: absenceOperationId,
       estimatedDuration: absDurationMin,
       startDate: absStartDate,
       startTime: absStartTime,
@@ -76,7 +76,7 @@ const AppSidebar: React.FC = () => {
 
     // Shift overlapping steps for this operator
     const operatorSteps = steps.filter(
-      s => s.operatorId === absOperatorId && s.operationId !== 'op-8'
+      s => s.operatorId === absOperatorId && s.operationId !== absenceOperationId
     );
 
     operatorSteps.forEach(s => {

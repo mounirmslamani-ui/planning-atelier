@@ -19,7 +19,7 @@ const priorityColors: Record<OrderPriority, string> = {
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline';
 
 const SubcontractingPage: React.FC = () => {
-  const { orders, clients, steps, operations, updateStep } = usePlanning();
+  const { orders, clients, steps, operations, updateStep, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -58,7 +58,7 @@ const SubcontractingPage: React.FC = () => {
 
     return Array.from(orderMap.entries()).map(([orderId, info]) => {
       const order = orders.find(o => o.id === orderId);
-      if (!order || order.id === 'order-absence') return null;
+      if (!order || order.id === absenceOrderId) return null;
       return { order, ...info };
     }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[] }[];
   }, [steps, orders, subcontractorOpIds]);

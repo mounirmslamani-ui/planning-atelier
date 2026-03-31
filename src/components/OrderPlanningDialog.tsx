@@ -32,7 +32,7 @@ interface Props {
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments,
-    addStep, updateStep, deleteStep,
+    addStep, updateStep, deleteStep, absenceOperationId,
   } = usePlanning();
 
   const [rows, setRows] = useState<OperationRow[]>([]);
@@ -42,7 +42,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     if (!open) return;
 
     const existingSteps = steps
-      .filter(s => s.orderId === order.id && s.operationId !== 'op-8')
+      .filter(s => s.orderId === order.id && s.operationId !== absenceOperationId)
       .sort((a, b) => a.order - b.order);
 
     if (existingSteps.length > 0) {
@@ -108,11 +108,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
 
     // Remove all existing steps for this order (will be re-created by scheduler)
-    const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== 'op-8');
+    const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
     existingOrderSteps.forEach(s => deleteStep(s.id));
 
     // Build operations to schedule from current rows
-    const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === 'op-8');
+    const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === absenceOperationId);
 
     const opsToSchedule: OperationToSchedule[] = rows.map(row => {
       const isSub = row.assignType === 'subcontractor';
@@ -169,7 +169,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const durationFactor = (type: 'operator' | 'subcontractor') =>
     type === 'subcontractor' ? 450 : 60;
 
-  const hasExistingSteps = steps.some(s => s.orderId === order.id && s.operationId !== 'op-8');
+  const hasExistingSteps = steps.some(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -209,7 +209,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       onChange={e => updateRow(row.id, 'operationId', e.target.value)}
                     >
                       {operations
-                        .filter(o => o.id !== 'op-8' && o.category === row.assignType)
+                        .filter(o => o.id !== absenceOperationId && o.category === row.assignType)
                         .map(o => (
                           <option key={o.id} value={o.id}>{o.name}</option>
                         ))}

@@ -70,15 +70,16 @@ interface GanttBlockProps {
   isCtrlSelected: boolean;
   hasLink: boolean;
   subcontractingPending: boolean;
+  isAbsence: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
   onCtrlClick: (stepId: string) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, onDragStart, onResizeStart, onCtrlClick
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  const urgencyBg = step.operationId === 'op-8' ? 'bg-absence' : getUrgencyBg(order);
+  const urgencyBg = isAbsence ? 'bg-absence' : getUrgencyBg(order);
   const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
   const textColor = getDeadlineTextColor(order, step);
   const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
@@ -94,7 +95,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   if (!order.toolingAvailable) missingItems.push('Outillage');
   if (!order.studyReady) missingItems.push('Étude');
   if (subcontractingPending) missingItems.push('Sous-traitance en cours');
-  const isBlocked = (missingItems.length > 0) && step.operationId !== 'op-8';
+  const isBlocked = (missingItems.length > 0) && !isAbsence;
   const blockedTextClass = isBlocked ? 'opacity-40' : '';
   const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
@@ -136,7 +137,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       {hasLink && (
         <div className="absolute top-0 left-0 w-1.5 h-full bg-accent/60" />
       )}
-      {isLast && step.operationId !== 'op-8' && (
+      {isLast && !isAbsence && (
         <Flag className="absolute top-0.5 right-[18px] w-3 h-3 text-foreground/70" />
       )}
       {step.frozen && (
@@ -159,6 +160,7 @@ const GanttChart: React.FC = () => {
     updateStep, addStep, addProductionRecord,
     deleteStep, addQCEntry, setSteps,
     undo, redo, canUndo, canRedo,
+    absenceOperationId, absenceOrderId, loading,
   } = usePlanning();
 
   // Compute which orders have pending subcontracting (subcontractor op steps not done)
@@ -308,17 +310,17 @@ const GanttChart: React.FC = () => {
   // Replanifier: reschedule all non-frozen orders
   const handleReplanifier = useCallback(() => {
     // Group non-frozen steps by order, sorted by displayOrder
-    const orderIds = [...new Set(steps.filter(s => !s.frozen && s.operationId !== 'op-8').map(s => s.orderId))];
+    const orderIds = [...new Set(steps.filter(s => !s.frozen && s.operationId !== absenceOperationId).map(s => s.orderId))];
     const sortedOrders = orderIds
       .map(id => orders.find(o => o.id === id))
       .filter(Boolean)
       .sort((a, b) => (a!.displayOrder ?? 9999) - (b!.displayOrder ?? 9999)) as Order[];
 
     // Keep frozen steps and absence steps untouched
-    let workingSteps = steps.filter(s => s.frozen || s.operationId === 'op-8');
+    let workingSteps = steps.filter(s => s.frozen || s.operationId === absenceOperationId);
 
     for (const order of sortedOrders) {
-      const orderSteps = steps.filter(s => s.orderId === order.id && !s.frozen && s.operationId !== 'op-8')
+      const orderSteps = steps.filter(s => s.orderId === order.id && !s.frozen && s.operationId !== absenceOperationId)
         .sort((a, b) => a.order - b.order);
 
       if (orderSteps.length === 0) continue;
@@ -378,11 +380,11 @@ const GanttChart: React.FC = () => {
       if (hasSubSteps || subcontractors.length > 0) {
         specialRows.push({ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' });
       }
-      const hasMaterialPending = orders.some(o => o.id !== 'order-absence' && !o.materialAvailable);
+      const hasMaterialPending = orders.some(o => o.id !== absenceOrderId && !o.materialAvailable);
       if (hasMaterialPending) {
         specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
       }
-      const hasToolingPending = orders.some(o => o.id !== 'order-absence' && !o.toolingAvailable);
+      const hasToolingPending = orders.some(o => o.id !== absenceOrderId && !o.toolingAvailable);
       if (hasToolingPending) {
         specialRows.push({ type: 'tooling' as const, id: '__tooling__', label: 'Achat outillage', sublabel: '' });
       }
@@ -595,7 +597,7 @@ const GanttChart: React.FC = () => {
         };
 
         if (dragState.altKey) {
-          addStep({ ...newStepData, id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` });
+          addStep({ ...newStepData, id: crypto.randomUUID() });
         } else {
           updateStep(newStepData);
           // Propagate to dependent steps
@@ -641,7 +643,7 @@ const GanttChart: React.FC = () => {
     const step = steps.find(s => s.id === validateStepId);
     if (!step) return;
     const record: ProductionRecord = {
-      id: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: crypto.randomUUID(),
       stepId: step.id,
       orderId: step.orderId,
       operatorId: step.operatorId,
@@ -658,7 +660,7 @@ const GanttChart: React.FC = () => {
       const continueEnd = addWorkMinutes(continueStart, remainingMin, holidays);
       addStep({
         ...step,
-        id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: crypto.randomUUID(),
         estimatedDuration: remainingMin,
         startDate: continueStart.toISOString().split('T')[0],
         startTime: `${String(continueStart.getHours()).padStart(2, '0')}:${String(continueStart.getMinutes()).padStart(2, '0')}`,
@@ -667,11 +669,11 @@ const GanttChart: React.FC = () => {
       });
     } else {
       // Check if this was the last step for the order (no other steps remaining on planning after removal)
-      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== 'op-8');
-      if (otherSteps.length === 0 && step.orderId !== 'order-absence') {
+      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== absenceOperationId);
+      if (otherSteps.length === 0 && step.orderId !== absenceOrderId) {
         // Move order to Quality Control
         addQCEntry({
-          id: `qc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          id: crypto.randomUUID(),
           orderId: step.orderId,
           controlDate: '',
           createdAt: new Date().toISOString(),
@@ -962,11 +964,11 @@ const GanttChart: React.FC = () => {
                 if (row.type === 'subcontractor') return !!s.subcontractorId;
                 if (row.type === 'material') {
                   const order = orders.find(o => o.id === s.orderId);
-                  return order && !order.materialAvailable && s.operationId !== 'op-8';
+                   return order && !order.materialAvailable && s.operationId !== absenceOperationId;
                 }
                 if (row.type === 'tooling') {
                   const order = orders.find(o => o.id === s.orderId);
-                  return order && !order.toolingAvailable && s.operationId !== 'op-8';
+                  return order && !order.toolingAvailable && s.operationId !== absenceOperationId;
                 }
                 return false;
               });
@@ -1004,6 +1006,7 @@ const GanttChart: React.FC = () => {
                           isCtrlSelected={ctrlSelectedStepId === step.id}
                           hasLink={!!step.dependsOn}
                           subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
+                          isAbsence={step.operationId === absenceOperationId}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
                           onCtrlClick={handleCtrlClick}

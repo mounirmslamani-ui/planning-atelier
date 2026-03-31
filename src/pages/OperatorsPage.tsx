@@ -42,7 +42,7 @@ const OperatorsPage: React.FC = () => {
 
   const handleSave = () => {
     const data: Operator = {
-      id: editing?.id || `opr-${Date.now()}`,
+      id: editing?.id || crypto.randomUUID(),
       name,
       mainFunction,
       secondaryFunctions,

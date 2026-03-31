@@ -21,7 +21,7 @@ interface PendingOrdersTableProps {
 }
 
 const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, emptyMessage }) => {
-  const { orders, clients } = usePlanning();
+  const { orders, clients, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -29,7 +29,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
 
   const filteredOrders = useMemo(() => {
-    let result = orders.filter(o => o.id !== 'order-absence').filter(filterFn);
+    let result = orders.filter(o => o.id !== absenceOrderId).filter(filterFn);
 
     // Apply text filters
     Object.entries(filters).forEach(([key, val]) => {

@@ -36,7 +36,7 @@ const ClientsPage: React.FC = () => {
 
   const handleSave = () => {
     if (editing) updateClient({ ...editing, name });
-    else addClient({ id: `cl-${Date.now()}`, name });
+    else addClient({ id: crypto.randomUUID(), name });
     setDialogOpen(false);
   };
 

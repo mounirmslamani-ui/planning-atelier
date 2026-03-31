@@ -56,7 +56,7 @@ const QualityControlPage: React.FC = () => {
 
     if (decision === 'conforme' || decision === 'conforme-derogation') {
       addDeliveryEntry({
-        id: `del-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: crypto.randomUUID(),
         orderId: entry.orderId,
         controlDate: entry.controlDate,
         decision,

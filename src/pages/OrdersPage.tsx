@@ -41,9 +41,10 @@ function computeCR(
   order: Order,
   steps: { orderId: string; operationId: string; estimatedDuration: number }[],
   productionRecords: { orderId: string; actualDuration: number }[],
-  holidays: { date: string; name: string }[]
+  holidays: { date: string; name: string }[],
+  absenceOpId: string,
 ): number | null {
-  const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== 'op-8');
+  const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOpId);
   const totalAllocated = orderSteps.reduce((sum, s) => sum + s.estimatedDuration, 0);
   if (totalAllocated === 0) return null; // indéfini
 
@@ -111,7 +112,7 @@ function computeCR(
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
@@ -131,15 +132,15 @@ const OrdersPage: React.FC = () => {
   // CR map
   const crMap = useMemo(() => {
     const map = new Map<string, number | null>();
-    orders.filter(o => o.id !== 'order-absence').forEach(o => {
-      map.set(o.id, computeCR(o, steps, productionRecords, holidays));
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      map.set(o.id, computeCR(o, steps, productionRecords, holidays, absenceOperationId));
     });
     return map;
-  }, [orders, steps, productionRecords, holidays]);
+  }, [orders, steps, productionRecords, holidays, absenceOrderId, absenceOperationId]);
 
   // Default sort: priority desc (P1 first) then CR asc (smallest first)
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== 'order-absence');
+    const real = orders.filter(o => o.id !== absenceOrderId);
     // If any have displayOrder set and frozen, respect that
     // Separate frozen and non-frozen
     const frozen = real.filter(o => o.frozenOrder);
@@ -172,13 +173,13 @@ const OrdersPage: React.FC = () => {
 
   // Assign displayOrders
   React.useEffect(() => {
-    const real = orders.filter(o => o.id !== 'order-absence');
+    const real = orders.filter(o => o.id !== absenceOrderId);
     const needsUpdate = real.some((o, i) => {
       const sorted = baseSorted[i];
       return sorted && o.id === sorted.id && o.displayOrder !== i + 1;
     });
     if (baseSorted.length > 0 && needsUpdate) {
-      const absence = orders.find(o => o.id === 'order-absence');
+      const absence = orders.find(o => o.id === absenceOrderId);
       setOrders([...(absence ? [absence] : []), ...baseSorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
     }
   }, []);
@@ -254,7 +255,7 @@ const OrdersPage: React.FC = () => {
   const openNew = () => { setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
   const openEdit = (o: Order) => { setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
   const handleSave = () => {
-    const data: Order = { id: editing?.id || `ord-${Date.now()}`, ...form };
+    const data: Order = { id: editing?.id || crypto.randomUUID(), ...form };
     if (editing) updateOrder(data); else addOrder(data);
     setDialogOpen(false);
   };
@@ -267,7 +268,7 @@ const OrdersPage: React.FC = () => {
   };
 
   const handleExcelImport = (imported: Omit<Order, 'id'>[]) => {
-    imported.forEach((o, i) => addOrder({ id: `ord-${Date.now()}-${i}`, ...o } as Order));
+    imported.forEach((o, i) => addOrder({ id: crypto.randomUUID(), ...o } as Order));
   };
 
   // Drag & drop
@@ -305,7 +306,7 @@ const OrdersPage: React.FC = () => {
     if (insertAt < 0) insertAt = 0;
     remaining.splice(insertAt, 0, ...draggedItems);
 
-    const absence = orders.find(o => o.id === 'order-absence');
+    const absence = orders.find(o => o.id === absenceOrderId);
     // Mark dragged orders as frozen
     setOrders([
       ...(absence ? [absence] : []),
@@ -325,12 +326,12 @@ const OrdersPage: React.FC = () => {
 
   const unlockOrder = (o: Order) => updateOrder({ ...o, frozenOrder: false });
   const unlockAll = () => {
-    const absence = orders.find(o => o.id === 'order-absence');
-    const real = orders.filter(o => o.id !== 'order-absence').map(o => ({ ...o, frozenOrder: false }));
+    const absence = orders.find(o => o.id === absenceOrderId);
+    const real = orders.filter(o => o.id !== absenceOrderId).map(o => ({ ...o, frozenOrder: false }));
     setOrders([...(absence ? [absence] : []), ...real]);
   };
 
-  const hasFrozenOrders = orders.some(o => o.id !== 'order-absence' && o.frozenOrder);
+  const hasFrozenOrders = orders.some(o => o.id !== absenceOrderId && o.frozenOrder);
 
   const columns: { key: ColumnKey; label: string }[] = [
     { key: 'orderNumber', label: 'N° Commande' },

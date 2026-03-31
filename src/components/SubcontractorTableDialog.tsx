@@ -20,14 +20,14 @@ interface SubcontractorTableDialogProps {
 }
 
 const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ open, onOpenChange }) => {
-  const { steps, orders, clients, operations, subcontractors } = usePlanning();
+  const { steps, orders, clients, operations, subcontractors, absenceOperationId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const subSteps = useMemo(() => {
     let result = steps
-      .filter(s => s.subcontractorId && s.operationId !== 'op-8')
+      .filter(s => s.subcontractorId && s.operationId !== absenceOperationId)
       .map(s => {
         const order = orders.find(o => o.id === s.orderId);
         const client = order ? clients.find(c => c.id === order.clientId) : null;
