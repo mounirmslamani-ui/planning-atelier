@@ -36,7 +36,7 @@ const OperationsPage: React.FC = () => {
     if (editing) {
       updateOperation({ ...editing, name, category });
     } else {
-      addOperation({ id: `op-${Date.now()}`, name, category });
+      addOperation({ id: crypto.randomUUID(), name, category });
     }
     setDialogOpen(false);
   };

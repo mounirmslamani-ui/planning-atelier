@@ -56,7 +56,7 @@ const EquipmentPage: React.FC = () => {
 
   const handleSave = () => {
     const data: Equipment = {
-      id: editing?.id || `eq-${Date.now()}`,
+      id: editing?.id || crypto.randomUUID(),
       designation,
       type,
       capacity,

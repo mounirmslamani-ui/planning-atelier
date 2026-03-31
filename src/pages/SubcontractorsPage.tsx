@@ -35,7 +35,7 @@ const SubcontractorsPage: React.FC = () => {
 
   const handleSave = () => {
     const data: Subcontractor = {
-      id: editing?.id || `sub-${Date.now()}`,
+      id: editing?.id || crypto.randomUUID(),
       companyName,
       mainActivity,
       secondaryActivities,

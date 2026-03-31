@@ -179,7 +179,7 @@ export function scheduleOrder(
 
     if (bestCandidate) {
       const step: ProductionStep = {
-        id: `step-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+        id: crypto.randomUUID(),
         orderId,
         operatorId: bestCandidate.isSub ? '' : bestCandidate.assigneeId,
         subcontractorId: bestCandidate.isSub ? bestCandidate.assigneeId : undefined,
