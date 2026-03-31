@@ -8,6 +8,11 @@ export interface OperationToSchedule {
   equipmentIds?: string[];
 }
 
+// Module-level absence operation ID — set by context after initial load
+let _absenceOpId = '';
+export function setAbsenceOpId(id: string) { _absenceOpId = id; }
+export function getAbsenceOpId() { return _absenceOpId; }
+
 interface ScheduleCandidate {
   assigneeId: string;
   isSub: boolean;
@@ -84,7 +89,7 @@ function findEarliestSlot(
     if (candidateEnd <= existing.start) break;
 
     // Never displace absences or frozen steps
-    if (existing.step.operationId === 'op-8' || existing.step.frozen) {
+    if (existing.step.operationId === _absenceOpId || existing.step.frozen) {
       if (candidate < existing.end) candidate = new Date(existing.end);
       continue;
     }

@@ -1,7 +1,28 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'; // v5
-import type { Operator, Subcontractor, Operation, Client, Order, ProductionStep, Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment } from '@/types/planning';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import type {
+  Operator, Subcontractor, Operation, Client, Order, ProductionStep,
+  Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment,
+} from '@/types/planning';
+import {
+  fetchAllData,
+  ensureAbsenceOperation, ensureAbsenceOrder,
+  dbInsertEquipment, dbUpdateEquipment, dbDeleteEquipment,
+  dbInsertOperator, dbUpdateOperator, dbDeleteOperator,
+  dbInsertSubcontractor, dbUpdateSubcontractor, dbDeleteSubcontractor,
+  dbInsertOperation, dbUpdateOperation, dbDeleteOperation,
+  dbInsertClient, dbUpdateClient, dbDeleteClient,
+  dbInsertOrder, dbUpdateOrder, dbDeleteOrder, dbBulkUpdateOrders,
+  dbInsertStep, dbUpdateStep, dbDeleteStep,
+  dbInsertHoliday, dbDeleteHoliday,
+  dbInsertRecord, dbDeleteRecord,
+  dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
+  dbInsertDelivery, dbDeleteDelivery,
+} from '@/lib/supabase-data';
 
-interface PlanningState {
+interface PlanningContextType {
+  loading: boolean;
+  absenceOperationId: string;
+  absenceOrderId: string;
   operators: Operator[];
   subcontractors: Subcontractor[];
   operations: Operation[];
@@ -17,9 +38,6 @@ interface PlanningState {
   ganttZeroDate: Date;
   selectedOperatorId: string | null;
   selectedOrderId: string | null;
-}
-
-interface PlanningContextType extends PlanningState {
   setOperators: (ops: Operator[]) => void;
   addOperator: (op: Operator) => void;
   updateOperator: (op: Operator) => void;
@@ -47,17 +65,13 @@ interface PlanningContextType extends PlanningState {
   setHolidays: (holidays: Holiday[]) => void;
   addHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
-  productionRecords: ProductionRecord[];
   addProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
-  qcEntries: QualityControlEntry[];
   addQCEntry: (entry: QualityControlEntry) => void;
   updateQCEntry: (entry: QualityControlEntry) => void;
   deleteQCEntry: (id: string) => void;
-  deliveryEntries: DeliveryEntry[];
   addDeliveryEntry: (entry: DeliveryEntry) => void;
   deleteDeliveryEntry: (id: string) => void;
-  equipments: Equipment[];
   setEquipments: (eqs: Equipment[]) => void;
   addEquipment: (eq: Equipment) => void;
   updateEquipment: (eq: Equipment) => void;
@@ -72,31 +86,6 @@ interface PlanningContextType extends PlanningState {
   canRedo: boolean;
 }
 
-const defaultOperations: Operation[] = [
-  { id: 'op-1', name: 'Tournage', category: 'operator' },
-  { id: 'op-2', name: 'Fraisage', category: 'operator' },
-  { id: 'op-3', name: 'Perçage', category: 'operator' },
-  { id: 'op-4', name: 'Rectification', category: 'operator' },
-  { id: 'op-5', name: 'Soudure', category: 'operator' },
-  { id: 'op-6', name: 'Traitement thermique', category: 'subcontractor' },
-  { id: 'op-7', name: 'Contrôle qualité', category: 'operator' },
-  { id: 'op-8', name: 'Absence', category: 'operator' },
-];
-
-const defaultOperators: Operator[] = [
-  { id: 'opr-1', name: 'Ahmed', mainFunction: 'Tournage', secondaryFunctions: ['Perçage'] },
-  { id: 'opr-2', name: 'Mohamed', mainFunction: 'Tournage', secondaryFunctions: ['Fraisage'] },
-  { id: 'opr-3', name: 'Karim', mainFunction: 'Fraisage', secondaryFunctions: ['Tournage'] },
-  { id: 'opr-4', name: 'Youssef', mainFunction: 'Fraisage', secondaryFunctions: [] },
-  { id: 'opr-5', name: 'Omar', mainFunction: 'Soudure', secondaryFunctions: ['Rectification'] },
-];
-
-const defaultClients: Client[] = [
-  { id: 'cl-1', name: 'LGPA' },
-  { id: 'cl-2', name: 'SARL Mécanique Plus' },
-];
-
-// Snapshot type for undo/redo (only data that matters)
 interface Snapshot {
   operators: Operator[];
   subcontractors: Subcontractor[];
@@ -116,15 +105,15 @@ const MAX_HISTORY = 50;
 const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [operators, setOperators] = useState<Operator[]>(defaultOperators);
-  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([
-    { id: 'sub-1', companyName: 'Traitements SA', mainActivity: 'Traitement thermique', secondaryActivities: [] },
-  ]);
-  const [operations, setOperations] = useState<Operation[]>(defaultOperations);
-  const [clients, setClients] = useState<Client[]>(defaultClients);
-  const [orders, setOrders] = useState<Order[]>([
-    { id: 'order-absence', orderNumber: 'ABS', orderDate: '', clientId: '', designation: 'Absence', quantity: 0, priority: 'P5', plannedDeadline: '', materialAvailable: true, toolingAvailable: true, studyReady: true },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [absenceOperationId, setAbsenceOperationId] = useState('');
+  const [absenceOrderId, setAbsenceOrderId] = useState('');
+
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [steps, setSteps] = useState<ProductionStep[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [productionRecords, setProductionRecords] = useState<ProductionRecord[]>([]);
@@ -136,10 +125,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  // Undo/Redo history
+  // ───────────────────── Undo/Redo ─────────────────────
   const undoStack = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
-  const [historyTrigger, setHistoryTrigger] = useState(0); // force re-render for canUndo/canRedo
+  const [historyTrigger, setHistoryTrigger] = useState(0);
 
   const takeSnapshot = useCallback((): Snapshot => ({
     operators: [...operators],
@@ -199,71 +188,186 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        redo();
-      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
-  // Wrapped setters that push undo before mutating
-  const wrap = <T extends any[]>(fn: (...args: T) => void) =>
-    useCallback((...args: T) => { pushUndo(); fn(...args); }, [pushUndo, fn]);
+  // ───────────────────── Initial Data Load ─────────────────────
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchAllData();
 
-  const addOperator = wrap((op: Operator) => setOperators(prev => [...prev, op]));
-  const updateOperator = wrap((op: Operator) => setOperators(prev => prev.map(o => o.id === op.id ? op : o)));
-  const deleteOperator = wrap((id: string) => setOperators(prev => prev.filter(o => o.id !== id)));
+        // Ensure special Absence entities exist
+        const absOp = await ensureAbsenceOperation(data.operations);
+        const absOrder = await ensureAbsenceOrder(data.orders);
 
-  const addSubcontractor = wrap((sub: Subcontractor) => setSubcontractors(prev => [...prev, sub]));
-  const updateSubcontractor = wrap((sub: Subcontractor) => setSubcontractors(prev => prev.map(s => s.id === sub.id ? sub : s)));
-  const deleteSubcontractor = wrap((id: string) => setSubcontractors(prev => prev.filter(s => s.id !== id)));
+        // Add absence op to operations list if it was just created
+        if (!data.operations.find(o => o.id === absOp.id)) {
+          data.operations.push(absOp);
+        }
+        if (!data.orders.find(o => o.id === absOrder.id)) {
+          data.orders.push(absOrder);
+        }
 
-  const addOperation = wrap((op: Operation) => setOperations(prev => [...prev, op]));
-  const updateOperation = wrap((op: Operation) => setOperations(prev => prev.map(o => o.id === op.id ? op : o)));
-  const deleteOperation = wrap((id: string) => setOperations(prev => prev.filter(o => o.id !== id)));
+        setAbsenceOperationId(absOp.id);
+        setAbsenceOrderId(absOrder.id);
 
-  const addClient = wrap((client: Client) => setClients(prev => [...prev, client]));
-  const updateClient = wrap((client: Client) => setClients(prev => prev.map(c => c.id === client.id ? client : c)));
-  const deleteClient = wrap((id: string) => setClients(prev => prev.filter(c => c.id !== id)));
+        setEquipments(data.equipments);
+        setOperators(data.operators);
+        setSubcontractors(data.subcontractors);
+        setOperations(data.operations);
+        setClients(data.clients);
+        setOrders(data.orders);
+        setSteps(data.steps);
+        setHolidays(data.holidays);
+        setProductionRecords(data.productionRecords);
+        setQCEntries(data.qcEntries);
+        setDeliveryEntries(data.deliveryEntries);
+      } catch (err) {
+        console.error('[PlanningContext] Failed to load data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
-  const addOrder = wrap((order: Order) => setOrders(prev => [...prev, order]));
-  const updateOrder = wrap((order: Order) => setOrders(prev => prev.map(o => o.id === order.id ? order : o)));
-  const deleteOrder = wrap((id: string) => setOrders(prev => prev.filter(o => o.id !== id)));
+  // ───────────────────── CRUD with optimistic updates + DB sync ─────────────────────
 
-  const addStep = wrap((step: ProductionStep) => setSteps(prev => [...prev, step]));
-  const updateStep = wrap((step: ProductionStep) => setSteps(prev => prev.map(s => s.id === step.id ? step : s)));
-  const deleteStep = wrap((id: string) => setSteps(prev => prev.filter(s => s.id !== id)));
+  // Equipment
+  const addEquipment = useCallback((eq: Equipment) => {
+    pushUndo(); setEquipments(prev => [...prev, eq]); dbInsertEquipment(eq);
+  }, [pushUndo]);
+  const updateEquipment = useCallback((eq: Equipment) => {
+    pushUndo(); setEquipments(prev => prev.map(e => e.id === eq.id ? eq : e)); dbUpdateEquipment(eq);
+  }, [pushUndo]);
+  const deleteEquipment = useCallback((id: string) => {
+    pushUndo(); setEquipments(prev => prev.filter(e => e.id !== id)); dbDeleteEquipment(id);
+  }, [pushUndo]);
 
-  const addHoliday = wrap((holiday: Holiday) => setHolidays(prev => [...prev, holiday]));
-  const deleteHoliday = wrap((id: string) => setHolidays(prev => prev.filter(h => h.id !== id)));
+  // Operator
+  const addOperator = useCallback((op: Operator) => {
+    pushUndo(); setOperators(prev => [...prev, op]); dbInsertOperator(op);
+  }, [pushUndo]);
+  const updateOperator = useCallback((op: Operator) => {
+    pushUndo(); setOperators(prev => prev.map(o => o.id === op.id ? op : o)); dbUpdateOperator(op);
+  }, [pushUndo]);
+  const deleteOperator = useCallback((id: string) => {
+    pushUndo(); setOperators(prev => prev.filter(o => o.id !== id)); dbDeleteOperator(id);
+  }, [pushUndo]);
 
-  const addProductionRecord = wrap((record: ProductionRecord) => setProductionRecords(prev => [...prev, record]));
-  const deleteProductionRecord = wrap((id: string) => setProductionRecords(prev => prev.filter(r => r.id !== id)));
+  // Subcontractor
+  const addSubcontractor = useCallback((sub: Subcontractor) => {
+    pushUndo(); setSubcontractors(prev => [...prev, sub]); dbInsertSubcontractor(sub);
+  }, [pushUndo]);
+  const updateSubcontractor = useCallback((sub: Subcontractor) => {
+    pushUndo(); setSubcontractors(prev => prev.map(s => s.id === sub.id ? sub : s)); dbUpdateSubcontractor(sub);
+  }, [pushUndo]);
+  const deleteSubcontractor = useCallback((id: string) => {
+    pushUndo(); setSubcontractors(prev => prev.filter(s => s.id !== id)); dbDeleteSubcontractor(id);
+  }, [pushUndo]);
 
-  const addQCEntry = wrap((entry: QualityControlEntry) => setQCEntries(prev => [...prev, entry]));
-  const updateQCEntry = wrap((entry: QualityControlEntry) => setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)));
-  const deleteQCEntry = wrap((id: string) => setQCEntries(prev => prev.filter(e => e.id !== id)));
+  // Operation
+  const addOperation = useCallback((op: Operation) => {
+    pushUndo(); setOperations(prev => [...prev, op]); dbInsertOperation(op);
+  }, [pushUndo]);
+  const updateOperation = useCallback((op: Operation) => {
+    pushUndo(); setOperations(prev => prev.map(o => o.id === op.id ? op : o)); dbUpdateOperation(op);
+  }, [pushUndo]);
+  const deleteOperation = useCallback((id: string) => {
+    pushUndo(); setOperations(prev => prev.filter(o => o.id !== id)); dbDeleteOperation(id);
+  }, [pushUndo]);
 
-  const addDeliveryEntry = wrap((entry: DeliveryEntry) => setDeliveryEntries(prev => [...prev, entry]));
-  const deleteDeliveryEntry = wrap((id: string) => setDeliveryEntries(prev => prev.filter(e => e.id !== id)));
+  // Client
+  const addClient = useCallback((client: Client) => {
+    pushUndo(); setClients(prev => [...prev, client]); dbInsertClient(client);
+  }, [pushUndo]);
+  const updateClient = useCallback((client: Client) => {
+    pushUndo(); setClients(prev => prev.map(c => c.id === client.id ? client : c)); dbUpdateClient(client);
+  }, [pushUndo]);
+  const deleteClient = useCallback((id: string) => {
+    pushUndo(); setClients(prev => prev.filter(c => c.id !== id)); dbDeleteClient(id);
+  }, [pushUndo]);
 
-  const addEquipment = wrap((eq: Equipment) => setEquipments(prev => [...prev, eq]));
-  const updateEquipment = wrap((eq: Equipment) => setEquipments(prev => prev.map(e => e.id === eq.id ? eq : e)));
-  const deleteEquipment = wrap((id: string) => setEquipments(prev => prev.filter(e => e.id !== id)));
+  // Order
+  const addOrder = useCallback((order: Order) => {
+    pushUndo(); setOrders(prev => [...prev, order]); dbInsertOrder(order);
+  }, [pushUndo]);
+  const updateOrder = useCallback((order: Order) => {
+    pushUndo(); setOrders(prev => prev.map(o => o.id === order.id ? order : o)); dbUpdateOrder(order);
+  }, [pushUndo]);
+  const deleteOrder = useCallback((id: string) => {
+    pushUndo(); setOrders(prev => prev.filter(o => o.id !== id)); dbDeleteOrder(id);
+  }, [pushUndo]);
+
+  // Wrapped setOrders that also syncs to DB
+  const setOrdersWrapped = useCallback((newOrders: Order[]) => {
+    setOrders(newOrders);
+    // Bulk update all non-ABS orders
+    const toSync = newOrders.filter(o => o.orderNumber !== 'ABS');
+    dbBulkUpdateOrders(toSync);
+  }, []);
+
+  // Step
+  const addStep = useCallback((step: ProductionStep) => {
+    pushUndo(); setSteps(prev => [...prev, step]); dbInsertStep(step);
+  }, [pushUndo]);
+  const updateStep = useCallback((step: ProductionStep) => {
+    pushUndo(); setSteps(prev => prev.map(s => s.id === step.id ? step : s)); dbUpdateStep(step);
+  }, [pushUndo]);
+  const deleteStep = useCallback((id: string) => {
+    pushUndo(); setSteps(prev => prev.filter(s => s.id !== id)); dbDeleteStep(id);
+  }, [pushUndo]);
+
+  // Holiday
+  const addHoliday = useCallback((holiday: Holiday) => {
+    pushUndo(); setHolidays(prev => [...prev, holiday]); dbInsertHoliday(holiday);
+  }, [pushUndo]);
+  const deleteHoliday = useCallback((id: string) => {
+    pushUndo(); setHolidays(prev => prev.filter(h => h.id !== id)); dbDeleteHoliday(id);
+  }, [pushUndo]);
+
+  // Production Record
+  const addProductionRecord = useCallback((record: ProductionRecord) => {
+    pushUndo(); setProductionRecords(prev => [...prev, record]); dbInsertRecord(record);
+  }, [pushUndo]);
+  const deleteProductionRecord = useCallback((id: string) => {
+    pushUndo(); setProductionRecords(prev => prev.filter(r => r.id !== id)); dbDeleteRecord(id);
+  }, [pushUndo]);
+
+  // QC Entry
+  const addQCEntry = useCallback((entry: QualityControlEntry) => {
+    pushUndo(); setQCEntries(prev => [...prev, entry]); dbInsertQCEntry(entry);
+  }, [pushUndo]);
+  const updateQCEntry = useCallback((entry: QualityControlEntry) => {
+    pushUndo(); setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)); dbUpdateQCEntry(entry);
+  }, [pushUndo]);
+  const deleteQCEntry = useCallback((id: string) => {
+    pushUndo(); setQCEntries(prev => prev.filter(e => e.id !== id)); dbDeleteQCEntry(id);
+  }, [pushUndo]);
+
+  // Delivery Entry
+  const addDeliveryEntry = useCallback((entry: DeliveryEntry) => {
+    pushUndo(); setDeliveryEntries(prev => [...prev, entry]); dbInsertDelivery(entry);
+  }, [pushUndo]);
+  const deleteDeliveryEntry = useCallback((id: string) => {
+    pushUndo(); setDeliveryEntries(prev => prev.filter(e => e.id !== id)); dbDeleteDelivery(id);
+  }, [pushUndo]);
 
   return (
     <PlanningContext.Provider value={{
+      loading,
+      absenceOperationId,
+      absenceOrderId,
       operators, setOperators, addOperator, updateOperator, deleteOperator,
       subcontractors, setSubcontractors, addSubcontractor, updateSubcontractor, deleteSubcontractor,
       operations, setOperations, addOperation, updateOperation, deleteOperation,
       clients, setClients, addClient, updateClient, deleteClient,
-      orders, setOrders, addOrder, updateOrder, deleteOrder,
+      orders, setOrders: setOrdersWrapped, addOrder, updateOrder, deleteOrder,
       steps, setSteps, addStep, updateStep, deleteStep,
       holidays, setHolidays, addHoliday, deleteHoliday,
       productionRecords, addProductionRecord, deleteProductionRecord,
