@@ -357,8 +357,9 @@ const OrdersPage: React.FC = () => {
   };
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation'];
-    if (editMode && editableFields.includes(col)) {
+    const isEditing = editingRowId === o.id;
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'materialAvailable', 'toolingAvailable', 'studyReady'];
+    if (isEditing && editableFields.includes(col)) {
       if (col === 'priority') {
         return (
           <select
@@ -387,6 +388,29 @@ const OrdersPage: React.FC = () => {
             onClick={e => e.stopPropagation()}
             placeholder="Note..." />
         );
+      }
+      if (col === 'deliveryDeadline') {
+        return (
+          <Input type="date" className="h-7 text-xs"
+            value={(getInlineValue(o, 'deliveryDeadline') as string) || o.deliveryDeadline || o.plannedDeadline}
+            onChange={e => setInlineValue(o.id, 'deliveryDeadline', e.target.value)}
+            onClick={e => e.stopPropagation()} />
+        );
+      }
+      if (col === 'materialAvailable') {
+        const val = (getInlineValue(o, 'materialAvailable') as boolean);
+        return <Package className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
+          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'materialAvailable', !val); }} />;
+      }
+      if (col === 'toolingAvailable') {
+        const val = (getInlineValue(o, 'toolingAvailable') as boolean);
+        return <Wrench className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
+          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'toolingAvailable', !val); }} />;
+      }
+      if (col === 'studyReady') {
+        const val = (getInlineValue(o, 'studyReady') as boolean);
+        return <FileCheck className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
+          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'studyReady', !val); }} />;
       }
       if (col === 'orderNumber' || col === 'designation') {
         return (
