@@ -12,7 +12,6 @@ const priorityColors: Record<OrderPriority, string> = {
   'P2': 'bg-urgent-moderate text-white',
   'P3': 'bg-priority-p3 text-foreground',
   'P4': 'bg-priority-p4 text-foreground',
-  'P5': 'bg-muted text-muted-foreground',
 };
 
 interface PurchaseRowDialogProps {
