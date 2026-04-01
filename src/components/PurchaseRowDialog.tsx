@@ -54,7 +54,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
     });
 
     if (sortKey && sortDir) {
-      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
+      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
       result = [...result].sort((a, b) => {
         let cmp = 0;
         switch (sortKey) {
