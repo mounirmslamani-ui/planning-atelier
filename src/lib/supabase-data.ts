@@ -226,9 +226,9 @@ export function mapStepToDB(s: ProductionStep) {
     subcontractor_id: nullIfEmpty(s.subcontractorId),
     operation_id: s.operationId,
     estimated_duration: s.estimatedDuration,
-    start_date: nullIfEmpty(s.startDate),
+    start_date: toISODateOrNull(s.startDate),
     start_time: nullIfEmpty(s.startTime),
-    end_date: nullIfEmpty(s.endDate),
+    end_date: toISODateOrNull(s.endDate),
     end_time: nullIfEmpty(s.endTime),
     depends_on: nullIfEmpty(s.dependsOn),
     depends_on_percentage: s.dependsOnPercentage ?? null,
@@ -236,7 +236,7 @@ export function mapStepToDB(s: ProductionStep) {
     frozen: s.frozen ?? false,
     equipment_ids: s.equipmentIds || [],
     subcontracting_done: s.subcontractingDone ?? false,
-    subcontracting_deadline: nullIfEmpty(s.subcontractingDeadline),
+    subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
   };
 }
 
