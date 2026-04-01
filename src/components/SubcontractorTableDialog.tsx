@@ -135,16 +135,16 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
               ) : subSteps.map((r, idx) => (
                 <TableRow key={r.id}>
                   <TableCell className="text-sm font-mono">{r.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{r.orderDate || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.orderDate) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{r.clientName}</TableCell>
                   <TableCell className="text-sm">{r.designation}</TableCell>
                   <TableCell className="text-center text-sm">{r.quantity}</TableCell>
                   <TableCell>{r.priority ? <Badge className={`${priorityColors[r.priority]} text-xs`}>{r.priority}</Badge> : '—'}</TableCell>
-                  <TableCell className="text-sm">{r.plannedDeadline || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.plannedDeadline) || '—'}</TableCell>
                   <TableCell className="text-sm">{r.operationName}</TableCell>
                   <TableCell className="text-sm font-medium">{r.subcontractorName}</TableCell>
-                  <TableCell className="text-sm">{r.startDate} {r.startTime}</TableCell>
-                  <TableCell className="text-sm">{r.endDate} {r.endTime}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.startDate)} {r.startTime}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.endDate)} {r.endTime}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
