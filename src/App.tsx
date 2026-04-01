@@ -21,6 +21,7 @@ import ToolingPurchasesPage from "./pages/ToolingPurchasesPage";
 import StudyPage from "./pages/StudyPage";
 import EquipmentPage from "./pages/EquipmentPage";
 import SubcontractingPage from "./pages/SubcontractingPage";
+import AbsencesPage from "./pages/AbsencesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
