@@ -20,10 +20,12 @@ const OperatorsPage: React.FC = () => {
   const [secondaryEquipments, setSecondaryEquipments] = useState<string[]>([]);
   const [newSecEquip, setNewSecEquip] = useState('');
 
+  const operatorOps = operations.filter(o => o.category === 'operator' && o.name !== 'Absence');
+
   const openNew = () => {
     setEditing(null);
     setName('');
-    setMainFunction(operations[0]?.name || '');
+    setMainFunction(operatorOps[0]?.name || '');
     setSecondaryFunctions([]);
     setMainEquipment('');
     setSecondaryEquipments([]);
@@ -33,7 +35,7 @@ const OperatorsPage: React.FC = () => {
   const openEdit = (op: Operator) => {
     setEditing(op);
     setName(op.name);
-    setMainFunction(op.mainFunction);
+    setMainFunction(op.mainFunction === 'Absence' ? (operatorOps[0]?.name || '') : op.mainFunction);
     setSecondaryFunctions([...op.secondaryFunctions]);
     setMainEquipment(op.mainEquipment || '');
     setSecondaryEquipments([...(op.secondaryEquipments || [])]);
@@ -107,9 +109,15 @@ const OperatorsPage: React.FC = () => {
               <TableRow key={op.id}>
                 <TableCell className="font-medium">{op.name}</TableCell>
                 <TableCell>
-                  <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                    {op.mainFunction}
-                  </span>
+                  {op.mainFunction === 'Absence' ? (
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive">
+                      ⚠ Non définie
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                      {op.mainFunction}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
@@ -176,7 +184,7 @@ const OperatorsPage: React.FC = () => {
                 value={mainFunction} 
                 onChange={e => setMainFunction(e.target.value)}
               >
-                {operations.filter(o => o.category === 'operator' && o.name !== 'Absence').map(o => (
+                {operatorOps.map(o => (
                   <option key={o.id} value={o.name}>{o.name}</option>
                 ))}
               </select>
@@ -198,7 +206,7 @@ const OperatorsPage: React.FC = () => {
                   onChange={e => setNewSecondary(e.target.value)}
                 >
                   <option value="">Sélectionner...</option>
-                  {operations.filter(o => o.category === 'operator' && o.name !== 'Absence' && o.name !== mainFunction && !secondaryFunctions.includes(o.name)).map(o => (
+                  {operatorOps.filter(o => o.name !== mainFunction && !secondaryFunctions.includes(o.name)).map(o => (
                     <option key={o.id} value={o.name}>{o.name}</option>
                   ))}
                 </select>
