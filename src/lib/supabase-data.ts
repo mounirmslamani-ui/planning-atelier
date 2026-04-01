@@ -569,3 +569,50 @@ export async function ensureAbsenceOrder(existingOrders: Order[]): Promise<Order
   }
   return mapOrderFromDB(data);
 }
+
+// ───────────────────── Sync All In-Memory Data to DB ─────────────────────
+
+export async function syncAllDataToDB(data: {
+  equipments: Equipment[];
+  operators: Operator[];
+  subcontractors: Subcontractor[];
+  operations: Operation[];
+  clients: Client[];
+  orders: Order[];
+  steps: ProductionStep[];
+  holidays: Holiday[];
+  productionRecords: ProductionRecord[];
+  qcEntries: QualityControlEntry[];
+  deliveryEntries: DeliveryEntry[];
+}) {
+  console.log('[Sync] Starting full data sync to DB...');
+  const results = await Promise.allSettled([
+    data.equipments.length > 0 ? supabase.from('equipments').upsert(data.equipments.map(mapEquipmentToDB)).then(r => { if (r.error) logError('equipments', 'sync', r.error); else console.log(`[Sync] Equipments: ${data.equipments.length}`); }) : Promise.resolve(),
+    data.operators.length > 0 ? supabase.from('operators').upsert(data.operators.map(mapOperatorToDB)).then(r => { if (r.error) logError('operators', 'sync', r.error); else console.log(`[Sync] Operators: ${data.operators.length}`); }) : Promise.resolve(),
+    data.subcontractors.length > 0 ? supabase.from('subcontractors').upsert(data.subcontractors.map(mapSubcontractorToDB)).then(r => { if (r.error) logError('subcontractors', 'sync', r.error); else console.log(`[Sync] Subcontractors: ${data.subcontractors.length}`); }) : Promise.resolve(),
+    data.operations.length > 0 ? supabase.from('operations').upsert(data.operations.map(mapOperationToDB)).then(r => { if (r.error) logError('operations', 'sync', r.error); else console.log(`[Sync] Operations: ${data.operations.length}`); }) : Promise.resolve(),
+    data.clients.length > 0 ? supabase.from('clients').upsert(data.clients.map(mapClientToDB)).then(r => { if (r.error) logError('clients', 'sync', r.error); else console.log(`[Sync] Clients: ${data.clients.length}`); }) : Promise.resolve(),
+    data.orders.length > 0 ? supabase.from('orders').upsert(data.orders.map(mapOrderToDB)).then(r => { if (r.error) logError('orders', 'sync', r.error); else console.log(`[Sync] Orders: ${data.orders.length}`); }) : Promise.resolve(),
+    data.holidays.length > 0 ? supabase.from('holidays').upsert(data.holidays.map(mapHolidayToDB)).then(r => { if (r.error) logError('holidays', 'sync', r.error); else console.log(`[Sync] Holidays: ${data.holidays.length}`); }) : Promise.resolve(),
+  ]);
+  
+  // Steps depend on orders/operators, sync after
+  if (data.steps.length > 0) {
+    const { error } = await supabase.from('production_steps').upsert(data.steps.map(mapStepToDB));
+    if (error) logError('steps', 'sync', error); else console.log(`[Sync] Steps: ${data.steps.length}`);
+  }
+  if (data.productionRecords.length > 0) {
+    const { error } = await supabase.from('production_records').upsert(data.productionRecords.map(mapRecordToDB));
+    if (error) logError('records', 'sync', error); else console.log(`[Sync] Records: ${data.productionRecords.length}`);
+  }
+  if (data.qcEntries.length > 0) {
+    const { error } = await supabase.from('quality_control_entries').upsert(data.qcEntries.map(mapQCEntryToDB));
+    if (error) logError('qcEntries', 'sync', error); else console.log(`[Sync] QC: ${data.qcEntries.length}`);
+  }
+  if (data.deliveryEntries.length > 0) {
+    const { error } = await supabase.from('delivery_entries').upsert(data.deliveryEntries.map(mapDeliveryToDB));
+    if (error) logError('deliveries', 'sync', error); else console.log(`[Sync] Deliveries: ${data.deliveryEntries.length}`);
+  }
+  
+  console.log('[Sync] Full data sync complete.');
+}
