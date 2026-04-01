@@ -139,6 +139,7 @@ export function mapOrderFromDB(row: any): Order {
     materialAvailable: row.material_available ?? false,
     toolingAvailable: row.tooling_available ?? false,
     studyReady: row.study_ready ?? false,
+    observation: row.observation || undefined,
   };
 }
 
