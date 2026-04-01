@@ -293,7 +293,7 @@ export function mapQCEntryToDB(e: QualityControlEntry) {
   return {
     id: e.id,
     order_id: e.orderId,
-    control_date: e.controlDate || new Date().toISOString().split('T')[0],
+    control_date: toISODate(e.controlDate),
     decision: e.decision || null,
     rework_notes: e.reworkNotes || null,
   };
