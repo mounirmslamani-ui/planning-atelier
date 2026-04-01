@@ -373,7 +373,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       clients, setClients, addClient, updateClient, deleteClient,
       orders, setOrders: setOrdersWrapped, addOrder, updateOrder, deleteOrder,
       steps, setSteps, addStep, updateStep, deleteStep,
-      holidays, setHolidays, addHoliday, deleteHoliday,
+      holidays, setHolidays, addHoliday, updateHoliday, deleteHoliday,
       productionRecords, addProductionRecord, deleteProductionRecord,
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
