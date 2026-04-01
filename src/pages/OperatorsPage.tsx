@@ -206,7 +206,7 @@ const OperatorsPage: React.FC = () => {
                   onChange={e => setNewSecondary(e.target.value)}
                 >
                   <option value="">Sélectionner...</option>
-                  {operations.filter(o => o.category === 'operator' && o.name !== 'Absence' && o.name !== mainFunction && !secondaryFunctions.includes(o.name)).map(o => (
+                  {operatorOps.filter(o => o.name !== mainFunction && !secondaryFunctions.includes(o.name)).map(o => (
                     <option key={o.id} value={o.name}>{o.name}</option>
                   ))}
                 </select>
