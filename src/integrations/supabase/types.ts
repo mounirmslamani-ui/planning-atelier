@@ -200,6 +200,7 @@ export type Database = {
           frozen_order: boolean
           id: string
           material_available: boolean
+          observation: string | null
           order_date: string
           order_number: string
           planned_deadline: string
@@ -221,6 +222,7 @@ export type Database = {
           frozen_order?: boolean
           id?: string
           material_available?: boolean
+          observation?: string | null
           order_date?: string
           order_number: string
           planned_deadline?: string
@@ -242,6 +244,7 @@ export type Database = {
           frozen_order?: boolean
           id?: string
           material_available?: boolean
+          observation?: string | null
           order_date?: string
           order_number?: string
           planned_deadline?: string

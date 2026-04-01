@@ -139,6 +139,7 @@ export function mapOrderFromDB(row: any): Order {
     materialAvailable: row.material_available ?? false,
     toolingAvailable: row.tooling_available ?? false,
     studyReady: row.study_ready ?? false,
+    observation: row.observation || undefined,
   };
 }
 
@@ -161,6 +162,7 @@ export function mapOrderToDB(o: Order) {
     material_available: o.materialAvailable ?? false,
     tooling_available: o.toolingAvailable ?? false,
     study_ready: o.studyReady ?? false,
+    observation: o.observation || null,
   };
 }
 

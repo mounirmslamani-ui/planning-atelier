@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, CalendarCheck } from 'lucide-react';
+import { Plus, Trash2, CalendarCheck, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { Order } from '@/types/planning';
@@ -82,6 +82,18 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
   const removeRow = (id: string) => {
     setRows(prev => prev.filter(r => r.id !== id).map((r, i) => ({ ...r, order: i + 1 })));
+  };
+
+  const moveRow = (id: string, direction: 'up' | 'down') => {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === id);
+      if (idx < 0) return prev;
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]];
+      return copy.map((r, i) => ({ ...r, order: i + 1 }));
+    });
   };
 
   const updateRow = (id: string, field: keyof OperationRow, value: any) => {
@@ -195,6 +207,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 <TableHead>Option 2</TableHead>
                 <TableHead>Option 3</TableHead>
                 <TableHead>Équipements</TableHead>
+                <TableHead className="w-12">Ordre</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -260,6 +273,16 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     </select>
                   </TableCell>
                   <TableCell>
+                    <div className="flex flex-col gap-0.5 items-center">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveRow(row.id, 'up')} disabled={row.order === 1}>
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveRow(row.id, 'down')} disabled={row.order === rows.length}>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => removeRow(row.id)}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
@@ -268,7 +291,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
               ))}
               {rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-6">
                     Ajoutez des opérations pour cette commande.
                   </TableCell>
                 </TableRow>
