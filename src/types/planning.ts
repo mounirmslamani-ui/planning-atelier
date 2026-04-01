@@ -49,7 +49,7 @@ export interface Client {
   clientClass?: ClientClass;
 }
 
-export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'P5';
+export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4';
 
 export interface Order {
   id: string;

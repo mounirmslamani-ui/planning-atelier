@@ -60,7 +60,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
           case 'client': cmp = getClientName(a.clientId).localeCompare(getClientName(b.clientId)); break;
           case 'designation': cmp = a.designation.localeCompare(b.designation); break;
           case 'quantity': cmp = a.quantity - b.quantity; break;
-          case 'priority': cmp = (priorityRank[a.priority || 'P5'] ?? 4) - (priorityRank[b.priority || 'P5'] ?? 4); break;
+          case 'priority': cmp = (priorityRank[a.priority || 'P4'] ?? 3) - (priorityRank[b.priority || 'P4'] ?? 3); break;
           case 'plannedDeadline': cmp = a.plannedDeadline.localeCompare(b.plannedDeadline); break;
         }
         return sortDir === 'desc' ? -cmp : cmp;

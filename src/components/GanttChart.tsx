@@ -30,7 +30,6 @@ function getUrgencyBg(order: Order): string {
   if (p === 'P2') return 'bg-urgent-moderate/80';
   if (p === 'P3') return 'bg-priority-p3/80';
   if (p === 'P4') return 'bg-priority-p4/80';
-  if (p === 'P5') return 'bg-priority-p5/80';
   return 'bg-muted';
 }
 
