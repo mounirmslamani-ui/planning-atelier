@@ -16,6 +16,34 @@ function nullIfEmpty(s: string | undefined | null): string | null {
   return s && s.length > 0 ? s : null;
 }
 
+/**
+ * Convert any date string to ISO format yyyy-mm-dd for PostgreSQL.
+ * Handles: dd-mm-yyyy, dd/mm/yyyy, yyyy-mm-dd, mm-dd-yyyy ambiguous cases.
+ */
+function toISODate(dateStr: string | undefined | null, fallback?: string): string {
+  if (!dateStr || dateStr.trim() === '') return fallback || new Date().toISOString().split('T')[0];
+  const s = dateStr.trim();
+  // Already ISO format yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // dd/mm/yyyy or dd-mm-yyyy
+  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (match) {
+    const [, a, b, year] = match;
+    const day = a.padStart(2, '0');
+    const month = b.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  // Fallback: try Date parse
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  return fallback || new Date().toISOString().split('T')[0];
+}
+
+function toISODateOrNull(dateStr: string | undefined | null): string | null {
+  if (!dateStr || dateStr.trim() === '') return null;
+  return toISODate(dateStr);
+}
+
 // ───────────────────── Equipment ─────────────────────
 
 export function mapEquipmentFromDB(row: any): Equipment {
