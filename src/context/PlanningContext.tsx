@@ -13,7 +13,7 @@ import {
   dbInsertClient, dbUpdateClient, dbDeleteClient,
   dbInsertOrder, dbUpdateOrder, dbDeleteOrder, dbBulkUpdateOrders,
   dbInsertStep, dbUpdateStep, dbDeleteStep,
-  dbInsertHoliday, dbDeleteHoliday,
+  dbInsertHoliday, dbUpdateHoliday, dbDeleteHoliday,
   dbInsertRecord, dbDeleteRecord,
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
   dbInsertDelivery, dbDeleteDelivery,
@@ -64,6 +64,7 @@ interface PlanningContextType {
   deleteStep: (id: string) => void;
   setHolidays: (holidays: Holiday[]) => void;
   addHoliday: (holiday: Holiday) => void;
+  updateHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
   addProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
@@ -327,6 +328,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addHoliday = useCallback((holiday: Holiday) => {
     pushUndo(); setHolidays(prev => [...prev, holiday]); dbInsertHoliday(holiday);
   }, [pushUndo]);
+  const updateHoliday = useCallback((holiday: Holiday) => {
+    pushUndo(); setHolidays(prev => prev.map(h => h.id === holiday.id ? holiday : h)); dbUpdateHoliday(holiday);
+  }, [pushUndo]);
   const deleteHoliday = useCallback((id: string) => {
     pushUndo(); setHolidays(prev => prev.filter(h => h.id !== id)); dbDeleteHoliday(id);
   }, [pushUndo]);
@@ -369,7 +373,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       clients, setClients, addClient, updateClient, deleteClient,
       orders, setOrders: setOrdersWrapped, addOrder, updateOrder, deleteOrder,
       steps, setSteps, addStep, updateStep, deleteStep,
-      holidays, setHolidays, addHoliday, deleteHoliday,
+      holidays, setHolidays, addHoliday, updateHoliday, deleteHoliday,
       productionRecords, addProductionRecord, deleteProductionRecord,
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,

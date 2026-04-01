@@ -455,6 +455,10 @@ export async function dbInsertHoliday(h: Holiday) {
   const { error } = await supabase.from('holidays').insert(mapHolidayToDB(h));
   if (error) logError('holiday', 'insert', error);
 }
+export async function dbUpdateHoliday(h: Holiday) {
+  const { error } = await supabase.from('holidays').update(mapHolidayToDB(h)).eq('id', h.id);
+  if (error) logError('holiday', 'update', error);
+}
 export async function dbDeleteHoliday(id: string) {
   const { error } = await supabase.from('holidays').delete().eq('id', id);
   if (error) logError('holiday', 'delete', error);

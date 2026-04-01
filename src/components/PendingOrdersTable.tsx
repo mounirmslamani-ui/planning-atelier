@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import type { Order, OrderPriority } from '@/types/planning';
@@ -96,7 +97,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
             filteredOrders.map((order, idx) => (
               <TableRow key={order.id}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
-                <TableCell className="text-sm">{order.orderDate || '—'}</TableCell>
+                <TableCell className="text-sm">{formatDateFR(order.orderDate) || '—'}</TableCell>
                 <TableCell className="text-sm font-medium">{getClientName(order.clientId)}</TableCell>
                 <TableCell className="text-sm">{order.designation}</TableCell>
                 <TableCell className="text-center text-sm">{order.quantity}</TableCell>
@@ -105,7 +106,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
                     <Badge className={`${priorityColors[order.priority]} text-xs`}>{order.priority}</Badge>
                   ) : '—'}
                 </TableCell>
-                <TableCell className="text-sm">{order.plannedDeadline || '—'}</TableCell>
+                <TableCell className="text-sm">{formatDateFR(order.plannedDeadline) || '—'}</TableCell>
               </TableRow>
             ))
           )}

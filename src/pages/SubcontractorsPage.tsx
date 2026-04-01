@@ -132,7 +132,7 @@ const SubcontractorsPage: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Activité principale</label>
               <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 value={mainActivity}
                 onChange={e => setMainActivity(e.target.value)}
               >
@@ -153,7 +153,7 @@ const SubcontractorsPage: React.FC = () => {
               </div>
               <div className="flex gap-2">
                 <select
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   value={newSecondary}
                   onChange={e => setNewSecondary(e.target.value)}
                 >

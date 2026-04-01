@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import type { OrderPriority } from '@/types/planning';
@@ -134,16 +135,16 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
               ) : subSteps.map((r, idx) => (
                 <TableRow key={r.id}>
                   <TableCell className="text-sm font-mono">{r.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{r.orderDate || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.orderDate) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{r.clientName}</TableCell>
                   <TableCell className="text-sm">{r.designation}</TableCell>
                   <TableCell className="text-center text-sm">{r.quantity}</TableCell>
                   <TableCell>{r.priority ? <Badge className={`${priorityColors[r.priority]} text-xs`}>{r.priority}</Badge> : '—'}</TableCell>
-                  <TableCell className="text-sm">{r.plannedDeadline || '—'}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.plannedDeadline) || '—'}</TableCell>
                   <TableCell className="text-sm">{r.operationName}</TableCell>
                   <TableCell className="text-sm font-medium">{r.subcontractorName}</TableCell>
-                  <TableCell className="text-sm">{r.startDate} {r.startTime}</TableCell>
-                  <TableCell className="text-sm">{r.endDate} {r.endTime}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.startDate)} {r.startTime}</TableCell>
+                  <TableCell className="text-sm">{formatDateFR(r.endDate)} {r.endTime}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
