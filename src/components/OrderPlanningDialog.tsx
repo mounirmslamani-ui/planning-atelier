@@ -207,6 +207,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 <TableHead>Option 2</TableHead>
                 <TableHead>Option 3</TableHead>
                 <TableHead>Équipements</TableHead>
+                <TableHead className="w-12">Ordre</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
