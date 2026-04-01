@@ -488,27 +488,30 @@ const OrdersPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayOrders.map((o, index) => (
+            {displayOrders.map((o, index) => {
+              const isRowEditing = editingRowId === o.id;
+              return (
               <TableRow
                 key={o.id}
-                draggable={!hasActiveFilters && !editMode}
+                draggable={!hasActiveFilters && !isRowEditing}
                 onDragStart={e => handleDragStart(e, index)}
                 onDragOver={e => handleDragOver(e, index)}
                 onDragLeave={() => setDragOverIndex(null)}
                 onDrop={e => handleDrop(e, index)}
                 onDragEnd={handleDragEnd}
                 className={`transition-colors ${
-                  !hasActiveFilters && !editMode ? 'cursor-grab active:cursor-grabbing' : ''
+                  !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
                 } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                 } ${isDragging(index) ? 'opacity-40' : ''
-                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''}`}
+                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
+                } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
               >
                 <TableCell onClick={e => e.stopPropagation()}>
                   <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-1">
-                    {!hasActiveFilters && !editMode && <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />}
+                    {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />}
                     {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
                     <span className="text-sm font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                   </div>
@@ -526,12 +529,26 @@ const OrdersPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => setPlanningOrder(o)} title="Affectations">
                       <CalendarCheck className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(o)} title="Modifier"><Pencil className="w-3.5 h-3.5" /></Button>
+                    {isRowEditing ? (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
+                          <span className="text-normal text-sm font-bold">✓</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
+                          <span className="text-destructive text-sm font-bold">✕</span>
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="ghost" size="icon" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => deleteOrder(o.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
             {displayOrders.length === 0 && (
               <TableRow><TableCell colSpan={16} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
