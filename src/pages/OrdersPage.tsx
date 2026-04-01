@@ -271,17 +271,19 @@ const OrdersPage: React.FC = () => {
   const setInlineValue = (id: string, field: keyof Order, value: any) => {
     setInlineEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const saveInlineEdits = () => {
-    Object.entries(inlineEdits).forEach(([id, changes]) => {
-      const order = orders.find(o => o.id === id);
-      if (order && Object.keys(changes).length > 0) {
-        updateOrder({ ...order, ...changes });
-      }
-    });
-    setInlineEdits({});
-    setEditMode(false);
+  const saveInlineEdits = (id: string) => {
+    const changes = inlineEdits[id];
+    const order = orders.find(o => o.id === id);
+    if (order && changes && Object.keys(changes).length > 0) {
+      updateOrder({ ...order, ...changes });
+    }
+    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setEditingRowId(null);
   };
-  const cancelInlineEdits = () => { setInlineEdits({}); setEditMode(false); };
+  const cancelInlineEdits = (id: string) => {
+    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setEditingRowId(null);
+  };
 
   // Drag & drop
   const handleDragStart = (e: React.DragEvent, index: number) => {
