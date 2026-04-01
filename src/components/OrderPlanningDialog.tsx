@@ -84,6 +84,18 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     setRows(prev => prev.filter(r => r.id !== id).map((r, i) => ({ ...r, order: i + 1 })));
   };
 
+  const moveRow = (id: string, direction: 'up' | 'down') => {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === id);
+      if (idx < 0) return prev;
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[idx], copy[newIdx]] = [copy[newIdx], copy[idx]];
+      return copy.map((r, i) => ({ ...r, order: i + 1 }));
+    });
+  };
+
   const updateRow = (id: string, field: keyof OperationRow, value: any) => {
     setRows(prev => prev.map(r => {
       if (r.id !== id) return r;
