@@ -247,7 +247,7 @@ export function mapHolidayFromDB(row: any): Holiday {
 }
 
 export function mapHolidayToDB(h: Holiday) {
-  return { id: h.id, date: h.date, name: h.name };
+  return { id: h.id, date: toISODate(h.date), name: h.name };
 }
 
 // ───────────────────── ProductionRecord ─────────────────────
