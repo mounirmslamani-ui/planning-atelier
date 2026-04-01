@@ -69,6 +69,7 @@ export interface Order {
   materialAvailable: boolean;
   toolingAvailable: boolean;
   studyReady: boolean;
+  observation?: string;
 }
 
 export interface ProductionStep {

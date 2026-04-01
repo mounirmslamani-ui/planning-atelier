@@ -162,6 +162,7 @@ export function mapOrderToDB(o: Order) {
     material_available: o.materialAvailable ?? false,
     tooling_available: o.toolingAvailable ?? false,
     study_ready: o.studyReady ?? false,
+    observation: o.observation || null,
   };
 }
 
