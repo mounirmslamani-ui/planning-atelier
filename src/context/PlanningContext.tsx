@@ -328,6 +328,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addHoliday = useCallback((holiday: Holiday) => {
     pushUndo(); setHolidays(prev => [...prev, holiday]); dbInsertHoliday(holiday);
   }, [pushUndo]);
+  const updateHoliday = useCallback((holiday: Holiday) => {
+    pushUndo(); setHolidays(prev => prev.map(h => h.id === holiday.id ? holiday : h)); dbUpdateHoliday(holiday);
+  }, [pushUndo]);
   const deleteHoliday = useCallback((id: string) => {
     pushUndo(); setHolidays(prev => prev.filter(h => h.id !== id)); dbDeleteHoliday(id);
   }, [pushUndo]);
