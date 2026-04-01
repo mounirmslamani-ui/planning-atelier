@@ -16,6 +16,34 @@ function nullIfEmpty(s: string | undefined | null): string | null {
   return s && s.length > 0 ? s : null;
 }
 
+/**
+ * Convert any date string to ISO format yyyy-mm-dd for PostgreSQL.
+ * Handles: dd-mm-yyyy, dd/mm/yyyy, yyyy-mm-dd, mm-dd-yyyy ambiguous cases.
+ */
+function toISODate(dateStr: string | undefined | null, fallback?: string): string {
+  if (!dateStr || dateStr.trim() === '') return fallback || new Date().toISOString().split('T')[0];
+  const s = dateStr.trim();
+  // Already ISO format yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // dd/mm/yyyy or dd-mm-yyyy
+  const match = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (match) {
+    const [, a, b, year] = match;
+    const day = a.padStart(2, '0');
+    const month = b.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  // Fallback: try Date parse
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  return fallback || new Date().toISOString().split('T')[0];
+}
+
+function toISODateOrNull(dateStr: string | undefined | null): string | null {
+  if (!dateStr || dateStr.trim() === '') return null;
+  return toISODate(dateStr);
+}
+
 // ───────────────────── Equipment ─────────────────────
 
 export function mapEquipmentFromDB(row: any): Equipment {
@@ -147,17 +175,17 @@ export function mapOrderToDB(o: Order) {
   return {
     id: o.id,
     order_number: o.orderNumber,
-    order_date: o.orderDate || new Date().toISOString().split('T')[0],
+    order_date: toISODate(o.orderDate),
     client_id: nullIfEmpty(o.clientId),
     designation: o.designation,
     quantity: o.quantity,
     priority: o.priority || 'P3',
     display_order: o.displayOrder ?? null,
     frozen_order: o.frozenOrder ?? false,
-    planned_deadline: o.plannedDeadline || new Date().toISOString().split('T')[0],
+    planned_deadline: toISODate(o.plannedDeadline),
     prototype_quantity: o.prototypeQuantity ?? null,
-    prototype_deadline: nullIfEmpty(o.prototypeDeadline),
-    delivery_deadline: nullIfEmpty(o.deliveryDeadline),
+    prototype_deadline: toISODateOrNull(o.prototypeDeadline),
+    delivery_deadline: toISODateOrNull(o.deliveryDeadline),
     complementary_quantity: o.complementaryQuantity ?? null,
     material_available: o.materialAvailable ?? false,
     tooling_available: o.toolingAvailable ?? false,
@@ -198,9 +226,9 @@ export function mapStepToDB(s: ProductionStep) {
     subcontractor_id: nullIfEmpty(s.subcontractorId),
     operation_id: s.operationId,
     estimated_duration: s.estimatedDuration,
-    start_date: nullIfEmpty(s.startDate),
+    start_date: toISODateOrNull(s.startDate),
     start_time: nullIfEmpty(s.startTime),
-    end_date: nullIfEmpty(s.endDate),
+    end_date: toISODateOrNull(s.endDate),
     end_time: nullIfEmpty(s.endTime),
     depends_on: nullIfEmpty(s.dependsOn),
     depends_on_percentage: s.dependsOnPercentage ?? null,
@@ -208,7 +236,7 @@ export function mapStepToDB(s: ProductionStep) {
     frozen: s.frozen ?? false,
     equipment_ids: s.equipmentIds || [],
     subcontracting_done: s.subcontractingDone ?? false,
-    subcontracting_deadline: nullIfEmpty(s.subcontractingDeadline),
+    subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
   };
 }
 
@@ -219,7 +247,7 @@ export function mapHolidayFromDB(row: any): Holiday {
 }
 
 export function mapHolidayToDB(h: Holiday) {
-  return { id: h.id, date: h.date, name: h.name };
+  return { id: h.id, date: toISODate(h.date), name: h.name };
 }
 
 // ───────────────────── ProductionRecord ─────────────────────
@@ -265,7 +293,7 @@ export function mapQCEntryToDB(e: QualityControlEntry) {
   return {
     id: e.id,
     order_id: e.orderId,
-    control_date: e.controlDate || new Date().toISOString().split('T')[0],
+    control_date: toISODate(e.controlDate),
     decision: e.decision || null,
     rework_notes: e.reworkNotes || null,
   };
@@ -287,7 +315,7 @@ export function mapDeliveryToDB(e: DeliveryEntry) {
   return {
     id: e.id,
     order_id: e.orderId,
-    control_date: e.controlDate || new Date().toISOString().split('T')[0],
+    control_date: toISODate(e.controlDate),
     decision: e.decision,
     moved_at: e.movedAt || new Date().toISOString(),
   };
@@ -540,4 +568,51 @@ export async function ensureAbsenceOrder(existingOrders: Order[]): Promise<Order
     return order;
   }
   return mapOrderFromDB(data);
+}
+
+// ───────────────────── Sync All In-Memory Data to DB ─────────────────────
+
+export async function syncAllDataToDB(data: {
+  equipments: Equipment[];
+  operators: Operator[];
+  subcontractors: Subcontractor[];
+  operations: Operation[];
+  clients: Client[];
+  orders: Order[];
+  steps: ProductionStep[];
+  holidays: Holiday[];
+  productionRecords: ProductionRecord[];
+  qcEntries: QualityControlEntry[];
+  deliveryEntries: DeliveryEntry[];
+}) {
+  console.log('[Sync] Starting full data sync to DB...');
+  const results = await Promise.allSettled([
+    data.equipments.length > 0 ? supabase.from('equipments').upsert(data.equipments.map(mapEquipmentToDB)).then(r => { if (r.error) logError('equipments', 'sync', r.error); else console.log(`[Sync] Equipments: ${data.equipments.length}`); }) : Promise.resolve(),
+    data.operators.length > 0 ? supabase.from('operators').upsert(data.operators.map(mapOperatorToDB)).then(r => { if (r.error) logError('operators', 'sync', r.error); else console.log(`[Sync] Operators: ${data.operators.length}`); }) : Promise.resolve(),
+    data.subcontractors.length > 0 ? supabase.from('subcontractors').upsert(data.subcontractors.map(mapSubcontractorToDB)).then(r => { if (r.error) logError('subcontractors', 'sync', r.error); else console.log(`[Sync] Subcontractors: ${data.subcontractors.length}`); }) : Promise.resolve(),
+    data.operations.length > 0 ? supabase.from('operations').upsert(data.operations.map(mapOperationToDB)).then(r => { if (r.error) logError('operations', 'sync', r.error); else console.log(`[Sync] Operations: ${data.operations.length}`); }) : Promise.resolve(),
+    data.clients.length > 0 ? supabase.from('clients').upsert(data.clients.map(mapClientToDB)).then(r => { if (r.error) logError('clients', 'sync', r.error); else console.log(`[Sync] Clients: ${data.clients.length}`); }) : Promise.resolve(),
+    data.orders.length > 0 ? supabase.from('orders').upsert(data.orders.map(mapOrderToDB)).then(r => { if (r.error) logError('orders', 'sync', r.error); else console.log(`[Sync] Orders: ${data.orders.length}`); }) : Promise.resolve(),
+    data.holidays.length > 0 ? supabase.from('holidays').upsert(data.holidays.map(mapHolidayToDB)).then(r => { if (r.error) logError('holidays', 'sync', r.error); else console.log(`[Sync] Holidays: ${data.holidays.length}`); }) : Promise.resolve(),
+  ]);
+  
+  // Steps depend on orders/operators, sync after
+  if (data.steps.length > 0) {
+    const { error } = await supabase.from('production_steps').upsert(data.steps.map(mapStepToDB));
+    if (error) logError('steps', 'sync', error); else console.log(`[Sync] Steps: ${data.steps.length}`);
+  }
+  if (data.productionRecords.length > 0) {
+    const { error } = await supabase.from('production_records').upsert(data.productionRecords.map(mapRecordToDB));
+    if (error) logError('records', 'sync', error); else console.log(`[Sync] Records: ${data.productionRecords.length}`);
+  }
+  if (data.qcEntries.length > 0) {
+    const { error } = await supabase.from('quality_control_entries').upsert(data.qcEntries.map(mapQCEntryToDB));
+    if (error) logError('qcEntries', 'sync', error); else console.log(`[Sync] QC: ${data.qcEntries.length}`);
+  }
+  if (data.deliveryEntries.length > 0) {
+    const { error } = await supabase.from('delivery_entries').upsert(data.deliveryEntries.map(mapDeliveryToDB));
+    if (error) logError('deliveries', 'sync', error); else console.log(`[Sync] Deliveries: ${data.deliveryEntries.length}`);
+  }
+  
+  console.log('[Sync] Full data sync complete.');
 }

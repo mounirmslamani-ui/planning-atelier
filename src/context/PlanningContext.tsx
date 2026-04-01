@@ -4,7 +4,7 @@ import type {
   Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment,
 } from '@/types/planning';
 import {
-  fetchAllData,
+  fetchAllData, syncAllDataToDB,
   ensureAbsenceOperation, ensureAbsenceOrder,
   dbInsertEquipment, dbUpdateEquipment, dbDeleteEquipment,
   dbInsertOperator, dbUpdateOperator, dbDeleteOperator,
@@ -228,6 +228,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setProductionRecords(data.productionRecords);
         setQCEntries(data.qcEntries);
         setDeliveryEntries(data.deliveryEntries);
+
+        // Re-sync all data to DB to fix any previously failed inserts (date format issues)
+        await syncAllDataToDB(data);
       } catch (err) {
         console.error('[PlanningContext] Failed to load data:', err);
       } finally {
