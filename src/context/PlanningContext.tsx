@@ -13,7 +13,7 @@ import {
   dbInsertClient, dbUpdateClient, dbDeleteClient,
   dbInsertOrder, dbUpdateOrder, dbDeleteOrder, dbBulkUpdateOrders,
   dbInsertStep, dbUpdateStep, dbDeleteStep,
-  dbInsertHoliday, dbDeleteHoliday,
+  dbInsertHoliday, dbUpdateHoliday, dbDeleteHoliday,
   dbInsertRecord, dbDeleteRecord,
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
   dbInsertDelivery, dbDeleteDelivery,
