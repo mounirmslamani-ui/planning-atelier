@@ -315,7 +315,7 @@ export function mapDeliveryToDB(e: DeliveryEntry) {
   return {
     id: e.id,
     order_id: e.orderId,
-    control_date: e.controlDate || new Date().toISOString().split('T')[0],
+    control_date: toISODate(e.controlDate),
     decision: e.decision,
     moved_at: e.movedAt || new Date().toISOString(),
   };
