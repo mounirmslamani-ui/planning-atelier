@@ -35,7 +35,7 @@ const OperatorsPage: React.FC = () => {
   const openEdit = (op: Operator) => {
     setEditing(op);
     setName(op.name);
-    setMainFunction(op.mainFunction);
+    setMainFunction(op.mainFunction === 'Absence' ? (operatorOps[0]?.name || '') : op.mainFunction);
     setSecondaryFunctions([...op.secondaryFunctions]);
     setMainEquipment(op.mainEquipment || '');
     setSecondaryEquipments([...(op.secondaryEquipments || [])]);
