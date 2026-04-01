@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, CalendarCheck } from 'lucide-react';
+import { Plus, Trash2, CalendarCheck, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { Order } from '@/types/planning';
