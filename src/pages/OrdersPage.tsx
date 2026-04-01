@@ -27,7 +27,6 @@ const priorityColors: Record<OrderPriority, string> = {
   'P2': 'bg-urgent-moderate text-white',
   'P3': 'bg-priority-p3 text-foreground',
   'P4': 'bg-priority-p4 text-foreground',
-  'P5': 'bg-muted text-muted-foreground',
 };
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
