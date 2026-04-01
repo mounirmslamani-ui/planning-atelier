@@ -109,9 +109,15 @@ const OperatorsPage: React.FC = () => {
               <TableRow key={op.id}>
                 <TableCell className="font-medium">{op.name}</TableCell>
                 <TableCell>
-                  <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                    {op.mainFunction}
-                  </span>
+                  {op.mainFunction === 'Absence' ? (
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive">
+                      ⚠ Non définie
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                      {op.mainFunction}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
