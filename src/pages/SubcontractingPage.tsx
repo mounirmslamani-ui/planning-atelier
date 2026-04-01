@@ -13,7 +13,6 @@ const priorityColors: Record<OrderPriority, string> = {
   'P2': 'bg-urgent-moderate text-white',
   'P3': 'bg-priority-p3 text-foreground',
   'P4': 'bg-priority-p4 text-foreground',
-  'P5': 'bg-muted text-muted-foreground',
 };
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline';
@@ -87,7 +86,7 @@ const SubcontractingPage: React.FC = () => {
 
     // Sort
     if (sortKey && sortDir) {
-      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
+      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
       result.sort((a, b) => {
         let cmp = 0;
         switch (sortKey as ColumnKey) {
@@ -96,7 +95,7 @@ const SubcontractingPage: React.FC = () => {
           case 'client': cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId)); break;
           case 'designation': cmp = a.order.designation.localeCompare(b.order.designation); break;
           case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
-          case 'priority': cmp = (priorityRank[a.order.priority || 'P5'] ?? 4) - (priorityRank[b.order.priority || 'P5'] ?? 4); break;
+          case 'priority': cmp = (priorityRank[a.order.priority || 'P4'] ?? 3) - (priorityRank[b.order.priority || 'P4'] ?? 3); break;
           case 'plannedDeadline': cmp = a.order.plannedDeadline.localeCompare(b.order.plannedDeadline); break;
           case 'subcontractingDeadline': cmp = a.deadline.localeCompare(b.deadline); break;
         }

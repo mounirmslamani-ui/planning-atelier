@@ -12,7 +12,6 @@ const priorityColors: Record<OrderPriority, string> = {
   'P2': 'bg-urgent-moderate text-white',
   'P3': 'bg-priority-p3 text-foreground',
   'P4': 'bg-priority-p4 text-foreground',
-  'P5': 'bg-muted text-muted-foreground',
 };
 
 interface PurchaseRowDialogProps {
@@ -55,7 +54,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
     });
 
     if (sortKey && sortDir) {
-      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
+      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
       result = [...result].sort((a, b) => {
         let cmp = 0;
         switch (sortKey) {
@@ -64,7 +63,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
           case 'client': cmp = a.clientName.localeCompare(b.clientName); break;
           case 'designation': cmp = a.designation.localeCompare(b.designation); break;
           case 'quantity': cmp = a.quantity - b.quantity; break;
-          case 'priority': cmp = (priorityRank[a.priority || 'P5'] ?? 4) - (priorityRank[b.priority || 'P5'] ?? 4); break;
+          case 'priority': cmp = (priorityRank[a.priority || 'P4'] ?? 3) - (priorityRank[b.priority || 'P4'] ?? 3); break;
           case 'plannedDeadline': cmp = a.plannedDeadline.localeCompare(b.plannedDeadline); break;
         }
         return sortDir === 'desc' ? -cmp : cmp;

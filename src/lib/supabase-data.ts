@@ -528,7 +528,7 @@ export async function ensureAbsenceOrder(existingOrders: Order[]): Promise<Order
     clientId: '',
     designation: 'Absence',
     quantity: 0,
-    priority: 'P5',
+    priority: 'P4',
     plannedDeadline: '',
     materialAvailable: true,
     toolingAvailable: true,

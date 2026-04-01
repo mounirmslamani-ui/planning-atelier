@@ -21,7 +21,6 @@ const parsePriority = (val: string): OrderPriority => {
   if (lower.includes('قصوى') || lower === 'p1' || lower === 'critical') return 'P1';
   if (lower.includes('نسبيا') || lower === 'p2' || lower === 'moderate') return 'P2';
   if (lower.includes('تعليق') || lower === 'p4' || lower === 'pending') return 'P4';
-  if (lower.includes('انتظار') || lower === 'p5' || lower === 'waiting') return 'P5';
   return 'P3';
 };
 
