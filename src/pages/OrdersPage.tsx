@@ -90,8 +90,8 @@ const OrdersPage: React.FC = () => {
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Inline editing
-  const [editMode, setEditMode] = useState(false);
+  // Inline editing — per row
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Order>>>({});
 
   // Undo/Redo
@@ -271,17 +271,19 @@ const OrdersPage: React.FC = () => {
   const setInlineValue = (id: string, field: keyof Order, value: any) => {
     setInlineEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const saveInlineEdits = () => {
-    Object.entries(inlineEdits).forEach(([id, changes]) => {
-      const order = orders.find(o => o.id === id);
-      if (order && Object.keys(changes).length > 0) {
-        updateOrder({ ...order, ...changes });
-      }
-    });
-    setInlineEdits({});
-    setEditMode(false);
+  const saveInlineEdits = (id: string) => {
+    const changes = inlineEdits[id];
+    const order = orders.find(o => o.id === id);
+    if (order && changes && Object.keys(changes).length > 0) {
+      updateOrder({ ...order, ...changes });
+    }
+    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setEditingRowId(null);
   };
-  const cancelInlineEdits = () => { setInlineEdits({}); setEditMode(false); };
+  const cancelInlineEdits = (id: string) => {
+    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setEditingRowId(null);
+  };
 
   // Drag & drop
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -355,8 +357,9 @@ const OrdersPage: React.FC = () => {
   };
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation'];
-    if (editMode && editableFields.includes(col)) {
+    const isEditing = editingRowId === o.id;
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'materialAvailable', 'toolingAvailable', 'studyReady'];
+    if (isEditing && editableFields.includes(col)) {
       if (col === 'priority') {
         return (
           <select
@@ -385,6 +388,29 @@ const OrdersPage: React.FC = () => {
             onClick={e => e.stopPropagation()}
             placeholder="Note..." />
         );
+      }
+      if (col === 'deliveryDeadline') {
+        return (
+          <Input type="date" className="h-7 text-xs"
+            value={(getInlineValue(o, 'deliveryDeadline') as string) || o.deliveryDeadline || o.plannedDeadline}
+            onChange={e => setInlineValue(o.id, 'deliveryDeadline', e.target.value)}
+            onClick={e => e.stopPropagation()} />
+        );
+      }
+      if (col === 'materialAvailable') {
+        const val = (getInlineValue(o, 'materialAvailable') as boolean);
+        return <Package className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
+          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'materialAvailable', !val); }} />;
+      }
+      if (col === 'toolingAvailable') {
+        const val = (getInlineValue(o, 'toolingAvailable') as boolean);
+        return <Wrench className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
+          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'toolingAvailable', !val); }} />;
+      }
+      if (col === 'studyReady') {
+        const val = (getInlineValue(o, 'studyReady') as boolean);
+        return <FileCheck className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
+          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'studyReady', !val); }} />;
       }
       if (col === 'orderNumber' || col === 'designation') {
         return (
@@ -429,16 +455,6 @@ const OrdersPage: React.FC = () => {
               <Unlock className="w-4 h-4 mr-1" /> Libérer tout
             </Button>
           )}
-          {editMode ? (
-            <>
-              <Button onClick={saveInlineEdits} size="sm" variant="default">Enregistrer</Button>
-              <Button onClick={cancelInlineEdits} size="sm" variant="outline">Annuler</Button>
-            </>
-          ) : (
-            <Button onClick={() => setEditMode(true)} variant="outline" size="sm">
-              <Pencil className="w-4 h-4 mr-1" /> Éditer
-            </Button>
-          )}
           <Button onClick={() => setPasteDialogOpen(true)} variant="outline" size="sm">
             <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
           </Button>
@@ -472,27 +488,30 @@ const OrdersPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayOrders.map((o, index) => (
+            {displayOrders.map((o, index) => {
+              const isRowEditing = editingRowId === o.id;
+              return (
               <TableRow
                 key={o.id}
-                draggable={!hasActiveFilters && !editMode}
+                draggable={!hasActiveFilters && !isRowEditing}
                 onDragStart={e => handleDragStart(e, index)}
                 onDragOver={e => handleDragOver(e, index)}
                 onDragLeave={() => setDragOverIndex(null)}
                 onDrop={e => handleDrop(e, index)}
                 onDragEnd={handleDragEnd}
                 className={`transition-colors ${
-                  !hasActiveFilters && !editMode ? 'cursor-grab active:cursor-grabbing' : ''
+                  !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
                 } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                 } ${isDragging(index) ? 'opacity-40' : ''
-                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''}`}
+                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
+                } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
               >
                 <TableCell onClick={e => e.stopPropagation()}>
                   <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center gap-1">
-                    {!hasActiveFilters && !editMode && <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />}
+                    {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />}
                     {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
                     <span className="text-sm font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                   </div>
@@ -510,12 +529,26 @@ const OrdersPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => setPlanningOrder(o)} title="Affectations">
                       <CalendarCheck className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(o)} title="Modifier"><Pencil className="w-3.5 h-3.5" /></Button>
+                    {isRowEditing ? (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
+                          <span className="text-normal text-sm font-bold">✓</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
+                          <span className="text-destructive text-sm font-bold">✕</span>
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="ghost" size="icon" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => deleteOrder(o.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
             {displayOrders.length === 0 && (
               <TableRow><TableCell colSpan={16} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
