@@ -272,6 +272,16 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     </select>
                   </TableCell>
                   <TableCell>
+                    <div className="flex flex-col gap-0.5 items-center">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveRow(row.id, 'up')} disabled={row.order === 1}>
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveRow(row.id, 'down')} disabled={row.order === rows.length}>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => removeRow(row.id)}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
