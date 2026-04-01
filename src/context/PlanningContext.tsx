@@ -4,7 +4,7 @@ import type {
   Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment,
 } from '@/types/planning';
 import {
-  fetchAllData,
+  fetchAllData, syncAllDataToDB,
   ensureAbsenceOperation, ensureAbsenceOrder,
   dbInsertEquipment, dbUpdateEquipment, dbDeleteEquipment,
   dbInsertOperator, dbUpdateOperator, dbDeleteOperator,
