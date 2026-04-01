@@ -20,10 +20,12 @@ const OperatorsPage: React.FC = () => {
   const [secondaryEquipments, setSecondaryEquipments] = useState<string[]>([]);
   const [newSecEquip, setNewSecEquip] = useState('');
 
+  const operatorOps = operations.filter(o => o.category === 'operator' && o.name !== 'Absence');
+
   const openNew = () => {
     setEditing(null);
     setName('');
-    setMainFunction(operations[0]?.name || '');
+    setMainFunction(operatorOps[0]?.name || '');
     setSecondaryFunctions([]);
     setMainEquipment('');
     setSecondaryEquipments([]);
