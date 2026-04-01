@@ -455,16 +455,6 @@ const OrdersPage: React.FC = () => {
               <Unlock className="w-4 h-4 mr-1" /> Libérer tout
             </Button>
           )}
-          {editMode ? (
-            <>
-              <Button onClick={saveInlineEdits} size="sm" variant="default">Enregistrer</Button>
-              <Button onClick={cancelInlineEdits} size="sm" variant="outline">Annuler</Button>
-            </>
-          ) : (
-            <Button onClick={() => setEditMode(true)} variant="outline" size="sm">
-              <Pencil className="w-4 h-4 mr-1" /> Éditer
-            </Button>
-          )}
           <Button onClick={() => setPasteDialogOpen(true)} variant="outline" size="sm">
             <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
           </Button>
