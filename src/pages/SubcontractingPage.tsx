@@ -95,7 +95,7 @@ const SubcontractingPage: React.FC = () => {
           case 'client': cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId)); break;
           case 'designation': cmp = a.order.designation.localeCompare(b.order.designation); break;
           case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
-          case 'priority': cmp = (priorityRank[a.order.priority || 'P5'] ?? 4) - (priorityRank[b.order.priority || 'P5'] ?? 4); break;
+          case 'priority': cmp = (priorityRank[a.order.priority || 'P4'] ?? 3) - (priorityRank[b.order.priority || 'P4'] ?? 3); break;
           case 'plannedDeadline': cmp = a.order.plannedDeadline.localeCompare(b.order.plannedDeadline); break;
           case 'subcontractingDeadline': cmp = a.deadline.localeCompare(b.deadline); break;
         }
