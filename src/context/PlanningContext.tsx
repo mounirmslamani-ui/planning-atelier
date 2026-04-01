@@ -64,6 +64,7 @@ interface PlanningContextType {
   deleteStep: (id: string) => void;
   setHolidays: (holidays: Holiday[]) => void;
   addHoliday: (holiday: Holiday) => void;
+  updateHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
   addProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
