@@ -90,8 +90,8 @@ const OrdersPage: React.FC = () => {
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Inline editing
-  const [editMode, setEditMode] = useState(false);
+  // Inline editing — per row
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Order>>>({});
 
   // Undo/Redo
