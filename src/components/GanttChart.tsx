@@ -1043,10 +1043,10 @@ const GanttChart: React.FC = () => {
 
                 // Find row indices
                 const sourceRowIdx = ganttRows.findIndex(r =>
-                  r.type === 'operator' ? r.id === sourceStep.operatorId && !sourceStep.subcontractorId : !!sourceStep.subcontractorId
+                  r.type === 'operator' && r.id === sourceStep.operatorId
                 );
                 const targetRowIdx = ganttRows.findIndex(r =>
-                  r.type === 'operator' ? r.id === targetStep.operatorId && !targetStep.subcontractorId : !!targetStep.subcontractorId
+                  r.type === 'operator' && r.id === targetStep.operatorId
                 );
                 if (sourceRowIdx < 0 || targetRowIdx < 0) return null;
 
