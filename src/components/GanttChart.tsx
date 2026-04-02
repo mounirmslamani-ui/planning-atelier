@@ -119,17 +119,17 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       }}
       title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor} ${blockedTextClass}`}>
+      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate text-foreground ${blockedTextClass}`}>
         {subcontractorName ? (
           <>
-            <div className="font-heading">{order.orderNumber} — {subcontractorName}</div>
-            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+            <div className="font-heading font-bold">{order.orderNumber} — {subcontractorName}</div>
+            <div className="opacity-70 truncate">{clientName} — {order.designation}</div>
           </>
         ) : (
           <>
-            <div className="font-heading">{order.orderNumber}</div>
+            <div className="font-heading font-bold">{order.orderNumber}</div>
             <div className="opacity-80">{operationName}</div>
-            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+            <div className="opacity-70 truncate">{clientName} — {order.designation}</div>
           </>
         )}
       </div>
