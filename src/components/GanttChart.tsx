@@ -604,7 +604,7 @@ const GanttChart: React.FC = () => {
           ...step,
           frozen: true, // Mark as frozen after manual move
           operatorId: targetRow?.type === 'operator' ? targetRow.id : step.operatorId,
-          subcontractorId: targetRow?.type === 'subcontractor' ? undefined : step.subcontractorId,
+          subcontractorId: step.subcontractorId,
           startDate: newStart.toISOString().split('T')[0],
           startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
           endDate: newEnd.toISOString().split('T')[0],
