@@ -84,16 +84,6 @@ interface GanttBlockProps {
 const GanttBlock: React.FC<GanttBlockProps> = ({
   step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  const urgencyBg = isAbsence ? 'bg-absence' : getUrgencyBg(order);
-  const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
-  const textColor = getDeadlineTextColor(order, step);
-  const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
-  const borderClass = isCtrlSelected
-    ? 'border-2 border-primary ring-2 ring-primary/40'
-    : hasLink
-      ? 'border-2 border-accent'
-      : isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
-
   // Determine if order is missing prerequisites
   const missingItems: string[] = [];
   if (!order.materialAvailable) missingItems.push('Matière');
@@ -101,7 +91,16 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   if (!order.studyReady) missingItems.push('Étude');
   if (subcontractingPending) missingItems.push('Sous-traitance en cours');
   const isBlocked = (missingItems.length > 0) && !isAbsence;
-  const blockedTextClass = isBlocked ? 'opacity-40' : '';
+
+  const blockBg = isAbsence ? 'bg-absence' : getBlockBg(order, isBlocked);
+  const priorityBorder = isAbsence ? 'border-muted-foreground' : getPriorityBorderColor(order);
+  const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
+  const borderClass = isCtrlSelected
+    ? 'border-2 border-primary ring-2 ring-primary/40'
+    : hasLink
+      ? `border-2 border-accent`
+      : `border-2 ${priorityBorder}`;
+  const blockedTextClass = '';
   const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
   return (
