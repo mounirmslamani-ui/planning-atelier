@@ -974,8 +974,7 @@ const GanttChart: React.FC = () => {
             {ganttRows.map((row, rowIndex) => {
               // Determine which steps to show in this row
               const rowSteps = filteredSteps.filter(s => {
-                if (row.type === 'operator') return s.operatorId === row.id && !s.subcontractorId;
-                if (row.type === 'subcontractor') return !!s.subcontractorId;
+                if (row.type === 'operator') return s.operatorId === row.id;
                 if (row.type === 'material') {
                   const order = orders.find(o => o.id === s.orderId);
                    return order && !order.materialAvailable && s.operationId !== absenceOperationId;
