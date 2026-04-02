@@ -34,16 +34,19 @@ function computeThirdField(
 }
 
 const StepsPage: React.FC = () => {
-  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays, subcontractors } = usePlanning();
+  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays, subcontractors, absenceOperationId, absenceOrderId } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ProductionStep | null>(null);
   const [assignType, setAssignType] = useState<'operator' | 'subcontractor'>('operator');
 
+  const realOrders = orders.filter(o => o.orderNumber !== 'ABS');
+  const realOperations = operations.filter(o => o.id !== absenceOperationId);
+
   const emptyStep = (): Omit<ProductionStep, 'id'> => ({
-    orderId: orders[0]?.id || '',
+    orderId: realOrders[0]?.id || '',
     operatorId: operators[0]?.id || '',
     subcontractorId: undefined,
-    operationId: operations[0]?.id || '',
+    operationId: realOperations[0]?.id || '',
     estimatedDuration: 60, // stored in minutes
     startDate: new Date().toISOString().split('T')[0],
     startTime: '08:00',
@@ -101,7 +104,7 @@ const StepsPage: React.FC = () => {
   return (
     <div className="p-6">
       <PageHeader title="Affectations" description="Assignation des opérateurs et durées estimatives" actions={
-        <Button onClick={openNew} size="sm" disabled={orders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
+        <Button onClick={openNew} size="sm" disabled={realOrders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
@@ -149,7 +152,7 @@ const StepsPage: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Commande</label>
               <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.orderId} onChange={e => updateForm('orderId', e.target.value)}>
-                {orders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
+                {realOrders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
               </select>
             </div>
             <div>
@@ -183,7 +186,7 @@ const StepsPage: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Opération</label>
               <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operationId} onChange={e => updateForm('operationId', e.target.value)}>
-                {operations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
             <div>

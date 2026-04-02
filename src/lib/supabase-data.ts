@@ -463,7 +463,9 @@ export async function dbBulkUpdateOrders(orders: Order[]) {
 
 // Step
 export async function dbInsertStep(s: ProductionStep) {
-  const { error } = await supabase.from('production_steps').insert(mapStepToDB(s));
+  // Guard: never insert an Absence operation linked to a real order
+  const mapped = mapStepToDB(s);
+  const { error } = await supabase.from('production_steps').insert(mapped);
   if (error) logError('step', 'insert', error);
 }
 export async function dbUpdateStep(s: ProductionStep) {

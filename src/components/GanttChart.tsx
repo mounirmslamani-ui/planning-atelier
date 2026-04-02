@@ -974,14 +974,18 @@ const GanttChart: React.FC = () => {
             {ganttRows.map((row, rowIndex) => {
               // Determine which steps to show in this row
               const rowSteps = filteredSteps.filter(s => {
+                // Absence steps must ONLY appear if order is the sentinel ABS order
+                const isAbsenceStep = s.operationId === absenceOperationId;
+                if (isAbsenceStep && s.orderId !== absenceOrderId) return false;
+
                 if (row.type === 'operator') return s.operatorId === row.id;
                 if (row.type === 'material') {
                   const order = orders.find(o => o.id === s.orderId);
-                   return order && !order.materialAvailable && s.operationId !== absenceOperationId;
+                   return order && !order.materialAvailable && !isAbsenceStep;
                 }
                 if (row.type === 'tooling') {
                   const order = orders.find(o => o.id === s.orderId);
-                  return order && !order.toolingAvailable && s.operationId !== absenceOperationId;
+                  return order && !order.toolingAvailable && !isAbsenceStep;
                 }
                 return false;
               });
@@ -1132,7 +1136,7 @@ const GanttChart: React.FC = () => {
               <div>
                 <label className="text-sm font-medium mb-1 block">Opération</label>
                 <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operationId} onChange={e => updateEditForm('operationId', e.target.value)}>
-                  {operations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
               </div>
               <div>
