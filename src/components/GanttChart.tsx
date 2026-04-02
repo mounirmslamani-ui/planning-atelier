@@ -907,7 +907,6 @@ const GanttChart: React.FC = () => {
               key={row.id}
               onClick={() => {
                 if (row.type === 'operator') handleOperatorClick(row.id);
-                else if (row.type === 'subcontractor') setSubDialogOpen(true);
                 else if (row.type === 'material') setMaterialDialogOpen(true);
                 else if (row.type === 'tooling') setToolingDialogOpen(true);
               }}
