@@ -152,7 +152,7 @@ const StepsPage: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Commande</label>
               <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.orderId} onChange={e => updateForm('orderId', e.target.value)}>
-                {orders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
+                {realOrders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
               </select>
             </div>
             <div>
