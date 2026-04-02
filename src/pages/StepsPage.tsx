@@ -39,11 +39,14 @@ const StepsPage: React.FC = () => {
   const [editing, setEditing] = useState<ProductionStep | null>(null);
   const [assignType, setAssignType] = useState<'operator' | 'subcontractor'>('operator');
 
+  const realOrders = orders.filter(o => o.orderNumber !== 'ABS');
+  const realOperations = operations.filter(o => o.id !== absenceOperationId);
+
   const emptyStep = (): Omit<ProductionStep, 'id'> => ({
-    orderId: orders[0]?.id || '',
+    orderId: realOrders[0]?.id || '',
     operatorId: operators[0]?.id || '',
     subcontractorId: undefined,
-    operationId: operations[0]?.id || '',
+    operationId: realOperations[0]?.id || '',
     estimatedDuration: 60, // stored in minutes
     startDate: new Date().toISOString().split('T')[0],
     startTime: '08:00',
