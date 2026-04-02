@@ -24,13 +24,19 @@ const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
 const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
 
-function getUrgencyBg(order: Order): string {
+function getPriorityBorderColor(order: Order): string {
   const p = order.priority;
-  if (p === 'P1') return 'bg-urgent/80';
-  if (p === 'P2') return 'bg-urgent-moderate/80';
-  if (p === 'P3') return 'bg-priority-p3/80';
-  if (p === 'P4') return 'bg-priority-p4/80';
-  return 'bg-muted';
+  if (p === 'P1') return 'border-[hsl(0,72%,51%)]'; // red
+  if (p === 'P2') return 'border-[hsl(30,90%,50%)]'; // orange
+  if (p === 'P3') return 'border-[hsl(160,60%,40%)]'; // teal/green
+  if (p === 'P4') return 'border-[hsl(55,90%,50%)]'; // yellow
+  return 'border-muted-foreground';
+}
+
+function getBlockBg(order: Order, isBlocked: boolean): string {
+  if (isBlocked) return 'bg-[hsl(270,50%,55%)]'; // purple fill when blocked
+  if (order.priority === 'P4') return 'bg-[hsl(55,90%,50%)]'; // yellow fill for P4 available
+  return 'bg-white'; // white fill for P1-P3 when available
 }
 
 function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {
