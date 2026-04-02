@@ -359,7 +359,7 @@ const GanttChart: React.FC = () => {
     }
   }, [steps, orders, holidays, equipments, deleteStep, addStep, updateStep]);
 
-  type GanttRow = { type: 'operator' | 'subcontractor' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
+  type GanttRow = { type: 'operator' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
 
   // Dialog states for special row clicks
   const [subDialogOpen, setSubDialogOpen] = useState(false);
