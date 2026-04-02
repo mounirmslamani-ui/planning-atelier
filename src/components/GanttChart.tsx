@@ -24,13 +24,19 @@ const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
 const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
 
-function getUrgencyBg(order: Order): string {
+function getPriorityBorderColor(order: Order): string {
   const p = order.priority;
-  if (p === 'P1') return 'bg-urgent/80';
-  if (p === 'P2') return 'bg-urgent-moderate/80';
-  if (p === 'P3') return 'bg-priority-p3/80';
-  if (p === 'P4') return 'bg-priority-p4/80';
-  return 'bg-muted';
+  if (p === 'P1') return 'border-[hsl(0,72%,51%)]'; // red
+  if (p === 'P2') return 'border-[hsl(30,90%,50%)]'; // orange
+  if (p === 'P3') return 'border-[hsl(160,60%,40%)]'; // teal/green
+  if (p === 'P4') return 'border-[hsl(55,90%,50%)]'; // yellow
+  return 'border-muted-foreground';
+}
+
+function getBlockBg(order: Order, isBlocked: boolean): string {
+  if (isBlocked) return 'bg-[hsl(270,50%,55%)]'; // purple fill when blocked
+  if (order.priority === 'P4') return 'bg-[hsl(55,90%,50%)]'; // yellow fill for P4 available
+  return 'bg-white'; // white fill for P1-P3 when available
 }
 
 function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {
@@ -78,16 +84,6 @@ interface GanttBlockProps {
 const GanttBlock: React.FC<GanttBlockProps> = ({
   step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  const urgencyBg = isAbsence ? 'bg-absence' : getUrgencyBg(order);
-  const hatch = getHatchClass(order.materialAvailable, order.toolingAvailable, order.studyReady);
-  const textColor = getDeadlineTextColor(order, step);
-  const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
-  const borderClass = isCtrlSelected
-    ? 'border-2 border-primary ring-2 ring-primary/40'
-    : hasLink
-      ? 'border-2 border-accent'
-      : isLast ? 'border-2 border-foreground' : 'border border-foreground/20';
-
   // Determine if order is missing prerequisites
   const missingItems: string[] = [];
   if (!order.materialAvailable) missingItems.push('Matière');
@@ -95,12 +91,21 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
   if (!order.studyReady) missingItems.push('Étude');
   if (subcontractingPending) missingItems.push('Sous-traitance en cours');
   const isBlocked = (missingItems.length > 0) && !isAbsence;
-  const blockedTextClass = isBlocked ? 'opacity-40' : '';
+
+  const blockBg = isAbsence ? 'bg-absence' : getBlockBg(order, isBlocked);
+  const priorityBorder = isAbsence ? 'border-muted-foreground' : getPriorityBorderColor(order);
+  const frozenClass = step.frozen ? 'ring-2 ring-blue-400/60' : '';
+  const borderClass = isCtrlSelected
+    ? 'border-2 border-primary ring-2 ring-primary/40'
+    : hasLink
+      ? `border-2 border-accent`
+      : `border-2 ${priorityBorder}`;
+  const blockedTextClass = '';
   const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${urgencyBg} ${hatch} ${borderClass} ${frozenClass} group`}
+      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => {
         if (e.ctrlKey || e.metaKey) {
@@ -114,17 +119,17 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       }}
       title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate ${textColor} ${blockedTextClass}`}>
+      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate text-foreground ${blockedTextClass}`}>
         {subcontractorName ? (
           <>
-            <div className="font-heading">{order.orderNumber} — {subcontractorName}</div>
-            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+            <div className="font-heading font-bold">{order.orderNumber} — {subcontractorName}</div>
+            <div className="opacity-70 truncate">{clientName} — {order.designation}</div>
           </>
         ) : (
           <>
-            <div className="font-heading">{order.orderNumber}</div>
+            <div className="font-heading font-bold">{order.orderNumber}</div>
             <div className="opacity-80">{operationName}</div>
-            <div className="opacity-60 truncate">{clientName} — {order.designation}</div>
+            <div className="opacity-70 truncate">{clientName} — {order.designation}</div>
           </>
         )}
       </div>
@@ -354,12 +359,23 @@ const GanttChart: React.FC = () => {
     }
   }, [steps, orders, holidays, equipments, deleteStep, addStep, updateStep]);
 
-  type GanttRow = { type: 'operator' | 'subcontractor' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
+  type GanttRow = { type: 'operator' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
 
   // Dialog states for special row clicks
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
   const [toolingDialogOpen, setToolingDialogOpen] = useState(false);
+
+  // Compute operator charge (sum of assigned task durations in hours)
+  const operatorCharge = useMemo(() => {
+    const chargeMap: Record<string, number> = {};
+    steps.forEach(s => {
+      if (s.operatorId && !s.subcontractorId && s.operationId !== absenceOperationId) {
+        chargeMap[s.operatorId] = (chargeMap[s.operatorId] || 0) + s.estimatedDuration;
+      }
+    });
+    return chargeMap;
+  }, [steps, absenceOperationId]);
 
   const ganttRows = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
@@ -370,15 +386,15 @@ const GanttChart: React.FC = () => {
         const bi = functionOrder.indexOf(b.mainFunction);
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
-      .map(op => ({ type: 'operator' as const, id: op.id, label: op.name, sublabel: op.mainFunction }));
+      .map(op => {
+        const chargeMin = operatorCharge[op.id] || 0;
+        const chargeH = (chargeMin / 60).toFixed(1);
+        return { type: 'operator' as const, id: op.id, label: op.name, sublabel: `${chargeH} h` };
+      });
 
-    // Add special rows
+    // Add special rows (no more subcontractor row)
     const specialRows: GanttRow[] = [];
     if (!selectedOperatorId) {
-      const hasSubSteps = steps.some(s => s.subcontractorId);
-      if (hasSubSteps || subcontractors.length > 0) {
-        specialRows.push({ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' });
-      }
       const hasMaterialPending = orders.some(o => o.id !== absenceOrderId && !o.materialAvailable);
       if (hasMaterialPending) {
         specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
@@ -390,7 +406,7 @@ const GanttChart: React.FC = () => {
     }
 
     return [...opRows, ...specialRows];
-  }, [operators, selectedOperatorId, steps, subcontractors, orders]);
+  }, [operators, selectedOperatorId, orders, operatorCharge, absenceOrderId]);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
@@ -588,7 +604,7 @@ const GanttChart: React.FC = () => {
           ...step,
           frozen: true, // Mark as frozen after manual move
           operatorId: targetRow?.type === 'operator' ? targetRow.id : step.operatorId,
-          subcontractorId: targetRow?.type === 'subcontractor' ? undefined : step.subcontractorId,
+          subcontractorId: step.subcontractorId,
           startDate: newStart.toISOString().split('T')[0],
           startTime: `${String(newStart.getHours()).padStart(2, '0')}:${String(newStart.getMinutes()).padStart(2, '0')}`,
           endDate: newEnd.toISOString().split('T')[0],
@@ -891,7 +907,6 @@ const GanttChart: React.FC = () => {
               key={row.id}
               onClick={() => {
                 if (row.type === 'operator') handleOperatorClick(row.id);
-                else if (row.type === 'subcontractor') setSubDialogOpen(true);
                 else if (row.type === 'material') setMaterialDialogOpen(true);
                 else if (row.type === 'tooling') setToolingDialogOpen(true);
               }}
@@ -959,8 +974,7 @@ const GanttChart: React.FC = () => {
             {ganttRows.map((row, rowIndex) => {
               // Determine which steps to show in this row
               const rowSteps = filteredSteps.filter(s => {
-                if (row.type === 'operator') return s.operatorId === row.id && !s.subcontractorId;
-                if (row.type === 'subcontractor') return !!s.subcontractorId;
+                if (row.type === 'operator') return s.operatorId === row.id;
                 if (row.type === 'material') {
                   const order = orders.find(o => o.id === s.orderId);
                    return order && !order.materialAvailable && s.operationId !== absenceOperationId;
@@ -978,8 +992,7 @@ const GanttChart: React.FC = () => {
                   className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
                   style={{ height: ROW_HEIGHT }}
                   onClick={() => {
-                    if (row.type === 'subcontractor') setSubDialogOpen(true);
-                    else if (row.type === 'material') setMaterialDialogOpen(true);
+                    if (row.type === 'material') setMaterialDialogOpen(true);
                     else if (row.type === 'tooling') setToolingDialogOpen(true);
                   }}
                 >
@@ -1030,10 +1043,10 @@ const GanttChart: React.FC = () => {
 
                 // Find row indices
                 const sourceRowIdx = ganttRows.findIndex(r =>
-                  r.type === 'operator' ? r.id === sourceStep.operatorId && !sourceStep.subcontractorId : !!sourceStep.subcontractorId
+                  r.type === 'operator' && r.id === sourceStep.operatorId
                 );
                 const targetRowIdx = ganttRows.findIndex(r =>
-                  r.type === 'operator' ? r.id === targetStep.operatorId && !targetStep.subcontractorId : !!targetStep.subcontractorId
+                  r.type === 'operator' && r.id === targetStep.operatorId
                 );
                 if (sourceRowIdx < 0 || targetRowIdx < 0) return null;
 
