@@ -104,7 +104,7 @@ const StepsPage: React.FC = () => {
   return (
     <div className="p-6">
       <PageHeader title="Affectations" description="Assignation des opérateurs et durées estimatives" actions={
-        <Button onClick={openNew} size="sm" disabled={orders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
+        <Button onClick={openNew} size="sm" disabled={realOrders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
