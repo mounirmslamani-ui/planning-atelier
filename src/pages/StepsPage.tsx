@@ -183,7 +183,7 @@ const StepsPage: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Opération</label>
               <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operationId} onChange={e => updateForm('operationId', e.target.value)}>
-                {operations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
             <div>
