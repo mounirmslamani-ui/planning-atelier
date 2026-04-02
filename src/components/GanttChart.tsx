@@ -366,6 +366,17 @@ const GanttChart: React.FC = () => {
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
   const [toolingDialogOpen, setToolingDialogOpen] = useState(false);
 
+  // Compute operator charge (sum of assigned task durations in hours)
+  const operatorCharge = useMemo(() => {
+    const chargeMap: Record<string, number> = {};
+    steps.forEach(s => {
+      if (s.operatorId && !s.subcontractorId && s.operationId !== absenceOperationId) {
+        chargeMap[s.operatorId] = (chargeMap[s.operatorId] || 0) + s.estimatedDuration;
+      }
+    });
+    return chargeMap;
+  }, [steps, absenceOperationId]);
+
   const ganttRows = useMemo(() => {
     const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
     const opRows: GanttRow[] = [...operators]
@@ -375,15 +386,15 @@ const GanttChart: React.FC = () => {
         const bi = functionOrder.indexOf(b.mainFunction);
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
-      .map(op => ({ type: 'operator' as const, id: op.id, label: op.name, sublabel: op.mainFunction }));
+      .map(op => {
+        const chargeMin = operatorCharge[op.id] || 0;
+        const chargeH = (chargeMin / 60).toFixed(1);
+        return { type: 'operator' as const, id: op.id, label: op.name, sublabel: `${chargeH} h` };
+      });
 
-    // Add special rows
+    // Add special rows (no more subcontractor row)
     const specialRows: GanttRow[] = [];
     if (!selectedOperatorId) {
-      const hasSubSteps = steps.some(s => s.subcontractorId);
-      if (hasSubSteps || subcontractors.length > 0) {
-        specialRows.push({ type: 'subcontractor' as const, id: '__subcontractor__', label: 'Sous-traitant', sublabel: '' });
-      }
       const hasMaterialPending = orders.some(o => o.id !== absenceOrderId && !o.materialAvailable);
       if (hasMaterialPending) {
         specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
@@ -395,7 +406,7 @@ const GanttChart: React.FC = () => {
     }
 
     return [...opRows, ...specialRows];
-  }, [operators, selectedOperatorId, steps, subcontractors, orders]);
+  }, [operators, selectedOperatorId, orders, operatorCharge, absenceOrderId]);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
