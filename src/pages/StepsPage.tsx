@@ -34,7 +34,7 @@ function computeThirdField(
 }
 
 const StepsPage: React.FC = () => {
-  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays, subcontractors } = usePlanning();
+  const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays, subcontractors, absenceOperationId, absenceOrderId } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ProductionStep | null>(null);
   const [assignType, setAssignType] = useState<'operator' | 'subcontractor'>('operator');
