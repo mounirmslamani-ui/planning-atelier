@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock, Flag, Undo2, Redo2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock, Flag, Undo2, Redo2, Search, X } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import { scheduleOrder } from '@/lib/scheduler';
@@ -76,13 +76,14 @@ interface GanttBlockProps {
   hasLink: boolean;
   subcontractingPending: boolean;
   isAbsence: boolean;
+  isDimmed: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
   onCtrlClick: (stepId: string) => void;
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, onDragStart, onResizeStart, onCtrlClick
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick
 }) => {
   // Determine if order is missing prerequisites
   const missingItems: string[] = [];
@@ -105,7 +106,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
 
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group`}
+      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group transition-opacity ${isDimmed ? 'opacity-25' : ''}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => {
         if (e.ctrlKey || e.metaKey) {
@@ -128,8 +129,9 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
         ) : (
           <>
             <div className="font-heading font-bold">{order.orderNumber}</div>
-            <div className="opacity-80">{operationName}</div>
-            <div className="opacity-70 truncate">{clientName} — {order.designation}</div>
+            <div className="opacity-80 truncate">{clientName}</div>
+            <div className="opacity-70 truncate">{order.designation} — Qté: {order.quantity}</div>
+            <div className="opacity-70 truncate">{operationName}</div>
           </>
         )}
       </div>
@@ -359,11 +361,11 @@ const GanttChart: React.FC = () => {
     }
   }, [steps, orders, holidays, equipments, deleteStep, addStep, updateStep]);
 
-  type GanttRow = { type: 'operator' | 'material' | 'tooling'; id: string; label: string; sublabel: string };
+  type GanttRow = { type: 'operator' | 'tooling'; id: string; label: string; sublabel: string };
 
   // Dialog states for special row clicks
   const [subDialogOpen, setSubDialogOpen] = useState(false);
-  const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false); // keep state for dialog
   const [toolingDialogOpen, setToolingDialogOpen] = useState(false);
 
   // Compute operator charge (sum of assigned task durations in hours)
@@ -377,13 +379,18 @@ const GanttChart: React.FC = () => {
     return chargeMap;
   }, [steps, absenceOperationId]);
 
+  // Search/highlight order state
+  const [searchOrderNumber, setSearchOrderNumber] = useState('');
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
+
+  const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
+
   const ganttRows = useMemo(() => {
-    const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
     const opRows: GanttRow[] = [...operators]
       .filter(op => !selectedOperatorId || op.id === selectedOperatorId)
       .sort((a, b) => {
-        const ai = functionOrder.indexOf(a.mainFunction);
-        const bi = functionOrder.indexOf(b.mainFunction);
+        const ai = OPERATOR_NAME_ORDER.indexOf(a.name);
+        const bi = OPERATOR_NAME_ORDER.indexOf(b.name);
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .map(op => {
@@ -392,13 +399,9 @@ const GanttChart: React.FC = () => {
         return { type: 'operator' as const, id: op.id, label: op.name, sublabel: `${chargeH} h` };
       });
 
-    // Add special rows (no more subcontractor row)
+    // Only tooling special row (material row removed)
     const specialRows: GanttRow[] = [];
     if (!selectedOperatorId) {
-      const hasMaterialPending = orders.some(o => o.id !== absenceOrderId && !o.materialAvailable);
-      if (hasMaterialPending) {
-        specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
-      }
       const hasToolingPending = orders.some(o => o.id !== absenceOrderId && !o.toolingAvailable);
       if (hasToolingPending) {
         specialRows.push({ type: 'tooling' as const, id: '__tooling__', label: 'Achat outillage', sublabel: '' });
@@ -407,6 +410,41 @@ const GanttChart: React.FC = () => {
 
     return [...opRows, ...specialRows];
   }, [operators, selectedOperatorId, orders, operatorCharge, absenceOrderId]);
+
+  // Handle search order
+  const handleSearchOrder = useCallback(() => {
+    if (!searchOrderNumber.trim()) {
+      setHighlightedOrderId(null);
+      return;
+    }
+    const order = orders.find(o => o.orderNumber.toLowerCase().includes(searchOrderNumber.trim().toLowerCase()));
+    if (order) {
+      setHighlightedOrderId(order.id);
+      // Find the date range of all steps for this order
+      const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
+      if (orderSteps.length > 0) {
+        const startDates = orderSteps.map(s => new Date(s.startDate)).sort((a, b) => a.getTime() - b.getTime());
+        const endDates = orderSteps.map(s => new Date(s.endDate)).sort((a, b) => a.getTime() - b.getTime());
+        const earliest = startDates[0];
+        const latest = endDates[endDates.length - 1];
+        // Set gantt view to show the full range
+        const diffDays = Math.ceil((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 1) {
+          setGanttView('day');
+        } else if (diffDays <= 7) {
+          setGanttView('week');
+        } else {
+          setGanttView('month');
+        }
+        setGanttZeroDate(earliest);
+      }
+    }
+  }, [searchOrderNumber, orders, steps, absenceOperationId, setGanttView, setGanttZeroDate]);
+
+  const handleResetSearch = useCallback(() => {
+    setSearchOrderNumber('');
+    setHighlightedOrderId(null);
+  }, []);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
@@ -862,6 +900,28 @@ const GanttChart: React.FC = () => {
         <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
           <Redo2 className="w-4 h-4" />
         </Button>
+        {/* Search order */}
+        <div className="flex items-center gap-1 ml-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="N° commande..."
+              className="rounded border bg-background pl-7 pr-2 py-1 text-xs w-32"
+              value={searchOrderNumber}
+              onChange={e => setSearchOrderNumber(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearchOrder(); }}
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={handleSearchOrder} className="h-7 px-2">
+            <Search className="w-3.5 h-3.5" />
+          </Button>
+          {highlightedOrderId && (
+            <Button variant="ghost" size="sm" onClick={handleResetSearch} className="h-7 px-2" title="Réinitialiser">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
         {(selectedOperatorId || selectedOrderId) && (
           <button
             onClick={() => { setSelectedOperatorId(null); setSelectedOrderId(null); }}
@@ -907,15 +967,14 @@ const GanttChart: React.FC = () => {
               key={row.id}
               onClick={() => {
                 if (row.type === 'operator') handleOperatorClick(row.id);
-                else if (row.type === 'material') setMaterialDialogOpen(true);
                 else if (row.type === 'tooling') setToolingDialogOpen(true);
               }}
               className={`flex items-center px-2 border-b transition-colors cursor-pointer hover:bg-muted/50 ${row.type !== 'operator' ? 'bg-muted/20' : ''}`}
               style={{ height: ROW_HEIGHT }}
             >
               <div>
-                <div className={`text-xs font-medium truncate ${row.type !== 'operator' ? 'text-primary' : ''}`}>{row.label}</div>
-                {row.sublabel && <div className="text-[10px] text-muted-foreground">{row.sublabel}</div>}
+                <div className={`text-sm font-medium truncate ${row.type !== 'operator' ? 'text-primary' : ''}`}>{row.label}</div>
+                {row.sublabel && <div className="text-[10px] text-accent font-semibold">{row.sublabel}</div>}
               </div>
             </div>
           ))}
@@ -974,15 +1033,10 @@ const GanttChart: React.FC = () => {
             {ganttRows.map((row, rowIndex) => {
               // Determine which steps to show in this row
               const rowSteps = filteredSteps.filter(s => {
-                // Absence steps must ONLY appear if order is the sentinel ABS order
                 const isAbsenceStep = s.operationId === absenceOperationId;
                 if (isAbsenceStep && s.orderId !== absenceOrderId) return false;
 
                 if (row.type === 'operator') return s.operatorId === row.id;
-                if (row.type === 'material') {
-                  const order = orders.find(o => o.id === s.orderId);
-                   return order && !order.materialAvailable && !isAbsenceStep;
-                }
                 if (row.type === 'tooling') {
                   const order = orders.find(o => o.id === s.orderId);
                   return order && !order.toolingAvailable && !isAbsenceStep;
@@ -996,8 +1050,7 @@ const GanttChart: React.FC = () => {
                   className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
                   style={{ height: ROW_HEIGHT }}
                   onClick={() => {
-                    if (row.type === 'material') setMaterialDialogOpen(true);
-                    else if (row.type === 'tooling') setToolingDialogOpen(true);
+                    if (row.type === 'tooling') setToolingDialogOpen(true);
                   }}
                 >
                   {rowSteps.map(step => {
@@ -1023,6 +1076,7 @@ const GanttChart: React.FC = () => {
                           hasLink={!!step.dependsOn}
                           subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
                           isAbsence={step.operationId === absenceOperationId}
+                          isDimmed={!!highlightedOrderId && step.orderId !== highlightedOrderId}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
                           onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
                           onCtrlClick={handleCtrlClick}
