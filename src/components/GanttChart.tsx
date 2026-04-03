@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock, Flag, Undo2, Redo2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Check, CalendarCheck, Lock, Unlock, Flag, Undo2, Redo2, Search, X } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import type { GanttView, ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import { scheduleOrder } from '@/lib/scheduler';
