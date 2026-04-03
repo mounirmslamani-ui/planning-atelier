@@ -131,10 +131,8 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
           </>
         ) : (
           <>
-            <div className="font-heading font-bold">{order.orderNumber}</div>
-            <div className="opacity-80 truncate">{clientName}</div>
+            <div className="font-heading font-bold truncate">{order.orderNumber} — {clientName}</div>
             <div className="opacity-70 truncate">{order.designation} — Qté: {order.quantity}</div>
-            <div className="opacity-70 truncate">{operationName}</div>
           </>
         )}
       </div>
