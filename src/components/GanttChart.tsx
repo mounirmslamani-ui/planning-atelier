@@ -102,7 +102,10 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       ? `border-2 border-accent`
       : `border-2 ${priorityBorder}`;
   const blockedTextClass = '';
-  const tooltipText = `${order.orderNumber} — ${order.designation}\n${operationName} | ${clientName} | Qté: ${order.quantity}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
+  const durationH = Math.floor(step.estimatedDuration / 60);
+  const durationM = step.estimatedDuration % 60;
+  const durationStr = `${durationH}h${String(durationM).padStart(2, '0')}`;
+  const tooltipText = `${order.orderNumber} — ${clientName}\n${order.designation} — Qté: ${order.quantity}\n${operationName} ${durationStr}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
 
   return (
     <div
