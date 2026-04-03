@@ -950,8 +950,8 @@ const GanttChart: React.FC = () => {
               style={{ height: ROW_HEIGHT }}
             >
               <div>
-                <div className={`text-xs font-medium truncate ${row.type !== 'operator' ? 'text-primary' : ''}`}>{row.label}</div>
-                {row.sublabel && <div className="text-[10px] text-muted-foreground">{row.sublabel}</div>}
+                <div className={`text-sm font-medium truncate ${row.type !== 'operator' ? 'text-primary' : ''}`}>{row.label}</div>
+                {row.sublabel && <div className="text-[10px] text-accent font-semibold">{row.sublabel}</div>}
               </div>
             </div>
           ))}
