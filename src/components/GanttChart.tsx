@@ -378,13 +378,18 @@ const GanttChart: React.FC = () => {
     return chargeMap;
   }, [steps, absenceOperationId]);
 
+  // Search/highlight order state
+  const [searchOrderNumber, setSearchOrderNumber] = useState('');
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
+
+  const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
+
   const ganttRows = useMemo(() => {
-    const functionOrder = ['Tournage', 'Fraisage', 'Rectification', 'Perçage', 'Soudure', 'Traitement thermique', 'Contrôle qualité'];
     const opRows: GanttRow[] = [...operators]
       .filter(op => !selectedOperatorId || op.id === selectedOperatorId)
       .sort((a, b) => {
-        const ai = functionOrder.indexOf(a.mainFunction);
-        const bi = functionOrder.indexOf(b.mainFunction);
+        const ai = OPERATOR_NAME_ORDER.indexOf(a.name);
+        const bi = OPERATOR_NAME_ORDER.indexOf(b.name);
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .map(op => {
@@ -393,13 +398,9 @@ const GanttChart: React.FC = () => {
         return { type: 'operator' as const, id: op.id, label: op.name, sublabel: `${chargeH} h` };
       });
 
-    // Add special rows (no more subcontractor row)
+    // Only tooling special row (material row removed)
     const specialRows: GanttRow[] = [];
     if (!selectedOperatorId) {
-      const hasMaterialPending = orders.some(o => o.id !== absenceOrderId && !o.materialAvailable);
-      if (hasMaterialPending) {
-        specialRows.push({ type: 'material' as const, id: '__material__', label: 'Achat matières', sublabel: '' });
-      }
       const hasToolingPending = orders.some(o => o.id !== absenceOrderId && !o.toolingAvailable);
       if (hasToolingPending) {
         specialRows.push({ type: 'tooling' as const, id: '__tooling__', label: 'Achat outillage', sublabel: '' });
@@ -408,6 +409,41 @@ const GanttChart: React.FC = () => {
 
     return [...opRows, ...specialRows];
   }, [operators, selectedOperatorId, orders, operatorCharge, absenceOrderId]);
+
+  // Handle search order
+  const handleSearchOrder = useCallback(() => {
+    if (!searchOrderNumber.trim()) {
+      setHighlightedOrderId(null);
+      return;
+    }
+    const order = orders.find(o => o.orderNumber.toLowerCase().includes(searchOrderNumber.trim().toLowerCase()));
+    if (order) {
+      setHighlightedOrderId(order.id);
+      // Find the date range of all steps for this order
+      const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
+      if (orderSteps.length > 0) {
+        const startDates = orderSteps.map(s => new Date(s.startDate)).sort((a, b) => a.getTime() - b.getTime());
+        const endDates = orderSteps.map(s => new Date(s.endDate)).sort((a, b) => a.getTime() - b.getTime());
+        const earliest = startDates[0];
+        const latest = endDates[endDates.length - 1];
+        // Set gantt view to show the full range
+        const diffDays = Math.ceil((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 1) {
+          setGanttView('day');
+        } else if (diffDays <= 7) {
+          setGanttView('week');
+        } else {
+          setGanttView('month');
+        }
+        setGanttZeroDate(earliest);
+      }
+    }
+  }, [searchOrderNumber, orders, steps, absenceOperationId, setGanttView, setGanttZeroDate]);
+
+  const handleResetSearch = useCallback(() => {
+    setSearchOrderNumber('');
+    setHighlightedOrderId(null);
+  }, []);
 
   const filteredSteps = useMemo(() => {
     let result = steps;
