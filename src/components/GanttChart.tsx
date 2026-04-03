@@ -899,6 +899,28 @@ const GanttChart: React.FC = () => {
         <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
           <Redo2 className="w-4 h-4" />
         </Button>
+        {/* Search order */}
+        <div className="flex items-center gap-1 ml-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="N° commande..."
+              className="rounded border bg-background pl-7 pr-2 py-1 text-xs w-32"
+              value={searchOrderNumber}
+              onChange={e => setSearchOrderNumber(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSearchOrder(); }}
+            />
+          </div>
+          <Button variant="outline" size="sm" onClick={handleSearchOrder} className="h-7 px-2">
+            <Search className="w-3.5 h-3.5" />
+          </Button>
+          {highlightedOrderId && (
+            <Button variant="ghost" size="sm" onClick={handleResetSearch} className="h-7 px-2" title="Réinitialiser">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
         {(selectedOperatorId || selectedOrderId) && (
           <button
             onClick={() => { setSelectedOperatorId(null); setSelectedOrderId(null); }}
