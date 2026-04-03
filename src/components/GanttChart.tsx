@@ -364,7 +364,7 @@ const GanttChart: React.FC = () => {
 
   // Dialog states for special row clicks
   const [subDialogOpen, setSubDialogOpen] = useState(false);
-  const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false); // keep state for dialog
   const [toolingDialogOpen, setToolingDialogOpen] = useState(false);
 
   // Compute operator charge (sum of assigned task durations in hours)
