@@ -106,7 +106,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
 
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group`}
+      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group transition-opacity ${isDimmed ? 'opacity-25' : ''}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       onMouseDown={e => {
         if (e.ctrlKey || e.metaKey) {
