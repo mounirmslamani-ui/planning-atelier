@@ -1027,8 +1027,7 @@ const GanttChart: React.FC = () => {
                   className={`relative border-b ${rowIndex % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
                   style={{ height: ROW_HEIGHT }}
                   onClick={() => {
-                    if (row.type === 'material') setMaterialDialogOpen(true);
-                    else if (row.type === 'tooling') setToolingDialogOpen(true);
+                    if (row.type === 'tooling') setToolingDialogOpen(true);
                   }}
                 >
                   {rowSteps.map(step => {
