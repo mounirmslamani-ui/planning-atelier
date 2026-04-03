@@ -83,7 +83,7 @@ interface GanttBlockProps {
 }
 
 const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, onDragStart, onResizeStart, onCtrlClick
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick
 }) => {
   // Determine if order is missing prerequisites
   const missingItems: string[] = [];
