@@ -76,6 +76,7 @@ interface GanttBlockProps {
   hasLink: boolean;
   subcontractingPending: boolean;
   isAbsence: boolean;
+  isDimmed: boolean;
   onDragStart: (stepId: string, startX: number, startLeft: number, startY: number, altKey: boolean) => void;
   onResizeStart: (stepId: string, startX: number, startWidth: number) => void;
   onCtrlClick: (stepId: string) => void;
