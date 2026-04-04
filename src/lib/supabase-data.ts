@@ -215,6 +215,12 @@ export function mapStepFromDB(row: any): ProductionStep {
     equipmentIds: row.equipment_ids || [],
     subcontractingDone: row.subcontracting_done ?? false,
     subcontractingDeadline: row.subcontracting_deadline || undefined,
+    studyReady: row.study_ready ?? true,
+    materialAvailable: row.material_available ?? true,
+    toolingAvailable: row.tooling_available ?? true,
+    studyDeadline: row.study_deadline || undefined,
+    materialDeadline: row.material_deadline || undefined,
+    toolingDeadline: row.tooling_deadline || undefined,
   };
 }
 
