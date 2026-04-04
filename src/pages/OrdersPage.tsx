@@ -353,7 +353,7 @@ const OrdersPage: React.FC = () => {
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'materialAvailable', 'toolingAvailable', 'studyReady'];
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline'];
     if (isEditing && editableFields.includes(col)) {
       if (col === 'priority') {
         return (
