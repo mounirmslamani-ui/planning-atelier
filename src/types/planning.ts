@@ -90,6 +90,12 @@ export interface ProductionStep {
   equipmentIds?: string[]; // required equipment for this step
   subcontractingDone?: boolean; // true when subcontracting is completed
   subcontractingDeadline?: string; // deadline for subcontracting (date string)
+  studyReady?: boolean; // step-level: study done
+  materialAvailable?: boolean; // step-level: material available
+  toolingAvailable?: boolean; // step-level: tooling available
+  studyDeadline?: string; // expected date for study completion
+  materialDeadline?: string; // expected date for material purchase
+  toolingDeadline?: string; // expected date for tooling purchase
 }
 
 export interface Holiday {
