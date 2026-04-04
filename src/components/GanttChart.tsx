@@ -88,11 +88,11 @@ interface GanttBlockProps {
 const GanttBlock: React.FC<GanttBlockProps> = ({
   step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  // Determine if order is missing prerequisites
+  // Determine if step is missing prerequisites (step-level)
   const missingItems: string[] = [];
-  if (!order.materialAvailable) missingItems.push('Matière');
-  if (!order.toolingAvailable) missingItems.push('Outillage');
-  if (!order.studyReady) missingItems.push('Étude');
+  if (!(step.materialAvailable ?? true)) missingItems.push('Matière');
+  if (!(step.toolingAvailable ?? true)) missingItems.push('Outillage');
+  if (!(step.studyReady ?? true)) missingItems.push('Étude');
   if (subcontractingPending) missingItems.push('Sous-traitance en cours');
   const isBlocked = (missingItems.length > 0) && !isAbsence;
 
