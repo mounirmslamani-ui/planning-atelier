@@ -215,6 +215,12 @@ export function mapStepFromDB(row: any): ProductionStep {
     equipmentIds: row.equipment_ids || [],
     subcontractingDone: row.subcontracting_done ?? false,
     subcontractingDeadline: row.subcontracting_deadline || undefined,
+    studyReady: row.study_ready ?? true,
+    materialAvailable: row.material_available ?? true,
+    toolingAvailable: row.tooling_available ?? true,
+    studyDeadline: row.study_deadline || undefined,
+    materialDeadline: row.material_deadline || undefined,
+    toolingDeadline: row.tooling_deadline || undefined,
   };
 }
 
@@ -237,6 +243,12 @@ export function mapStepToDB(s: ProductionStep) {
     equipment_ids: s.equipmentIds || [],
     subcontracting_done: s.subcontractingDone ?? false,
     subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
+    study_ready: s.studyReady ?? true,
+    material_available: s.materialAvailable ?? true,
+    tooling_available: s.toolingAvailable ?? true,
+    study_deadline: toISODateOrNull(s.studyDeadline),
+    material_deadline: toISODateOrNull(s.materialDeadline),
+    tooling_deadline: toISODateOrNull(s.toolingDeadline),
   };
 }
 

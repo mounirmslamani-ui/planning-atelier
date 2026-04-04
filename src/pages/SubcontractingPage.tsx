@@ -56,6 +56,7 @@ const SubcontractingPage: React.FC = () => {
     });
 
     return Array.from(orderMap.entries()).map(([orderId, info]) => {
+      if (info.done) return null; // Hide completed subcontracting
       const order = orders.find(o => o.id === orderId);
       if (!order || order.id === absenceOrderId) return null;
       return { order, ...info };

@@ -39,12 +39,15 @@ function getBlockBg(order: Order, isBlocked: boolean): string {
   return 'bg-white'; // white fill for P1-P3 when available
 }
 
-function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {
-  const blocked = [!materialAvailable, !toolingAvailable, !studyReady].filter(Boolean).length;
+function getHatchClass(step: any): string {
+  const matBlocked = !(step.materialAvailable ?? true);
+  const toolBlocked = !(step.toolingAvailable ?? true);
+  const studyBlocked = !(step.studyReady ?? true);
+  const blocked = [matBlocked, toolBlocked, studyBlocked].filter(Boolean).length;
   if (blocked >= 2) return 'hatch-cross';
-  if (!materialAvailable) return 'hatch-right';
-  if (!toolingAvailable) return 'hatch-left';
-  if (!studyReady) return 'hatch-right';
+  if (matBlocked) return 'hatch-right';
+  if (toolBlocked) return 'hatch-left';
+  if (studyBlocked) return 'hatch-right';
   return '';
 }
 
@@ -85,11 +88,11 @@ interface GanttBlockProps {
 const GanttBlock: React.FC<GanttBlockProps> = ({
   step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick
 }) => {
-  // Determine if order is missing prerequisites
+  // Determine if step is missing prerequisites (step-level)
   const missingItems: string[] = [];
-  if (!order.materialAvailable) missingItems.push('Matière');
-  if (!order.toolingAvailable) missingItems.push('Outillage');
-  if (!order.studyReady) missingItems.push('Étude');
+  if (!(step.materialAvailable ?? true)) missingItems.push('Matière');
+  if (!(step.toolingAvailable ?? true)) missingItems.push('Outillage');
+  if (!(step.studyReady ?? true)) missingItems.push('Étude');
   if (subcontractingPending) missingItems.push('Sous-traitance en cours');
   const isBlocked = (missingItems.length > 0) && !isAbsence;
 

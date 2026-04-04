@@ -339,15 +339,21 @@ export type Database = {
           estimated_duration: number
           frozen: boolean
           id: string
+          material_available: boolean
+          material_deadline: string | null
           operation_id: string
           operator_id: string | null
           order_id: string
           start_date: string | null
           start_time: string | null
           step_order: number
+          study_deadline: string | null
+          study_ready: boolean
           subcontracting_deadline: string | null
           subcontracting_done: boolean
           subcontractor_id: string | null
+          tooling_available: boolean
+          tooling_deadline: string | null
           updated_at: string
         }
         Insert: {
@@ -360,15 +366,21 @@ export type Database = {
           estimated_duration?: number
           frozen?: boolean
           id?: string
+          material_available?: boolean
+          material_deadline?: string | null
           operation_id: string
           operator_id?: string | null
           order_id: string
           start_date?: string | null
           start_time?: string | null
           step_order?: number
+          study_deadline?: string | null
+          study_ready?: boolean
           subcontracting_deadline?: string | null
           subcontracting_done?: boolean
           subcontractor_id?: string | null
+          tooling_available?: boolean
+          tooling_deadline?: string | null
           updated_at?: string
         }
         Update: {
@@ -381,15 +393,21 @@ export type Database = {
           estimated_duration?: number
           frozen?: boolean
           id?: string
+          material_available?: boolean
+          material_deadline?: string | null
           operation_id?: string
           operator_id?: string | null
           order_id?: string
           start_date?: string | null
           start_time?: string | null
           step_order?: number
+          study_deadline?: string | null
+          study_ready?: boolean
           subcontracting_deadline?: string | null
           subcontracting_done?: boolean
           subcontractor_id?: string | null
+          tooling_available?: boolean
+          tooling_deadline?: string | null
           updated_at?: string
         }
         Relationships: [

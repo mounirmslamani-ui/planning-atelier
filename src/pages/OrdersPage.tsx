@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Package, Wrench, GripVertical, ClipboardPaste, FileCheck, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2 } from 'lucide-react';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
@@ -31,7 +31,7 @@ const priorityColors: Record<OrderPriority, string> = {
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'materialAvailable' | 'toolingAvailable' | 'studyReady' | 'cr' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'observation';
 
 function computeCR(
   order: Order,
@@ -196,9 +196,6 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
-      case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
-      case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
-      case 'studyReady': return o.studyReady ? 'Oui' : 'Non';
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'observation': return o.observation || '';
       default: return '';
@@ -330,9 +327,6 @@ const OrdersPage: React.FC = () => {
     { key: 'priority', label: 'Priorité' },
     { key: 'deliveryDeadline', label: 'Délai' },
     { key: 'cr', label: 'CR' },
-    { key: 'materialAvailable', label: 'Mat.' },
-    { key: 'toolingAvailable', label: 'Out.' },
-    { key: 'studyReady', label: 'Étude' },
     { key: 'observation', label: 'Observation' },
   ];
 
@@ -356,7 +350,7 @@ const OrdersPage: React.FC = () => {
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'materialAvailable', 'toolingAvailable', 'studyReady'];
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline'];
     if (isEditing && editableFields.includes(col)) {
       if (col === 'priority') {
         return (
@@ -395,21 +389,6 @@ const OrdersPage: React.FC = () => {
             onClick={e => e.stopPropagation()} />
         );
       }
-      if (col === 'materialAvailable') {
-        const val = (getInlineValue(o, 'materialAvailable') as boolean);
-        return <Package className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
-          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'materialAvailable', !val); }} />;
-      }
-      if (col === 'toolingAvailable') {
-        const val = (getInlineValue(o, 'toolingAvailable') as boolean);
-        return <Wrench className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
-          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'toolingAvailable', !val); }} />;
-      }
-      if (col === 'studyReady') {
-        const val = (getInlineValue(o, 'studyReady') as boolean);
-        return <FileCheck className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
-          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'studyReady', !val); }} />;
-      }
       if (col === 'orderNumber' || col === 'designation') {
         return (
           <Input className="h-7 text-xs"
@@ -429,10 +408,7 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return <span className="text-sm">{o.quantity}</span>;
       case 'priority': return <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>;
       case 'deliveryDeadline': return <span className="text-sm">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
-      case 'cr': return formatCR(o.id);
-      case 'materialAvailable': return <Package className={`w-4 h-4 ${o.materialAvailable ? 'text-normal' : 'text-destructive'}`} />;
-      case 'toolingAvailable': return <Wrench className={`w-4 h-4 ${o.toolingAvailable ? 'text-normal' : 'text-destructive'}`} />;
-      case 'studyReady': return <FileCheck className={`w-4 h-4 ${o.studyReady ? 'text-normal' : 'text-destructive'}`} />;
+      case 'observation': return <span className="text-xs text-muted-foreground max-w-[150px] truncate block">{o.observation || '—'}</span>;
       case 'observation': return <span className="text-xs text-muted-foreground max-w-[150px] truncate block">{o.observation || '—'}</span>;
       default: return null;
     }
@@ -610,20 +586,6 @@ const OrdersPage: React.FC = () => {
             <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Observation</label>
               <Input value={form.observation || ''} onChange={e => updateForm('observation', e.target.value)} placeholder="Note d'information..." />
-            </div>
-            <div className="flex items-center gap-6 col-span-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.materialAvailable} onChange={e => updateForm('materialAvailable', e.target.checked)} className="rounded" />
-                <Package className="w-4 h-4" /> Matière disponible
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.toolingAvailable} onChange={e => updateForm('toolingAvailable', e.target.checked)} className="rounded" />
-                <Wrench className="w-4 h-4" /> Outillage disponible
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.studyReady} onChange={e => updateForm('studyReady', e.target.checked)} className="rounded" />
-                <FileCheck className="w-4 h-4" /> Étude faite
-              </label>
             </div>
           </div>
           <DialogFooter>
