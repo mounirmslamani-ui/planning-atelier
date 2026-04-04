@@ -408,10 +408,7 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return <span className="text-sm">{o.quantity}</span>;
       case 'priority': return <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>;
       case 'deliveryDeadline': return <span className="text-sm">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
-      case 'cr': return formatCR(o.id);
-      case 'materialAvailable': return <Package className={`w-4 h-4 ${o.materialAvailable ? 'text-normal' : 'text-destructive'}`} />;
-      case 'toolingAvailable': return <Wrench className={`w-4 h-4 ${o.toolingAvailable ? 'text-normal' : 'text-destructive'}`} />;
-      case 'studyReady': return <FileCheck className={`w-4 h-4 ${o.studyReady ? 'text-normal' : 'text-destructive'}`} />;
+      case 'observation': return <span className="text-xs text-muted-foreground max-w-[150px] truncate block">{o.observation || '—'}</span>;
       case 'observation': return <span className="text-xs text-muted-foreground max-w-[150px] truncate block">{o.observation || '—'}</span>;
       default: return null;
     }
