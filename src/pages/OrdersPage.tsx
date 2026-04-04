@@ -587,20 +587,6 @@ const OrdersPage: React.FC = () => {
               <label className="text-sm font-medium mb-1 block">Observation</label>
               <Input value={form.observation || ''} onChange={e => updateForm('observation', e.target.value)} placeholder="Note d'information..." />
             </div>
-            <div className="flex items-center gap-6 col-span-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.materialAvailable} onChange={e => updateForm('materialAvailable', e.target.checked)} className="rounded" />
-                <Package className="w-4 h-4" /> Matière disponible
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.toolingAvailable} onChange={e => updateForm('toolingAvailable', e.target.checked)} className="rounded" />
-                <Wrench className="w-4 h-4" /> Outillage disponible
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.studyReady} onChange={e => updateForm('studyReady', e.target.checked)} className="rounded" />
-                <FileCheck className="w-4 h-4" /> Étude faite
-              </label>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
