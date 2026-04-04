@@ -389,21 +389,6 @@ const OrdersPage: React.FC = () => {
             onClick={e => e.stopPropagation()} />
         );
       }
-      if (col === 'materialAvailable') {
-        const val = (getInlineValue(o, 'materialAvailable') as boolean);
-        return <Package className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
-          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'materialAvailable', !val); }} />;
-      }
-      if (col === 'toolingAvailable') {
-        const val = (getInlineValue(o, 'toolingAvailable') as boolean);
-        return <Wrench className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
-          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'toolingAvailable', !val); }} />;
-      }
-      if (col === 'studyReady') {
-        const val = (getInlineValue(o, 'studyReady') as boolean);
-        return <FileCheck className={`w-4 h-4 cursor-pointer ${val ? 'text-normal' : 'text-destructive'}`}
-          onClick={e => { e.stopPropagation(); setInlineValue(o.id, 'studyReady', !val); }} />;
-      }
       if (col === 'orderNumber' || col === 'designation') {
         return (
           <Input className="h-7 text-xs"
