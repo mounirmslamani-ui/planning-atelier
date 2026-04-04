@@ -330,9 +330,6 @@ const OrdersPage: React.FC = () => {
     { key: 'priority', label: 'Priorité' },
     { key: 'deliveryDeadline', label: 'Délai' },
     { key: 'cr', label: 'CR' },
-    { key: 'materialAvailable', label: 'Mat.' },
-    { key: 'toolingAvailable', label: 'Out.' },
-    { key: 'studyReady', label: 'Étude' },
     { key: 'observation', label: 'Observation' },
   ];
 
