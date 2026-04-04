@@ -39,12 +39,15 @@ function getBlockBg(order: Order, isBlocked: boolean): string {
   return 'bg-white'; // white fill for P1-P3 when available
 }
 
-function getHatchClass(materialAvailable: boolean, toolingAvailable: boolean, studyReady: boolean = true): string {
-  const blocked = [!materialAvailable, !toolingAvailable, !studyReady].filter(Boolean).length;
+function getHatchClass(step: any): string {
+  const matBlocked = !(step.materialAvailable ?? true);
+  const toolBlocked = !(step.toolingAvailable ?? true);
+  const studyBlocked = !(step.studyReady ?? true);
+  const blocked = [matBlocked, toolBlocked, studyBlocked].filter(Boolean).length;
   if (blocked >= 2) return 'hatch-cross';
-  if (!materialAvailable) return 'hatch-right';
-  if (!toolingAvailable) return 'hatch-left';
-  if (!studyReady) return 'hatch-right';
+  if (matBlocked) return 'hatch-right';
+  if (toolBlocked) return 'hatch-left';
+  if (studyBlocked) return 'hatch-right';
   return '';
 }
 
