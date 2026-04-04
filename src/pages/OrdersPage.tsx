@@ -196,9 +196,6 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
-      case 'materialAvailable': return o.materialAvailable ? 'Oui' : 'Non';
-      case 'toolingAvailable': return o.toolingAvailable ? 'Oui' : 'Non';
-      case 'studyReady': return o.studyReady ? 'Oui' : 'Non';
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'observation': return o.observation || '';
       default: return '';
