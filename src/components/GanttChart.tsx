@@ -85,15 +85,20 @@ interface GanttBlockProps {
   onCtrlClick: (stepId: string) => void;
 }
 
-const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick
+const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = ({
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick, pendingSubNames
 }) => {
   // Determine if step is missing prerequisites (step-level)
   const missingItems: string[] = [];
   if (!(step.materialAvailable ?? true)) missingItems.push('Matière');
   if (!(step.toolingAvailable ?? true)) missingItems.push('Outillage');
   if (!(step.studyReady ?? true)) missingItems.push('Étude');
-  if (subcontractingPending) missingItems.push('Sous-traitance en cours');
+  if (subcontractingPending) {
+    const subLabel = pendingSubNames && pendingSubNames.length > 0
+      ? `Sous-traitance [${pendingSubNames.join('+')}] en cours`
+      : 'Sous-traitance en cours';
+    missingItems.push(subLabel);
+  }
   const isBlocked = (missingItems.length > 0) && !isAbsence;
 
   const blockBg = isAbsence ? 'bg-absence' : getBlockBg(order, isBlocked);
@@ -104,11 +109,10 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
     : hasLink
       ? `border-2 border-accent`
       : `border-2 ${priorityBorder}`;
-  const blockedTextClass = '';
   const durationH = Math.floor(step.estimatedDuration / 60);
   const durationM = step.estimatedDuration % 60;
   const durationStr = `${durationH}h${String(durationM).padStart(2, '0')}`;
-  const tooltipText = `${order.orderNumber} — ${clientName}\n${order.designation} — Qté: ${order.quantity}\n${operationName} ${durationStr}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
+  const tooltipText = `${order.orderNumber} — ${clientName}\n${order.designation} — Qté: ${order.quantity}\n${operationName} ${durationStr}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(' + ')}` : ''}`;
 
   return (
     <div
