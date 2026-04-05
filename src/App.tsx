@@ -22,6 +22,7 @@ import StudyPage from "./pages/StudyPage";
 import EquipmentPage from "./pages/EquipmentPage";
 import SubcontractingPage from "./pages/SubcontractingPage";
 import AbsencesPage from "./pages/AbsencesPage";
+import PlanningTableauPage from "./pages/PlanningTableauPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
