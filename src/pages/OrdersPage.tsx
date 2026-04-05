@@ -79,6 +79,7 @@ interface HistoryEntry { orders: Order[] }
 
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
