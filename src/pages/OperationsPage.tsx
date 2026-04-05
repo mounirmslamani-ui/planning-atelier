@@ -69,7 +69,7 @@ const OperationsPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(op)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteOperation(op.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette opération ?', () => deleteOperation(op.id))}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
