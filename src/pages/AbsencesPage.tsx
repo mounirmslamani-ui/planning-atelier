@@ -15,6 +15,7 @@ import type { ProductionStep } from '@/types/planning';
 const AbsencesPage: React.FC = () => {
   const { operators, steps, holidays, addStep, updateStep, deleteStep, absenceOperationId, absenceOrderId } = usePlanning();
 
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [absOperatorId, setAbsOperatorId] = useState('');
