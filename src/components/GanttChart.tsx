@@ -130,7 +130,7 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
       }}
       title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate text-foreground ${blockedTextClass}`}>
+      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate ${isBlocked ? 'text-white' : 'text-foreground'}`}>
         {subcontractorName ? (
           <>
             <div className="font-heading font-bold">{order.orderNumber} — {subcontractorName}</div>
