@@ -391,7 +391,7 @@ const GanttChart: React.FC = () => {
   const [searchOrderNumber, setSearchOrderNumber] = useState('');
   const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
 
-  const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
+  const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عادل', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
 
   const ganttRows = useMemo(() => {
     const opRows: GanttRow[] = [...operators]
