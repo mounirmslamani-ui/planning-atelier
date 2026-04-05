@@ -134,7 +134,7 @@ const PlanningTableauPage: React.FC = () => {
     <div>
       <PageHeader
         title="Planning Tableau"
-        action={
+        actions={
           <div className="flex items-center gap-3">
             <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="w-44" />
             <Button variant="outline" onClick={handleExport}>
