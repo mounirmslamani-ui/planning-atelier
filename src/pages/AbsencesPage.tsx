@@ -163,7 +163,7 @@ const AbsencesPage: React.FC = () => {
                       <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteStep(s.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette absence ?', () => deleteStep(s.id))}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     </div>
