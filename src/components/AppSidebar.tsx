@@ -4,7 +4,7 @@ import {
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
-  PackagePlus, Hammer, FileSearch, Cog
+  PackagePlus, Hammer, FileSearch, Cog, TableProperties
 } from 'lucide-react';
 
 const sidebarGroups = [
