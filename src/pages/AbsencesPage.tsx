@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
@@ -13,6 +15,7 @@ import type { ProductionStep } from '@/types/planning';
 const AbsencesPage: React.FC = () => {
   const { operators, steps, holidays, addStep, updateStep, deleteStep, absenceOperationId, absenceOrderId } = usePlanning();
 
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [absOperatorId, setAbsOperatorId] = useState('');
@@ -160,7 +163,7 @@ const AbsencesPage: React.FC = () => {
                       <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteStep(s.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette absence ?', () => deleteStep(s.id))}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     </div>
@@ -230,6 +233,7 @@ const AbsencesPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog open={confirmState.open} title={confirmState.title} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
     </div>
   );
 };

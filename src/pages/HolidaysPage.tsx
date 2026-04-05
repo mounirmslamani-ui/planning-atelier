@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
@@ -10,6 +12,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 const HolidaysPage: React.FC = () => {
   const { holidays, addHoliday, updateHoliday, deleteHoliday } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState('');
@@ -78,7 +81,7 @@ const HolidaysPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(h)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteHoliday(h.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer ce jour férié ?', () => deleteHoliday(h.id))}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
@@ -118,6 +121,7 @@ const HolidaysPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog open={confirmState.open} title={confirmState.title} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
     </div>
   );
 };

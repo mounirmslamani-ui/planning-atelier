@@ -4,7 +4,7 @@ import {
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
-  PackagePlus, Hammer, FileSearch, Cog
+  PackagePlus, Hammer, FileSearch, Cog, TableProperties
 } from 'lucide-react';
 
 const sidebarGroups = [
@@ -20,6 +20,7 @@ const sidebarGroups = [
     title: 'PLANNING & SUIVI',
     items: [
       { to: '/', label: 'Planning (Gantt)', icon: LayoutDashboard },
+      { to: '/planning-tableau', label: 'Planning Tableau', icon: TableProperties },
       { to: '/study', label: 'Étude', icon: FileSearch },
       { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus },
       { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer },

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,7 @@ function computeThirdField(
 
 const StepsPage: React.FC = () => {
   const { steps, addStep, updateStep, deleteStep, orders, operators, operations, holidays, subcontractors, absenceOperationId, absenceOrderId } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ProductionStep | null>(null);
   const [assignType, setAssignType] = useState<'operator' | 'subcontractor'>('operator');
@@ -133,7 +136,7 @@ const StepsPage: React.FC = () => {
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteStep(s.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette étape ?', () => deleteStep(s.id))}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -235,6 +238,7 @@ const StepsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog open={confirmState.open} title={confirmState.title} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
     </div>
   );
 };

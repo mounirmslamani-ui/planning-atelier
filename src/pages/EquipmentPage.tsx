@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,7 @@ const stateColors: Record<EquipmentState, string> = {
 
 const EquipmentPage: React.FC = () => {
   const { equipments, addEquipment, updateEquipment, deleteEquipment } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Equipment | null>(null);
   const [designation, setDesignation] = useState('');
@@ -106,7 +109,7 @@ const EquipmentPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(eq)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteEquipment(eq.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cet équipement ?', () => deleteEquipment(eq.id))}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
@@ -169,6 +172,7 @@ const EquipmentPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog open={confirmState.open} title={confirmState.title} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
     </div>
   );
 };

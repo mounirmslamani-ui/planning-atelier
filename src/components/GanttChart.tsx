@@ -85,15 +85,20 @@ interface GanttBlockProps {
   onCtrlClick: (stepId: string) => void;
 }
 
-const GanttBlock: React.FC<GanttBlockProps> = ({
-  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick
+const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = ({
+  step, order, operationName, clientName, subcontractorName, left, width, isLast, isCtrlSelected, hasLink, subcontractingPending, isAbsence, isDimmed, onDragStart, onResizeStart, onCtrlClick, pendingSubNames
 }) => {
   // Determine if step is missing prerequisites (step-level)
   const missingItems: string[] = [];
   if (!(step.materialAvailable ?? true)) missingItems.push('Matière');
   if (!(step.toolingAvailable ?? true)) missingItems.push('Outillage');
   if (!(step.studyReady ?? true)) missingItems.push('Étude');
-  if (subcontractingPending) missingItems.push('Sous-traitance en cours');
+  if (subcontractingPending) {
+    const subLabel = pendingSubNames && pendingSubNames.length > 0
+      ? `Sous-traitance [${pendingSubNames.join('+')}] en cours`
+      : 'Sous-traitance en cours';
+    missingItems.push(subLabel);
+  }
   const isBlocked = (missingItems.length > 0) && !isAbsence;
 
   const blockBg = isAbsence ? 'bg-absence' : getBlockBg(order, isBlocked);
@@ -104,11 +109,10 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
     : hasLink
       ? `border-2 border-accent`
       : `border-2 ${priorityBorder}`;
-  const blockedTextClass = '';
   const durationH = Math.floor(step.estimatedDuration / 60);
   const durationM = step.estimatedDuration % 60;
   const durationStr = `${durationH}h${String(durationM).padStart(2, '0')}`;
-  const tooltipText = `${order.orderNumber} — ${clientName}\n${order.designation} — Qté: ${order.quantity}\n${operationName} ${durationStr}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(', ')}` : ''}`;
+  const tooltipText = `${order.orderNumber} — ${clientName}\n${order.designation} — Qté: ${order.quantity}\n${operationName} ${durationStr}${subcontractorName ? `\nSous-traitant: ${subcontractorName}` : ''}${step.dependsOn ? `\nDépend de: #${step.dependsOnPercentage ?? 100}%` : ''}${isBlocked ? `\n⚠ Manque: ${missingItems.join(' + ')}` : ''}`;
 
   return (
     <div
@@ -126,7 +130,7 @@ const GanttBlock: React.FC<GanttBlockProps> = ({
       }}
       title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate text-foreground ${blockedTextClass}`}>
+      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate ${isBlocked ? 'text-white' : 'text-foreground'}`}>
         {subcontractorName ? (
           <>
             <div className="font-heading font-bold">{order.orderNumber} — {subcontractorName}</div>
@@ -184,6 +188,19 @@ const GanttChart: React.FC = () => {
     });
     return pending;
   }, [steps, subcontractorOpIds]);
+
+  // Compute pending subcontracting operation names per order
+  const pendingSubNamesPerOrder = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    steps.forEach(s => {
+      if (subcontractorOpIds.has(s.operationId) && !(s.subcontractingDone)) {
+        const opName = operations.find(op => op.id === s.operationId)?.name || '?';
+        if (!map[s.orderId]) map[s.orderId] = [];
+        if (!map[s.orderId].includes(opName)) map[s.orderId].push(opName);
+      }
+    });
+    return map;
+  }, [steps, subcontractorOpIds, operations]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
@@ -387,7 +404,7 @@ const GanttChart: React.FC = () => {
   const [searchOrderNumber, setSearchOrderNumber] = useState('');
   const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
 
-  const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
+  const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عادل', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
 
   const ganttRows = useMemo(() => {
     const opRows: GanttRow[] = [...operators]
@@ -1079,6 +1096,7 @@ const GanttChart: React.FC = () => {
                           isCtrlSelected={ctrlSelectedStepId === step.id}
                           hasLink={!!step.dependsOn}
                           subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
+                          pendingSubNames={pendingSubNamesPerOrder[order.id] || []}
                           isAbsence={step.operationId === absenceOperationId}
                           isDimmed={!!highlightedOrderId && step.orderId !== highlightedOrderId}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
