@@ -31,6 +31,7 @@ const stateColors: Record<EquipmentState, string> = {
 
 const EquipmentPage: React.FC = () => {
   const { equipments, addEquipment, updateEquipment, deleteEquipment } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Equipment | null>(null);
   const [designation, setDesignation] = useState('');
