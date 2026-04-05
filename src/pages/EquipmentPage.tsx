@@ -109,7 +109,7 @@ const EquipmentPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(eq)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteEquipment(eq.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cet équipement ?', () => deleteEquipment(eq.id))}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
