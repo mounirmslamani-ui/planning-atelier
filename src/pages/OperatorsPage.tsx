@@ -12,6 +12,7 @@ import type { Operator } from '@/types/planning';
 
 const OperatorsPage: React.FC = () => {
   const { operators, addOperator, updateOperator, deleteOperator, operations, equipments } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Operator | null>(null);
   const [name, setName] = useState('');
