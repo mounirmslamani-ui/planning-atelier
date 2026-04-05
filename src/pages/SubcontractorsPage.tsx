@@ -12,6 +12,7 @@ import type { Subcontractor } from '@/types/planning';
 
 const SubcontractorsPage: React.FC = () => {
   const { subcontractors, addSubcontractor, updateSubcontractor, deleteSubcontractor, operations } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Subcontractor | null>(null);
   const [companyName, setCompanyName] = useState('');
