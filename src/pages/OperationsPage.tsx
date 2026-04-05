@@ -12,6 +12,7 @@ import type { Operation, OperationCategory } from '@/types/planning';
 
 const OperationsPage: React.FC = () => {
   const { operations, addOperation, updateOperation, deleteOperation, absenceOperationId } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Operation | null>(null);
   const [name, setName] = useState('');
