@@ -20,6 +20,7 @@ const sidebarGroups = [
     title: 'PLANNING & SUIVI',
     items: [
       { to: '/', label: 'Planning (Gantt)', icon: LayoutDashboard },
+      { to: '/planning-tableau', label: 'Planning Tableau', icon: TableProperties },
       { to: '/study', label: 'Étude', icon: FileSearch },
       { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus },
       { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer },
