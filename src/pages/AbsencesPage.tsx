@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
