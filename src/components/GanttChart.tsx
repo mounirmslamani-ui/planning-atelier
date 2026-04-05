@@ -189,6 +189,19 @@ const GanttChart: React.FC = () => {
     return pending;
   }, [steps, subcontractorOpIds]);
 
+  // Compute pending subcontracting operation names per order
+  const pendingSubNamesPerOrder = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    steps.forEach(s => {
+      if (subcontractorOpIds.has(s.operationId) && !(s.subcontractingDone)) {
+        const opName = operations.find(op => op.id === s.operationId)?.name || '?';
+        if (!map[s.orderId]) map[s.orderId] = [];
+        if (!map[s.orderId].includes(opName)) map[s.orderId].push(opName);
+      }
+    });
+    return map;
+  }, [steps, subcontractorOpIds, operations]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<{ stepId: string; startX: number; startY: number; startLeft: number; altKey: boolean } | null>(null);
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
