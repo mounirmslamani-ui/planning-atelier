@@ -1096,6 +1096,7 @@ const GanttChart: React.FC = () => {
                           isCtrlSelected={ctrlSelectedStepId === step.id}
                           hasLink={!!step.dependsOn}
                           subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
+                          pendingSubNames={pendingSubNamesPerOrder[order.id] || []}
                           isAbsence={step.operationId === absenceOperationId}
                           isDimmed={!!highlightedOrderId && step.orderId !== highlightedOrderId}
                           onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
