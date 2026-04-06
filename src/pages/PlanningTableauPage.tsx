@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatDateFR } from '@/lib/utils';
 import { ArrowUp, ArrowDown, Download, Plus, Minus } from 'lucide-react';
 import { isWorkDay } from '@/lib/workTime';
-import type { ProductionStep, Order } from '@/types/planning';
+import type { ProductionStep, Order, Holiday } from '@/types/planning';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عادل', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
