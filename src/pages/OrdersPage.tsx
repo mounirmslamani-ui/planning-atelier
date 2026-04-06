@@ -158,7 +158,10 @@ const OrdersPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
-  const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+  const getClientName = useCallback((id: string) => {
+    if (!id) return '*******';
+    return clients.find(c => c.id === id)?.name || '*******';
+  }, [clients]);
 
   const crMap = useMemo(() => {
     const map = new Map<string, number | null>();
