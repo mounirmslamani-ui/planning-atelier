@@ -474,8 +474,12 @@ export async function dbBulkUpdateOrders(orders: Order[]) {
 }
 
 // Step
-export async function dbInsertStep(s: ProductionStep) {
+export async function dbInsertStep(s: ProductionStep, absenceOpId?: string, absenceOrderId?: string) {
   // Guard: never insert an Absence operation linked to a real order
+  if (absenceOpId && s.operationId === absenceOpId && absenceOrderId && s.orderId !== absenceOrderId) {
+    console.warn('[DB] Blocked insertion of Absence step linked to real order:', s.orderId);
+    return;
+  }
   const mapped = mapStepToDB(s);
   const { error } = await supabase.from('production_steps').insert(mapped);
   if (error) logError('step', 'insert', error);
