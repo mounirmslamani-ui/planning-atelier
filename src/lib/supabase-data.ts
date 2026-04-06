@@ -615,9 +615,15 @@ export async function syncAllDataToDB(data: {
   ]);
   
   // Steps depend on orders/operators, sync after
-  if (data.steps.length > 0) {
-    const { error } = await supabase.from('production_steps').upsert(data.steps.map(mapStepToDB));
-    if (error) logError('steps', 'sync', error); else console.log(`[Sync] Steps: ${data.steps.length}`);
+  // Filter out any corrupted absence steps linked to real orders
+  const absOp = data.operations.find(o => o.name === 'Absence');
+  const absOrder = data.orders.find(o => o.orderNumber === 'ABS');
+  const cleanSteps = absOp && absOrder
+    ? data.steps.filter(s => !(s.operationId === absOp.id && s.orderId !== absOrder.id))
+    : data.steps;
+  if (cleanSteps.length > 0) {
+    const { error } = await supabase.from('production_steps').upsert(cleanSteps.map(mapStepToDB));
+    if (error) logError('steps', 'sync', error); else console.log(`[Sync] Steps: ${cleanSteps.length}`);
   }
   if (data.productionRecords.length > 0) {
     const { error } = await supabase.from('production_records').upsert(data.productionRecords.map(mapRecordToDB));
