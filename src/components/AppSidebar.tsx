@@ -46,7 +46,7 @@ const AppSidebar: React.FC = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-60 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
+    <aside className="w-60 h-screen sticky top-0 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-6 h-6 text-sidebar-primary" />
         <h1 className="font-heading text-sm font-bold text-sidebar-foreground tracking-wider uppercase">

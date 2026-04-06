@@ -230,7 +230,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           <DialogHeader>
             <DialogTitle className="font-heading">Définition des tâches et affectations</DialogTitle>
             <p className="text-sm text-muted-foreground">
-              {order.orderNumber} — {order.designation} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
+              {order.orderNumber} — {order.designation} — Qté : {order.quantity} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
             </p>
           </DialogHeader>
 
