@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2 } from 'lucide-react';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -19,10 +19,10 @@ import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHead
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
-  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation. Lancement immédiat dès que matière, outillage, études prêts.', color: 'text-urgent', border: 'border-urgent/30' },
-  'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines, en avance sur le délai ou légèrement en retard CR<2.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
-  'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert, large avance sur les délais.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
-  'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre de la part du client. Statut provisoire, programmer en dernier.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
+  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
+  'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
+  'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
+  'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
 };
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -33,16 +33,17 @@ const priorityColors: Record<OrderPriority, string> = {
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'atelierTime' | 'observation';
 
 function computeCR(
   order: Order,
-  steps: { orderId: string; operationId: string; estimatedDuration: number }[],
+  steps: { orderId: string; operationId: string; estimatedDuration: number; subcontractorId?: string }[],
   productionRecords: { orderId: string; actualDuration: number }[],
   holidays: { date: string; name: string }[],
   absenceOpId: string,
 ): number | null {
-  const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOpId);
+  // Only operator steps (no subcontractor, no absence)
+  const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOpId && !s.subcontractorId);
   const totalAllocated = orderSteps.reduce((sum, s) => sum + s.estimatedDuration, 0);
   if (totalAllocated === 0) return null;
   const totalDone = productionRecords.filter(r => r.orderId === order.id).reduce((sum, r) => sum + r.actualDuration, 0);
@@ -74,8 +75,22 @@ function computeCR(
   return remainingAllocated / availableMinutes;
 }
 
-// ─── Undo/Redo History ───
-interface HistoryEntry { orders: Order[] }
+function computeAtelierTime(
+  orderId: string,
+  steps: { orderId: string; operationId: string; estimatedDuration: number; subcontractorId?: string }[],
+  absenceOpId: string,
+): number {
+  return steps
+    .filter(s => s.orderId === orderId && s.operationId !== absenceOpId && !s.subcontractorId)
+    .reduce((sum, s) => sum + s.estimatedDuration, 0);
+}
+
+function formatMinutesToHM(minutes: number): string {
+  if (minutes === 0) return '—';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h00`;
+}
 
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
@@ -91,16 +106,15 @@ const OrdersPage: React.FC = () => {
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Inline editing — per row
+  // Inline editing
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Order>>>({});
 
-  // Undo/Redo
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  // Undo/Redo (page-level)
+  const [history, setHistory] = useState<{ orders: Order[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoRedo = useRef(false);
 
-  // Push to history on orders change (if not from undo/redo)
   useEffect(() => {
     if (isUndoRedo.current) { isUndoRedo.current = false; return; }
     const real = orders.filter(o => o.id !== absenceOrderId);
@@ -135,7 +149,6 @@ const OrdersPage: React.FC = () => {
     setHistoryIndex(i => i + 1);
   }, [canRedo, history, historyIndex, orders, absenceOrderId, setOrders]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
@@ -155,38 +168,29 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, productionRecords, holidays, absenceOrderId, absenceOperationId]);
 
+  const atelierTimeMap = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      map.set(o.id, computeAtelierTime(o.id, steps, absenceOperationId));
+    });
+    return map;
+  }, [orders, steps, absenceOperationId, absenceOrderId]);
+
+  // Sort by displayOrder ascending (playlist style)
   const baseSorted = useMemo(() => {
     const real = orders.filter(o => o.id !== absenceOrderId);
-    const frozen = real.filter(o => o.frozenOrder);
-    const nonFrozen = real.filter(o => !o.frozenOrder);
-    nonFrozen.sort((a, b) => {
-      const pa = priorityRank[a.priority] ?? 5;
-      const pb = priorityRank[b.priority] ?? 5;
-      if (pa !== pb) return pa - pb;
-      const crA = crMap.get(a.id); const crB = crMap.get(b.id);
-      if (crA == null && crB == null) return 0;
-      if (crA == null) return 1;
-      if (crB == null) return -1;
-      return crB - crA;
-    });
-    const allOrders = [...nonFrozen];
-    frozen.sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-    for (const fo of frozen) {
-      const pos = Math.min((fo.displayOrder ?? 9999) - 1, allOrders.length);
-      allOrders.splice(Math.max(0, pos), 0, fo);
-    }
-    return allOrders;
-  }, [orders, crMap]);
+    return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+  }, [orders, absenceOrderId]);
 
-  React.useEffect(() => {
+  // On first load, reindex if needed
+  useEffect(() => {
     const real = orders.filter(o => o.id !== absenceOrderId);
-    const needsUpdate = real.some((o, i) => {
-      const sorted = baseSorted[i];
-      return sorted && o.id === sorted.id && o.displayOrder !== i + 1;
-    });
-    if (baseSorted.length > 0 && needsUpdate) {
+    if (real.length === 0) return;
+    const sorted = [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+    const needsReindex = sorted.some((o, i) => o.displayOrder !== i + 1);
+    if (needsReindex) {
       const absence = orders.find(o => o.id === absenceOrderId);
-      setOrders([...(absence ? [absence] : []), ...baseSorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
+      setOrders([...(absence ? [absence] : []), ...sorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
     }
   }, []);
 
@@ -200,10 +204,11 @@ const OrdersPage: React.FC = () => {
       case 'priority': return o.priority || '';
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
+      case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, crMap]);
+  }, [getClientName, crMap, atelierTimeMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
@@ -216,7 +221,7 @@ const OrdersPage: React.FC = () => {
       list.sort((a, b) => {
         const va = getColValue(a, sortKey as ColumnKey);
         const vb = getColValue(b, sortKey as ColumnKey);
-        if (sortKey === 'quantity' || sortKey === 'cr') {
+        if (sortKey === 'quantity' || sortKey === 'cr' || sortKey === 'atelierTime') {
           const diff = (Number(va) || 0) - (Number(vb) || 0);
           return sortDir === 'asc' ? diff : -diff;
         }
@@ -283,7 +288,7 @@ const OrdersPage: React.FC = () => {
     setEditingRowId(null);
   };
 
-  // Drag & drop
+  // Drag & drop — playlist-style reordering
   const handleDragStart = (e: React.DragEvent, index: number) => {
     const orderId = displayOrders[index].id;
     if (selectedIds.has(orderId) && selectedIds.size > 1) {
@@ -304,8 +309,14 @@ const OrdersPage: React.FC = () => {
     let insertAt = dropIndex - dragIndices.filter(i => i < dropIndex).length;
     if (insertAt < 0) insertAt = 0;
     remaining.splice(insertAt, 0, ...draggedItems);
+    // Reindex all orders 1, 2, 3, ... and freeze dragged items
     const absence = orders.find(o => o.id === absenceOrderId);
-    setOrders([...(absence ? [absence] : []), ...remaining.map((o, i) => ({ ...o, displayOrder: i + 1, frozenOrder: draggedItems.some(d => d.id === o.id) ? true : o.frozenOrder }))]);
+    const reindexed = remaining.map((o, i) => ({
+      ...o,
+      displayOrder: i + 1,
+      frozenOrder: draggedItems.some(d => d.id === o.id) ? true : o.frozenOrder,
+    }));
+    setOrders([...(absence ? [absence] : []), ...reindexed]);
     setDragIndices(null); setDragOverIndex(null);
   };
   const handleDragEnd = () => { setDragIndices(null); setDragOverIndex(null); };
@@ -321,16 +332,17 @@ const OrdersPage: React.FC = () => {
 
   const hasFrozenOrders = orders.some(o => o.id !== absenceOrderId && o.frozenOrder);
 
-  const columns: { key: ColumnKey; label: string }[] = [
-    { key: 'orderNumber', label: 'N° Commande' },
-    { key: 'orderDate', label: 'Date' },
-    { key: 'client', label: 'Client' },
+  const columns: { key: ColumnKey; label: string; className?: string }[] = [
+    { key: 'orderNumber', label: 'N° Cmd', className: 'w-[90px]' },
+    { key: 'orderDate', label: 'Date', className: 'w-[80px]' },
+    { key: 'client', label: 'Client', className: 'w-[100px]' },
     { key: 'designation', label: 'Désignation' },
-    { key: 'quantity', label: 'Qté' },
-    { key: 'priority', label: 'Priorité' },
-    { key: 'deliveryDeadline', label: 'Délai' },
-    { key: 'cr', label: 'CR' },
-    { key: 'observation', label: 'Observation' },
+    { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
+    { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
+    { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
+    { key: 'cr', label: 'CR', className: 'w-[50px]' },
+    { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
+    { key: 'observation', label: 'Observation', className: 'w-[130px]' },
   ];
 
   const formatCR = (orderId: string) => {
@@ -353,8 +365,25 @@ const OrdersPage: React.FC = () => {
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline'];
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client'];
     if (isEditing && editableFields.includes(col)) {
+      if (col === 'client') {
+        return (
+          <Select
+            value={(getInlineValue(o, 'clientId') as string) || o.clientId}
+            onValueChange={val => setInlineValue(o.id, 'clientId', val)}
+          >
+            <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      }
       if (col === 'priority') {
         return (
           <select
@@ -363,7 +392,7 @@ const OrdersPage: React.FC = () => {
             onChange={e => setInlineValue(o.id, 'priority', e.target.value)}
             onClick={e => e.stopPropagation()}
           >
-            {Object.entries(priorityConfig).map(([k, v]) => <option key={k} value={k}>{k}</option>)}
+            {Object.entries(priorityConfig).map(([k]) => <option key={k} value={k}>{k}</option>)}
           </select>
         );
       }
@@ -377,7 +406,7 @@ const OrdersPage: React.FC = () => {
       }
       if (col === 'observation') {
         return (
-          <Input className="h-7 text-xs min-w-[120px]"
+          <Input className="h-7 text-xs min-w-[100px]"
             value={(getInlineValue(o, 'observation') as string) || ''}
             onChange={e => setInlineValue(o.id, 'observation', e.target.value)}
             onClick={e => e.stopPropagation()}
@@ -404,15 +433,19 @@ const OrdersPage: React.FC = () => {
 
     // Read-only display
     switch (col) {
-      case 'orderNumber': return <span className="font-heading text-sm">{o.orderNumber}</span>;
-      case 'orderDate': return <span className="text-sm">{formatDateFR(o.orderDate)}</span>;
-      case 'client': return <span className="text-sm">{getClientName(o.clientId)}</span>;
-      case 'designation': return <span className="text-sm max-w-48 truncate block">{o.designation}</span>;
-      case 'quantity': return <span className="text-sm">{o.quantity}</span>;
-      case 'priority': return <Badge className={priorityColors[o.priority]}>{o.priority}</Badge>;
-      case 'deliveryDeadline': return <span className="text-sm">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
-      case 'observation': return <span className="text-xs text-muted-foreground max-w-[150px] truncate block">{o.observation || '—'}</span>;
-      case 'observation': return <span className="text-xs text-muted-foreground max-w-[150px] truncate block">{o.observation || '—'}</span>;
+      case 'orderNumber': return <span className="font-heading text-xs">{o.orderNumber}</span>;
+      case 'orderDate': return <span className="text-xs">{formatDateFR(o.orderDate)}</span>;
+      case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
+      case 'designation': return <span className="text-xs truncate block">{o.designation}</span>;
+      case 'quantity': return <span className="text-xs">{o.quantity}</span>;
+      case 'priority': return <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge>;
+      case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
+      case 'cr': return formatCR(o.id);
+      case 'atelierTime': {
+        const mins = atelierTimeMap.get(o.id) || 0;
+        return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
+      }
+      case 'observation': return <span className="text-xs text-muted-foreground max-w-[130px] truncate block">{o.observation || '—'}</span>;
       default: return null;
     }
   };
@@ -452,16 +485,16 @@ const OrdersPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10">
+              <TableHead className="w-8 px-1">
                 <Checkbox checked={selectedIds.size === displayOrders.length && displayOrders.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
-              <TableHead className="w-16 text-center text-xs">Ordre</TableHead>
+              <TableHead className="w-14 text-center text-xs px-1">Ordre</TableHead>
               {columns.map(col => (
-                <TableHead key={col.key}>
+                <TableHead key={col.key} className={col.className}>
                   <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} />
                 </TableHead>
               ))}
-              <TableHead className="w-28 text-xs">Actions</TableHead>
+              <TableHead className="w-24 text-xs px-1">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -483,51 +516,51 @@ const OrdersPage: React.FC = () => {
                 } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
                 } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
               >
-                <TableCell onClick={e => e.stopPropagation()}>
+                <TableCell className="px-1" onClick={e => e.stopPropagation()}>
                   <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
                 </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />}
+                <TableCell className="text-center px-1">
+                  <div className="flex items-center justify-center gap-0.5">
+                    {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
                     {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
-                    <span className="text-sm font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
+                    <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                   </div>
                 </TableCell>
                 {columns.map(col => (
-                  <TableCell key={col.key}>{renderCell(o, col.key, index)}</TableCell>
+                  <TableCell key={col.key} className="py-1.5 px-2">{renderCell(o, col.key, index)}</TableCell>
                 ))}
-                <TableCell>
-                  <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                <TableCell className="px-1">
+                  <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                     {o.frozenOrder && (
-                      <Button variant="ghost" size="icon" onClick={() => unlockOrder(o)} title="Libérer">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="Libérer">
                         <Unlock className="w-3.5 h-3.5 text-primary" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => setPlanningOrder(o)} title="Affectations">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPlanningOrder(o)} title="Affectations">
                       <CalendarCheck className="w-3.5 h-3.5" />
                     </Button>
                     {isRowEditing ? (
                       <>
-                        <Button variant="ghost" size="icon" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
                           <span className="text-normal text-sm font-bold">✓</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
                           <span className="text-destructive text-sm font-bold">✕</span>
                         </Button>
                       </>
                     ) : (
-                      <Button variant="ghost" size="icon" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
               );
             })}
             {displayOrders.length === 0 && (
-              <TableRow><TableCell colSpan={16} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -548,9 +581,12 @@ const OrdersPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Client</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.clientId} onChange={e => updateForm('clientId', e.target.value)}>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <Select value={form.clientId} onValueChange={val => updateForm('clientId', val)}>
+                <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
+                <SelectContent>
+                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Priorité</label>

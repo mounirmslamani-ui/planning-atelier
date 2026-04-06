@@ -58,7 +58,7 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
       return {
         orderNumber: row[0] || '',
         orderDate: row[1] || new Date().toISOString().split('T')[0],
-        clientId: matchedClient?.id || clients[0]?.id || '',
+        clientId: matchedClient?.id || '',
         designation: row[3] || '',
         quantity: parseInt(row[4]) || 1,
         priority: parsePriority(row[5] || ''),
