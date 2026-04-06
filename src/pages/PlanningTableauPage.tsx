@@ -27,7 +27,7 @@ function getDesignationBg(priority: string): string {
 }
 
 /** Get N working days starting from today */
-function getWorkingDays(n: number, holidays: { date: string; name: string }[]): string[] {
+function getWorkingDays(n: number, holidays: { date: string }[]): string[] {
   const result: string[] = [];
   const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
