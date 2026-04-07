@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUp, ArrowDown } from 'lucide-react';
-import { isWorkDay } from '@/lib/workTime';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck } from 'lucide-react';
+import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -43,6 +43,15 @@ function trafficLight(available: boolean | undefined, hasDeadline: boolean): str
   return '🔴'; // blocked, no deadline
 }
 
+function cycleTrafficLight(available: boolean | undefined, hasDeadline: boolean): { available: boolean; hasDeadline: boolean } {
+  const current = trafficLight(available, hasDeadline);
+  if (current === '🟢') return { available: false, hasDeadline: true }; // → 🟠
+  if (current === '🟠') return { available: false, hasDeadline: false }; // → 🔴
+  if (current === '🔴') return { available: true, hasDeadline: false }; // → ⚫ (skip to green)
+  // ⚫ → 🟢
+  return { available: true, hasDeadline: false };
+}
+
 /** Phase amont: check if all previous steps for this order are done */
 function phaseAmontStatus(
   step: ProductionStep,
@@ -51,15 +60,13 @@ function phaseAmontStatus(
 ): 'green' | 'red' | 'warning' | 'na' {
   const orderSteps = allSteps.filter(s => s.orderId === step.orderId).sort((a, b) => a.order - b.order);
   const currentIdx = orderSteps.findIndex(s => s.id === step.id);
-  if (currentIdx <= 0) return 'na'; // first step or not found
-  
+  if (currentIdx <= 0) return 'na';
   const previousSteps = orderSteps.slice(0, currentIdx);
   const allPreviousDone = previousSteps.every(ps => {
     const records = productionRecords.filter(r => r.stepId === ps.id);
     const totalDone = records.reduce((sum, r) => sum + r.actualDuration, 0);
     return totalDone >= ps.estimatedDuration;
   });
-  
   if (allPreviousDone) return 'green';
   return 'red';
 }
@@ -69,6 +76,13 @@ function phaseAmontEmoji(status: string): string {
   if (status === 'red') return '🔴';
   if (status === 'warning') return '⚠️';
   return '⚫';
+}
+
+function cyclePhaseAmont(status: string): string {
+  if (status === 'na') return 'green';
+  if (status === 'green') return 'red';
+  if (status === 'red') return 'warning';
+  return 'na';
 }
 
 function getWorkingDays(n: number, holidays: Holiday[]): string[] {
@@ -93,6 +107,37 @@ function formatMinutesToHM(minutes: number): string {
   return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h00`;
 }
 
+/** Recalculate start dates sequentially for tasks assigned to same operator */
+function recalcStartDates(
+  tasks: { step: ProductionStep; order: Order }[],
+  holidays: Holiday[],
+): ProductionStep[] {
+  const now = new Date();
+  now.setHours(7, 0, 0, 0); // work day start
+  // Make sure we start on a work day
+  while (!isWorkDay(now, holidays)) {
+    now.setDate(now.getDate() + 1);
+  }
+
+  let cursor = now;
+  const updated: ProductionStep[] = [];
+
+  for (const { step } of tasks) {
+    const start = new Date(cursor);
+    const end = addWorkMinutes(start, step.estimatedDuration, holidays);
+    const startDate = start.toISOString().split('T')[0];
+    const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+    const endDate = end.toISOString().split('T')[0];
+    const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+
+    if (step.startDate !== startDate || step.startTime !== startTime || step.endDate !== endDate || step.endTime !== endTime) {
+      updated.push({ ...step, startDate, startTime, endDate, endTime });
+    }
+    cursor = end;
+  }
+  return updated;
+}
+
 interface TaskItem {
   step: ProductionStep;
   order: Order;
@@ -109,7 +154,12 @@ const PlanningTableauPage: React.FC = () => {
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Order>>>({});
-  const [phaseAmontWarning, setPhaseAmontWarning] = useState<{ stepId: string; operatorId: string; direction: -1 | 1 } | null>(null);
+  const [phaseAmontWarning, setPhaseAmontWarning] = useState<{ stepId: string; operatorId: string; pendingTasks: TaskItem[] } | null>(null);
+
+  // Drag & drop state
+  const [dragOperatorId, setDragOperatorId] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
@@ -122,7 +172,7 @@ const PlanningTableauPage: React.FC = () => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
 
-  // Group steps by operator for the working days range, sorted by priority
+  // Group steps by operator for the working days range, sorted by step.order
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
     const firstDay = workingDays[0];
@@ -138,7 +188,7 @@ const PlanningTableauPage: React.FC = () => {
       if (step.orderId === absenceOrderId) return;
       if (!step.operatorId) return;
       if (!step.startDate || !step.endDate) return;
-      if (step.subcontractorId) return; // exclude subcontracting
+      if (step.subcontractorId) return;
 
       if (step.startDate <= lastDay && step.endDate >= firstDay) {
         const order = orders.find(o => o.id === step.orderId);
@@ -149,15 +199,9 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by step order
+    // Sort tasks within each operator by step.order (manual ordering)
     Object.values(result).forEach(group => {
-      group.tasks.sort((a, b) => {
-        // Sort by priority first, then by step.order
-        const pa = priorityRank[a.order.priority] ?? 9;
-        const pb = priorityRank[b.order.priority] ?? 9;
-        if (pa !== pb) return pa - pb;
-        return a.step.order - b.step.order;
-      });
+      group.tasks.sort((a, b) => a.step.order - b.step.order);
     });
 
     return Object.values(result)
@@ -169,40 +213,75 @@ const PlanningTableauPage: React.FC = () => {
       .filter(g => g.tasks.length > 0);
   }, [operators, steps, orders, workingDays, absenceOperationId, absenceOrderId]);
 
-  // Move task up/down within an operator's list (swap step orders)
-  const moveTask = useCallback((operatorId: string, stepId: string, direction: -1 | 1) => {
+  // Drag & drop handlers
+  const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
+    setDragOperatorId(operatorId);
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
+    e.preventDefault();
+    if (dragOperatorId !== operatorId) return;
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }, [dragOperatorId]);
+
+  const handleDrop = useCallback((e: React.DragEvent, operatorId: string, dropIndex: number) => {
+    e.preventDefault();
+    if (dragOperatorId !== operatorId || dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      setDragOperatorId(null);
+      return;
+    }
+
     const group = operatorTasks.find(g => g.operator.id === operatorId);
     if (!group) return;
-    const idx = group.tasks.findIndex(t => t.step.id === stepId);
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= group.tasks.length) return;
 
-    const currentStep = group.tasks[idx].step;
-    
-    // Check phase amont when moving UP (giving higher priority)
-    if (direction === -1) {
-      const amontStatus = phaseAmontStatus(currentStep, steps, productionRecords);
+    const items = [...group.tasks];
+    const [dragged] = items.splice(dragIndex, 1);
+    items.splice(dropIndex, 0, dragged);
+
+    // Check phase amont if moved up
+    if (dropIndex < dragIndex) {
+      const amontStatus = phaseAmontStatus(dragged.step, steps, productionRecords);
       if (amontStatus === 'red') {
-        setPhaseAmontWarning({ stepId, operatorId, direction });
+        setPhaseAmontWarning({ stepId: dragged.step.id, operatorId, pendingTasks: items });
+        setDragIndex(null);
+        setDragOverIndex(null);
+        setDragOperatorId(null);
         return;
       }
     }
 
-    executeMove(operatorId, stepId, direction);
-  }, [operatorTasks, steps, productionRecords]);
+    applyReorder(items);
+    setDragIndex(null);
+    setDragOverIndex(null);
+    setDragOperatorId(null);
+  }, [dragOperatorId, dragIndex, operatorTasks, steps, productionRecords]);
 
-  const executeMove = useCallback((operatorId: string, stepId: string, direction: -1 | 1) => {
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
-    if (!group) return;
-    const idx = group.tasks.findIndex(t => t.step.id === stepId);
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= group.tasks.length) return;
-    
-    const stepA = group.tasks[idx].step;
-    const stepB = group.tasks[newIdx].step;
-    updateStep({ ...stepA, order: stepB.order });
-    updateStep({ ...stepB, order: stepA.order });
-  }, [operatorTasks, updateStep]);
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+    setDragOperatorId(null);
+  }, []);
+
+  /** Apply new order + recalculate dates */
+  const applyReorder = useCallback((tasks: TaskItem[]) => {
+    // Reassign step.order sequentially
+    tasks.forEach(({ step }, idx) => {
+      const newOrder = idx + 1;
+      if (step.order !== newOrder) {
+        updateStep({ ...step, order: newOrder });
+      }
+    });
+
+    // Recalculate start/end dates
+    const dateUpdates = recalcStartDates(tasks, holidays);
+    dateUpdates.forEach(s => updateStep(s));
+  }, [updateStep, holidays]);
 
   // Inline edit helpers
   const getInlineValue = (o: Order, field: keyof Order) => {
@@ -225,6 +304,22 @@ const PlanningTableauPage: React.FC = () => {
     setEditingRowId(null);
   };
 
+  // Toggle status handlers (when editing)
+  const toggleStudy = useCallback((step: ProductionStep) => {
+    const { available } = cycleTrafficLight(step.studyReady, !!step.studyDeadline);
+    updateStep({ ...step, studyReady: available, studyDeadline: available ? undefined : step.studyDeadline });
+  }, [updateStep]);
+
+  const toggleMaterial = useCallback((step: ProductionStep) => {
+    const { available } = cycleTrafficLight(step.materialAvailable, !!step.materialDeadline);
+    updateStep({ ...step, materialAvailable: available, materialDeadline: available ? undefined : step.materialDeadline });
+  }, [updateStep]);
+
+  const toggleTooling = useCallback((step: ProductionStep) => {
+    const { available } = cycleTrafficLight(step.toolingAvailable, !!step.toolingDeadline);
+    updateStep({ ...step, toolingAvailable: available, toolingDeadline: available ? undefined : step.toolingDeadline });
+  }, [updateStep]);
+
   // Check if step has material/tooling blocked → violet background
   const isStepBlocked = (step: ProductionStep): boolean => {
     const matBlocked = !(step.materialAvailable ?? true);
@@ -243,10 +338,11 @@ const PlanningTableauPage: React.FC = () => {
       wsData.push([group.operator.name]);
       merges.push({ s: { r: rowIdx, c: 0 }, e: { r: rowIdx, c: 8 } });
       rowIdx++;
-      wsData.push(['N° Cmd', 'Client', 'Désignation', 'Qté', 'Priorité', 'Délai', 'Opération', 'Durée', 'Date début']);
+      wsData.push(['Date début', 'N° Cmd', 'Client', 'Désignation', 'Qté', 'Priorité', 'Délai', 'Opération', 'Durée']);
       rowIdx++;
       group.tasks.forEach(({ step, order }) => {
         wsData.push([
+          formatDateFR(step.startDate),
           order.orderNumber,
           getClientName(order.clientId),
           order.designation,
@@ -255,7 +351,6 @@ const PlanningTableauPage: React.FC = () => {
           formatDateFR(order.deliveryDeadline || order.plannedDeadline),
           getOperationName(step.operationId),
           formatMinutesToHM(step.estimatedDuration),
-          formatDateFR(step.startDate),
         ]);
         rowIdx++;
       });
@@ -265,7 +360,7 @@ const PlanningTableauPage: React.FC = () => {
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!merges'] = merges;
-    ws['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 45 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 8 }, { wch: 12 }];
+    ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 45 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 8 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Planning');
     XLSX.writeFile(wb, `Planning_${numDays}j.xlsx`);
   }, [operatorTasks, numDays, getClientName, getOperationName]);
@@ -315,6 +410,7 @@ const PlanningTableauPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10 px-1 text-center text-xs">Ordre</TableHead>
+                    <TableHead className="w-[70px] text-xs">Date début</TableHead>
                     <TableHead className="w-[80px] text-xs">N° Cmd</TableHead>
                     <TableHead className="w-[90px] text-xs">Client</TableHead>
                     <TableHead className="text-xs">Désignation</TableHead>
@@ -323,7 +419,6 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[100px] text-xs">Opération</TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
-                    <TableHead className="w-[70px] text-xs">Date début</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Outillage">Ou.</TableHead>
@@ -343,15 +438,28 @@ const PlanningTableauPage: React.FC = () => {
                     const amontStatus = phaseAmontStatus(step, steps, productionRecords);
                     const amontEmoji = phaseAmontEmoji(amontStatus);
 
+                    const isDragOver = dragOperatorId === group.operator.id && dragOverIndex === index;
+                    const isDragging = dragOperatorId === group.operator.id && dragIndex === index;
+
                     return (
                       <TableRow
                         key={step.id}
-                        className={`transition-colors ${blocked ? 'bg-[hsl(270,50%,55%)]/5' : ''}`}
+                        draggable={!isEditing}
+                        onDragStart={e => handleDragStart(e, group.operator.id, index)}
+                        onDragOver={e => handleDragOver(e, group.operator.id, index)}
+                        onDragLeave={() => setDragOverIndex(null)}
+                        onDrop={e => handleDrop(e, group.operator.id, index)}
+                        onDragEnd={handleDragEnd}
+                        className={`transition-colors ${blocked ? 'bg-[hsl(270,50%,55%)]/5' : ''} ${isDragOver ? 'border-t-2 border-t-primary' : ''} ${isDragging ? 'opacity-40' : ''}`}
                       >
-                        <TableCell className="text-center px-1">
+                        <TableCell className="text-center px-1 cursor-grab">
                           <div className="flex items-center justify-center gap-0.5">
+                            <GripVertical className="w-3 h-3 text-muted-foreground" />
                             <span className="text-xs font-medium text-muted-foreground">{index + 1}</span>
                           </div>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="font-heading text-xs">{order.orderNumber}</span>
@@ -427,25 +535,43 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="py-1.5 px-2 text-center">
                           <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
                         </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
-                        </TableCell>
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{studyStatus}</span></TooltipTrigger>
-                            <TooltipContent>Étude {step.studyReady ? 'OK' : step.studyDeadline ? `Prévue ${formatDateFR(step.studyDeadline)}` : 'Manquante'}</TooltipContent>
+                            <TooltipTrigger>
+                              <span
+                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
+                                onClick={isEditing ? (e) => { e.stopPropagation(); toggleStudy(step); } : undefined}
+                              >
+                                {studyStatus}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Étude {step.studyReady ? 'OK' : step.studyDeadline ? `Prévue ${formatDateFR(step.studyDeadline)}` : 'Manquante'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{matStatus}</span></TooltipTrigger>
-                            <TooltipContent>Matière {step.materialAvailable ? 'OK' : step.materialDeadline ? `Prévue ${formatDateFR(step.materialDeadline)}` : 'Manquante'}</TooltipContent>
+                            <TooltipTrigger>
+                              <span
+                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
+                                onClick={isEditing ? (e) => { e.stopPropagation(); toggleMaterial(step); } : undefined}
+                              >
+                                {matStatus}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Matière {step.materialAvailable ? 'OK' : step.materialDeadline ? `Prévue ${formatDateFR(step.materialDeadline)}` : 'Manquante'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{toolStatus}</span></TooltipTrigger>
-                            <TooltipContent>Outillage {step.toolingAvailable ? 'OK' : step.toolingDeadline ? `Prévu ${formatDateFR(step.toolingDeadline)}` : 'Manquant'}</TooltipContent>
+                            <TooltipTrigger>
+                              <span
+                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
+                                onClick={isEditing ? (e) => { e.stopPropagation(); toggleTooling(step); } : undefined}
+                              >
+                                {toolStatus}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Outillage {step.toolingAvailable ? 'OK' : step.toolingDeadline ? `Prévu ${formatDateFR(step.toolingDeadline)}` : 'Manquant'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
                         <TableCell className="py-1.5 px-1 text-center">
@@ -458,12 +584,6 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveTask(group.operator.id, step.id, -1)} title="Monter">
-                              <ArrowUp className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveTask(group.operator.id, step.id, 1)} title="Descendre">
-                              <ArrowDown className="w-3.5 h-3.5" />
-                            </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="Affectations">
                               <CalendarCheck className="w-3.5 h-3.5" />
                             </Button>
@@ -497,14 +617,14 @@ const PlanningTableauPage: React.FC = () => {
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
 
-      {/* Phase amont warning */}
+      {/* Phase amont warning on drag */}
       <ConfirmDialog
         open={!!phaseAmontWarning}
         title="Attention : phase amont non terminée"
         description="La phase amont n'est pas encore faite. Déplacer quand même cette étape ?"
         onConfirm={() => {
           if (phaseAmontWarning) {
-            executeMove(phaseAmontWarning.operatorId, phaseAmontWarning.stepId, phaseAmontWarning.direction);
+            applyReorder(phaseAmontWarning.pendingTasks);
           }
           setPhaseAmontWarning(null);
         }}
