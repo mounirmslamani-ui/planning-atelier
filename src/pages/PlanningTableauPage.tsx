@@ -341,7 +341,7 @@ const PlanningTableauPage: React.FC = () => {
                     const matStatus = trafficLight(step.materialAvailable, !!step.materialDeadline);
                     const toolStatus = trafficLight(step.toolingAvailable, !!step.toolingDeadline);
                     const amontStatus = phaseAmontStatus(step, steps, productionRecords);
-                    const amontEmoji = step._phaseAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
+                    const amontEmoji = phaseAmontEmoji(amontStatus);
 
                     return (
                       <TableRow
