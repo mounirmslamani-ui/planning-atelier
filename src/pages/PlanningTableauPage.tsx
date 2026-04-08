@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
 import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck } from 'lucide-react';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
-import type { ProductionStep, Order, Holiday } from '@/types/planning';
+import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
@@ -35,21 +36,54 @@ function getDesignationBg(priority: string): string {
   return '';
 }
 
-/** Traffic light emoji for prerequisite status */
+/** Traffic light: 🟢=available/done, 🟠=partial/in-progress, 🔴=blocked/not-done, ⚫=N/A, ⚠️=warning */
 function trafficLight(available: boolean | undefined, hasDeadline: boolean): string {
-  if (available === undefined || available === null) return '⚫'; // non applicable
-  if (available) return '🟢'; // ready
-  if (hasDeadline) return '🟠'; // partially — has a deadline set
-  return '🔴'; // blocked, no deadline
+  if (available === undefined || available === null) return '⚫';
+  if (available) return '🟢';
+  if (hasDeadline) return '🟠';
+  return '🔴';
 }
 
-function cycleTrafficLight(available: boolean | undefined, hasDeadline: boolean): { available: boolean; hasDeadline: boolean } {
+/** Cycle: 🟢→🟠→🔴→⚫→🟢 */
+function cycleTrafficLight(available: boolean | undefined, hasDeadline: boolean): { available: boolean; clearDeadline: boolean } {
   const current = trafficLight(available, hasDeadline);
-  if (current === '🟢') return { available: false, hasDeadline: true }; // → 🟠
-  if (current === '🟠') return { available: false, hasDeadline: false }; // → 🔴
-  if (current === '🔴') return { available: true, hasDeadline: false }; // → ⚫ (skip to green)
+  if (current === '🟢') return { available: false, clearDeadline: false }; // → 🟠 (partial)
+  if (current === '🟠') return { available: false, clearDeadline: true }; // → 🔴 (blocked)
+  if (current === '🔴') return { available: true, clearDeadline: true }; // → ⚫ N/A ... actually let's do → ⚫
   // ⚫ → 🟢
-  return { available: true, hasDeadline: false };
+  return { available: true, clearDeadline: true };
+}
+
+// For cycle we need 4 states: 🟢 → 🟠 → 🔴 → / → 🟢
+type TrafficState = 'green' | 'orange' | 'red' | 'na';
+
+function getTrafficState(available: boolean | undefined, hasDeadline: boolean): TrafficState {
+  if (available === undefined || available === null) return 'na';
+  if (available) return 'green';
+  if (hasDeadline) return 'orange';
+  return 'red';
+}
+
+function trafficEmoji(state: TrafficState): string {
+  if (state === 'green') return '🟢';
+  if (state === 'orange') return '🟠';
+  if (state === 'red') return '🔴';
+  return '/';
+}
+
+function cycleState(state: TrafficState): TrafficState {
+  if (state === 'green') return 'orange';
+  if (state === 'orange') return 'red';
+  if (state === 'red') return 'na';
+  return 'green';
+}
+
+function stateToStepFields(state: TrafficState, field: 'study' | 'material' | 'tooling'): { available: boolean | undefined; deadline: string | undefined } {
+  if (state === 'green') return { available: true, deadline: undefined };
+  if (state === 'orange') return { available: false, deadline: 'pending' }; // truthy deadline
+  if (state === 'red') return { available: false, deadline: undefined };
+  // na
+  return { available: undefined, deadline: undefined };
 }
 
 /** Phase amont: check if all previous steps for this order are done */
@@ -76,13 +110,6 @@ function phaseAmontEmoji(status: string): string {
   if (status === 'red') return '🔴';
   if (status === 'warning') return '⚠️';
   return '⚫';
-}
-
-function cyclePhaseAmont(status: string): string {
-  if (status === 'na') return 'green';
-  if (status === 'green') return 'red';
-  if (status === 'red') return 'warning';
-  return 'na';
 }
 
 function getWorkingDays(n: number, holidays: Holiday[]): string[] {
@@ -113,8 +140,7 @@ function recalcStartDates(
   holidays: Holiday[],
 ): ProductionStep[] {
   const now = new Date();
-  now.setHours(7, 0, 0, 0); // work day start
-  // Make sure we start on a work day
+  now.setHours(7, 0, 0, 0);
   while (!isWorkDay(now, holidays)) {
     now.setDate(now.getDate() + 1);
   }
@@ -143,18 +169,52 @@ interface TaskItem {
   order: Order;
 }
 
+// ─── Production Register Dialog ──────────────────────────────
+interface ProductionDialogState {
+  open: boolean;
+  step: ProductionStep | null;
+  order: Order | null;
+  operatorName: string;
+  operationName: string;
+  durationToday: string; // hh:mm input
+  totalDoneAlready: number; // minutes
+}
+
 const PlanningTableauPage: React.FC = () => {
   const {
     operators, orders, steps, clients, operations,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
-    holidays, productionRecords,
+    holidays, productionRecords, addProductionRecord, deleteStep,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [numDays, setNumDays] = useState(5);
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
-  const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Order>>>({});
-  const [phaseAmontWarning, setPhaseAmontWarning] = useState<{ stepId: string; operatorId: string; pendingTasks: TaskItem[] } | null>(null);
+  const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
+
+  // Chained confirm dialogs for drag-up checks
+  const [pendingDrop, setPendingDrop] = useState<{
+    tasks: TaskItem[];
+    stepId: string;
+    checks: { type: 'study' | 'material' | 'tooling' | 'phaseAmont'; message: string }[];
+    currentCheck: number;
+    warnings: Set<string>;
+  } | null>(null);
+
+  // Production register dialog
+  const [prodDialog, setProdDialog] = useState<ProductionDialogState>({
+    open: false, step: null, order: null, operatorName: '', operationName: '', durationToday: '', totalDoneAlready: 0,
+  });
+  const [completionDialog, setCompletionDialog] = useState<{
+    open: boolean;
+    stepId: string;
+    orderId: string;
+    operatorId: string;
+    operationId: string;
+    totalEstimated: number;
+    totalDone: number; // after adding today
+    durationToday: number;
+  } | null>(null);
 
   // Drag & drop state
   const [dragOperatorId, setDragOperatorId] = useState<string | null>(null);
@@ -172,7 +232,7 @@ const PlanningTableauPage: React.FC = () => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
 
-  // Group steps by operator for the working days range, sorted by step.order
+  // Group steps by operator
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
     const firstDay = workingDays[0];
@@ -199,7 +259,6 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by step.order (manual ordering)
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => a.step.order - b.step.order);
     });
@@ -213,7 +272,7 @@ const PlanningTableauPage: React.FC = () => {
       .filter(g => g.tasks.length > 0);
   }, [operators, steps, orders, workingDays, absenceOperationId, absenceOrderId]);
 
-  // Drag & drop handlers
+  // ─── Drag & drop handlers with chained prerequisite checks ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
     setDragOperatorId(operatorId);
     setDragIndex(index);
@@ -244,11 +303,33 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    // Check phase amont if moved up
+    // If moved UP, check prerequisites
     if (dropIndex < dragIndex) {
-      const amontStatus = phaseAmontStatus(dragged.step, steps, productionRecords);
-      if (amontStatus === 'red') {
-        setPhaseAmontWarning({ stepId: dragged.step.id, operatorId, pendingTasks: items });
+      const checks: { type: 'study' | 'material' | 'tooling' | 'phaseAmont'; message: string }[] = [];
+
+      // Phase amont
+      const amontSt = phaseAmontStatus(dragged.step, steps, productionRecords);
+      if (amontSt === 'red') {
+        checks.push({ type: 'phaseAmont', message: "Attention : phase amont n'est pas encore effectuée. Reprogrammer quand même cette étape ?" });
+      }
+
+      // Study
+      if (dragged.step.studyReady === false) {
+        checks.push({ type: 'study', message: "Attention : étude non finalisée. Reprogrammer quand même cette étape ?" });
+      }
+
+      // Material
+      if (dragged.step.materialAvailable === false) {
+        checks.push({ type: 'material', message: "Attention : matière première non disponible. Reprogrammer quand même cette étape ?" });
+      }
+
+      // Tooling
+      if (dragged.step.toolingAvailable === false) {
+        checks.push({ type: 'tooling', message: "Attention : outillage non disponible. Reprogrammer quand même cette étape ?" });
+      }
+
+      if (checks.length > 0) {
+        setPendingDrop({ tasks: items, stepId: dragged.step.id, checks, currentCheck: 0, warnings: new Set() });
         setDragIndex(null);
         setDragOverIndex(null);
         setDragOperatorId(null);
@@ -268,64 +349,206 @@ const PlanningTableauPage: React.FC = () => {
     setDragOperatorId(null);
   }, []);
 
-  /** Apply new order + recalculate dates */
-  const applyReorder = useCallback((tasks: TaskItem[]) => {
-    // Reassign step.order sequentially
+  /** Apply new order + recalculate dates, optionally set ⚠️ warnings */
+  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
     tasks.forEach(({ step }, idx) => {
       const newOrder = idx + 1;
-      if (step.order !== newOrder) {
-        updateStep({ ...step, order: newOrder });
+      const isTarget = step.id === targetStepId;
+      const updates: Partial<ProductionStep> = {};
+      if (step.order !== newOrder) updates.order = newOrder;
+
+      // Apply ⚠️ warnings to the moved step
+      if (isTarget && warningFields) {
+        // We mark with special values — study/material/tooling get deadline='warning'
+        // phaseAmont warning is visual only — we keep it by setting a special deadline marker
+      }
+
+      if (Object.keys(updates).length > 0 || isTarget) {
+        updateStep({ ...step, ...updates, order: newOrder });
       }
     });
 
-    // Recalculate start/end dates
     const dateUpdates = recalcStartDates(tasks, holidays);
     dateUpdates.forEach(s => updateStep(s));
   }, [updateStep, holidays]);
 
-  // Inline edit helpers
-  const getInlineValue = (o: Order, field: keyof Order) => {
-    return inlineEdits[o.id]?.[field] ?? o[field];
-  };
-  const setInlineValue = (id: string, field: keyof Order, value: any) => {
-    setInlineEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  };
-  const saveInlineEdits = (id: string) => {
-    const changes = inlineEdits[id];
-    const order = orders.find(o => o.id === id);
-    if (order && changes && Object.keys(changes).length > 0) {
-      updateOrder({ ...order, ...changes });
+  // Handle chained confirm for pending drop
+  const handlePendingConfirm = useCallback(() => {
+    if (!pendingDrop) return;
+    const { checks, currentCheck, warnings, tasks, stepId } = pendingDrop;
+    const currentType = checks[currentCheck].type;
+    const newWarnings = new Set(warnings);
+    newWarnings.add(currentType);
+
+    const nextCheck = currentCheck + 1;
+    if (nextCheck < checks.length) {
+      setPendingDrop({ ...pendingDrop, currentCheck: nextCheck, warnings: newWarnings });
+    } else {
+      // All checks passed — apply reorder with warnings
+      // Update the step with ⚠️ markers
+      const step = tasks.find(t => t.step.id === stepId)?.step;
+      if (step) {
+        const updatedStep = { ...step };
+        if (newWarnings.has('study')) { updatedStep.studyReady = false; updatedStep.studyDeadline = 'warning'; }
+        if (newWarnings.has('material')) { updatedStep.materialAvailable = false; updatedStep.materialDeadline = 'warning'; }
+        if (newWarnings.has('tooling')) { updatedStep.toolingAvailable = false; updatedStep.toolingDeadline = 'warning'; }
+        // phaseAmont warning is visual only — we keep it by setting a special deadline marker
+        updateStep(updatedStep);
+      }
+
+      // Update tasks array with the updated step
+      const updatedTasks = tasks.map(t => t.step.id === stepId && step ? { ...t, step: { ...step } } : t);
+      applyReorder(updatedTasks);
+      setPendingDrop(null);
     }
-    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+  }, [pendingDrop, applyReorder, updateStep]);
+
+  const handlePendingCancel = useCallback(() => {
+    setPendingDrop(null);
+  }, []);
+
+  // ─── Inline edit helpers (now for step fields: date début, opération, durée, statuts) ───
+  const getStepInlineValue = (step: ProductionStep, field: string) => {
+    return inlineEdits[step.id]?.[field] ?? (step as any)[field];
+  };
+  const setStepInlineValue = (stepId: string, field: string, value: any) => {
+    setInlineEdits(prev => ({ ...prev, [stepId]: { ...prev[stepId], [field]: value } }));
+  };
+
+  const saveInlineEdits = (stepId: string) => {
+    const changes = inlineEdits[stepId];
+    const step = steps.find(s => s.id === stepId);
+    if (step && changes && Object.keys(changes).length > 0) {
+      const updated = { ...step };
+      if (changes.startDate !== undefined) updated.startDate = changes.startDate;
+      if (changes.operationId !== undefined) updated.operationId = changes.operationId;
+      if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
+      // Traffic light states
+      if (changes.studyState !== undefined) {
+        const s = changes.studyState as TrafficState;
+        updated.studyReady = s === 'green' ? true : s === 'na' ? undefined as any : false;
+        updated.studyDeadline = s === 'orange' ? 'pending' : undefined;
+      }
+      if (changes.materialState !== undefined) {
+        const s = changes.materialState as TrafficState;
+        updated.materialAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
+        updated.materialDeadline = s === 'orange' ? 'pending' : undefined;
+      }
+      if (changes.toolingState !== undefined) {
+        const s = changes.toolingState as TrafficState;
+        updated.toolingAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
+        updated.toolingDeadline = s === 'orange' ? 'pending' : undefined;
+      }
+      updateStep(updated);
+    }
+    setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
     setEditingRowId(null);
   };
-  const cancelInlineEdits = (id: string) => {
-    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
+
+  const cancelInlineEdits = (stepId: string) => {
+    setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
     setEditingRowId(null);
   };
-
-  // Toggle status handlers (when editing)
-  const toggleStudy = useCallback((step: ProductionStep) => {
-    const { available } = cycleTrafficLight(step.studyReady, !!step.studyDeadline);
-    updateStep({ ...step, studyReady: available, studyDeadline: available ? undefined : step.studyDeadline });
-  }, [updateStep]);
-
-  const toggleMaterial = useCallback((step: ProductionStep) => {
-    const { available } = cycleTrafficLight(step.materialAvailable, !!step.materialDeadline);
-    updateStep({ ...step, materialAvailable: available, materialDeadline: available ? undefined : step.materialDeadline });
-  }, [updateStep]);
-
-  const toggleTooling = useCallback((step: ProductionStep) => {
-    const { available } = cycleTrafficLight(step.toolingAvailable, !!step.toolingDeadline);
-    updateStep({ ...step, toolingAvailable: available, toolingDeadline: available ? undefined : step.toolingDeadline });
-  }, [updateStep]);
 
   // Check if step has material/tooling blocked → violet background
   const isStepBlocked = (step: ProductionStep): boolean => {
-    const matBlocked = !(step.materialAvailable ?? true);
-    const toolBlocked = !(step.toolingAvailable ?? true);
-    return matBlocked || toolBlocked;
+    const matState = getTrafficState(step.materialAvailable, !!step.materialDeadline);
+    const toolState = getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
+    return matState === 'orange' || matState === 'red' || toolState === 'orange' || toolState === 'red';
   };
+
+  // ─── Drag to Production Register ───
+  const handleDragStartForProd = useCallback((e: React.DragEvent, step: ProductionStep, order: Order) => {
+    e.dataTransfer.setData('application/x-prod-step', JSON.stringify({ stepId: step.id, orderId: order.id }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, []);
+
+  // ─── Open production register dialog ───
+  const openProdDialog = useCallback((stepId: string) => {
+    const step = steps.find(s => s.id === stepId);
+    if (!step) return;
+    const order = orders.find(o => o.id === step.orderId);
+    if (!order) return;
+    const operator = operators.find(o => o.id === step.operatorId);
+    const totalDoneAlready = productionRecords
+      .filter(r => r.stepId === stepId)
+      .reduce((sum, r) => sum + r.actualDuration, 0);
+
+    setProdDialog({
+      open: true,
+      step,
+      order,
+      operatorName: operator?.name || '—',
+      operationName: getOperationName(step.operationId),
+      durationToday: '',
+      totalDoneAlready,
+    });
+  }, [steps, orders, operators, productionRecords, getOperationName]);
+
+  const handleProdDialogOk = useCallback(() => {
+    if (!prodDialog.step || !prodDialog.order) return;
+    const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
+    const durationTodayMin = (hh || 0) * 60 + (mm || 0);
+    if (durationTodayMin <= 0) return;
+
+    const totalDone = prodDialog.totalDoneAlready + durationTodayMin;
+
+    setCompletionDialog({
+      open: true,
+      stepId: prodDialog.step.id,
+      orderId: prodDialog.order.id,
+      operatorId: prodDialog.step.operatorId || '',
+      operationId: prodDialog.step.operationId,
+      totalEstimated: prodDialog.step.estimatedDuration,
+      totalDone,
+      durationToday: durationTodayMin,
+    });
+    setProdDialog(prev => ({ ...prev, open: false }));
+  }, [prodDialog]);
+
+  const handleCompletionAnswer = useCallback((finished: boolean) => {
+    if (!completionDialog) return;
+    const { stepId, orderId, operatorId, operationId, durationToday, totalEstimated, totalDone } = completionDialog;
+
+    // Add production record
+    const record: ProductionRecord = {
+      id: crypto.randomUUID(),
+      stepId,
+      orderId,
+      operatorId,
+      operationId,
+      actualDuration: durationToday,
+      validatedAt: new Date().toISOString(),
+    };
+    addProductionRecord(record);
+
+    if (finished) {
+      // Remove step from planning
+      deleteStep(stepId);
+    } else {
+      // Update remaining duration and reschedule to next working day
+      const step = steps.find(s => s.id === stepId);
+      if (step) {
+        const remaining = Math.max(0, totalEstimated - totalDone);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        while (!isWorkDay(tomorrow, holidays)) {
+          tomorrow.setDate(tomorrow.getDate() + 1);
+        }
+        const nextDay = tomorrow.toISOString().split('T')[0];
+        updateStep({
+          ...step,
+          estimatedDuration: remaining,
+          startDate: nextDay,
+          startTime: '07:00',
+          endDate: nextDay,
+          endTime: '07:00',
+        });
+      }
+    }
+
+    setCompletionDialog(null);
+  }, [completionDialog, addProductionRecord, deleteStep, steps, updateStep, holidays]);
 
   // Export to Excel
   const handleExport = useCallback(() => {
@@ -369,6 +592,15 @@ const PlanningTableauPage: React.FC = () => {
     ? `${formatDateFR(workingDays[0])} → ${formatDateFR(workingDays[workingDays.length - 1])}`
     : '';
 
+  // Traffic light legend
+  const legendItems = [
+    { emoji: '🟢', label: 'Disponible / Fait' },
+    { emoji: '🟠', label: 'Partiel / En cours' },
+    { emoji: '🔴', label: 'Non disponible / Pas fait' },
+    { emoji: '/', label: 'Pas besoin' },
+    { emoji: '⚠️', label: 'Attention (forcé)' },
+  ];
+
   return (
     <div className="p-6">
       <PageHeader
@@ -385,6 +617,13 @@ const PlanningTableauPage: React.FC = () => {
               </Button>
             </div>
             <span className="text-xs text-muted-foreground">{periodLabel}</span>
+            <div className="flex items-center gap-2 border-l pl-3 ml-2">
+              {legendItems.map(l => (
+                <span key={l.emoji} className="text-xs text-muted-foreground flex items-center gap-0.5">
+                  <span className="text-sm">{l.emoji}</span>{l.label}
+                </span>
+              ))}
+            </div>
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-1" /> Exporter Excel
             </Button>
@@ -431,12 +670,22 @@ const PlanningTableauPage: React.FC = () => {
                     const blocked = isStepBlocked(step);
                     const isEditing = editingRowId === step.id;
                     const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
-                    
-                    const studyStatus = trafficLight(step.studyReady, !!step.studyDeadline);
-                    const matStatus = trafficLight(step.materialAvailable, !!step.materialDeadline);
-                    const toolStatus = trafficLight(step.toolingAvailable, !!step.toolingDeadline);
+
+                    // Current traffic states
+                    const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
+                    const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
+                    const toolState = step.toolingDeadline === 'warning' ? 'warning' as any : getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
                     const amontStatus = phaseAmontStatus(step, steps, productionRecords);
-                    const amontEmoji = phaseAmontEmoji(amontStatus);
+                    const amontEmoji = step.studyDeadline === 'warning' && amontStatus === 'red' ? '⚠️' : phaseAmontEmoji(amontStatus);
+
+                    // For editing, get overridden states
+                    const editStudyState = inlineEdits[step.id]?.studyState ?? studyState;
+                    const editMatState = inlineEdits[step.id]?.materialState ?? matState;
+                    const editToolState = inlineEdits[step.id]?.toolingState ?? toolState;
+
+                    const studyEmoji = studyState === 'warning' ? '⚠️' : trafficEmoji(studyState);
+                    const matEmoji = matState === 'warning' ? '⚠️' : trafficEmoji(matState);
+                    const toolEmoji = toolState === 'warning' ? '⚠️' : trafficEmoji(toolState);
 
                     const isDragOver = dragOperatorId === group.operator.id && dragOverIndex === index;
                     const isDragging = dragOperatorId === group.operator.id && dragIndex === index;
@@ -445,7 +694,11 @@ const PlanningTableauPage: React.FC = () => {
                       <TableRow
                         key={step.id}
                         draggable={!isEditing}
-                        onDragStart={e => handleDragStart(e, group.operator.id, index)}
+                        onDragStart={e => {
+                          handleDragStart(e, group.operator.id, index);
+                          // Also set prod drag data
+                          e.dataTransfer.setData('application/x-prod-step', JSON.stringify({ stepId: step.id, orderId: order.id }));
+                        }}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverIndex(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
@@ -459,121 +712,121 @@ const PlanningTableauPage: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
+                          {isEditing ? (
+                            <Input type="date" className="h-7 text-xs w-[110px]"
+                              value={getStepInlineValue(step, 'startDate') || ''}
+                              onChange={e => setStepInlineValue(step.id, 'startDate', e.target.value)}
+                              onClick={e => e.stopPropagation()} />
+                          ) : (
+                            <span className="text-xs">{formatDateFR(step.startDate)}</span>
+                          )}
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="font-heading text-xs">{order.orderNumber}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{getClientName(order.clientId)}</span>
+                        </TableCell>
+                        <TableCell className={`py-1.5 px-2 ${designBg}`}>
+                          <span className={`text-xs truncate block ${blocked ? 'text-white font-medium' : ''}`}>
+                            {order.designation}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          <span className="text-xs">{order.quantity}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          <Badge className={`${priorityColors[order.priority]} text-xs`}>{order.priority}</Badge>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
                           {isEditing ? (
                             <Select
-                              value={(getInlineValue(order, 'clientId') as string) || order.clientId}
-                              onValueChange={val => setInlineValue(order.id, 'clientId', val)}
+                              value={getStepInlineValue(step, 'operationId') || step.operationId}
+                              onValueChange={val => setStepInlineValue(step.id, 'operationId', val)}
                             >
                               <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {clients.map(c => (
-                                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                ))}
+                                {operations
+                                  .filter(o => o.id !== absenceOperationId && o.category === 'operator')
+                                  .map(o => (
+                                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                           ) : (
-                            <span className="text-xs">{getClientName(order.clientId)}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className={`py-1.5 px-2 ${designBg}`}>
-                          {isEditing ? (
-                            <Input className="h-7 text-xs"
-                              value={(getInlineValue(order, 'designation') as string) || ''}
-                              onChange={e => setInlineValue(order.id, 'designation', e.target.value)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className={`text-xs truncate block ${blocked ? 'text-white font-medium' : ''}`}>
-                              {order.designation}
-                            </span>
+                            <span className="text-xs">{getOperationName(step.operationId)}</span>
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           {isEditing ? (
-                            <Input type="number" min={1} className="h-7 w-14 text-xs"
-                              value={getInlineValue(order, 'quantity') as number}
-                              onChange={e => setInlineValue(order.id, 'quantity', parseInt(e.target.value) || 1)}
+                            <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
+                              value={getStepInlineValue(step, 'estimatedDuration') ?? step.estimatedDuration}
+                              onChange={e => setStepInlineValue(step.id, 'estimatedDuration', parseInt(e.target.value) || 0)}
                               onClick={e => e.stopPropagation()} />
                           ) : (
-                            <span className="text-xs">{order.quantity}</span>
+                            <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
-                          {isEditing ? (
-                            <select
-                              className="w-full rounded-md border border-input bg-background px-1 py-1 text-xs"
-                              value={(getInlineValue(order, 'priority') as string) || order.priority}
-                              onChange={e => setInlineValue(order.id, 'priority', e.target.value)}
-                              onClick={e => e.stopPropagation()}
-                            >
-                              {['P1', 'P2', 'P3', 'P4'].map(k => <option key={k} value={k}>{k}</option>)}
-                            </select>
-                          ) : (
-                            <Badge className={`${priorityColors[order.priority]} text-xs`}>{order.priority}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          {isEditing ? (
-                            <Input type="date" className="h-7 text-xs"
-                              value={(getInlineValue(order, 'deliveryDeadline') as string) || order.deliveryDeadline || order.plannedDeadline}
-                              onChange={e => setInlineValue(order.id, 'deliveryDeadline', e.target.value)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{getOperationName(step.operationId)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
-                          <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
-                        </TableCell>
+                        {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger>
                               <span
                                 className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => { e.stopPropagation(); toggleStudy(step); } : undefined}
+                                onClick={isEditing ? (e) => {
+                                  e.stopPropagation();
+                                  const cur = editStudyState as TrafficState;
+                                  setStepInlineValue(step.id, 'studyState', cycleState(cur));
+                                } : undefined}
                               >
-                                {studyStatus}
+                                {isEditing ? trafficEmoji(editStudyState as TrafficState) : studyEmoji}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent>Étude {step.studyReady ? 'OK' : step.studyDeadline ? `Prévue ${formatDateFR(step.studyDeadline)}` : 'Manquante'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
+                            <TooltipContent>Étude: {studyState === 'green' ? 'Fait' : studyState === 'orange' ? 'En cours' : studyState === 'red' ? 'Pas fait' : studyState === 'warning' ? '⚠️ Forcé' : 'Pas besoin'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
+                        {/* Matière */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger>
                               <span
                                 className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => { e.stopPropagation(); toggleMaterial(step); } : undefined}
+                                onClick={isEditing ? (e) => {
+                                  e.stopPropagation();
+                                  const cur = editMatState as TrafficState;
+                                  setStepInlineValue(step.id, 'materialState', cycleState(cur));
+                                } : undefined}
                               >
-                                {matStatus}
+                                {isEditing ? trafficEmoji(editMatState as TrafficState) : matEmoji}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent>Matière {step.materialAvailable ? 'OK' : step.materialDeadline ? `Prévue ${formatDateFR(step.materialDeadline)}` : 'Manquante'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
+                            <TooltipContent>Matière: {matState === 'green' ? 'Disponible' : matState === 'orange' ? 'Partielle' : matState === 'red' ? 'Non disponible' : matState === 'warning' ? '⚠️ Forcé' : 'Pas besoin'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
+                        {/* Outillage */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger>
                               <span
                                 className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => { e.stopPropagation(); toggleTooling(step); } : undefined}
+                                onClick={isEditing ? (e) => {
+                                  e.stopPropagation();
+                                  const cur = editToolState as TrafficState;
+                                  setStepInlineValue(step.id, 'toolingState', cycleState(cur));
+                                } : undefined}
                               >
-                                {toolStatus}
+                                {isEditing ? trafficEmoji(editToolState as TrafficState) : toolEmoji}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent>Outillage {step.toolingAvailable ? 'OK' : step.toolingDeadline ? `Prévu ${formatDateFR(step.toolingDeadline)}` : 'Manquant'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
+                            <TooltipContent>Outillage: {toolState === 'green' ? 'Disponible' : toolState === 'orange' ? 'Partiel' : toolState === 'red' ? 'Non disponible' : toolState === 'warning' ? '⚠️ Forcé' : 'Pas besoin'}{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
+                        {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
@@ -589,15 +842,15 @@ const PlanningTableauPage: React.FC = () => {
                             </Button>
                             {isEditing ? (
                               <>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => saveInlineEdits(order.id)} title="Enregistrer">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => saveInlineEdits(step.id)} title="Enregistrer">
                                   <span className="text-normal text-sm font-bold">✓</span>
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cancelInlineEdits(order.id)} title="Annuler">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cancelInlineEdits(step.id)} title="Annuler">
                                   <span className="text-destructive text-sm font-bold">✕</span>
                                 </Button>
                               </>
                             ) : (
-                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRowId(step.id); setInlineEdits(prev => ({ ...prev, [order.id]: {} })); }} title="Éditer">
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRowId(step.id); setInlineEdits(prev => ({ ...prev, [step.id]: {} })); }} title="Éditer">
                                 <Pencil className="w-3.5 h-3.5" />
                               </Button>
                             )}
@@ -617,18 +870,80 @@ const PlanningTableauPage: React.FC = () => {
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
 
-      {/* Phase amont warning on drag */}
+      {/* Chained prerequisite check dialogs */}
       <ConfirmDialog
-        open={!!phaseAmontWarning}
-        title="Attention : phase amont non terminée"
-        description="La phase amont n'est pas encore faite. Déplacer quand même cette étape ?"
-        onConfirm={() => {
-          if (phaseAmontWarning) {
-            applyReorder(phaseAmontWarning.pendingTasks);
-          }
-          setPhaseAmontWarning(null);
-        }}
-        onCancel={() => setPhaseAmontWarning(null)}
+        open={!!pendingDrop && pendingDrop.currentCheck < pendingDrop.checks.length}
+        title="Attention"
+        description={pendingDrop ? pendingDrop.checks[pendingDrop.currentCheck]?.message : ''}
+        onConfirm={handlePendingConfirm}
+        onCancel={handlePendingCancel}
+        confirmLabel="Oui"
+        cancelLabel="Non"
+        variant="default"
+      />
+
+      {/* Production Register Dialog */}
+      <Dialog open={prodDialog.open} onOpenChange={(o) => { if (!o) setProdDialog(prev => ({ ...prev, open: false })); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-heading">Enregistrement Production</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-2">
+              <span className="text-muted-foreground">Opérateur :</span>
+              <span className="font-medium">{prodDialog.operatorName}</span>
+              <span className="text-muted-foreground">N° Cde :</span>
+              <span className="font-medium">{prodDialog.order?.orderNumber || '—'}</span>
+              <span className="text-muted-foreground">Désignation :</span>
+              <span className="font-medium">{prodDialog.order?.designation || '—'}</span>
+              <span className="text-muted-foreground">Qté :</span>
+              <span className="font-medium">{prodDialog.order?.quantity || '—'}</span>
+              <span className="text-muted-foreground">Opération :</span>
+              <span className="font-medium">{prodDialog.operationName}</span>
+              <span className="text-muted-foreground">Durée totale estimée :</span>
+              <span className="font-medium">{prodDialog.step ? formatMinutesToHM(prodDialog.step.estimatedDuration) : '—'}</span>
+            </div>
+            <div className="border-t pt-3">
+              <label className="text-sm text-muted-foreground mb-1 block">Durée effectuée aujourd'hui (hh:mm) :</label>
+              <Input
+                type="time"
+                className="h-9 w-32"
+                value={prodDialog.durationToday}
+                onChange={e => setProdDialog(prev => ({ ...prev, durationToday: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2">
+              <span className="text-muted-foreground">Durée effectuée totale :</span>
+              <span className="font-medium">{(() => {
+                const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
+                const todayMin = (hh || 0) * 60 + (mm || 0);
+                return formatMinutesToHM(prodDialog.totalDoneAlready + todayMin);
+              })()}</span>
+              <span className="text-muted-foreground">Durée estimée restante :</span>
+              <span className="font-medium">{(() => {
+                const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
+                const todayMin = (hh || 0) * 60 + (mm || 0);
+                const remaining = Math.max(0, (prodDialog.step?.estimatedDuration || 0) - prodDialog.totalDoneAlready - todayMin);
+                return formatMinutesToHM(remaining);
+              })()}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProdDialog(prev => ({ ...prev, open: false }))}>Annuler</Button>
+            <Button onClick={handleProdDialogOk} disabled={!prodDialog.durationToday}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Completion Dialog */}
+      <ConfirmDialog
+        open={!!completionDialog}
+        title="Phase terminée ?"
+        description="Cette phase est-elle complètement terminée ?"
+        onConfirm={() => completionDialog && handleCompletionAnswer(true)}
+        onCancel={() => completionDialog && handleCompletionAnswer(false)}
+        confirmLabel="Oui, terminée"
+        cancelLabel="Non, à poursuivre"
         variant="default"
       />
 
