@@ -49,6 +49,7 @@ interface AppSidebarProps {
 const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop }) => {
   const location = useLocation();
   const [dragOver, setDragOver] = useState(false);
+  const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
 
   return (
     <aside className="w-60 h-screen sticky top-0 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0">
@@ -81,11 +82,17 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop }) => {
                       e.preventDefault();
                       setDragOver(false);
                       try {
-                        const data = JSON.parse(e.dataTransfer.getData('application/x-prod-step'));
+                        const rawPayload =
+                          e.dataTransfer.getData('application/x-prod-step') ||
+                          e.dataTransfer.getData('text/x-prod-step') ||
+                          dragPayloadWindow.__planningProdDragPayload ||
+                          '';
+                        const data = rawPayload ? JSON.parse(rawPayload) : null;
                         if (data?.stepId) {
                           onProdDrop!(data.stepId);
                         }
                       } catch {}
+                      dragPayloadWindow.__planningProdDragPayload = undefined;
                     } : undefined}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                       isActive 

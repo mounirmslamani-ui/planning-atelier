@@ -220,6 +220,7 @@ const PlanningTableauPage: React.FC = () => {
   const [dragOperatorId, setDragOperatorId] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
 
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
@@ -344,6 +345,7 @@ const PlanningTableauPage: React.FC = () => {
   }, [dragOperatorId, dragIndex, operatorTasks, steps, productionRecords]);
 
   const handleDragEnd = useCallback(() => {
+    (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = undefined;
     setDragIndex(null);
     setDragOverIndex(null);
     setDragOperatorId(null);
@@ -351,25 +353,54 @@ const PlanningTableauPage: React.FC = () => {
 
   /** Apply new order + recalculate dates, optionally set ⚠️ warnings */
   const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
-    tasks.forEach(({ step }, idx) => {
-      const newOrder = idx + 1;
-      const isTarget = step.id === targetStepId;
-      const updates: Partial<ProductionStep> = {};
-      if (step.order !== newOrder) updates.order = newOrder;
+    const reorderedTasks = tasks.map(({ step, order }, idx) => {
+      const reorderedStep: ProductionStep = {
+        ...step,
+        order: idx + 1,
+      };
 
-      // Apply ⚠️ warnings to the moved step
-      if (isTarget && warningFields) {
-        // We mark with special values — study/material/tooling get deadline='warning'
-        // phaseAmont warning is visual only — we keep it by setting a special deadline marker
+      if (step.id === targetStepId && warningFields) {
+        if (warningFields.has('study')) {
+          reorderedStep.studyReady = false;
+          reorderedStep.studyDeadline = 'warning';
+        }
+        if (warningFields.has('material')) {
+          reorderedStep.materialAvailable = false;
+          reorderedStep.materialDeadline = 'warning';
+        }
+        if (warningFields.has('tooling')) {
+          reorderedStep.toolingAvailable = false;
+          reorderedStep.toolingDeadline = 'warning';
+        }
       }
 
-      if (Object.keys(updates).length > 0 || isTarget) {
-        updateStep({ ...step, ...updates, order: newOrder });
-      }
+      return { order, step: reorderedStep };
     });
 
-    const dateUpdates = recalcStartDates(tasks, holidays);
-    dateUpdates.forEach(s => updateStep(s));
+    const dateUpdatesById = new Map(
+      recalcStartDates(reorderedTasks, holidays).map(step => [step.id, step]),
+    );
+
+    reorderedTasks.forEach(({ step }, idx) => {
+      const nextStep = dateUpdatesById.get(step.id) ?? step;
+      const currentStep = tasks[idx].step;
+      const hasChanged =
+        currentStep.order !== nextStep.order ||
+        currentStep.startDate !== nextStep.startDate ||
+        currentStep.startTime !== nextStep.startTime ||
+        currentStep.endDate !== nextStep.endDate ||
+        currentStep.endTime !== nextStep.endTime ||
+        currentStep.studyReady !== nextStep.studyReady ||
+        currentStep.studyDeadline !== nextStep.studyDeadline ||
+        currentStep.materialAvailable !== nextStep.materialAvailable ||
+        currentStep.materialDeadline !== nextStep.materialDeadline ||
+        currentStep.toolingAvailable !== nextStep.toolingAvailable ||
+        currentStep.toolingDeadline !== nextStep.toolingDeadline;
+
+      if (hasChanged) {
+        updateStep(nextStep);
+      }
+    });
   }, [updateStep, holidays]);
 
   // Handle chained confirm for pending drop
@@ -384,24 +415,14 @@ const PlanningTableauPage: React.FC = () => {
     if (nextCheck < checks.length) {
       setPendingDrop({ ...pendingDrop, currentCheck: nextCheck, warnings: newWarnings });
     } else {
-      // All checks passed — apply reorder with warnings
-      // Update the step with ⚠️ markers
-      const step = tasks.find(t => t.step.id === stepId)?.step;
-      if (step) {
-        const updatedStep = { ...step };
-        if (newWarnings.has('study')) { updatedStep.studyReady = false; updatedStep.studyDeadline = 'warning'; }
-        if (newWarnings.has('material')) { updatedStep.materialAvailable = false; updatedStep.materialDeadline = 'warning'; }
-        if (newWarnings.has('tooling')) { updatedStep.toolingAvailable = false; updatedStep.toolingDeadline = 'warning'; }
-        // phaseAmont warning is visual only — we keep it by setting a special deadline marker
-        updateStep(updatedStep);
+      if (newWarnings.has('phaseAmont')) {
+        setForcedPhaseAmontWarnings(prev => ({ ...prev, [stepId]: true }));
       }
 
-      // Update tasks array with the updated step
-      const updatedTasks = tasks.map(t => t.step.id === stepId && step ? { ...t, step: { ...step } } : t);
-      applyReorder(updatedTasks);
+      applyReorder(tasks, newWarnings, stepId);
       setPendingDrop(null);
     }
-  }, [pendingDrop, applyReorder, updateStep]);
+  }, [pendingDrop, applyReorder]);
 
   const handlePendingCancel = useCallback(() => {
     setPendingDrop(null);
@@ -459,8 +480,12 @@ const PlanningTableauPage: React.FC = () => {
 
   // ─── Drag to Production Register ───
   const handleDragStartForProd = useCallback((e: React.DragEvent, step: ProductionStep, order: Order) => {
-    e.dataTransfer.setData('application/x-prod-step', JSON.stringify({ stepId: step.id, orderId: order.id }));
-    e.dataTransfer.effectAllowed = 'copy';
+    const payload = JSON.stringify({ stepId: step.id, orderId: order.id });
+    e.dataTransfer.setData('application/x-prod-step', payload);
+    e.dataTransfer.setData('text/x-prod-step', payload);
+    e.dataTransfer.setData('text/plain', payload);
+    e.dataTransfer.effectAllowed = 'copyMove';
+    (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = payload;
   }, []);
 
   // ─── Open production register dialog ───
@@ -688,7 +713,8 @@ const PlanningTableauPage: React.FC = () => {
                     const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
                     const toolState = step.toolingDeadline === 'warning' ? 'warning' as any : getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
                     const amontStatus = phaseAmontStatus(step, steps, productionRecords);
-                    const amontEmoji = step.studyDeadline === 'warning' && amontStatus === 'red' ? '⚠️' : phaseAmontEmoji(amontStatus);
+                    const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
+                    const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
 
                     // For editing, get overridden states
                     const editStudyState = inlineEdits[step.id]?.studyState ?? studyState;
@@ -708,8 +734,7 @@ const PlanningTableauPage: React.FC = () => {
                         draggable={!isEditing}
                         onDragStart={e => {
                           handleDragStart(e, group.operator.id, index);
-                          // Also set prod drag data
-                          e.dataTransfer.setData('application/x-prod-step', JSON.stringify({ stepId: step.id, orderId: order.id }));
+                          handleDragStartForProd(e, step, order);
                         }}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverIndex(null)}
@@ -843,7 +868,13 @@ const PlanningTableauPage: React.FC = () => {
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>
-                              {amontStatus === 'na' ? 'Première étape' : amontStatus === 'green' ? 'Phases précédentes terminées' : 'Phases précédentes non terminées'}
+                              {amontStatus === 'na'
+                                ? 'Première étape'
+                                : hasForcedAmontWarning
+                                  ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
+                                  : amontStatus === 'green'
+                                    ? 'Phases précédentes terminées'
+                                    : 'Phases précédentes non terminées'}
                             </TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
