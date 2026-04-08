@@ -485,6 +485,18 @@ const PlanningTableauPage: React.FC = () => {
     });
   }, [steps, orders, operators, productionRecords, getOperationName]);
 
+  // Listen for drop events from sidebar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.stepId) {
+        openProdDialog(detail.stepId);
+      }
+    };
+    window.addEventListener('prod-register-drop', handler);
+    return () => window.removeEventListener('prod-register-drop', handler);
+  }, [openProdDialog]);
+
   const handleProdDialogOk = useCallback(() => {
     if (!prodDialog.step || !prodDialog.order) return;
     const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
