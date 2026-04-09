@@ -438,6 +438,43 @@ const PlanningTableauPage: React.FC = () => {
     setPendingDrop(null);
   }, []);
 
+  // ─── Auto-sort: by priority (P1>P2>P3>P4) then latest availability date ───
+  const handleAutoSort = useCallback((operatorId: string) => {
+    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    if (!group || group.tasks.length === 0) return;
+
+    const getLatestAvailDate = (step: ProductionStep): string => {
+      const dates: string[] = [];
+      if (step.studyDeadline && step.studyDeadline !== 'warning' && step.studyDeadline !== 'pending') dates.push(step.studyDeadline);
+      if (step.materialDeadline && step.materialDeadline !== 'warning' && step.materialDeadline !== 'pending') dates.push(step.materialDeadline);
+      if (step.toolingDeadline && step.toolingDeadline !== 'warning' && step.toolingDeadline !== 'pending') dates.push(step.toolingDeadline);
+      if (dates.length === 0) return '0000-00-00'; // available immediately
+      return dates.sort().reverse()[0];
+    };
+
+    const sorted = [...group.tasks].sort((a, b) => {
+      const pa = priorityRank[a.order.priority] ?? 9;
+      const pb = priorityRank[b.order.priority] ?? 9;
+      if (pa !== pb) return pa - pb;
+      const da = getLatestAvailDate(a.step);
+      const db = getLatestAvailDate(b.step);
+      return da.localeCompare(db);
+    });
+
+    applyReorder(sorted);
+  }, [operatorTasks, applyReorder]);
+
+  // ─── Validate: save step_order to DB and mark clean ───
+  const handleValidate = useCallback(() => {
+    // The steps are already being saved via updateStep in applyReorder
+    // Just recalculate all dates for all operators to ensure consistency
+    operatorTasks.forEach(group => {
+      const updated = recalcStartDates(group.tasks, holidays);
+      updated.forEach(step => updateStep(step));
+    });
+    setOrderDirty(false);
+  }, [operatorTasks, holidays, updateStep]);
+
   // ─── Inline edit helpers (now for step fields: date début, opération, durée, statuts) ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
     return inlineEdits[step.id]?.[field] ?? (step as any)[field];
