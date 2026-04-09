@@ -691,7 +691,14 @@ const PlanningTableauPage: React.FC = () => {
         title="Planning Tableau"
         actions={
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-muted rounded-md px-2 py-1">
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)">
+                <Undo2 className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
+                <Redo2 className="w-4 h-4" />
+              </Button>
+            </div>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setNumDays(d => Math.max(1, d - 1))}>
                 <Minus className="w-3.5 h-3.5" />
               </Button>
