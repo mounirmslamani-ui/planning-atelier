@@ -179,11 +179,40 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
+  // Auto-sort: priority (P1>P2>P3>P4), then latest availability date (study/material/tooling deadlines)
+  const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
+    return [...orderList].sort((a, b) => {
+      // Primary: priority rank
+      const pa = priorityRank[a.priority] ?? 5;
+      const pb = priorityRank[b.priority] ?? 5;
+      if (pa !== pb) return pa - pb;
+
+      // Secondary: latest availability date among study/material/tooling deadlines
+      const getLatestAvailDate = (o: Order): string => {
+        const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
+        let latest = '';
+        orderSteps.forEach(s => {
+          if (s.studyDeadline && s.studyDeadline !== 'warning' && s.studyDeadline !== 'pending' && s.studyDeadline > latest) latest = s.studyDeadline;
+          if (s.materialDeadline && s.materialDeadline !== 'warning' && s.materialDeadline !== 'pending' && s.materialDeadline > latest) latest = s.materialDeadline;
+          if (s.toolingDeadline && s.toolingDeadline !== 'warning' && s.toolingDeadline !== 'pending' && s.toolingDeadline > latest) latest = s.toolingDeadline;
+        });
+        return latest || '0000-00-00'; // no deadline = available now = sort first
+      };
+
+      const da = getLatestAvailDate(a);
+      const db = getLatestAvailDate(b);
+      return da.localeCompare(db);
+    });
+  }, [steps, absenceOperationId]);
+
   // Sort by displayOrder ascending (playlist style)
   const baseSorted = useMemo(() => {
     const real = orders.filter(o => o.id !== absenceOrderId);
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
   }, [orders, absenceOrderId]);
+
+  // Track if order has been validated (saved to DB)
+  const [orderValidated, setOrderValidated] = useState(true);
 
   // On first load, reindex if needed
   useEffect(() => {
@@ -196,6 +225,24 @@ const OrdersPage: React.FC = () => {
       setOrders([...(absence ? [absence] : []), ...sorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
     }
   }, []);
+
+  // Auto-sort and apply when clicking "Trier auto"
+  const handleAutoSort = useCallback(() => {
+    const real = orders.filter(o => o.id !== absenceOrderId);
+    const sorted = autoSortOrders(real).map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const absence = orders.find(o => o.id === absenceOrderId);
+    setOrders([...(absence ? [absence] : []), ...sorted]);
+    setOrderValidated(false);
+  }, [orders, absenceOrderId, autoSortOrders, setOrders]);
+
+  // Validate: persist order to DB
+  const handleValidateOrder = useCallback(() => {
+    const real = orders.filter(o => o.id !== absenceOrderId);
+    const absence = orders.find(o => o.id === absenceOrderId);
+    const reindexed = real.sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999)).map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    setOrders([...(absence ? [absence] : []), ...reindexed]);
+    setOrderValidated(true);
+  }, [orders, absenceOrderId, setOrders]);
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
@@ -268,6 +315,7 @@ const OrdersPage: React.FC = () => {
 
   const handleExcelImport = (imported: Omit<Order, 'id'>[]) => {
     imported.forEach((o) => addOrder({ id: crypto.randomUUID(), ...o } as Order));
+    setOrderValidated(false);
   };
 
   // Inline edit helpers
@@ -321,6 +369,7 @@ const OrdersPage: React.FC = () => {
     }));
     setOrders([...(absence ? [absence] : []), ...reindexed]);
     setDragIndices(null); setDragOverIndex(null);
+    setOrderValidated(false);
   };
   const handleDragEnd = () => { setDragIndices(null); setDragOverIndex(null); };
   const isDragging = (index: number) => dragIndices?.includes(index) ?? false;
@@ -462,6 +511,12 @@ const OrdersPage: React.FC = () => {
           </Button>
           <Button onClick={redo} variant="outline" size="icon" disabled={!canRedo} title="Rétablir (Ctrl+Y)">
             <Redo2 className="w-4 h-4" />
+          </Button>
+          <Button onClick={handleAutoSort} variant="outline" size="sm" title="Trier par priorité puis disponibilité">
+            Trier auto
+          </Button>
+          <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
+            ✓ Valider
           </Button>
           {hasFrozenOrders && (
             <Button onClick={unlockAll} variant="outline" size="sm">

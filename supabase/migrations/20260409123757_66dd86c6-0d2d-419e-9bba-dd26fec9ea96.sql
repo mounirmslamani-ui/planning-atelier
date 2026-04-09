@@ -1,0 +1,1 @@
+ALTER TABLE public.production_records DROP CONSTRAINT IF EXISTS production_records_step_id_fkey;

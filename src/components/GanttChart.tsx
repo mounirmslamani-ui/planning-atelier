@@ -116,18 +116,8 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
 
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group transition-opacity ${isDimmed ? 'opacity-25' : ''}`}
+      className={`absolute top-1 rounded-sm cursor-default select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group transition-opacity ${isDimmed ? 'opacity-25' : ''}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
-      onMouseDown={e => {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          onCtrlClick(step.id);
-          return;
-        }
-        e.preventDefault();
-        onDragStart(step.id, e.clientX, left, e.clientY, e.altKey);
-      }}
       title={tooltipText}
     >
       <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate ${isBlocked ? 'text-white' : 'text-foreground'}`}>
@@ -157,10 +147,6 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
       {step.frozen && (
         <Lock className="absolute top-0.5 right-3 w-2.5 h-2.5 text-blue-500/80" />
       )}
-      <div
-        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
-        onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
-      />
     </div>
   );
 };
@@ -836,9 +822,6 @@ const GanttChart: React.FC = () => {
   return (
     <div
       className="flex flex-col h-full"
-      onMouseMove={(e) => { handleMouseMove(e); handleGlobalMouseMove(e); }}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => { setDragState(null); setResizeState(null); setIsOverValidateZone(false); }}
     >
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-2 bg-card border-b">
@@ -912,15 +895,7 @@ const GanttChart: React.FC = () => {
             }}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={handleReplanifier} className="ml-2">
-          <CalendarCheck className="w-4 h-4 mr-1" /> Replanifier
-        </Button>
-        <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)" className="ml-1">
-          <Undo2 className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
-          <Redo2 className="w-4 h-4" />
-        </Button>
+        <span className="text-xs text-muted-foreground italic ml-2">Visualisation seule — utilisez le Planning Tableau pour modifier</span>
         {/* Search order */}
         <div className="flex items-center gap-1 ml-2">
           <div className="relative">
@@ -951,29 +926,6 @@ const GanttChart: React.FC = () => {
             Tout afficher
           </button>
         )}
-        {ctrlSelectedStepId && (
-          <div className="px-3 py-1 text-xs rounded bg-primary/10 text-primary border border-primary/30 animate-pulse">
-            Bloc sélectionné — Ctrl+Clic sur un 2ème bloc pour lier
-          </div>
-        )}
-        {/* Validate production icon - drop zone */}
-        <div
-          ref={validateZoneRef}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed transition-all ${
-            isOverValidateZone
-              ? 'border-primary bg-primary/20 scale-110'
-              : dragState
-                ? 'border-primary/50 bg-primary/5 animate-pulse'
-                : 'border-muted-foreground/30 bg-muted/30'
-          }`}
-          title="Glissez un bloc ici pour valider la production"
-        >
-          <div className="relative w-7 h-7">
-            <Settings className={`w-7 h-7 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} />
-            <Check className={`absolute bottom-0 right-0 w-3.5 h-3.5 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} strokeWidth={3} />
-          </div>
-          <span className={`text-[10px] font-medium ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'}`}>Valider</span>
-        </div>
       </div>
 
       {/* Chart area */}
@@ -1093,15 +1045,15 @@ const GanttChart: React.FC = () => {
                           left={left}
                           width={width}
                           isLast={isLast}
-                          isCtrlSelected={ctrlSelectedStepId === step.id}
+                          isCtrlSelected={false}
                           hasLink={!!step.dependsOn}
                           subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
                           pendingSubNames={pendingSubNamesPerOrder[order.id] || []}
                           isAbsence={step.operationId === absenceOperationId}
                           isDimmed={!!highlightedOrderId && step.orderId !== highlightedOrderId}
-                          onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
-                          onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
-                          onCtrlClick={handleCtrlClick}
+                          onDragStart={() => {}}
+                          onResizeStart={() => {}}
+                          onCtrlClick={() => {}}
                         />
                       </div>
                     );

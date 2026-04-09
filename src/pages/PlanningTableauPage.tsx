@@ -233,7 +233,7 @@ const PlanningTableauPage: React.FC = () => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
 
-  // Group steps by operator
+  // Group steps by operator, sorted by order Cn from orders table
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
     const firstDay = workingDays[0];
@@ -260,8 +260,14 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
+    // Sort tasks within each operator by the order's Cn (displayOrder) from "Commandes en cours"
     Object.values(result).forEach(group => {
-      group.tasks.sort((a, b) => a.step.order - b.step.order);
+      group.tasks.sort((a, b) => {
+        const orderA = a.order.displayOrder ?? 9999;
+        const orderB = b.order.displayOrder ?? 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.step.order - b.step.order;
+      });
     });
 
     return Object.values(result)
@@ -687,6 +693,7 @@ const PlanningTableauPage: React.FC = () => {
                   <TableRow>
                     <TableHead className="w-10 px-1 text-center text-xs">Ordre</TableHead>
                     <TableHead className="w-[70px] text-xs">Date début</TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[80px] text-xs">N° Cmd</TableHead>
                     <TableHead className="w-[90px] text-xs">Client</TableHead>
                     <TableHead className="text-xs">Désignation</TableHead>
@@ -694,7 +701,6 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[100px] text-xs">Opération</TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Outillage">Ou.</TableHead>
@@ -758,6 +764,16 @@ const PlanningTableauPage: React.FC = () => {
                             <span className="text-xs">{formatDateFR(step.startDate)}</span>
                           )}
                         </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          {isEditing ? (
+                            <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
+                              value={getStepInlineValue(step, 'estimatedDuration') ?? step.estimatedDuration}
+                              onChange={e => setStepInlineValue(step.id, 'estimatedDuration', parseInt(e.target.value) || 0)}
+                              onClick={e => e.stopPropagation()} />
+                          ) : (
+                            <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="font-heading text-xs">{order.orderNumber}</span>
                         </TableCell>
@@ -797,16 +813,6 @@ const PlanningTableauPage: React.FC = () => {
                             </Select>
                           ) : (
                             <span className="text-xs">{getOperationName(step.operationId)}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
-                          {isEditing ? (
-                            <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
-                              value={getStepInlineValue(step, 'estimatedDuration') ?? step.estimatedDuration}
-                              onChange={e => setStepInlineValue(step.id, 'estimatedDuration', parseInt(e.target.value) || 0)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
                           )}
                         </TableCell>
                         {/* Étude */}
