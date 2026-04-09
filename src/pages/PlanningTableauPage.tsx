@@ -410,6 +410,7 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(nextStep);
       }
     });
+    setOrderDirty(true);
   }, [updateStep, holidays]);
 
   // Handle chained confirm for pending drop
