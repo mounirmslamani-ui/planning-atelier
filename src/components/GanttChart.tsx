@@ -116,18 +116,8 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
 
   return (
     <div
-      className={`absolute top-1 rounded-sm cursor-move select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group transition-opacity ${isDimmed ? 'opacity-25' : ''}`}
+      className={`absolute top-1 rounded-sm cursor-default select-none overflow-hidden ${blockBg} ${borderClass} ${frozenClass} group transition-opacity ${isDimmed ? 'opacity-25' : ''}`}
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
-      onMouseDown={e => {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          onCtrlClick(step.id);
-          return;
-        }
-        e.preventDefault();
-        onDragStart(step.id, e.clientX, left, e.clientY, e.altKey);
-      }}
       title={tooltipText}
     >
       <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate ${isBlocked ? 'text-white' : 'text-foreground'}`}>
@@ -157,10 +147,6 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
       {step.frozen && (
         <Lock className="absolute top-0.5 right-3 w-2.5 h-2.5 text-blue-500/80" />
       )}
-      <div
-        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-foreground/20"
-        onMouseDown={e => { e.stopPropagation(); e.preventDefault(); onResizeStart(step.id, e.clientX, width); }}
-      />
     </div>
   );
 };
