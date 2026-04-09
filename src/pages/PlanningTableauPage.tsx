@@ -730,9 +730,14 @@ const PlanningTableauPage: React.FC = () => {
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
               <h3 className="text-base font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
-              <span className="text-sm font-medium text-accent">
-                {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
-              </span>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleAutoSort(group.operator.id)}>
+                  <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Trier auto
+                </Button>
+                <span className="text-sm font-medium text-accent">
+                  {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
+                </span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <Table>
