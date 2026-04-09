@@ -764,6 +764,16 @@ const PlanningTableauPage: React.FC = () => {
                             <span className="text-xs">{formatDateFR(step.startDate)}</span>
                           )}
                         </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          {isEditing ? (
+                            <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
+                              value={getStepInlineValue(step, 'estimatedDuration') ?? step.estimatedDuration}
+                              onChange={e => setStepInlineValue(step.id, 'estimatedDuration', parseInt(e.target.value) || 0)}
+                              onClick={e => e.stopPropagation()} />
+                          ) : (
+                            <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="font-heading text-xs">{order.orderNumber}</span>
                         </TableCell>
@@ -803,16 +813,6 @@ const PlanningTableauPage: React.FC = () => {
                             </Select>
                           ) : (
                             <span className="text-xs">{getOperationName(step.operationId)}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
-                          {isEditing ? (
-                            <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
-                              value={getStepInlineValue(step, 'estimatedDuration') ?? step.estimatedDuration}
-                              onChange={e => setStepInlineValue(step.id, 'estimatedDuration', parseInt(e.target.value) || 0)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
                           )}
                         </TableCell>
                         {/* Étude */}
