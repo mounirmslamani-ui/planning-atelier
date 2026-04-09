@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check } from 'lucide-react';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -710,6 +710,12 @@ const PlanningTableauPage: React.FC = () => {
             </div>
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            </Button>
+            <Button
+              onClick={handleValidate}
+              className={`transition-all ${orderDirty ? 'animate-pulse bg-accent text-accent-foreground hover:bg-accent/90' : 'bg-primary text-primary-foreground'}`}
+            >
+              <Check className="w-4 h-4 mr-1" /> Valider
             </Button>
           </div>
         }
