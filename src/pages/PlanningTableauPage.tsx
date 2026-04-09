@@ -700,6 +700,7 @@ const PlanningTableauPage: React.FC = () => {
                 <Redo2 className="w-4 h-4" />
               </Button>
             </div>
+            <div className="flex items-center gap-1 bg-muted rounded-md px-2 py-1">
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setNumDays(d => Math.max(1, d - 1))}>
                 <Minus className="w-3.5 h-3.5" />
               </Button>
