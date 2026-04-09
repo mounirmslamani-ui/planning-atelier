@@ -185,6 +185,7 @@ const PlanningTableauPage: React.FC = () => {
     operators, orders, steps, clients, operations,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord, deleteStep,
+    undo, redo, canUndo, canRedo,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [numDays, setNumDays] = useState(5);
