@@ -1045,15 +1045,15 @@ const GanttChart: React.FC = () => {
                           left={left}
                           width={width}
                           isLast={isLast}
-                          isCtrlSelected={ctrlSelectedStepId === step.id}
+                          isCtrlSelected={false}
                           hasLink={!!step.dependsOn}
                           subcontractingPending={ordersWithPendingSubcontracting.has(order.id)}
                           pendingSubNames={pendingSubNamesPerOrder[order.id] || []}
                           isAbsence={step.operationId === absenceOperationId}
                           isDimmed={!!highlightedOrderId && step.orderId !== highlightedOrderId}
-                          onDragStart={(id, x, l, y, alt) => setDragState({ stepId: id, startX: x, startY: y, startLeft: l, altKey: alt })}
-                          onResizeStart={(id, x, w) => setResizeState({ stepId: id, startX: x, startWidth: w })}
-                          onCtrlClick={handleCtrlClick}
+                          onDragStart={() => {}}
+                          onResizeStart={() => {}}
+                          onCtrlClick={() => {}}
                         />
                       </div>
                     );
