@@ -319,13 +319,6 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "production_records_step_id_fkey"
-            columns: ["step_id"]
-            isOneToOne: false
-            referencedRelation: "production_steps"
-            referencedColumns: ["id"]
-          },
         ]
       }
       production_steps: {
