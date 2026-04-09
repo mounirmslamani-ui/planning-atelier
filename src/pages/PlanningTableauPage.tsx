@@ -233,7 +233,7 @@ const PlanningTableauPage: React.FC = () => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
 
-  // Group steps by operator
+  // Group steps by operator, sorted by order Cn from orders table
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
     const firstDay = workingDays[0];
@@ -260,8 +260,14 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
+    // Sort tasks within each operator by the order's Cn (displayOrder) from "Commandes en cours"
     Object.values(result).forEach(group => {
-      group.tasks.sort((a, b) => a.step.order - b.step.order);
+      group.tasks.sort((a, b) => {
+        const orderA = a.order.displayOrder ?? 9999;
+        const orderB = b.order.displayOrder ?? 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.step.order - b.step.order;
+      });
     });
 
     return Object.values(result)
