@@ -898,15 +898,7 @@ const GanttChart: React.FC = () => {
             }}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={handleReplanifier} className="ml-2">
-          <CalendarCheck className="w-4 h-4 mr-1" /> Replanifier
-        </Button>
-        <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)" className="ml-1">
-          <Undo2 className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
-          <Redo2 className="w-4 h-4" />
-        </Button>
+        <span className="text-xs text-muted-foreground italic ml-2">Visualisation seule — utilisez le Planning Tableau pour modifier</span>
         {/* Search order */}
         <div className="flex items-center gap-1 ml-2">
           <div className="relative">
@@ -937,29 +929,6 @@ const GanttChart: React.FC = () => {
             Tout afficher
           </button>
         )}
-        {ctrlSelectedStepId && (
-          <div className="px-3 py-1 text-xs rounded bg-primary/10 text-primary border border-primary/30 animate-pulse">
-            Bloc sélectionné — Ctrl+Clic sur un 2ème bloc pour lier
-          </div>
-        )}
-        {/* Validate production icon - drop zone */}
-        <div
-          ref={validateZoneRef}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed transition-all ${
-            isOverValidateZone
-              ? 'border-primary bg-primary/20 scale-110'
-              : dragState
-                ? 'border-primary/50 bg-primary/5 animate-pulse'
-                : 'border-muted-foreground/30 bg-muted/30'
-          }`}
-          title="Glissez un bloc ici pour valider la production"
-        >
-          <div className="relative w-7 h-7">
-            <Settings className={`w-7 h-7 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} />
-            <Check className={`absolute bottom-0 right-0 w-3.5 h-3.5 ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'} transition-colors`} strokeWidth={3} />
-          </div>
-          <span className={`text-[10px] font-medium ${isOverValidateZone ? 'text-primary' : 'text-muted-foreground'}`}>Valider</span>
-        </div>
       </div>
 
       {/* Chart area */}
