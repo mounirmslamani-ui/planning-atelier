@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check } from 'lucide-react';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -222,6 +222,9 @@ const PlanningTableauPage: React.FC = () => {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
 
+  // Validation state: tracks if order has been modified since last "Valider"
+  const [orderDirty, setOrderDirty] = useState(false);
+
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
   const getClientName = useCallback((clientId: string) => {
@@ -407,6 +410,7 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(nextStep);
       }
     });
+    setOrderDirty(true);
   }, [updateStep, holidays]);
 
   // Handle chained confirm for pending drop
@@ -433,6 +437,43 @@ const PlanningTableauPage: React.FC = () => {
   const handlePendingCancel = useCallback(() => {
     setPendingDrop(null);
   }, []);
+
+  // ─── Auto-sort: by priority (P1>P2>P3>P4) then latest availability date ───
+  const handleAutoSort = useCallback((operatorId: string) => {
+    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    if (!group || group.tasks.length === 0) return;
+
+    const getLatestAvailDate = (step: ProductionStep): string => {
+      const dates: string[] = [];
+      if (step.studyDeadline && step.studyDeadline !== 'warning' && step.studyDeadline !== 'pending') dates.push(step.studyDeadline);
+      if (step.materialDeadline && step.materialDeadline !== 'warning' && step.materialDeadline !== 'pending') dates.push(step.materialDeadline);
+      if (step.toolingDeadline && step.toolingDeadline !== 'warning' && step.toolingDeadline !== 'pending') dates.push(step.toolingDeadline);
+      if (dates.length === 0) return '0000-00-00'; // available immediately
+      return dates.sort().reverse()[0];
+    };
+
+    const sorted = [...group.tasks].sort((a, b) => {
+      const pa = priorityRank[a.order.priority] ?? 9;
+      const pb = priorityRank[b.order.priority] ?? 9;
+      if (pa !== pb) return pa - pb;
+      const da = getLatestAvailDate(a.step);
+      const db = getLatestAvailDate(b.step);
+      return da.localeCompare(db);
+    });
+
+    applyReorder(sorted);
+  }, [operatorTasks, applyReorder]);
+
+  // ─── Validate: save step_order to DB and mark clean ───
+  const handleValidate = useCallback(() => {
+    // The steps are already being saved via updateStep in applyReorder
+    // Just recalculate all dates for all operators to ensure consistency
+    operatorTasks.forEach(group => {
+      const updated = recalcStartDates(group.tasks, holidays);
+      updated.forEach(step => updateStep(step));
+    });
+    setOrderDirty(false);
+  }, [operatorTasks, holidays, updateStep]);
 
   // ─── Inline edit helpers (now for step fields: date début, opération, durée, statuts) ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
@@ -670,6 +711,12 @@ const PlanningTableauPage: React.FC = () => {
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-1" /> Exporter Excel
             </Button>
+            <Button
+              onClick={handleValidate}
+              className={`transition-all ${orderDirty ? 'animate-pulse bg-accent text-accent-foreground hover:bg-accent/90' : 'bg-primary text-primary-foreground'}`}
+            >
+              <Check className="w-4 h-4 mr-1" /> Valider
+            </Button>
           </div>
         }
       />
@@ -683,9 +730,14 @@ const PlanningTableauPage: React.FC = () => {
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
               <h3 className="text-base font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
-              <span className="text-sm font-medium text-accent">
-                {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
-              </span>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleAutoSort(group.operator.id)}>
+                  <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Trier auto
+                </Button>
+                <span className="text-sm font-medium text-accent">
+                  {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
+                </span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <Table>
