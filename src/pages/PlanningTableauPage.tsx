@@ -693,6 +693,7 @@ const PlanningTableauPage: React.FC = () => {
                   <TableRow>
                     <TableHead className="w-10 px-1 text-center text-xs">Ordre</TableHead>
                     <TableHead className="w-[70px] text-xs">Date début</TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[80px] text-xs">N° Cmd</TableHead>
                     <TableHead className="w-[90px] text-xs">Client</TableHead>
                     <TableHead className="text-xs">Désignation</TableHead>
@@ -700,7 +701,6 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[100px] text-xs">Opération</TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Outillage">Ou.</TableHead>
