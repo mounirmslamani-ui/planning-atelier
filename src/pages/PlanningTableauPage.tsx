@@ -222,6 +222,9 @@ const PlanningTableauPage: React.FC = () => {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
 
+  // Validation state: tracks if order has been modified since last "Valider"
+  const [orderDirty, setOrderDirty] = useState(false);
+
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
   const getClientName = useCallback((clientId: string) => {
