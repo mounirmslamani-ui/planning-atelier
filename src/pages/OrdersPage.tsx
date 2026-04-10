@@ -179,7 +179,47 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
-  // Auto-sort: priority (P1>P2>P3>P4), then latest availability date (study/material/tooling deadlines)
+  // Order-level study/material/tooling status (worst case from steps)
+  const orderNeedsMap = useMemo(() => {
+    const map = new Map<string, { study: boolean; material: boolean; tooling: boolean }>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
+      if (orderSteps.length === 0) {
+        map.set(o.id, { study: o.studyReady, material: o.materialAvailable, tooling: o.toolingAvailable });
+        return;
+      }
+      // If ANY step has it false → order is false (worst case)
+      const study = orderSteps.every(s => s.studyReady !== false);
+      const material = orderSteps.every(s => s.materialAvailable !== false);
+      const tooling = orderSteps.every(s => s.toolingAvailable !== false);
+      map.set(o.id, { study, material, tooling });
+    });
+    return map;
+  }, [orders, steps, absenceOrderId, absenceOperationId]);
+
+  // Toggle order-level need and propagate to all steps
+  const toggleOrderNeed = useCallback((orderId: string, field: 'study' | 'material' | 'tooling') => {
+    const current = orderNeedsMap.get(orderId);
+    if (!current) return;
+    const newValue = !(current as any)[field];
+    
+    // Update all steps for this order
+    const orderSteps = steps.filter(s => s.orderId === orderId && s.operationId !== absenceOperationId);
+    orderSteps.forEach(s => {
+      if (field === 'study') updateStep({ ...s, studyReady: newValue, studyDeadline: newValue ? undefined : s.studyDeadline });
+      if (field === 'material') updateStep({ ...s, materialAvailable: newValue, materialDeadline: newValue ? undefined : s.materialDeadline });
+      if (field === 'tooling') updateStep({ ...s, toolingAvailable: newValue, toolingDeadline: newValue ? undefined : s.toolingDeadline });
+    });
+
+    // Also update order-level flags
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      if (field === 'study') updateOrder({ ...order, studyReady: newValue });
+      if (field === 'material') updateOrder({ ...order, materialAvailable: newValue });
+      if (field === 'tooling') updateOrder({ ...order, toolingAvailable: newValue });
+    }
+  }, [orderNeedsMap, steps, orders, absenceOperationId, updateStep, updateOrder]);
+
   const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
     return [...orderList].sort((a, b) => {
       // Primary: priority rank
