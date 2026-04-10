@@ -93,7 +93,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
