@@ -33,7 +33,7 @@ const priorityColors: Record<OrderPriority, string> = {
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'atelierTime' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 function computeCR(
   order: Order,
@@ -93,7 +93,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -179,7 +179,47 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
-  // Auto-sort: priority (P1>P2>P3>P4), then latest availability date (study/material/tooling deadlines)
+  // Order-level study/material/tooling status (worst case from steps)
+  const orderNeedsMap = useMemo(() => {
+    const map = new Map<string, { study: boolean; material: boolean; tooling: boolean }>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
+      if (orderSteps.length === 0) {
+        map.set(o.id, { study: o.studyReady, material: o.materialAvailable, tooling: o.toolingAvailable });
+        return;
+      }
+      // If ANY step has it false → order is false (worst case)
+      const study = orderSteps.every(s => s.studyReady !== false);
+      const material = orderSteps.every(s => s.materialAvailable !== false);
+      const tooling = orderSteps.every(s => s.toolingAvailable !== false);
+      map.set(o.id, { study, material, tooling });
+    });
+    return map;
+  }, [orders, steps, absenceOrderId, absenceOperationId]);
+
+  // Toggle order-level need and propagate to all steps
+  const toggleOrderNeed = useCallback((orderId: string, field: 'study' | 'material' | 'tooling') => {
+    const current = orderNeedsMap.get(orderId);
+    if (!current) return;
+    const newValue = !(current as any)[field];
+    
+    // Update all steps for this order
+    const orderSteps = steps.filter(s => s.orderId === orderId && s.operationId !== absenceOperationId);
+    orderSteps.forEach(s => {
+      if (field === 'study') updateStep({ ...s, studyReady: newValue, studyDeadline: newValue ? undefined : s.studyDeadline });
+      if (field === 'material') updateStep({ ...s, materialAvailable: newValue, materialDeadline: newValue ? undefined : s.materialDeadline });
+      if (field === 'tooling') updateStep({ ...s, toolingAvailable: newValue, toolingDeadline: newValue ? undefined : s.toolingDeadline });
+    });
+
+    // Also update order-level flags
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      if (field === 'study') updateOrder({ ...order, studyReady: newValue });
+      if (field === 'material') updateOrder({ ...order, materialAvailable: newValue });
+      if (field === 'tooling') updateOrder({ ...order, toolingAvailable: newValue });
+    }
+  }, [orderNeedsMap, steps, orders, absenceOperationId, updateStep, updateOrder]);
+
   const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
     return [...orderList].sort((a, b) => {
       // Primary: priority rank
@@ -255,10 +295,13 @@ const OrdersPage: React.FC = () => {
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
+      case 'study': { const n = orderNeedsMap.get(o.id); return n?.study ? '1' : '0'; }
+      case 'material': { const n = orderNeedsMap.get(o.id); return n?.material ? '1' : '0'; }
+      case 'tooling': { const n = orderNeedsMap.get(o.id); return n?.tooling ? '1' : '0'; }
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, crMap, atelierTimeMap]);
+  }, [getClientName, crMap, atelierTimeMap, orderNeedsMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
@@ -394,6 +437,9 @@ const OrdersPage: React.FC = () => {
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
     { key: 'cr', label: 'CR', className: 'w-[50px]' },
     { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
+    { key: 'study', label: 'Ét.', className: 'w-[35px]' },
+    { key: 'material', label: 'Mat.', className: 'w-[35px]' },
+    { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
     { key: 'observation', label: 'Observation', className: 'w-[130px]' },
   ];
 
@@ -496,6 +542,33 @@ const OrdersPage: React.FC = () => {
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
+      }
+      case 'study': {
+        const needs = orderNeedsMap.get(o.id);
+        const available = needs?.study ?? true;
+        return (
+          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'study')} title="Cliquer pour changer">
+            {available ? '🟢' : '🔴'}
+          </span>
+        );
+      }
+      case 'material': {
+        const needs = orderNeedsMap.get(o.id);
+        const available = needs?.material ?? true;
+        return (
+          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'material')} title="Cliquer pour changer">
+            {available ? '🟢' : '🔴'}
+          </span>
+        );
+      }
+      case 'tooling': {
+        const needs = orderNeedsMap.get(o.id);
+        const available = needs?.tooling ?? true;
+        return (
+          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'tooling')} title="Cliquer pour changer">
+            {available ? '🟢' : '🔴'}
+          </span>
+        );
       }
       case 'observation': return <span className="text-xs text-muted-foreground max-w-[130px] truncate block">{o.observation || '—'}</span>;
       default: return null;

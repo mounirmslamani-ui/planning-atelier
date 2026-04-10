@@ -48,8 +48,25 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline' | 'subcontractingDeadline'; label: string } | null>(null);
 
+  // Track whether we've initialized for this dialog open session
+  const initializedRef = React.useRef(false);
+  const prevOpenRef = React.useRef(false);
+
   useEffect(() => {
-    if (!open) return;
+    // Reset initialization flag when dialog closes
+    if (!open) {
+      if (prevOpenRef.current) {
+        initializedRef.current = false;
+      }
+      prevOpenRef.current = open;
+      return;
+    }
+    prevOpenRef.current = open;
+
+    // Only initialize once per dialog open
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const existingSteps = steps
       .filter(s => s.orderId === order.id && s.operationId !== absenceOperationId)
       .sort((a, b) => a.order - b.order);
@@ -81,7 +98,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     } else {
       setRows([]);
     }
-  }, [open, order.id, steps]);
+  }, [open, order.id, steps, absenceOperationId]);
 
   const addRow = () => {
     setRows(prev => [...prev, {
