@@ -434,6 +434,9 @@ const OrdersPage: React.FC = () => {
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
     { key: 'cr', label: 'CR', className: 'w-[50px]' },
     { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
+    { key: 'study', label: 'Ét.', className: 'w-[35px]' },
+    { key: 'material', label: 'Mat.', className: 'w-[35px]' },
+    { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
     { key: 'observation', label: 'Observation', className: 'w-[130px]' },
   ];
 
