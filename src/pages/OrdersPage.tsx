@@ -33,7 +33,7 @@ const priorityColors: Record<OrderPriority, string> = {
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'atelierTime' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 function computeCR(
   order: Order,
