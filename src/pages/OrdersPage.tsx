@@ -543,6 +543,33 @@ const OrdersPage: React.FC = () => {
         const mins = atelierTimeMap.get(o.id) || 0;
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
       }
+      case 'study': {
+        const needs = orderNeedsMap.get(o.id);
+        const available = needs?.study ?? true;
+        return (
+          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'study')} title="Cliquer pour changer">
+            {available ? '🟢' : '🔴'}
+          </span>
+        );
+      }
+      case 'material': {
+        const needs = orderNeedsMap.get(o.id);
+        const available = needs?.material ?? true;
+        return (
+          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'material')} title="Cliquer pour changer">
+            {available ? '🟢' : '🔴'}
+          </span>
+        );
+      }
+      case 'tooling': {
+        const needs = orderNeedsMap.get(o.id);
+        const available = needs?.tooling ?? true;
+        return (
+          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'tooling')} title="Cliquer pour changer">
+            {available ? '🟢' : '🔴'}
+          </span>
+        );
+      }
       case 'observation': return <span className="text-xs text-muted-foreground max-w-[130px] truncate block">{o.observation || '—'}</span>;
       default: return null;
     }
