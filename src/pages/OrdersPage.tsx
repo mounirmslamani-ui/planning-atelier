@@ -295,10 +295,13 @@ const OrdersPage: React.FC = () => {
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
+      case 'study': { const n = orderNeedsMap.get(o.id); return n?.study ? '1' : '0'; }
+      case 'material': { const n = orderNeedsMap.get(o.id); return n?.material ? '1' : '0'; }
+      case 'tooling': { const n = orderNeedsMap.get(o.id); return n?.tooling ? '1' : '0'; }
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, crMap, atelierTimeMap]);
+  }, [getClientName, crMap, atelierTimeMap, orderNeedsMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
