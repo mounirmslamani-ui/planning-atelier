@@ -15,15 +15,19 @@ const priorityColors: Record<OrderPriority, string> = {
   'P4': 'bg-priority-p4 text-foreground',
 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
 const SubcontractingPage: React.FC = () => {
-  const { orders, clients, steps, operations, updateStep, absenceOrderId } = usePlanning();
+  const { orders, clients, steps, operations, subcontractors, updateStep, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+  const getSubcontractorName = useCallback((id: string | undefined) => {
+    if (!id) return '—';
+    return subcontractors.find(s => s.id === id)?.companyName || '—';
+  }, [subcontractors]);
 
   // Find all subcontractor steps (operations with category 'subcontractor')
   const subcontractorOpIds = useMemo(() => {
@@ -31,11 +35,9 @@ const SubcontractingPage: React.FC = () => {
   }, [operations]);
 
   const subcontractingRows = useMemo(() => {
-    // Get all steps that are subcontractor operations
     const subSteps = steps.filter(s => subcontractorOpIds.has(s.operationId));
 
-    // Group by orderId - one row per order that has subcontracting
-    const orderMap = new Map<string, { deadline: string; done: boolean; stepIds: string[] }>();
+    const orderMap = new Map<string, { deadline: string; done: boolean; stepIds: string[]; subcontractorId: string | undefined }>();
     subSteps.forEach(s => {
       const existing = orderMap.get(s.orderId);
       if (!existing) {
@@ -43,30 +45,32 @@ const SubcontractingPage: React.FC = () => {
           deadline: s.subcontractingDeadline || s.endDate || '',
           done: s.subcontractingDone ?? false,
           stepIds: [s.id],
+          subcontractorId: s.subcontractorId,
         });
       } else {
-        // Take the latest deadline
         if ((s.subcontractingDeadline || s.endDate || '') > existing.deadline) {
           existing.deadline = s.subcontractingDeadline || s.endDate || '';
         }
-        // All must be done for the order to be considered done
         if (!(s.subcontractingDone ?? false)) existing.done = false;
         existing.stepIds.push(s.id);
+        // Use first non-empty subcontractorId
+        if (!existing.subcontractorId && s.subcontractorId) {
+          existing.subcontractorId = s.subcontractorId;
+        }
       }
     });
 
     return Array.from(orderMap.entries()).map(([orderId, info]) => {
-      if (info.done) return null; // Hide completed subcontracting
+      if (info.done) return null;
       const order = orders.find(o => o.id === orderId);
       if (!order || order.id === absenceOrderId) return null;
       return { order, ...info };
-    }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[] }[];
-  }, [steps, orders, subcontractorOpIds]);
+    }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[]; subcontractorId: string | undefined }[];
+  }, [steps, orders, subcontractorOpIds, absenceOrderId]);
 
   const filteredRows = useMemo(() => {
     let result = [...subcontractingRows];
 
-    // Apply text filters
     Object.entries(filters).forEach(([key, val]) => {
       if (!val) return;
       const lv = val.toLowerCase();
@@ -80,12 +84,12 @@ const SubcontractingPage: React.FC = () => {
           case 'priority': return (r.order.priority || '').toLowerCase().includes(lv);
           case 'plannedDeadline': return r.order.plannedDeadline.includes(lv);
           case 'subcontractingDeadline': return r.deadline.includes(lv);
+          case 'subcontractor': return getSubcontractorName(r.subcontractorId).toLowerCase().includes(lv);
           default: return true;
         }
       });
     });
 
-    // Sort
     if (sortKey && sortDir) {
       const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
       result.sort((a, b) => {
@@ -99,13 +103,14 @@ const SubcontractingPage: React.FC = () => {
           case 'priority': cmp = (priorityRank[a.order.priority || 'P4'] ?? 3) - (priorityRank[b.order.priority || 'P4'] ?? 3); break;
           case 'plannedDeadline': cmp = a.order.plannedDeadline.localeCompare(b.order.plannedDeadline); break;
           case 'subcontractingDeadline': cmp = a.deadline.localeCompare(b.deadline); break;
+          case 'subcontractor': cmp = getSubcontractorName(a.subcontractorId).localeCompare(getSubcontractorName(b.subcontractorId)); break;
         }
         return sortDir === 'desc' ? -cmp : cmp;
       });
     }
 
     return result;
-  }, [subcontractingRows, filters, sortKey, sortDir, getClientName]);
+  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName]);
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
@@ -133,6 +138,7 @@ const SubcontractingPage: React.FC = () => {
               <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Sous-traitant" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Délai promis" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Délai sous-traitance" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-center w-16">Fait</TableHead>
@@ -141,7 +147,7 @@ const SubcontractingPage: React.FC = () => {
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   Aucune sous-traitance planifiée ✓
                 </TableCell>
               </TableRow>
@@ -159,6 +165,7 @@ const SubcontractingPage: React.FC = () => {
                       <Badge className={`${priorityColors[row.order.priority]} text-xs`}>{row.order.priority}</Badge>
                     ) : '—'}
                   </TableCell>
+                  <TableCell className="text-sm font-medium">{getSubcontractorName(row.subcontractorId)}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.plannedDeadline) || '—'}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.deadline) || '—'}</TableCell>
                   <TableCell className="text-center">
