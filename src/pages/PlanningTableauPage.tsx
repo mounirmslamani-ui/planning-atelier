@@ -473,22 +473,39 @@ const PlanningTableauPage: React.FC = () => {
     applyReorder(sorted);
   }, [operatorTasks, applyReorder]);
 
-  // ─── Validate: save step_order to DB, sync with Gantt, mark clean ───
+  // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
   const handleValidate = useCallback(() => {
-    operatorTasks.forEach(group => {
-      const updated = recalcStartDates(group.tasks, holidays);
-      updated.forEach(step => updateStep(step));
+    // Commit every draft step that differs from the context steps
+    const contextMap = new Map(steps.map(s => [s.id, s]));
+    draftSteps.forEach(draft => {
+      const original = contextMap.get(draft.id);
+      if (!original ||
+        draft.order !== original.order ||
+        draft.startDate !== original.startDate ||
+        draft.startTime !== original.startTime ||
+        draft.endDate !== original.endDate ||
+        draft.endTime !== original.endTime ||
+        draft.frozen !== original.frozen ||
+        draft.studyReady !== original.studyReady ||
+        draft.studyDeadline !== original.studyDeadline ||
+        draft.materialAvailable !== original.materialAvailable ||
+        draft.materialDeadline !== original.materialDeadline ||
+        draft.toolingAvailable !== original.toolingAvailable ||
+        draft.toolingDeadline !== original.toolingDeadline ||
+        draft.operationId !== original.operationId ||
+        draft.estimatedDuration !== original.estimatedDuration
+      ) {
+        updateStep(draft);
+      }
     });
     setOrderDirty(false);
-  }, [operatorTasks, holidays, updateStep]);
+  }, [draftSteps, steps, updateStep]);
 
-  // ─── Toggle frozen (lock) on a step ───
+  // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
-    const step = steps.find(s => s.id === stepId);
-    if (step) {
-      updateStep({ ...step, frozen: !step.frozen });
-    }
-  }, [steps, updateStep]);
+    setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: !s.frozen } : s));
+    setOrderDirty(true);
+  }, []);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
@@ -500,7 +517,7 @@ const PlanningTableauPage: React.FC = () => {
 
   const saveInlineEdits = (stepId: string) => {
     const changes = inlineEdits[stepId];
-    const step = steps.find(s => s.id === stepId);
+    const step = draftSteps.find(s => s.id === stepId);
     if (step && changes && Object.keys(changes).length > 0) {
       const updated = { ...step };
       if (changes.startDate !== undefined) updated.startDate = changes.startDate;
@@ -521,7 +538,9 @@ const PlanningTableauPage: React.FC = () => {
         updated.toolingAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
         updated.toolingDeadline = s === 'orange' ? 'pending' : undefined;
       }
-      updateStep(updated);
+      // Save to draft only (not DB)
+      setDraftSteps(prev => prev.map(s => s.id === stepId ? updated : s));
+      setOrderDirty(true);
     }
     setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
     setEditingRowId(null);
