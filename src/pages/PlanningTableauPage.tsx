@@ -572,7 +572,7 @@ const PlanningTableauPage: React.FC = () => {
   }, []);
 
   const openProdDialog = useCallback((stepId: string) => {
-    const step = steps.find(s => s.id === stepId);
+    const step = draftSteps.find(s => s.id === stepId);
     if (!step) return;
     const order = orders.find(o => o.id === step.orderId);
     if (!order) return;
