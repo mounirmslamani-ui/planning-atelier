@@ -85,6 +85,22 @@ function phaseAmontEmoji(status: string): string {
   return '⚫';
 }
 
+/** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
+function getStepFlowPosition(
+  step: ProductionStep,
+  allSteps: ProductionStep[],
+): 'only' | 'first' | 'last' | 'middle' | 'none' {
+  // Get all operator steps (non-subcontractor) for this order, sorted by order
+  const operatorSteps = allSteps
+    .filter(s => s.orderId === step.orderId && !s.subcontractorId)
+    .sort((a, b) => a.order - b.order);
+  if (operatorSteps.length === 0) return 'none';
+  if (operatorSteps.length === 1 && operatorSteps[0].id === step.id) return 'only';
+  if (operatorSteps[0].id === step.id) return 'first';
+  if (operatorSteps[operatorSteps.length - 1].id === step.id) return 'last';
+  return 'middle';
+}
+
 function getWorkingDays(n: number, holidays: Holiday[]): string[] {
   const result: string[] = [];
   const cursor = new Date();
