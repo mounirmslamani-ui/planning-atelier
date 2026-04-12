@@ -344,7 +344,7 @@ const PlanningTableauPage: React.FC = () => {
     if (dropIndex < dragIndex) {
       const checks: { type: 'study' | 'material' | 'tooling' | 'phaseAmont'; message: string }[] = [];
 
-      const amontSt = phaseAmontStatus(dragged.step, steps, productionRecords);
+      const amontSt = phaseAmontStatus(dragged.step, draftSteps, productionRecords);
       if (amontSt === 'red') {
         checks.push({ type: 'phaseAmont', message: "Attention : phase amont n'est pas encore effectuée. Reprogrammer quand même cette étape ?" });
       }
@@ -356,6 +356,15 @@ const PlanningTableauPage: React.FC = () => {
       }
       if (dragged.step.toolingAvailable === false) {
         checks.push({ type: 'tooling', message: "Attention : outillage non disponible. Reprogrammer quand même cette étape ?" });
+      }
+
+      // Check commercial priority: if moved above a step with higher priority (lower Cn)
+      // We only warn if the dragged order has lower priority than something it's jumping over
+      const draggedPriority = priorityRank[dragged.order.priority] ?? 9;
+      const jumpedOverItems = items.slice(0, dropIndex);
+      const hasHigherPriorityAbove = jumpedOverItems.some(t => (priorityRank[t.order.priority] ?? 9) < draggedPriority);
+      if (hasHigherPriorityAbove) {
+        checks.push({ type: 'study' as any, message: "Attention l'ordre d'exécution ne respecte pas l'ordre défini dans les priorités commerciales. Reprogrammer quand même cette étape ?" });
       }
 
       if (checks.length > 0) {
@@ -371,7 +380,7 @@ const PlanningTableauPage: React.FC = () => {
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, steps, productionRecords]);
+  }, [operatorTasks, draftSteps, productionRecords, applyReorder]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
