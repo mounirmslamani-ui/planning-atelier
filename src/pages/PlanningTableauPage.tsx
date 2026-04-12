@@ -639,7 +639,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     }
     setCompletionDialog(null);
-  }, [completionDialog, addProductionRecord, deleteStep, steps, updateStep, holidays]);
+  }, [completionDialog, addProductionRecord, deleteStep, draftSteps, updateStep, holidays]);
 
   // Export to Excel
   const handleExport = useCallback(() => {
