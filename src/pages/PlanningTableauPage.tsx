@@ -832,7 +832,7 @@ const PlanningTableauPage: React.FC = () => {
                     const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
                     const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
                     const toolState = step.toolingDeadline === 'warning' ? 'warning' as any : getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
-                    const amontStatus = phaseAmontStatus(step, steps, productionRecords);
+                    const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
                     const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
                     const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
 
