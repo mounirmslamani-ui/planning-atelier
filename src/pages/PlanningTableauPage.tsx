@@ -200,6 +200,23 @@ const PlanningTableauPage: React.FC = () => {
     }
   }, []);
 
+  // ─── DRAFT STEPS: local layer that defers DB writes until "Valider" ───
+  const [draftSteps, setDraftSteps] = useState<ProductionStep[]>(steps);
+  const draftInitialized = useRef(false);
+
+  // Sync from context on initial load or when steps change from outside (e.g. OrderPlanningDialog)
+  useEffect(() => {
+    if (!draftInitialized.current) {
+      setDraftSteps(steps);
+      draftInitialized.current = true;
+      return;
+    }
+    // If not dirty, accept upstream changes
+    if (!orderDirty) {
+      setDraftSteps(steps);
+    }
+  }, [steps]); // intentionally exclude orderDirty to avoid loops
+
   // Chained confirm dialogs for drag-up checks
   const [pendingDrop, setPendingDrop] = useState<{
     tasks: TaskItem[];
@@ -244,7 +261,7 @@ const PlanningTableauPage: React.FC = () => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
 
-  // Group steps by operator
+  // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
     const firstDay = workingDays[0];
@@ -255,7 +272,7 @@ const PlanningTableauPage: React.FC = () => {
       result[op.id] = { operator: op, tasks: [] };
     });
 
-    steps.forEach(step => {
+    draftSteps.forEach(step => {
       if (step.operationId === absenceOperationId) return;
       if (step.orderId === absenceOrderId) return;
       if (!step.operatorId) return;
@@ -271,13 +288,13 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by the order's Cn (displayOrder)
+    // Sort tasks within each operator by step.order (local ordering)
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
-        const orderA = a.order.displayOrder ?? 9999;
-        const orderB = b.order.displayOrder ?? 9999;
+        const orderA = a.step.order;
+        const orderB = b.step.order;
         if (orderA !== orderB) return orderA - orderB;
-        return a.step.order - b.step.order;
+        return 0;
       });
     });
 
@@ -288,7 +305,46 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, steps, orders, workingDays, absenceOperationId, absenceOrderId]);
+  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId]);
+
+  /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
+  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
+    const reorderedTasks = tasks.map(({ step, order }, idx) => {
+      const reorderedStep: ProductionStep = {
+        ...step,
+        order: idx + 1,
+      };
+
+      if (step.id === targetStepId && warningFields) {
+        if (warningFields.has('study')) {
+          reorderedStep.studyReady = false;
+          reorderedStep.studyDeadline = 'warning';
+        }
+        if (warningFields.has('material')) {
+          reorderedStep.materialAvailable = false;
+          reorderedStep.materialDeadline = 'warning';
+        }
+        if (warningFields.has('tooling')) {
+          reorderedStep.toolingAvailable = false;
+          reorderedStep.toolingDeadline = 'warning';
+        }
+      }
+
+      return { order, step: reorderedStep };
+    });
+
+    const dateUpdates = recalcStartDates(reorderedTasks, holidays);
+    const dateUpdatesById = new Map(dateUpdates.map(s => [s.id, s]));
+
+    const updatedIds = new Set(reorderedTasks.map(t => t.step.id));
+    const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
+
+    setDraftSteps(prev => {
+      const unchanged = prev.filter(s => !updatedIds.has(s.id));
+      return [...unchanged, ...finalSteps];
+    });
+    setOrderDirty(true);
+  }, [holidays]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
@@ -327,7 +383,7 @@ const PlanningTableauPage: React.FC = () => {
     if (dropIndex < dragIndex) {
       const checks: { type: 'study' | 'material' | 'tooling' | 'phaseAmont'; message: string }[] = [];
 
-      const amontSt = phaseAmontStatus(dragged.step, steps, productionRecords);
+      const amontSt = phaseAmontStatus(dragged.step, draftSteps, productionRecords);
       if (amontSt === 'red') {
         checks.push({ type: 'phaseAmont', message: "Attention : phase amont n'est pas encore effectuée. Reprogrammer quand même cette étape ?" });
       }
@@ -339,6 +395,13 @@ const PlanningTableauPage: React.FC = () => {
       }
       if (dragged.step.toolingAvailable === false) {
         checks.push({ type: 'tooling', message: "Attention : outillage non disponible. Reprogrammer quand même cette étape ?" });
+      }
+
+      const draggedPriority = priorityRank[dragged.order.priority] ?? 9;
+      const jumpedOverItems = items.slice(0, dropIndex);
+      const hasHigherPriorityAbove = jumpedOverItems.some(t => (priorityRank[t.order.priority] ?? 9) < draggedPriority);
+      if (hasHigherPriorityAbove) {
+        checks.push({ type: 'study' as any, message: "Attention l'ordre d'exécution ne respecte pas l'ordre défini dans les priorités commerciales. Reprogrammer quand même cette étape ?" });
       }
 
       if (checks.length > 0) {
@@ -354,7 +417,7 @@ const PlanningTableauPage: React.FC = () => {
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, steps, productionRecords]);
+  }, [operatorTasks, draftSteps, productionRecords, applyReorder]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -362,59 +425,6 @@ const PlanningTableauPage: React.FC = () => {
     setIsDragging(false);
     (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = undefined;
   }, []);
-
-  /** Apply new order + recalculate dates, optionally set ⚠️ warnings */
-  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
-    const reorderedTasks = tasks.map(({ step, order }, idx) => {
-      const reorderedStep: ProductionStep = {
-        ...step,
-        order: idx + 1,
-      };
-
-      if (step.id === targetStepId && warningFields) {
-        if (warningFields.has('study')) {
-          reorderedStep.studyReady = false;
-          reorderedStep.studyDeadline = 'warning';
-        }
-        if (warningFields.has('material')) {
-          reorderedStep.materialAvailable = false;
-          reorderedStep.materialDeadline = 'warning';
-        }
-        if (warningFields.has('tooling')) {
-          reorderedStep.toolingAvailable = false;
-          reorderedStep.toolingDeadline = 'warning';
-        }
-      }
-
-      return { order, step: reorderedStep };
-    });
-
-    const dateUpdatesById = new Map(
-      recalcStartDates(reorderedTasks, holidays).map(step => [step.id, step]),
-    );
-
-    reorderedTasks.forEach(({ step }, idx) => {
-      const nextStep = dateUpdatesById.get(step.id) ?? step;
-      const currentStep = tasks[idx].step;
-      const hasChanged =
-        currentStep.order !== nextStep.order ||
-        currentStep.startDate !== nextStep.startDate ||
-        currentStep.startTime !== nextStep.startTime ||
-        currentStep.endDate !== nextStep.endDate ||
-        currentStep.endTime !== nextStep.endTime ||
-        currentStep.studyReady !== nextStep.studyReady ||
-        currentStep.studyDeadline !== nextStep.studyDeadline ||
-        currentStep.materialAvailable !== nextStep.materialAvailable ||
-        currentStep.materialDeadline !== nextStep.materialDeadline ||
-        currentStep.toolingAvailable !== nextStep.toolingAvailable ||
-        currentStep.toolingDeadline !== nextStep.toolingDeadline;
-
-      if (hasChanged) {
-        updateStep(nextStep);
-      }
-    });
-    setOrderDirty(true);
-  }, [updateStep, holidays]);
 
   // Handle chained confirm for pending drop
   const handlePendingConfirm = useCallback(() => {
@@ -469,22 +479,39 @@ const PlanningTableauPage: React.FC = () => {
     applyReorder(sorted);
   }, [operatorTasks, applyReorder]);
 
-  // ─── Validate: save step_order to DB, sync with Gantt, mark clean ───
+  // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
   const handleValidate = useCallback(() => {
-    operatorTasks.forEach(group => {
-      const updated = recalcStartDates(group.tasks, holidays);
-      updated.forEach(step => updateStep(step));
+    // Commit every draft step that differs from the context steps
+    const contextMap = new Map(steps.map(s => [s.id, s]));
+    draftSteps.forEach(draft => {
+      const original = contextMap.get(draft.id);
+      if (!original ||
+        draft.order !== original.order ||
+        draft.startDate !== original.startDate ||
+        draft.startTime !== original.startTime ||
+        draft.endDate !== original.endDate ||
+        draft.endTime !== original.endTime ||
+        draft.frozen !== original.frozen ||
+        draft.studyReady !== original.studyReady ||
+        draft.studyDeadline !== original.studyDeadline ||
+        draft.materialAvailable !== original.materialAvailable ||
+        draft.materialDeadline !== original.materialDeadline ||
+        draft.toolingAvailable !== original.toolingAvailable ||
+        draft.toolingDeadline !== original.toolingDeadline ||
+        draft.operationId !== original.operationId ||
+        draft.estimatedDuration !== original.estimatedDuration
+      ) {
+        updateStep(draft);
+      }
     });
     setOrderDirty(false);
-  }, [operatorTasks, holidays, updateStep]);
+  }, [draftSteps, steps, updateStep]);
 
-  // ─── Toggle frozen (lock) on a step ───
+  // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
-    const step = steps.find(s => s.id === stepId);
-    if (step) {
-      updateStep({ ...step, frozen: !step.frozen });
-    }
-  }, [steps, updateStep]);
+    setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: !s.frozen } : s));
+    setOrderDirty(true);
+  }, []);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
@@ -496,7 +523,7 @@ const PlanningTableauPage: React.FC = () => {
 
   const saveInlineEdits = (stepId: string) => {
     const changes = inlineEdits[stepId];
-    const step = steps.find(s => s.id === stepId);
+    const step = draftSteps.find(s => s.id === stepId);
     if (step && changes && Object.keys(changes).length > 0) {
       const updated = { ...step };
       if (changes.startDate !== undefined) updated.startDate = changes.startDate;
@@ -517,7 +544,9 @@ const PlanningTableauPage: React.FC = () => {
         updated.toolingAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
         updated.toolingDeadline = s === 'orange' ? 'pending' : undefined;
       }
-      updateStep(updated);
+      // Save to draft only (not DB)
+      setDraftSteps(prev => prev.map(s => s.id === stepId ? updated : s));
+      setOrderDirty(true);
     }
     setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
     setEditingRowId(null);
@@ -543,7 +572,7 @@ const PlanningTableauPage: React.FC = () => {
   }, []);
 
   const openProdDialog = useCallback((stepId: string) => {
-    const step = steps.find(s => s.id === stepId);
+    const step = draftSteps.find(s => s.id === stepId);
     if (!step) return;
     const order = orders.find(o => o.id === step.orderId);
     if (!order) return;
@@ -558,7 +587,7 @@ const PlanningTableauPage: React.FC = () => {
       operationName: getOperationName(step.operationId),
       durationToday: '', totalDoneAlready,
     });
-  }, [steps, orders, operators, productionRecords, getOperationName]);
+  }, [draftSteps, orders, operators, productionRecords, getOperationName]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -597,7 +626,7 @@ const PlanningTableauPage: React.FC = () => {
     if (finished) {
       deleteStep(stepId);
     } else {
-      const step = steps.find(s => s.id === stepId);
+      const step = draftSteps.find(s => s.id === stepId);
       if (step) {
         const remaining = Math.max(0, totalEstimated - totalDone);
         const tomorrow = new Date();
@@ -610,7 +639,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     }
     setCompletionDialog(null);
-  }, [completionDialog, addProductionRecord, deleteStep, steps, updateStep, holidays]);
+  }, [completionDialog, addProductionRecord, deleteStep, draftSteps, updateStep, holidays]);
 
   // Export to Excel
   const handleExport = useCallback(() => {
@@ -803,7 +832,7 @@ const PlanningTableauPage: React.FC = () => {
                     const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
                     const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
                     const toolState = step.toolingDeadline === 'warning' ? 'warning' as any : getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
-                    const amontStatus = phaseAmontStatus(step, steps, productionRecords);
+                    const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
                     const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
                     const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
 
