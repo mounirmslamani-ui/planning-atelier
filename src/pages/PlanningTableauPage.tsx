@@ -626,7 +626,7 @@ const PlanningTableauPage: React.FC = () => {
     if (finished) {
       deleteStep(stepId);
     } else {
-      const step = steps.find(s => s.id === stepId);
+      const step = draftSteps.find(s => s.id === stepId);
       if (step) {
         const remaining = Math.max(0, totalEstimated - totalDone);
         const tomorrow = new Date();
