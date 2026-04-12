@@ -380,7 +380,7 @@ const PlanningTableauPage: React.FC = () => {
     (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = undefined;
   }, []);
 
-  /** Apply new order + recalculate dates, optionally set ⚠️ warnings */
+  /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
     const reorderedTasks = tasks.map(({ step, order }, idx) => {
       const reorderedStep: ProductionStep = {
@@ -406,32 +406,19 @@ const PlanningTableauPage: React.FC = () => {
       return { order, step: reorderedStep };
     });
 
-    const dateUpdatesById = new Map(
-      recalcStartDates(reorderedTasks, holidays).map(step => [step.id, step]),
-    );
+    const dateUpdates = recalcStartDates(reorderedTasks, holidays);
+    const dateUpdatesById = new Map(dateUpdates.map(s => [s.id, s]));
 
-    reorderedTasks.forEach(({ step }, idx) => {
-      const nextStep = dateUpdatesById.get(step.id) ?? step;
-      const currentStep = tasks[idx].step;
-      const hasChanged =
-        currentStep.order !== nextStep.order ||
-        currentStep.startDate !== nextStep.startDate ||
-        currentStep.startTime !== nextStep.startTime ||
-        currentStep.endDate !== nextStep.endDate ||
-        currentStep.endTime !== nextStep.endTime ||
-        currentStep.studyReady !== nextStep.studyReady ||
-        currentStep.studyDeadline !== nextStep.studyDeadline ||
-        currentStep.materialAvailable !== nextStep.materialAvailable ||
-        currentStep.materialDeadline !== nextStep.materialDeadline ||
-        currentStep.toolingAvailable !== nextStep.toolingAvailable ||
-        currentStep.toolingDeadline !== nextStep.toolingDeadline;
+    // Build updated step list
+    const updatedIds = new Set(reorderedTasks.map(t => t.step.id));
+    const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
 
-      if (hasChanged) {
-        updateStep(nextStep);
-      }
+    setDraftSteps(prev => {
+      const unchanged = prev.filter(s => !updatedIds.has(s.id));
+      return [...unchanged, ...finalSteps];
     });
     setOrderDirty(true);
-  }, [updateStep, holidays]);
+  }, [holidays]);
 
   // Handle chained confirm for pending drop
   const handlePendingConfirm = useCallback(() => {
