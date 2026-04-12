@@ -200,6 +200,23 @@ const PlanningTableauPage: React.FC = () => {
     }
   }, []);
 
+  // ─── DRAFT STEPS: local layer that defers DB writes until "Valider" ───
+  const [draftSteps, setDraftSteps] = useState<ProductionStep[]>(steps);
+  const draftInitialized = useRef(false);
+
+  // Sync from context on initial load or when steps change from outside (e.g. OrderPlanningDialog)
+  useEffect(() => {
+    if (!draftInitialized.current) {
+      setDraftSteps(steps);
+      draftInitialized.current = true;
+      return;
+    }
+    // If not dirty, accept upstream changes
+    if (!orderDirty) {
+      setDraftSteps(steps);
+    }
+  }, [steps]); // intentionally exclude orderDirty to avoid loops
+
   // Chained confirm dialogs for drag-up checks
   const [pendingDrop, setPendingDrop] = useState<{
     tasks: TaskItem[];
@@ -244,7 +261,7 @@ const PlanningTableauPage: React.FC = () => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
 
-  // Group steps by operator
+  // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
     const firstDay = workingDays[0];
@@ -255,7 +272,7 @@ const PlanningTableauPage: React.FC = () => {
       result[op.id] = { operator: op, tasks: [] };
     });
 
-    steps.forEach(step => {
+    draftSteps.forEach(step => {
       if (step.operationId === absenceOperationId) return;
       if (step.orderId === absenceOrderId) return;
       if (!step.operatorId) return;
@@ -271,13 +288,13 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by the order's Cn (displayOrder)
+    // Sort tasks within each operator by step.order (local ordering)
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
-        const orderA = a.order.displayOrder ?? 9999;
-        const orderB = b.order.displayOrder ?? 9999;
+        const orderA = a.step.order;
+        const orderB = b.step.order;
         if (orderA !== orderB) return orderA - orderB;
-        return a.step.order - b.step.order;
+        return 0;
       });
     });
 
@@ -288,7 +305,7 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, steps, orders, workingDays, absenceOperationId, absenceOrderId]);
+  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
