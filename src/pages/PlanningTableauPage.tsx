@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut } from 'lucide-react';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -83,6 +83,22 @@ function phaseAmontEmoji(status: string): string {
   if (status === 'red') return '🔴';
   if (status === 'warning') return '⚠️';
   return '⚫';
+}
+
+/** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
+function getStepFlowPosition(
+  step: ProductionStep,
+  allSteps: ProductionStep[],
+): 'only' | 'first' | 'last' | 'middle' | 'none' {
+  // Get all operator steps (non-subcontractor) for this order, sorted by order
+  const operatorSteps = allSteps
+    .filter(s => s.orderId === step.orderId && !s.subcontractorId)
+    .sort((a, b) => a.order - b.order);
+  if (operatorSteps.length === 0) return 'none';
+  if (operatorSteps.length === 1 && operatorSteps[0].id === step.id) return 'only';
+  if (operatorSteps[0].id === step.id) return 'first';
+  if (operatorSteps[operatorSteps.length - 1].id === step.id) return 'last';
+  return 'middle';
 }
 
 function getWorkingDays(n: number, holidays: Holiday[]): string[] {
@@ -828,6 +844,7 @@ const PlanningTableauPage: React.FC = () => {
                     const blocked = isStepBlocked(step);
                     const isEditing = editingRowId === step.id;
                     const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
+                    const flowPos = getStepFlowPosition(step, draftSteps);
 
                     const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
                     const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
@@ -909,25 +926,40 @@ const PlanningTableauPage: React.FC = () => {
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          {isEditing ? (
-                            <Select
-                              value={getStepInlineValue(step, 'operationId') || step.operationId}
-                              onValueChange={val => setStepInlineValue(step.id, 'operationId', val)}
-                            >
-                              <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {operations
-                                  .filter(o => o.id !== absenceOperationId && o.category === 'operator')
-                                  .map(o => (
-                                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <span className="text-xs">{getOperationName(step.operationId)}</span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {/* Flow position icons */}
+                            {flowPos === 'only' && (
+                              <div className="flex items-center gap-0 shrink-0">
+                                <LogIn className="w-3.5 h-3.5 text-[hsl(142,60%,42%)]" />
+                                <LogOut className="w-3.5 h-3.5 text-[hsl(0,72%,51%)]" />
+                              </div>
+                            )}
+                            {flowPos === 'first' && (
+                              <LogIn className="w-3.5 h-3.5 text-[hsl(142,60%,42%)] shrink-0" />
+                            )}
+                            {flowPos === 'last' && (
+                              <LogOut className="w-3.5 h-3.5 text-[hsl(0,72%,51%)] shrink-0" />
+                            )}
+                            {isEditing ? (
+                              <Select
+                                value={getStepInlineValue(step, 'operationId') || step.operationId}
+                                onValueChange={val => setStepInlineValue(step.id, 'operationId', val)}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {operations
+                                    .filter(o => o.id !== absenceOperationId && o.category === 'operator')
+                                    .map(o => (
+                                      <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-xs">{getOperationName(step.operationId)}</span>
+                            )}
+                          </div>
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center">
