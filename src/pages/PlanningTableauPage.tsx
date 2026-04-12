@@ -307,6 +307,45 @@ const PlanningTableauPage: React.FC = () => {
       .filter(g => g.tasks.length > 0);
   }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId]);
 
+  /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
+  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
+    const reorderedTasks = tasks.map(({ step, order }, idx) => {
+      const reorderedStep: ProductionStep = {
+        ...step,
+        order: idx + 1,
+      };
+
+      if (step.id === targetStepId && warningFields) {
+        if (warningFields.has('study')) {
+          reorderedStep.studyReady = false;
+          reorderedStep.studyDeadline = 'warning';
+        }
+        if (warningFields.has('material')) {
+          reorderedStep.materialAvailable = false;
+          reorderedStep.materialDeadline = 'warning';
+        }
+        if (warningFields.has('tooling')) {
+          reorderedStep.toolingAvailable = false;
+          reorderedStep.toolingDeadline = 'warning';
+        }
+      }
+
+      return { order, step: reorderedStep };
+    });
+
+    const dateUpdates = recalcStartDates(reorderedTasks, holidays);
+    const dateUpdatesById = new Map(dateUpdates.map(s => [s.id, s]));
+
+    const updatedIds = new Set(reorderedTasks.map(t => t.step.id));
+    const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
+
+    setDraftSteps(prev => {
+      const unchanged = prev.filter(s => !updatedIds.has(s.id));
+      return [...unchanged, ...finalSteps];
+    });
+    setOrderDirty(true);
+  }, [holidays]);
+
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
     dragRef.current = { operatorId, index };
@@ -358,8 +397,6 @@ const PlanningTableauPage: React.FC = () => {
         checks.push({ type: 'tooling', message: "Attention : outillage non disponible. Reprogrammer quand même cette étape ?" });
       }
 
-      // Check commercial priority: if moved above a step with higher priority (lower Cn)
-      // We only warn if the dragged order has lower priority than something it's jumping over
       const draggedPriority = priorityRank[dragged.order.priority] ?? 9;
       const jumpedOverItems = items.slice(0, dropIndex);
       const hasHigherPriorityAbove = jumpedOverItems.some(t => (priorityRank[t.order.priority] ?? 9) < draggedPriority);
@@ -388,46 +425,6 @@ const PlanningTableauPage: React.FC = () => {
     setIsDragging(false);
     (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = undefined;
   }, []);
-
-  /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
-  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
-    const reorderedTasks = tasks.map(({ step, order }, idx) => {
-      const reorderedStep: ProductionStep = {
-        ...step,
-        order: idx + 1,
-      };
-
-      if (step.id === targetStepId && warningFields) {
-        if (warningFields.has('study')) {
-          reorderedStep.studyReady = false;
-          reorderedStep.studyDeadline = 'warning';
-        }
-        if (warningFields.has('material')) {
-          reorderedStep.materialAvailable = false;
-          reorderedStep.materialDeadline = 'warning';
-        }
-        if (warningFields.has('tooling')) {
-          reorderedStep.toolingAvailable = false;
-          reorderedStep.toolingDeadline = 'warning';
-        }
-      }
-
-      return { order, step: reorderedStep };
-    });
-
-    const dateUpdates = recalcStartDates(reorderedTasks, holidays);
-    const dateUpdatesById = new Map(dateUpdates.map(s => [s.id, s]));
-
-    // Build updated step list
-    const updatedIds = new Set(reorderedTasks.map(t => t.step.id));
-    const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
-
-    setDraftSteps(prev => {
-      const unchanged = prev.filter(s => !updatedIds.has(s.id));
-      return [...unchanged, ...finalSteps];
-    });
-    setOrderDirty(true);
-  }, [holidays]);
 
   // Handle chained confirm for pending drop
   const handlePendingConfirm = useCallback(() => {
