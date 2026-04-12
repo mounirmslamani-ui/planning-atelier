@@ -926,25 +926,40 @@ const PlanningTableauPage: React.FC = () => {
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          {isEditing ? (
-                            <Select
-                              value={getStepInlineValue(step, 'operationId') || step.operationId}
-                              onValueChange={val => setStepInlineValue(step.id, 'operationId', val)}
-                            >
-                              <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {operations
-                                  .filter(o => o.id !== absenceOperationId && o.category === 'operator')
-                                  .map(o => (
-                                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <span className="text-xs">{getOperationName(step.operationId)}</span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {/* Flow position icons */}
+                            {flowPos === 'only' && (
+                              <div className="flex items-center gap-0 shrink-0">
+                                <LogIn className="w-3.5 h-3.5 text-[hsl(142,60%,42%)]" />
+                                <LogOut className="w-3.5 h-3.5 text-[hsl(0,72%,51%)]" />
+                              </div>
+                            )}
+                            {flowPos === 'first' && (
+                              <LogIn className="w-3.5 h-3.5 text-[hsl(142,60%,42%)] shrink-0" />
+                            )}
+                            {flowPos === 'last' && (
+                              <LogOut className="w-3.5 h-3.5 text-[hsl(0,72%,51%)] shrink-0" />
+                            )}
+                            {isEditing ? (
+                              <Select
+                                value={getStepInlineValue(step, 'operationId') || step.operationId}
+                                onValueChange={val => setStepInlineValue(step.id, 'operationId', val)}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {operations
+                                    .filter(o => o.id !== absenceOperationId && o.category === 'operator')
+                                    .map(o => (
+                                      <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-xs">{getOperationName(step.operationId)}</span>
+                            )}
+                          </div>
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center">
