@@ -844,6 +844,7 @@ const PlanningTableauPage: React.FC = () => {
                     const blocked = isStepBlocked(step);
                     const isEditing = editingRowId === step.id;
                     const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
+                    const flowPos = getStepFlowPosition(step, draftSteps);
 
                     const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
                     const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
