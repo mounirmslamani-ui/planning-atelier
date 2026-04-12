@@ -587,7 +587,7 @@ const PlanningTableauPage: React.FC = () => {
       operationName: getOperationName(step.operationId),
       durationToday: '', totalDoneAlready,
     });
-  }, [steps, orders, operators, productionRecords, getOperationName]);
+  }, [draftSteps, orders, operators, productionRecords, getOperationName]);
 
   useEffect(() => {
     const handler = (e: Event) => {
