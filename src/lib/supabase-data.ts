@@ -517,6 +517,10 @@ export async function dbInsertRecord(r: ProductionRecord) {
   const { error } = await supabase.from('production_records').insert(mapRecordToDB(r));
   if (error) logError('record', 'insert', error);
 }
+export async function dbUpdateRecord(r: ProductionRecord) {
+  const { error } = await supabase.from('production_records').update(mapRecordToDB(r)).eq('id', r.id);
+  if (error) logError('record', 'update', error);
+}
 export async function dbDeleteRecord(id: string) {
   const { error } = await supabase.from('production_records').delete().eq('id', id);
   if (error) logError('record', 'delete', error);
