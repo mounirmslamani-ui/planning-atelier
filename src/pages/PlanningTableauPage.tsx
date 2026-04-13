@@ -652,13 +652,7 @@ const PlanningTableauPage: React.FC = () => {
     return matState === 'orange' || matState === 'red' || toolState === 'orange' || toolState === 'red';
   };
 
-  // ─── Drag to Production Register ───
-  const handleDragStartForProd = useCallback((e: React.DragEvent, step: ProductionStep, order: Order) => {
-    const payload = JSON.stringify({ stepId: step.id, orderId: order.id });
-    e.dataTransfer.setData('application/x-prod-step', payload);
-    e.dataTransfer.setData('text/x-prod-step', payload);
-    (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = payload;
-  }, []);
+  // (Drag to Production Register is now integrated in handleDragStart)
 
   const openProdDialog = useCallback((stepId: string) => {
     const step = draftSteps.find(s => s.id === stepId);
