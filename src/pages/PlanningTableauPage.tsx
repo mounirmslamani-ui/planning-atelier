@@ -935,10 +935,7 @@ const PlanningTableauPage: React.FC = () => {
                       <TableRow
                         key={step.id}
                         draggable={!isEditing && !step.frozen && !hasActiveFilters}
-                        onDragStart={e => {
-                          handleDragStart(e, group.operator.id, index);
-                          handleDragStartForProd(e, step, order);
-                        }}
+                        onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
