@@ -14,7 +14,7 @@ import {
   dbInsertOrder, dbUpdateOrder, dbDeleteOrder, dbBulkUpdateOrders,
   dbInsertStep, dbUpdateStep, dbDeleteStep,
   dbInsertHoliday, dbUpdateHoliday, dbDeleteHoliday,
-  dbInsertRecord, dbDeleteRecord,
+  dbInsertRecord, dbUpdateRecord, dbDeleteRecord,
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
   dbInsertDelivery, dbDeleteDelivery,
 } from '@/lib/supabase-data';
@@ -67,6 +67,7 @@ interface PlanningContextType {
   updateHoliday: (holiday: Holiday) => void;
   deleteHoliday: (id: string) => void;
   addProductionRecord: (record: ProductionRecord) => void;
+  updateProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
   addQCEntry: (entry: QualityControlEntry) => void;
   updateQCEntry: (entry: QualityControlEntry) => void;
