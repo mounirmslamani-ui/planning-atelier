@@ -430,11 +430,17 @@ const PlanningTableauPage: React.FC = () => {
   }, [holidays]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
-  const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
+    // Set vertical reorder data
     dragRef.current = { operatorId, index };
     setIsDragging(true);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = 'copyMove';
     e.dataTransfer.setData('text/plain', `${operatorId}:${index}`);
+    // Set horizontal (sidebar production register) data
+    const payload = JSON.stringify({ stepId: step.id, orderId: order.id });
+    e.dataTransfer.setData('application/x-prod-step', payload);
+    e.dataTransfer.setData('text/x-prod-step', payload);
+    (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = payload;
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
