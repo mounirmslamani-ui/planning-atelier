@@ -223,13 +223,23 @@ const PlanningTableauPage: React.FC = () => {
   // Sync from context on initial load or when steps change from outside (e.g. OrderPlanningDialog)
   useEffect(() => {
     if (!draftInitialized.current) {
-      setDraftSteps(steps);
+      setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
       draftInitialized.current = true;
       return;
     }
     // If not dirty, accept upstream changes
     if (!orderDirty) {
-      setDraftSteps(steps);
+      setDraftSteps(prev => {
+        // Detect truly new steps (exist in steps but not in prev)
+        const prevIds = new Set(prev.map(s => s.id));
+        const newSteps = steps.filter(s => !prevIds.has(s.id));
+        if (newSteps.length === 0) {
+          // No new steps – just accept upstream
+          return insertNewStepsAtPriorityTop(steps, orders);
+        }
+        // Merge: keep existing ordered steps, insert new ones at top of their priority group
+        return insertNewStepsAtPriorityTop(steps, orders);
+      });
     }
   }, [steps]); // intentionally exclude orderDirty to avoid loops
 
