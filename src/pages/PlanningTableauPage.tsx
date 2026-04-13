@@ -157,6 +157,63 @@ interface TaskItem {
   order: Order;
 }
 
+/**
+ * Insert new steps (order === 0 or no displayOrder) at the TOP of their priority group.
+ * Steps with existing order values keep their position.
+ * This ensures new commands are immediately visible without disrupting manual ordering.
+ */
+function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Order[]): ProductionStep[] {
+  const orderMap = new Map(allOrders.map(o => [o.id, o]));
+
+  // Separate steps that have been manually ordered (order > 0) from new ones (order === 0)
+  const ordered = allSteps.filter(s => s.order > 0);
+  const unordered = allSteps.filter(s => s.order <= 0);
+
+  if (unordered.length === 0) return allSteps;
+
+  // Group ordered steps by operatorId, preserving their order
+  const byOperator = new Map<string, ProductionStep[]>();
+  ordered.forEach(s => {
+    const key = s.operatorId || '__none__';
+    if (!byOperator.has(key)) byOperator.set(key, []);
+    byOperator.get(key)!.push(s);
+  });
+  // Sort each operator group by existing order
+  byOperator.forEach(arr => arr.sort((a, b) => a.order - b.order));
+
+  // For each unordered step, find its priority and insert at the top of that priority group
+  unordered.forEach(newStep => {
+    const key = newStep.operatorId || '__none__';
+    if (!byOperator.has(key)) byOperator.set(key, []);
+    const group = byOperator.get(key)!;
+    const newOrder = orderMap.get(newStep.orderId);
+    const newPriority = priorityRank[newOrder?.priority || 'P4'] ?? 3;
+
+    // Find the first step in this group with same or lower priority
+    let insertIdx = 0;
+    for (let i = 0; i < group.length; i++) {
+      const existingOrder = orderMap.get(group[i].orderId);
+      const existingPriority = priorityRank[existingOrder?.priority || 'P4'] ?? 3;
+      if (existingPriority >= newPriority) {
+        insertIdx = i;
+        break;
+      }
+      insertIdx = i + 1;
+    }
+    group.splice(insertIdx, 0, newStep);
+  });
+
+  // Reassign order numbers sequentially per operator
+  const result: ProductionStep[] = [];
+  byOperator.forEach(group => {
+    group.forEach((s, idx) => {
+      result.push({ ...s, order: idx + 1 });
+    });
+  });
+
+  return result;
+}
+
 interface ProductionDialogState {
   open: boolean;
   step: ProductionStep | null;
