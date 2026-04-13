@@ -696,9 +696,19 @@ const PlanningTableauPage: React.FC = () => {
     setProdDialog(prev => ({ ...prev, open: false }));
   }, [prodDialog]);
 
+  const lastRecordedStepRef = useRef<string | null>(null);
+
   const handleCompletionAnswer = useCallback((finished: boolean) => {
     if (!completionDialog) return;
     const { stepId, orderId, operatorId, operationId, durationToday, totalEstimated, totalDone } = completionDialog;
+
+    // Debounce: prevent double registration for same step in same interaction
+    const dedupeKey = `${stepId}-${durationToday}-${Date.now().toString().slice(0, -3)}`;
+    if (lastRecordedStepRef.current === dedupeKey) {
+      setCompletionDialog(null);
+      return;
+    }
+    lastRecordedStepRef.current = dedupeKey;
 
     const record: ProductionRecord = {
       id: crypto.randomUUID(), stepId, orderId, operatorId, operationId,

@@ -1,13 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Trash2, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Trash2, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 
-type SortField = 'date' | 'orderNumber' | 'client' | 'operation' | 'duration';
+type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
 
 const MONTHS = [
@@ -16,7 +20,7 @@ const MONTHS = [
 ];
 
 const ProductionRegisterPage: React.FC = () => {
-  const { productionRecords, deleteProductionRecord, operators, operations, orders, clients } = usePlanning();
+  const { productionRecords, deleteProductionRecord, updateProductionRecord, operators, operations, orders, clients } = usePlanning();
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const getOrder = (id: string) => orders.find(o => o.id === id);
@@ -29,23 +33,30 @@ const ProductionRegisterPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const validTab = activeTab && operatorsWithRecords.some(o => o.id === activeTab) ? activeTab : operatorsWithRecords[0]?.id || null;
 
-  // Filters
+  // Filters (checkbox sets)
   const [filterMonths, setFilterMonths] = useState<Set<string>>(new Set());
   const [filterClients, setFilterClients] = useState<Set<string>>(new Set());
   const [filterOrders, setFilterOrders] = useState<Set<string>>(new Set());
+  const [filterOperations, setFilterOperations] = useState<Set<string>>(new Set());
 
   // Sort
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
+  // Edit dialog
+  const [editRecord, setEditRecord] = useState<{
+    id: string; validatedAt: string; actualDuration: string;
+  } | null>(null);
+
+  // Confirm dialog
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+
   const tabRecords = useMemo(() =>
-    validTab
-      ? productionRecords.filter(r => r.operatorId === validTab)
-      : [],
+    validTab ? productionRecords.filter(r => r.operatorId === validTab) : [],
     [productionRecords, validTab]
   );
 
-  // Available filter values for current tab
+  // Available filter values
   const availableMonths = useMemo(() => {
     const set = new Set<string>();
     tabRecords.forEach(r => {
@@ -70,6 +81,12 @@ const ProductionRegisterPage: React.FC = () => {
     return Array.from(set);
   }, [tabRecords]);
 
+  const availableOperations = useMemo(() => {
+    const set = new Set<string>();
+    tabRecords.forEach(r => set.add(r.operationId));
+    return Array.from(set);
+  }, [tabRecords]);
+
   // Filtered records
   const filteredRecords = useMemo(() => {
     return tabRecords.filter(r => {
@@ -85,9 +102,12 @@ const ProductionRegisterPage: React.FC = () => {
       if (filterOrders.size > 0) {
         if (!filterOrders.has(r.orderId)) return false;
       }
+      if (filterOperations.size > 0) {
+        if (!filterOperations.has(r.operationId)) return false;
+      }
       return true;
     });
-  }, [tabRecords, filterMonths, filterClients, filterOrders, orders]);
+  }, [tabRecords, filterMonths, filterClients, filterOrders, filterOperations, orders]);
 
   // Sorted records
   const sortedRecords = useMemo(() => {
@@ -106,6 +126,16 @@ const ProductionRegisterPage: React.FC = () => {
           const cA = getClientName(getOrder(a.orderId)?.clientId || '');
           const cB = getClientName(getOrder(b.orderId)?.clientId || '');
           return dir * cA.localeCompare(cB);
+        }
+        case 'designation': {
+          const dA = getOrder(a.orderId)?.designation || '';
+          const dB = getOrder(b.orderId)?.designation || '';
+          return dir * dA.localeCompare(dB);
+        }
+        case 'quantity': {
+          const qA = getOrder(a.orderId)?.quantity ?? 0;
+          const qB = getOrder(b.orderId)?.quantity ?? 0;
+          return dir * (qA - qB);
         }
         case 'operation':
           return dir * getOperationName(a.operationId).localeCompare(getOperationName(b.operationId));
@@ -135,7 +165,7 @@ const ProductionRegisterPage: React.FC = () => {
     return sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
   };
 
-  const hasActiveFilters = filterMonths.size > 0 || filterClients.size > 0 || filterOrders.size > 0;
+  const hasActiveFilters = filterMonths.size > 0 || filterClients.size > 0 || filterOrders.size > 0 || filterOperations.size > 0;
 
   const formatMonthLabel = (key: string) => {
     const [year, month] = key.split('-');
@@ -148,6 +178,37 @@ const ProductionRegisterPage: React.FC = () => {
     else next.add(item);
     return next;
   };
+
+  const clearAllFilters = () => {
+    setFilterMonths(new Set());
+    setFilterClients(new Set());
+    setFilterOrders(new Set());
+    setFilterOperations(new Set());
+  };
+
+  const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
+    const dt = new Date(rec.validatedAt);
+    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const hh = Math.floor(rec.actualDuration / 60);
+    const mm = rec.actualDuration % 60;
+    setEditRecord({
+      id: rec.id,
+      validatedAt: dateStr,
+      actualDuration: `${hh}:${String(mm).padStart(2, '0')}`,
+    });
+  }, []);
+
+  const saveEdit = useCallback(() => {
+    if (!editRecord) return;
+    const rec = productionRecords.find(r => r.id === editRecord.id);
+    if (!rec) return;
+    const [hh, mm] = (editRecord.actualDuration || '0:0').split(':').map(Number);
+    const dur = (hh || 0) * 60 + (mm || 0);
+    if (dur <= 0) return;
+    const newDate = new Date(editRecord.validatedAt + 'T12:00:00');
+    updateProductionRecord({ ...rec, validatedAt: newDate.toISOString(), actualDuration: dur });
+    setEditRecord(null);
+  }, [editRecord, productionRecords, updateProductionRecord]);
 
   return (
     <div className="flex flex-col h-full">
@@ -168,12 +229,7 @@ const ProductionRegisterPage: React.FC = () => {
               return (
                 <button
                   key={op.id}
-                  onClick={() => {
-                    setActiveTab(op.id);
-                    setFilterMonths(new Set());
-                    setFilterClients(new Set());
-                    setFilterOrders(new Set());
-                  }}
+                  onClick={() => { setActiveTab(op.id); clearAllFilters(); }}
                   className={`relative px-4 py-2 text-xs font-medium border border-b-0 rounded-t-md transition-colors ${
                     isActive
                       ? 'bg-background text-foreground border-border -mb-px z-10'
@@ -187,9 +243,8 @@ const ProductionRegisterPage: React.FC = () => {
             })}
           </div>
 
-          {/* Sheet content */}
+          {/* Content */}
           <div className="flex-1 overflow-auto px-4 py-3">
-            {/* Header + filter summary */}
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div className="text-sm">
                 <span className="font-heading font-bold">{activeOperator?.name}</span>
@@ -198,7 +253,7 @@ const ProductionRegisterPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 {hasActiveFilters && (
                   <button
-                    onClick={() => { setFilterMonths(new Set()); setFilterClients(new Set()); setFilterOrders(new Set()); }}
+                    onClick={clearAllFilters}
                     className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                   >
                     <X className="w-3 h-3" /> Effacer filtres
@@ -212,7 +267,6 @@ const ProductionRegisterPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {/* Date */}
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground transition-colors">
@@ -226,7 +280,6 @@ const ProductionRegisterPage: React.FC = () => {
                       />
                     </div>
                   </TableHead>
-                  {/* Commande */}
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('orderNumber')} className="flex items-center gap-1 hover:text-foreground transition-colors">
@@ -243,7 +296,6 @@ const ProductionRegisterPage: React.FC = () => {
                       />
                     </div>
                   </TableHead>
-                  {/* Client */}
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('client')} className="flex items-center gap-1 hover:text-foreground transition-colors">
@@ -257,21 +309,35 @@ const ProductionRegisterPage: React.FC = () => {
                       />
                     </div>
                   </TableHead>
-                  <TableHead>Désignation</TableHead>
-                  <TableHead>Quantité</TableHead>
-                  {/* Opération */}
                   <TableHead>
-                    <button onClick={() => toggleSort('operation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                      Opération <SortIcon field="operation" />
+                    <button onClick={() => toggleSort('designation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                      Désignation <SortIcon field="designation" />
                     </button>
                   </TableHead>
-                  {/* Durée */}
+                  <TableHead>
+                    <button onClick={() => toggleSort('quantity')} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                      Quantité <SortIcon field="quantity" />
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleSort('operation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                        Opération <SortIcon field="operation" />
+                      </button>
+                      <FilterPopover
+                        items={availableOperations.map(id => ({ value: id, label: getOperationName(id) }))}
+                        selected={filterOperations}
+                        onToggle={(v) => setFilterOperations(toggleSetItem(filterOperations, v))}
+                        onClear={() => setFilterOperations(new Set())}
+                      />
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">
                     <button onClick={() => toggleSort('duration')} className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors">
                       Durée (h) <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-10"></TableHead>
+                  <TableHead className="w-20 text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -292,9 +358,20 @@ const ProductionRegisterPage: React.FC = () => {
                       <TableCell>{getOperationName(rec.operationId)}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => deleteProductionRecord(rec.id)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(rec)} title="Modifier">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => confirm('Supprimer cet enregistrement ?', () => deleteProductionRecord(rec.id), { variant: 'destructive' })}
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -304,11 +381,56 @@ const ProductionRegisterPage: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Modifier l'enregistrement</DialogTitle>
+          </DialogHeader>
+          {editRecord && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Date</label>
+                <Input
+                  type="date"
+                  value={editRecord.validatedAt}
+                  onChange={e => setEditRecord({ ...editRecord, validatedAt: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Durée (hh:mm)</label>
+                <Input
+                  value={editRecord.actualDuration}
+                  onChange={e => setEditRecord({ ...editRecord, actualDuration: e.target.value })}
+                  placeholder="1:30"
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>Annuler</Button>
+            <Button size="sm" onClick={saveEdit}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };
 
-// Reusable filter popover (Excel-style checkbox list)
+// Reusable filter popover
 const FilterPopover: React.FC<{
   items: { value: string; label: string }[];
   selected: Set<string>;
