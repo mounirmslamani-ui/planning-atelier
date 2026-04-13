@@ -343,6 +343,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addProductionRecord = useCallback((record: ProductionRecord) => {
     pushUndo(); setProductionRecords(prev => [...prev, record]); dbInsertRecord(record);
   }, [pushUndo]);
+  const updateProductionRecord = useCallback((record: ProductionRecord) => {
+    pushUndo(); setProductionRecords(prev => prev.map(r => r.id === record.id ? record : r)); dbUpdateRecord(record);
+  }, [pushUndo]);
   const deleteProductionRecord = useCallback((id: string) => {
     pushUndo(); setProductionRecords(prev => prev.filter(r => r.id !== id)); dbDeleteRecord(id);
   }, [pushUndo]);
@@ -378,7 +381,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       orders, setOrders: setOrdersWrapped, addOrder, updateOrder, deleteOrder,
       steps, setSteps, addStep, updateStep, deleteStep,
       holidays, setHolidays, addHoliday, updateHoliday, deleteHoliday,
-      productionRecords, addProductionRecord, deleteProductionRecord,
+      productionRecords, addProductionRecord, updateProductionRecord, deleteProductionRecord,
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
       equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
