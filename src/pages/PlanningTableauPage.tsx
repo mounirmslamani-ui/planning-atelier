@@ -157,6 +157,63 @@ interface TaskItem {
   order: Order;
 }
 
+/**
+ * Insert new steps (order === 0 or no displayOrder) at the TOP of their priority group.
+ * Steps with existing order values keep their position.
+ * This ensures new commands are immediately visible without disrupting manual ordering.
+ */
+function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Order[]): ProductionStep[] {
+  const orderMap = new Map(allOrders.map(o => [o.id, o]));
+
+  // Separate steps that have been manually ordered (order > 0) from new ones (order === 0)
+  const ordered = allSteps.filter(s => s.order > 0);
+  const unordered = allSteps.filter(s => s.order <= 0);
+
+  if (unordered.length === 0) return allSteps;
+
+  // Group ordered steps by operatorId, preserving their order
+  const byOperator = new Map<string, ProductionStep[]>();
+  ordered.forEach(s => {
+    const key = s.operatorId || '__none__';
+    if (!byOperator.has(key)) byOperator.set(key, []);
+    byOperator.get(key)!.push(s);
+  });
+  // Sort each operator group by existing order
+  byOperator.forEach(arr => arr.sort((a, b) => a.order - b.order));
+
+  // For each unordered step, find its priority and insert at the top of that priority group
+  unordered.forEach(newStep => {
+    const key = newStep.operatorId || '__none__';
+    if (!byOperator.has(key)) byOperator.set(key, []);
+    const group = byOperator.get(key)!;
+    const newOrder = orderMap.get(newStep.orderId);
+    const newPriority = priorityRank[newOrder?.priority || 'P4'] ?? 3;
+
+    // Find the first step in this group with same or lower priority
+    let insertIdx = 0;
+    for (let i = 0; i < group.length; i++) {
+      const existingOrder = orderMap.get(group[i].orderId);
+      const existingPriority = priorityRank[existingOrder?.priority || 'P4'] ?? 3;
+      if (existingPriority >= newPriority) {
+        insertIdx = i;
+        break;
+      }
+      insertIdx = i + 1;
+    }
+    group.splice(insertIdx, 0, newStep);
+  });
+
+  // Reassign order numbers sequentially per operator
+  const result: ProductionStep[] = [];
+  byOperator.forEach(group => {
+    group.forEach((s, idx) => {
+      result.push({ ...s, order: idx + 1 });
+    });
+  });
+
+  return result;
+}
+
 interface ProductionDialogState {
   open: boolean;
   step: ProductionStep | null;
@@ -223,13 +280,23 @@ const PlanningTableauPage: React.FC = () => {
   // Sync from context on initial load or when steps change from outside (e.g. OrderPlanningDialog)
   useEffect(() => {
     if (!draftInitialized.current) {
-      setDraftSteps(steps);
+      setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
       draftInitialized.current = true;
       return;
     }
     // If not dirty, accept upstream changes
     if (!orderDirty) {
-      setDraftSteps(steps);
+      setDraftSteps(prev => {
+        // Detect truly new steps (exist in steps but not in prev)
+        const prevIds = new Set(prev.map(s => s.id));
+        const newSteps = steps.filter(s => !prevIds.has(s.id));
+        if (newSteps.length === 0) {
+          // No new steps – just accept upstream
+          return insertNewStepsAtPriorityTop(steps, orders);
+        }
+        // Merge: keep existing ordered steps, insert new ones at top of their priority group
+        return insertNewStepsAtPriorityTop(steps, orders);
+      });
     }
   }, [steps]); // intentionally exclude orderDirty to avoid loops
 
@@ -363,11 +430,17 @@ const PlanningTableauPage: React.FC = () => {
   }, [holidays]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
-  const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
+    // Set vertical reorder data
     dragRef.current = { operatorId, index };
     setIsDragging(true);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = 'copyMove';
     e.dataTransfer.setData('text/plain', `${operatorId}:${index}`);
+    // Set horizontal (sidebar production register) data
+    const payload = JSON.stringify({ stepId: step.id, orderId: order.id });
+    e.dataTransfer.setData('application/x-prod-step', payload);
+    e.dataTransfer.setData('text/x-prod-step', payload);
+    (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = payload;
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, operatorId: string, index: number) => {
@@ -579,13 +652,7 @@ const PlanningTableauPage: React.FC = () => {
     return matState === 'orange' || matState === 'red' || toolState === 'orange' || toolState === 'red';
   };
 
-  // ─── Drag to Production Register ───
-  const handleDragStartForProd = useCallback((e: React.DragEvent, step: ProductionStep, order: Order) => {
-    const payload = JSON.stringify({ stepId: step.id, orderId: order.id });
-    e.dataTransfer.setData('application/x-prod-step', payload);
-    e.dataTransfer.setData('text/x-prod-step', payload);
-    (window as Window & { __planningProdDragPayload?: string }).__planningProdDragPayload = payload;
-  }, []);
+  // (Drag to Production Register is now integrated in handleDragStart)
 
   const openProdDialog = useCallback((stepId: string) => {
     const step = draftSteps.find(s => s.id === stepId);
@@ -868,10 +935,7 @@ const PlanningTableauPage: React.FC = () => {
                       <TableRow
                         key={step.id}
                         draggable={!isEditing && !step.frozen && !hasActiveFilters}
-                        onDragStart={e => {
-                          handleDragStart(e, group.operator.id, index);
-                          handleDragStartForProd(e, step, order);
-                        }}
+                        onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
