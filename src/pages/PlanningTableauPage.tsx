@@ -240,6 +240,7 @@ const PlanningTableauPage: React.FC = () => {
     operators, orders, steps, clients, operations,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord, deleteStep,
+    addQCEntry,
     undo, redo, canUndo, canRedo,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
@@ -738,6 +739,18 @@ const PlanningTableauPage: React.FC = () => {
       // Remove from local draftSteps immediately so it disappears from Planning Tableau
       setDraftSteps(prev => prev.filter(s => s.id !== stepId));
       deleteStep(stepId);
+
+      // Check if this was the last step for the order → move to Quality Control
+      const remainingSteps = steps.filter(s => s.id !== stepId && s.orderId === orderId && s.orderId !== absenceOrderId);
+      const remainingDraft = draftSteps.filter(s => s.id !== stepId && s.orderId === orderId);
+      if (remainingSteps.length === 0 && remainingDraft.length === 0) {
+        addQCEntry({
+          id: crypto.randomUUID(),
+          orderId,
+          controlDate: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+        });
+      }
     } else {
       const step = draftSteps.find(s => s.id === stepId);
       if (step) {
