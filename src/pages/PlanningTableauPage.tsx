@@ -158,30 +158,39 @@ interface TaskItem {
 }
 
 /**
- * Insert new steps (order === 0 or no displayOrder) at the TOP of their priority group.
- * Steps with existing order values keep their position.
- * This ensures new commands are immediately visible without disrupting manual ordering.
+ * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
+ * at the TOP of their priority group.
+ * Steps whose parent order has a valid displayOrder keep their relative Cn order.
  */
 function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Order[]): ProductionStep[] {
   const orderMap = new Map(allOrders.map(o => [o.id, o]));
 
-  // Separate steps that have been manually ordered (order > 0) from new ones (order === 0)
-  const ordered = allSteps.filter(s => s.order > 0);
-  const unordered = allSteps.filter(s => s.order <= 0);
+  // "ordered" = parent order has a displayOrder > 0
+  const ordered = allSteps.filter(s => {
+    const o = orderMap.get(s.orderId);
+    return o && o.displayOrder && o.displayOrder > 0;
+  });
+  const unordered = allSteps.filter(s => {
+    const o = orderMap.get(s.orderId);
+    return !o || !o.displayOrder || o.displayOrder <= 0;
+  });
 
   if (unordered.length === 0) return allSteps;
 
-  // Group ordered steps by operatorId, preserving their order
+  // Group ordered steps by operatorId, sorted by their parent order's displayOrder (Cn)
   const byOperator = new Map<string, ProductionStep[]>();
   ordered.forEach(s => {
     const key = s.operatorId || '__none__';
     if (!byOperator.has(key)) byOperator.set(key, []);
     byOperator.get(key)!.push(s);
   });
-  // Sort each operator group by existing order
-  byOperator.forEach(arr => arr.sort((a, b) => a.order - b.order));
+  byOperator.forEach(arr => arr.sort((a, b) => {
+    const oa = orderMap.get(a.orderId);
+    const ob = orderMap.get(b.orderId);
+    return (oa?.displayOrder || 0) - (ob?.displayOrder || 0);
+  }));
 
-  // For each unordered step, find its priority and insert at the top of that priority group
+  // For each unordered step, insert at the top of its priority group
   unordered.forEach(newStep => {
     const key = newStep.operatorId || '__none__';
     if (!byOperator.has(key)) byOperator.set(key, []);
@@ -189,7 +198,7 @@ function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Orde
     const newOrder = orderMap.get(newStep.orderId);
     const newPriority = priorityRank[newOrder?.priority || 'P4'] ?? 3;
 
-    // Find the first step in this group with same or lower priority
+    // Find the first step with same or lower priority
     let insertIdx = 0;
     for (let i = 0; i < group.length; i++) {
       const existingOrder = orderMap.get(group[i].orderId);
@@ -203,7 +212,7 @@ function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Orde
     group.splice(insertIdx, 0, newStep);
   });
 
-  // Reassign order numbers sequentially per operator
+  // Reassign step.order sequentially per operator
   const result: ProductionStep[] = [];
   byOperator.forEach(group => {
     group.forEach((s, idx) => {
@@ -371,13 +380,22 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by step.order (local ordering)
+    // Sort tasks within each operator by order.displayOrder (Cn from Commandes en cours)
+    // Frozen steps keep their position; others sort by Cn ascending.
+    // Steps without a Cn (displayOrder === 0 or null) go to the top of their priority group.
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
-        const orderA = a.step.order;
-        const orderB = b.step.order;
-        if (orderA !== orderB) return orderA - orderB;
-        return 0;
+        const cnA = a.order.displayOrder || 0;
+        const cnB = b.order.displayOrder || 0;
+        // Steps without Cn: sort by priority then keep natural order
+        if (cnA === 0 && cnB === 0) {
+          const pa = priorityRank[a.order.priority] ?? 9;
+          const pb = priorityRank[b.order.priority] ?? 9;
+          return pa - pb;
+        }
+        if (cnA === 0) return -1; // new steps go to top
+        if (cnB === 0) return 1;
+        return cnA - cnB;
       });
     });
 
@@ -717,6 +735,8 @@ const PlanningTableauPage: React.FC = () => {
     addProductionRecord(record);
 
     if (finished) {
+      // Remove from local draftSteps immediately so it disappears from Planning Tableau
+      setDraftSteps(prev => prev.filter(s => s.id !== stepId));
       deleteStep(stepId);
     } else {
       const step = draftSteps.find(s => s.id === stepId);
@@ -956,7 +976,9 @@ const PlanningTableauPage: React.FC = () => {
                           <div className="flex items-center justify-center gap-0.5">
                             {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
                             {step.frozen && <Lock className="w-3 h-3 text-primary" />}
-                            <span className="text-xs font-medium text-muted-foreground">{index + 1}</span>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : '⚠️'}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
