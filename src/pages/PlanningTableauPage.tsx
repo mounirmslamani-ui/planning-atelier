@@ -765,7 +765,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     }
     setCompletionDialog(null);
-  }, [completionDialog, addProductionRecord, deleteStep, draftSteps, updateStep, holidays]);
+  }, [completionDialog, addProductionRecord, deleteStep, draftSteps, steps, absenceOrderId, addQCEntry, updateStep, holidays]);
 
   // Export to Excel
   const handleExport = useCallback(() => {
