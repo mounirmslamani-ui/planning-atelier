@@ -700,6 +700,39 @@ const PlanningTableauPage: React.FC = () => {
     return () => window.removeEventListener('prod-register-drop', handler);
   }, [openProdDialog]);
 
+  // QC drop: force-transfer the order to Quality Control
+  const handleQcDrop = useCallback((stepId: string) => {
+    const step = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
+    if (!step) return;
+    const orderId = step.orderId;
+    if (orderId === absenceOrderId) return;
+
+    // Remove ALL remaining steps for this order from draft and DB
+    const orderStepIds = [...draftSteps, ...steps]
+      .filter(s => s.orderId === orderId)
+      .map(s => s.id);
+    const uniqueIds = [...new Set(orderStepIds)];
+    uniqueIds.forEach(id => deleteStep(id));
+    setDraftSteps(prev => prev.filter(s => s.orderId !== orderId));
+
+    // Create QC entry
+    addQCEntry({
+      id: crypto.randomUUID(),
+      orderId,
+      controlDate: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
+    });
+  }, [draftSteps, steps, absenceOrderId, deleteStep, addQCEntry]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.stepId) handleQcDrop(detail.stepId);
+    };
+    window.addEventListener('qc-drop', handler);
+    return () => window.removeEventListener('qc-drop', handler);
+  }, [handleQcDrop]);
+
   const handleProdDialogOk = useCallback(() => {
     if (!prodDialog.step || !prodDialog.order) return;
     const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);

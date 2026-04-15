@@ -7,49 +7,70 @@ import {
   PackagePlus, Hammer, FileSearch, Cog, TableProperties
 } from 'lucide-react';
 
+type DropTargetType = false | 'prod' | 'qc';
+
 const sidebarGroups = [
   {
     title: 'PILOTAGE & SAISIE',
     items: [
-      { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart, dropTarget: false },
-      { to: '/absences', label: 'Absences', icon: UserX, dropTarget: false },
-      { to: '/production-register', label: 'Registre de Production', icon: ClipboardCheck, dropTarget: true },
+      { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart, dropTarget: false as DropTargetType },
+      { to: '/absences', label: 'Absences', icon: UserX, dropTarget: false as DropTargetType },
+      { to: '/production-register', label: 'Registre de Production', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
     ],
   },
   {
     title: 'PLANNING & SUIVI',
     items: [
-      { to: '/planning-tableau', label: 'Planning Tableau', icon: TableProperties, dropTarget: false },
-      { to: '/', label: 'Planning (Gantt)', icon: LayoutDashboard, dropTarget: false },
-      { to: '/study', label: 'Étude', icon: FileSearch, dropTarget: false },
-      { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus, dropTarget: false },
-      { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer, dropTarget: false },
-      { to: '/subcontracting', label: 'Sous-traitance', icon: Factory, dropTarget: false },
-      { to: '/quality-control', label: 'Contrôle Qualité', icon: SearchCheck, dropTarget: false },
-      { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck, dropTarget: false },
+      { to: '/planning-tableau', label: 'Planning Tableau', icon: TableProperties, dropTarget: false as DropTargetType },
+      { to: '/', label: 'Planning (Gantt)', icon: LayoutDashboard, dropTarget: false as DropTargetType },
+      { to: '/study', label: 'Étude', icon: FileSearch, dropTarget: false as DropTargetType },
+      { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus, dropTarget: false as DropTargetType },
+      { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer, dropTarget: false as DropTargetType },
+      { to: '/subcontracting', label: 'Sous-traitance', icon: Factory, dropTarget: false as DropTargetType },
+      { to: '/quality-control', label: 'Contrôle Qualité', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
+      { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck, dropTarget: false as DropTargetType },
     ],
   },
   {
     title: 'CONFIGURATION ATELIER',
     items: [
-      { to: '/clients', label: 'Clients', icon: Building2, dropTarget: false },
-      { to: '/operators', label: 'Opérateurs', icon: Users, dropTarget: false },
-      { to: '/equipment', label: 'Équipements', icon: Cog, dropTarget: false },
-      { to: '/operations', label: 'Opérations', icon: Drill, dropTarget: false },
-      { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake, dropTarget: false },
-      { to: '/holidays', label: 'Jours fériés', icon: CalendarDays, dropTarget: false },
+      { to: '/clients', label: 'Clients', icon: Building2, dropTarget: false as DropTargetType },
+      { to: '/operators', label: 'Opérateurs', icon: Users, dropTarget: false as DropTargetType },
+      { to: '/equipment', label: 'Équipements', icon: Cog, dropTarget: false as DropTargetType },
+      { to: '/operations', label: 'Opérations', icon: Drill, dropTarget: false as DropTargetType },
+      { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake, dropTarget: false as DropTargetType },
+      { to: '/holidays', label: 'Jours fériés', icon: CalendarDays, dropTarget: false as DropTargetType },
     ],
   },
 ];
 
 interface AppSidebarProps {
   onProdDrop?: (stepId: string) => void;
+  onQcDrop?: (stepId: string) => void;
 }
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop, onQcDrop }) => {
   const location = useLocation();
-  const [dragOver, setDragOver] = useState(false);
+  const [dragOver, setDragOver] = useState<string | null>(null);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
+
+  const handleDrop = (dropType: DropTargetType, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(null);
+    try {
+      const rawPayload =
+        e.dataTransfer.getData('application/x-prod-step') ||
+        e.dataTransfer.getData('text/x-prod-step') ||
+        dragPayloadWindow.__planningProdDragPayload ||
+        '';
+      const data = rawPayload ? JSON.parse(rawPayload) : null;
+      if (data?.stepId) {
+        if (dropType === 'prod' && onProdDrop) onProdDrop(data.stepId);
+        if (dropType === 'qc' && onQcDrop) onQcDrop(data.stepId);
+      }
+    } catch {}
+    dragPayloadWindow.__planningProdDragPayload = undefined;
+  };
 
   return (
     <aside className="w-60 h-screen sticky top-0 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0">
@@ -70,35 +91,21 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop }) => {
               {group.items.map(item => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.to;
-                const isDropTarget = item.dropTarget && onProdDrop;
+                const isDropTarget = item.dropTarget && ((item.dropTarget === 'prod' && onProdDrop) || (item.dropTarget === 'qc' && onQcDrop));
+                const isDraggedOver = dragOver === item.to;
 
                 return (
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    onDragOver={isDropTarget ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setDragOver(true); } : undefined}
-                    onDragLeave={isDropTarget ? () => setDragOver(false) : undefined}
-                    onDrop={isDropTarget ? (e) => {
-                      e.preventDefault();
-                      setDragOver(false);
-                      try {
-                        const rawPayload =
-                          e.dataTransfer.getData('application/x-prod-step') ||
-                          e.dataTransfer.getData('text/x-prod-step') ||
-                          dragPayloadWindow.__planningProdDragPayload ||
-                          '';
-                        const data = rawPayload ? JSON.parse(rawPayload) : null;
-                        if (data?.stepId) {
-                          onProdDrop!(data.stepId);
-                        }
-                      } catch {}
-                      dragPayloadWindow.__planningProdDragPayload = undefined;
-                    } : undefined}
+                    onDragOver={isDropTarget ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setDragOver(item.to); } : undefined}
+                    onDragLeave={isDropTarget ? () => setDragOver(null) : undefined}
+                    onDrop={isDropTarget ? (e) => handleDrop(item.dropTarget, e) : undefined}
                     className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                       isActive 
                         ? 'bg-sidebar-accent text-sidebar-primary font-medium' 
                         : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-                    } ${isDropTarget && dragOver ? 'ring-2 ring-primary bg-primary/10' : ''}`}
+                    } ${isDropTarget && isDraggedOver ? 'ring-2 ring-primary bg-primary/10' : ''}`}
                   >
                     <Icon className="w-4 h-4" />
                     {item.label}
