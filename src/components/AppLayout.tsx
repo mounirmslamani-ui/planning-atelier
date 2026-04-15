@@ -6,8 +6,11 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading } = usePlanning();
 
   const handleProdDrop = useCallback((stepId: string) => {
-    // Dispatch a custom event that PlanningTableauPage listens for
     window.dispatchEvent(new CustomEvent('prod-register-drop', { detail: { stepId } }));
+  }, []);
+
+  const handleQcDrop = useCallback((stepId: string) => {
+    window.dispatchEvent(new CustomEvent('qc-drop', { detail: { stepId } }));
   }, []);
 
   if (loading) {
@@ -23,7 +26,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar onProdDrop={handleProdDrop} />
+      <AppSidebar onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
       <main className="flex-1 overflow-auto h-screen">
         {children}
       </main>
