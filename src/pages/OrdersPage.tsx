@@ -93,7 +93,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, productionRecords, holidays, absenceOperationId, absenceOrderId } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, productionRecords, holidays, absenceOperationId, absenceOrderId, deliveryEntries } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -246,10 +246,13 @@ const OrdersPage: React.FC = () => {
   }, [steps, absenceOperationId]);
 
   // Sort by displayOrder ascending (playlist style)
+  // IDs of orders that have been delivered (conforme / conforme-derogation)
+  const deliveredOrderIds = useMemo(() => new Set(deliveryEntries.map(de => de.orderId)), [deliveryEntries]);
+
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId);
+    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-  }, [orders, absenceOrderId]);
+  }, [orders, absenceOrderId, deliveredOrderIds]);
 
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
@@ -431,7 +434,7 @@ const OrdersPage: React.FC = () => {
     { key: 'orderNumber', label: 'N° Cmd', className: 'w-[90px]' },
     { key: 'orderDate', label: 'Date', className: 'w-[80px]' },
     { key: 'client', label: 'Client', className: 'w-[100px]' },
-    { key: 'designation', label: 'Désignation', className: 'max-w-[160px]' },
+    { key: 'designation', label: 'Désignation', className: 'max-w-[120px]' },
     { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
     { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
@@ -440,7 +443,7 @@ const OrdersPage: React.FC = () => {
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
     { key: 'material', label: 'Mat.', className: 'w-[35px]' },
     { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
-    { key: 'observation', label: 'Observation', className: 'w-[130px]' },
+    { key: 'observation', label: 'Observation', className: 'w-[170px]' },
   ];
 
   const formatCR = (orderId: string) => {
@@ -570,7 +573,7 @@ const OrdersPage: React.FC = () => {
           </span>
         );
       }
-      case 'observation': return <span className="text-xs text-muted-foreground max-w-[130px] truncate block">{o.observation || '—'}</span>;
+      case 'observation': return <span className="text-xs text-muted-foreground max-w-[170px] truncate block">{o.observation || '—'}</span>;
       default: return null;
     }
   };
