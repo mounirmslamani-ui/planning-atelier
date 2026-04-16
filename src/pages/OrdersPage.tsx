@@ -578,9 +578,53 @@ const OrdersPage: React.FC = () => {
     }
   };
 
+  // Compute last order numbers for each series (F, P, numeric)
+  const lastSeriesNumbers = useMemo(() => {
+    const extractNum = (on: string, prefix: string) => {
+      const match = on.match(new RegExp(`^${prefix}(\\d+)`, 'i'));
+      return match ? parseInt(match[1], 10) : -1;
+    };
+    const allOrders = orders.filter(o => o.orderNumber !== 'ABS');
+    let lastF = '', lastP = '', lastNum = '';
+    let maxF = -1, maxP = -1, maxN = -1;
+    for (const o of allOrders) {
+      const on = o.orderNumber;
+      if (/^F\d/i.test(on)) {
+        const n = extractNum(on, 'F');
+        if (n > maxF) { maxF = n; lastF = on; }
+      } else if (/^P\d/i.test(on)) {
+        const n = extractNum(on, 'P');
+        if (n > maxP) { maxP = n; lastP = on; }
+      } else if (/^\d/.test(on)) {
+        const n = parseInt(on, 10);
+        if (n > maxN) { maxN = n; lastNum = on; }
+      }
+    }
+    return { lastF, lastP, lastNum };
+  }, [orders]);
+
   return (
     <div className="p-6">
-      <PageHeader title="Commandes en cours" description={`${displayOrders.length} commande(s)`} actions={
+      <PageHeader title="Commandes en cours" description={
+        <div className="flex items-center gap-3">
+          <span>{displayOrders.length} commande(s)</span>
+          {lastSeriesNumbers.lastF && (
+            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-200">
+              F: {lastSeriesNumbers.lastF}
+            </span>
+          )}
+          {lastSeriesNumbers.lastP && (
+            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+              P: {lastSeriesNumbers.lastP}
+            </span>
+          )}
+          {lastSeriesNumbers.lastNum && (
+            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+              #: {lastSeriesNumbers.lastNum}
+            </span>
+          )}
+        </div>
+      } actions={
         <div className="flex gap-2 items-center">
           <Button onClick={undo} variant="outline" size="icon" disabled={!canUndo} title="Annuler (Ctrl+Z)">
             <Undo2 className="w-4 h-4" />
