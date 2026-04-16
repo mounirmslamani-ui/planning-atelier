@@ -60,12 +60,16 @@ const SubcontractingPage: React.FC = () => {
       }
     });
 
-    return Array.from(orderMap.entries()).map(([orderId, info]) => {
+    const rows = Array.from(orderMap.entries()).map(([orderId, info]) => {
       if (info.done) return null;
       const order = orders.find(o => o.id === orderId);
       if (!order || order.id === absenceOrderId) return null;
       return { order, ...info };
     }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[]; subcontractorId: string | undefined }[];
+
+    // Sort by displayOrder (Cn) from "Commandes en cours"
+    rows.sort((a, b) => (a.order.displayOrder ?? 9999) - (b.order.displayOrder ?? 9999));
+    return rows;
   }, [steps, orders, subcontractorOpIds, absenceOrderId]);
 
   const filteredRows = useMemo(() => {
@@ -131,7 +135,7 @@ const SubcontractingPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12 text-center">#</TableHead>
+              <TableHead className="w-12 text-center">Cn</TableHead>
               <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Date" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
@@ -154,7 +158,7 @@ const SubcontractingPage: React.FC = () => {
             ) : (
               filteredRows.map((row, idx) => (
                 <TableRow key={row.order.id} className={row.done ? 'opacity-60' : ''}>
-                  <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
+                  <TableCell className="text-center text-muted-foreground font-mono text-xs">{row.order.displayOrder ?? '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{row.order.orderNumber}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.orderDate) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{getClientName(row.order.clientId)}</TableCell>
