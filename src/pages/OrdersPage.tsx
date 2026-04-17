@@ -578,26 +578,38 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  // Compute last order numbers for each series (F, P, numeric)
+  // Compute last order numbers for each series (F, P, numeric) — priorité à l'année (après /), puis au numéro (avant /)
   const lastSeriesNumbers = useMemo(() => {
-    const extractNum = (on: string, prefix: string) => {
-      const match = on.match(new RegExp(`^${prefix}(\\d+)`, 'i'));
-      return match ? parseInt(match[1], 10) : -1;
+    // Returns [year, num] or null
+    const parse = (on: string, prefix: 'F' | 'P' | '') => {
+      const re = prefix
+        ? new RegExp(`^${prefix}(\\d+)\\s*/\\s*(\\d+)`, 'i')
+        : /^(\d+)\s*\/\s*(\d+)/;
+      const m = on.match(re);
+      if (!m) return null;
+      return { num: parseInt(m[1], 10), year: parseInt(m[2], 10) };
+    };
+    const isBetter = (a: { num: number; year: number }, b: { num: number; year: number } | null) => {
+      if (!b) return true;
+      if (a.year !== b.year) return a.year > b.year;
+      return a.num > b.num;
     };
     const allOrders = orders.filter(o => o.orderNumber !== 'ABS');
     let lastF = '', lastP = '', lastNum = '';
-    let maxF = -1, maxP = -1, maxN = -1;
+    let bestF: { num: number; year: number } | null = null;
+    let bestP: { num: number; year: number } | null = null;
+    let bestN: { num: number; year: number } | null = null;
     for (const o of allOrders) {
-      const on = o.orderNumber;
+      const on = o.orderNumber.trim();
       if (/^F\d/i.test(on)) {
-        const n = extractNum(on, 'F');
-        if (n > maxF) { maxF = n; lastF = on; }
+        const p = parse(on, 'F');
+        if (p && isBetter(p, bestF)) { bestF = p; lastF = on; }
       } else if (/^P\d/i.test(on)) {
-        const n = extractNum(on, 'P');
-        if (n > maxP) { maxP = n; lastP = on; }
+        const p = parse(on, 'P');
+        if (p && isBetter(p, bestP)) { bestP = p; lastP = on; }
       } else if (/^\d/.test(on)) {
-        const n = parseInt(on, 10);
-        if (n > maxN) { maxN = n; lastNum = on; }
+        const p = parse(on, '');
+        if (p && isBetter(p, bestN)) { bestN = p; lastNum = on; }
       }
     }
     return { lastF, lastP, lastNum };
@@ -609,18 +621,18 @@ const OrdersPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
-            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-200">
-              F: {lastSeriesNumbers.lastF}
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastF}
             </span>
           )}
           {lastSeriesNumbers.lastP && (
-            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
-              P: {lastSeriesNumbers.lastP}
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastP}
             </span>
           )}
           {lastSeriesNumbers.lastNum && (
-            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
-              #: {lastSeriesNumbers.lastNum}
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastNum}
             </span>
           )}
         </div>
