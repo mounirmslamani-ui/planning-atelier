@@ -882,6 +882,37 @@ const OrdersPage: React.FC = () => {
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
+
+      {/* Move selection by Cn dialog */}
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-base">Déplacer la sélection</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {selectedIds.size} commande(s) sélectionnée(s). Saisissez la nouvelle position (C<sub>n</sub>) à laquelle placer la première commande de la sélection. Les suivantes prendront C<sub>n</sub>+1, C<sub>n</sub>+2, … et le reste sera décalé automatiquement.
+            </p>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Position cible (Cn)</label>
+              <Input
+                type="number"
+                min={1}
+                max={baseSorted.length}
+                value={moveTargetCn}
+                onChange={e => setMoveTargetCn(e.target.value)}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') applyMoveSelection(); }}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Plage valide : 1 – {baseSorted.length}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Annuler</Button>
+            <Button onClick={applyMoveSelection} disabled={!moveTargetCn || parseInt(moveTargetCn, 10) < 1}>Déplacer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
