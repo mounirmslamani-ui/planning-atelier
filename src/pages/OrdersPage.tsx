@@ -344,6 +344,37 @@ const OrdersPage: React.FC = () => {
     else setSelectedIds(new Set(displayOrders.map(o => o.id)));
   };
 
+  // ---- Bulk move by Cn (saves only on Valider) ----
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveTargetCn, setMoveTargetCn] = useState<string>('');
+
+  const openMoveDialog = (extraId?: string) => {
+    const ids = new Set(selectedIds);
+    if (extraId) ids.add(extraId);
+    if (ids.size === 0) return;
+    if (extraId && !selectedIds.has(extraId)) setSelectedIds(ids);
+    const selectedSorted = baseSorted.filter(o => ids.has(o.id));
+    const minCn = Math.min(...selectedSorted.map(o => o.displayOrder ?? 9999));
+    setMoveTargetCn(String(minCn));
+    setMoveDialogOpen(true);
+  };
+
+  const applyMoveSelection = () => {
+    const target = parseInt(moveTargetCn, 10);
+    if (!target || target < 1) return;
+    const selectedItems = baseSorted.filter(o => selectedIds.has(o.id));
+    if (selectedItems.length === 0) { setMoveDialogOpen(false); return; }
+    const remaining = baseSorted.filter(o => !selectedIds.has(o.id));
+    const insertAt = Math.min(Math.max(0, target - 1), remaining.length);
+    const newList = [...remaining.slice(0, insertAt), ...selectedItems, ...remaining.slice(insertAt)];
+    const reindexed = newList.map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const absence = orders.find(o => o.id === absenceOrderId);
+    setOrders([...(absence ? [absence] : []), ...reindexed]);
+    setOrderValidated(false);
+    setMoveDialogOpen(false);
+    setSelectedIds(new Set());
+  };
+
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
     designation: '', quantity: 1, priority: 'P3', plannedDeadline: '', materialAvailable: true,
