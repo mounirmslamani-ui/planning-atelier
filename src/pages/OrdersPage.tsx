@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
@@ -343,6 +344,37 @@ const OrdersPage: React.FC = () => {
     else setSelectedIds(new Set(displayOrders.map(o => o.id)));
   };
 
+  // ---- Bulk move by Cn (saves only on Valider) ----
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [moveTargetCn, setMoveTargetCn] = useState<string>('');
+
+  const openMoveDialog = (extraId?: string) => {
+    const ids = new Set(selectedIds);
+    if (extraId) ids.add(extraId);
+    if (ids.size === 0) return;
+    if (extraId && !selectedIds.has(extraId)) setSelectedIds(ids);
+    const selectedSorted = baseSorted.filter(o => ids.has(o.id));
+    const minCn = Math.min(...selectedSorted.map(o => o.displayOrder ?? 9999));
+    setMoveTargetCn(String(minCn));
+    setMoveDialogOpen(true);
+  };
+
+  const applyMoveSelection = () => {
+    const target = parseInt(moveTargetCn, 10);
+    if (!target || target < 1) return;
+    const selectedItems = baseSorted.filter(o => selectedIds.has(o.id));
+    if (selectedItems.length === 0) { setMoveDialogOpen(false); return; }
+    const remaining = baseSorted.filter(o => !selectedIds.has(o.id));
+    const insertAt = Math.min(Math.max(0, target - 1), remaining.length);
+    const newList = [...remaining.slice(0, insertAt), ...selectedItems, ...remaining.slice(insertAt)];
+    const reindexed = newList.map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const absence = orders.find(o => o.id === absenceOrderId);
+    setOrders([...(absence ? [absence] : []), ...reindexed]);
+    setOrderValidated(false);
+    setMoveDialogOpen(false);
+    setSelectedIds(new Set());
+  };
+
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
     designation: '', quantity: 1, priority: 'P3', plannedDeadline: '', materialAvailable: true,
@@ -647,6 +679,11 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleAutoSort} variant="outline" size="sm" title="Trier par priorité puis disponibilité">
             Trier auto
           </Button>
+          {selectedIds.size > 0 && (
+            <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
+              <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
+            </Button>
+          )}
           <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
             ✓ Valider
           </Button>
@@ -691,62 +728,76 @@ const OrdersPage: React.FC = () => {
             {displayOrders.map((o, index) => {
               const isRowEditing = editingRowId === o.id;
               return (
-              <TableRow
-                key={o.id}
-                draggable={!hasActiveFilters && !isRowEditing}
-                onDragStart={e => handleDragStart(e, index)}
-                onDragOver={e => handleDragOver(e, index)}
-                onDragLeave={() => setDragOverIndex(null)}
-                onDrop={e => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-                className={`transition-colors ${
-                  !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
-                } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
-                } ${isDragging(index) ? 'opacity-40' : ''
-                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
-                } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
-              >
-                <TableCell className="px-1" onClick={e => e.stopPropagation()}>
-                  <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
-                </TableCell>
-                <TableCell className="text-center px-1">
-                  <div className="flex items-center justify-center gap-0.5">
-                    {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
-                    {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
-                    <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
-                  </div>
-                </TableCell>
-                {columns.map(col => (
-                  <TableCell key={col.key} className="py-1.5 px-2">{renderCell(o, col.key, index)}</TableCell>
-                ))}
-                <TableCell className="px-1">
-                  <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                    {o.frozenOrder && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="Libérer">
-                        <Unlock className="w-3.5 h-3.5 text-primary" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPlanningOrder(o)} title="Affectations">
-                      <CalendarCheck className="w-3.5 h-3.5" />
-                    </Button>
-                    {isRowEditing ? (
-                      <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
-                          <span className="text-normal text-sm font-bold">✓</span>
+              <ContextMenu key={o.id}>
+                <ContextMenuTrigger asChild>
+                  <TableRow
+                    draggable={!hasActiveFilters && !isRowEditing}
+                    onDragStart={e => handleDragStart(e, index)}
+                    onDragOver={e => handleDragOver(e, index)}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onDrop={e => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-colors ${
+                      !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
+                    } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
+                    } ${isDragging(index) ? 'opacity-40' : ''
+                    } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
+                    } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
+                  >
+                    <TableCell className="px-1" onClick={e => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
+                    </TableCell>
+                    <TableCell className="text-center px-1">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
+                        {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
+                        <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
+                      </div>
+                    </TableCell>
+                    {columns.map(col => (
+                      <TableCell key={col.key} className="py-1.5 px-2">{renderCell(o, col.key, index)}</TableCell>
+                    ))}
+                    <TableCell className="px-1">
+                      <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
+                        {o.frozenOrder && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="Libérer">
+                            <Unlock className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPlanningOrder(o)} title="Affectations">
+                          <CalendarCheck className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
-                          <span className="text-destructive text-sm font-bold">✕</span>
-                        </Button>
-                      </>
-                    ) : (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                        {isRowEditing ? (
+                          <>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
+                              <span className="text-normal text-sm font-bold">✓</span>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
+                              <span className="text-destructive text-sm font-bold">✕</span>
+                            </Button>
+                          </>
+                        ) : (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem onClick={() => openMoveDialog(o.id)}>
+                    <MoveVertical className="w-4 h-4 mr-2" />
+                    Déplacer la sélection {selectedIds.size > 0 ? `(${selectedIds.has(o.id) ? selectedIds.size : selectedIds.size + 1})` : '(1)'}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem onClick={() => setPlanningOrder(o)}>
+                    <ListPlus className="w-4 h-4 mr-2" />
+                    Étape suivante
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
               );
             })}
             {displayOrders.length === 0 && (
@@ -831,6 +882,37 @@ const OrdersPage: React.FC = () => {
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
+
+      {/* Move selection by Cn dialog */}
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-base">Déplacer la sélection</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {selectedIds.size} commande(s) sélectionnée(s). Saisissez la nouvelle position (C<sub>n</sub>) à laquelle placer la première commande de la sélection. Les suivantes prendront C<sub>n</sub>+1, C<sub>n</sub>+2, … et le reste sera décalé automatiquement.
+            </p>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Position cible (Cn)</label>
+              <Input
+                type="number"
+                min={1}
+                max={baseSorted.length}
+                value={moveTargetCn}
+                onChange={e => setMoveTargetCn(e.target.value)}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') applyMoveSelection(); }}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Plage valide : 1 – {baseSorted.length}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Annuler</Button>
+            <Button onClick={applyMoveSelection} disabled={!moveTargetCn || parseInt(moveTargetCn, 10) < 1}>Déplacer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
