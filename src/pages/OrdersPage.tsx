@@ -679,6 +679,11 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleAutoSort} variant="outline" size="sm" title="Trier par priorité puis disponibilité">
             Trier auto
           </Button>
+          {selectedIds.size > 0 && (
+            <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
+              <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
+            </Button>
+          )}
           <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
             ✓ Valider
           </Button>
