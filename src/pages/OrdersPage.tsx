@@ -621,18 +621,18 @@ const OrdersPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
-            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-200">
-              F: {lastSeriesNumbers.lastF}
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastF}
             </span>
           )}
           {lastSeriesNumbers.lastP && (
-            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
-              P: {lastSeriesNumbers.lastP}
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastP}
             </span>
           )}
           {lastSeriesNumbers.lastNum && (
-            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
-              #: {lastSeriesNumbers.lastNum}
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastNum}
             </span>
           )}
         </div>
