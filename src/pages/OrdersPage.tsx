@@ -728,62 +728,76 @@ const OrdersPage: React.FC = () => {
             {displayOrders.map((o, index) => {
               const isRowEditing = editingRowId === o.id;
               return (
-              <TableRow
-                key={o.id}
-                draggable={!hasActiveFilters && !isRowEditing}
-                onDragStart={e => handleDragStart(e, index)}
-                onDragOver={e => handleDragOver(e, index)}
-                onDragLeave={() => setDragOverIndex(null)}
-                onDrop={e => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-                className={`transition-colors ${
-                  !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
-                } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
-                } ${isDragging(index) ? 'opacity-40' : ''
-                } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
-                } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
-              >
-                <TableCell className="px-1" onClick={e => e.stopPropagation()}>
-                  <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
-                </TableCell>
-                <TableCell className="text-center px-1">
-                  <div className="flex items-center justify-center gap-0.5">
-                    {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
-                    {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
-                    <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
-                  </div>
-                </TableCell>
-                {columns.map(col => (
-                  <TableCell key={col.key} className="py-1.5 px-2">{renderCell(o, col.key, index)}</TableCell>
-                ))}
-                <TableCell className="px-1">
-                  <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                    {o.frozenOrder && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="Libérer">
-                        <Unlock className="w-3.5 h-3.5 text-primary" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPlanningOrder(o)} title="Affectations">
-                      <CalendarCheck className="w-3.5 h-3.5" />
-                    </Button>
-                    {isRowEditing ? (
-                      <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
-                          <span className="text-normal text-sm font-bold">✓</span>
+              <ContextMenu key={o.id}>
+                <ContextMenuTrigger asChild>
+                  <TableRow
+                    draggable={!hasActiveFilters && !isRowEditing}
+                    onDragStart={e => handleDragStart(e, index)}
+                    onDragOver={e => handleDragOver(e, index)}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onDrop={e => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`transition-colors ${
+                      !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
+                    } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
+                    } ${isDragging(index) ? 'opacity-40' : ''
+                    } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
+                    } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
+                  >
+                    <TableCell className="px-1" onClick={e => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
+                    </TableCell>
+                    <TableCell className="text-center px-1">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
+                        {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
+                        <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
+                      </div>
+                    </TableCell>
+                    {columns.map(col => (
+                      <TableCell key={col.key} className="py-1.5 px-2">{renderCell(o, col.key, index)}</TableCell>
+                    ))}
+                    <TableCell className="px-1">
+                      <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
+                        {o.frozenOrder && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="Libérer">
+                            <Unlock className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPlanningOrder(o)} title="Affectations">
+                          <CalendarCheck className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
-                          <span className="text-destructive text-sm font-bold">✕</span>
-                        </Button>
-                      </>
-                    ) : (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                        {isRowEditing ? (
+                          <>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
+                              <span className="text-normal text-sm font-bold">✓</span>
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
+                              <span className="text-destructive text-sm font-bold">✕</span>
+                            </Button>
+                          </>
+                        ) : (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem onClick={() => openMoveDialog(o.id)}>
+                    <MoveVertical className="w-4 h-4 mr-2" />
+                    Déplacer la sélection {selectedIds.size > 0 ? `(${selectedIds.has(o.id) ? selectedIds.size : selectedIds.size + 1})` : '(1)'}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem onClick={() => setPlanningOrder(o)}>
+                    <ListPlus className="w-4 h-4 mr-2" />
+                    Étape suivante
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
               );
             })}
             {displayOrders.length === 0 && (
