@@ -3,7 +3,9 @@ import type {
   Equipment, Operator, Subcontractor, Operation, Client, Order,
   ProductionStep, Holiday, ProductionRecord, QualityControlEntry, DeliveryEntry,
   EquipmentType, EquipmentState, OperationCategory, ClientClass, OrderPriority, QCDecision,
+  ResourceStatus,
 } from '@/types/planning';
+import { statusToBool, boolToStatus } from '@/types/planning';
 
 // ───────────────────── Helpers ─────────────────────
 
