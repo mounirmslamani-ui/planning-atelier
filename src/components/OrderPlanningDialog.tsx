@@ -188,14 +188,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     // Attach step-level prerequisites from rows
     newSteps.forEach((s, i) => {
       if (rows[i]) {
-        s.studyReady = rows[i].studyReady;
-        s.materialAvailable = rows[i].materialAvailable;
-        s.toolingAvailable = rows[i].toolingAvailable;
-        s.subcontractingDone = rows[i].subcontractingDone;
+        s.studyStatus = rows[i].studyStatus;
+        s.materialStatus = rows[i].materialStatus;
+        s.toolingStatus = rows[i].toolingStatus;
+        s.studyReady = rows[i].studyStatus === 'disponible';
+        s.materialAvailable = rows[i].materialStatus === 'disponible';
+        s.toolingAvailable = rows[i].toolingStatus === 'disponible';
         s.studyDeadline = rows[i].studyDeadline;
         s.materialDeadline = rows[i].materialDeadline;
         s.toolingDeadline = rows[i].toolingDeadline;
-        s.subcontractingDeadline = rows[i].subcontractingDeadline;
       }
       addStep(s);
     });
