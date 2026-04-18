@@ -51,6 +51,12 @@ export interface Client {
 
 export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4';
 
+export type ResourceStatus = 'disponible' | 'non-disponible' | 'partiel' | 'non-applicable';
+
+// Helper: legacy boolean view of a 4-state status (true only when "disponible")
+export const statusToBool = (s: ResourceStatus | undefined): boolean => s === 'disponible';
+export const boolToStatus = (b: boolean | undefined): ResourceStatus => (b ? 'disponible' : 'non-disponible');
+
 export interface Order {
   id: string;
   orderNumber: string;
