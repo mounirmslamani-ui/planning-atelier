@@ -151,6 +151,9 @@ export function mapClientToDB(c: Client) {
 // ───────────────────── Order ─────────────────────
 
 export function mapOrderFromDB(row: any): Order {
+  const materialStatus = (row.material_status || 'non-disponible') as ResourceStatus;
+  const toolingStatus  = (row.tooling_status  || 'non-disponible') as ResourceStatus;
+  const studyStatus    = (row.study_status    || 'non-disponible') as ResourceStatus;
   return {
     id: row.id,
     orderNumber: row.order_number,
@@ -166,14 +169,21 @@ export function mapOrderFromDB(row: any): Order {
     prototypeDeadline: row.prototype_deadline || undefined,
     deliveryDeadline: row.delivery_deadline || undefined,
     complementaryQuantity: row.complementary_quantity ?? undefined,
-    materialAvailable: row.material_available ?? false,
-    toolingAvailable: row.tooling_available ?? false,
-    studyReady: row.study_ready ?? false,
+    materialStatus,
+    toolingStatus,
+    studyStatus,
+    materialAvailable: statusToBool(materialStatus),
+    toolingAvailable: statusToBool(toolingStatus),
+    studyReady: statusToBool(studyStatus),
     observation: row.observation || undefined,
   };
 }
 
 export function mapOrderToDB(o: Order) {
+  // Prefer explicit status; fall back to legacy boolean.
+  const material_status = o.materialStatus ?? boolToStatus(o.materialAvailable);
+  const tooling_status  = o.toolingStatus  ?? boolToStatus(o.toolingAvailable);
+  const study_status    = o.studyStatus    ?? boolToStatus(o.studyReady);
   return {
     id: o.id,
     order_number: o.orderNumber,
@@ -189,9 +199,9 @@ export function mapOrderToDB(o: Order) {
     prototype_deadline: toISODateOrNull(o.prototypeDeadline),
     delivery_deadline: toISODateOrNull(o.deliveryDeadline),
     complementary_quantity: o.complementaryQuantity ?? null,
-    material_available: o.materialAvailable ?? false,
-    tooling_available: o.toolingAvailable ?? false,
-    study_ready: o.studyReady ?? false,
+    material_status,
+    tooling_status,
+    study_status,
     observation: o.observation || null,
   };
 }
