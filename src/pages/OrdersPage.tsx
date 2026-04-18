@@ -184,45 +184,83 @@ const OrdersPage: React.FC = () => {
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
   // Order-level study/material/tooling status (worst case from steps)
-  const orderNeedsMap = useMemo(() => {
-    const map = new Map<string, { study: boolean; material: boolean; tooling: boolean }>();
+  // Worst order: non-disponible > partiel > disponible > non-applicable
+  const STATUS_RANK: Record<ResourceStatus, number> = {
+    'non-disponible': 3,
+    'partiel': 2,
+    'disponible': 1,
+    'non-applicable': 0,
+  };
+  const orderStatusMap = useMemo(() => {
+    const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
       const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
       if (orderSteps.length === 0) {
-        map.set(o.id, { study: o.studyReady, material: o.materialAvailable, tooling: o.toolingAvailable });
+        map.set(o.id, {
+          study: o.studyStatus ?? 'non-disponible',
+          material: o.materialStatus ?? 'non-disponible',
+          tooling: o.toolingStatus ?? 'non-disponible',
+        });
         return;
       }
-      // If ANY step has it false → order is false (worst case)
-      const study = orderSteps.every(s => s.studyReady !== false);
-      const material = orderSteps.every(s => s.materialAvailable !== false);
-      const tooling = orderSteps.every(s => s.toolingAvailable !== false);
-      map.set(o.id, { study, material, tooling });
+      const worst = (key: 'studyStatus' | 'materialStatus' | 'toolingStatus'): ResourceStatus => {
+        let acc: ResourceStatus = 'non-applicable';
+        orderSteps.forEach(s => {
+          const v = (s[key] ?? 'disponible') as ResourceStatus;
+          if (STATUS_RANK[v] > STATUS_RANK[acc]) acc = v;
+        });
+        return acc;
+      };
+      map.set(o.id, {
+        study: worst('studyStatus'),
+        material: worst('materialStatus'),
+        tooling: worst('toolingStatus'),
+      });
     });
     return map;
   }, [orders, steps, absenceOrderId, absenceOperationId]);
 
-  // Toggle order-level need and propagate to all steps
-  const toggleOrderNeed = useCallback((orderId: string, field: 'study' | 'material' | 'tooling') => {
-    const current = orderNeedsMap.get(orderId);
-    if (!current) return;
-    const newValue = !(current as any)[field];
-    
-    // Update all steps for this order
+  // Date prompt for red/orange transitions
+  const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
+
+  const applyStatusToOrderAndSteps = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
+    const isAvail = status === 'disponible';
+
     const orderSteps = steps.filter(s => s.orderId === orderId && s.operationId !== absenceOperationId);
     orderSteps.forEach(s => {
-      if (field === 'study') updateStep({ ...s, studyReady: newValue, studyDeadline: newValue ? undefined : s.studyDeadline });
-      if (field === 'material') updateStep({ ...s, materialAvailable: newValue, materialDeadline: newValue ? undefined : s.materialDeadline });
-      if (field === 'tooling') updateStep({ ...s, toolingAvailable: newValue, toolingDeadline: newValue ? undefined : s.toolingDeadline });
+      updateStep({
+        ...s,
+        [statusKey]: status,
+        [boolKey]: isAvail,
+        [deadlineKey]: deadline || undefined,
+      } as any);
     });
 
-    // Also update order-level flags
     const order = orders.find(o => o.id === orderId);
     if (order) {
-      if (field === 'study') updateOrder({ ...order, studyReady: newValue });
-      if (field === 'material') updateOrder({ ...order, materialAvailable: newValue });
-      if (field === 'tooling') updateOrder({ ...order, toolingAvailable: newValue });
+      updateOrder({
+        ...order,
+        [statusKey]: status,
+        [boolKey]: isAvail,
+      } as any);
     }
-  }, [orderNeedsMap, steps, orders, absenceOperationId, updateStep, updateOrder]);
+  }, [steps, orders, absenceOperationId, updateStep, updateOrder]);
+
+  const handleStatusChange = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    if (status === 'non-disponible' || status === 'partiel') {
+      const labels = {
+        study: 'Date prévue pour fin Étude',
+        material: 'Date prévue pour disponibilité Matière',
+        tooling: 'Date prévue pour disponibilité Outillage',
+      };
+      setStatusDatePrompt({ orderId, field, status, label: labels[field] });
+    } else {
+      applyStatusToOrderAndSteps(orderId, field, status);
+    }
+  }, [applyStatusToOrderAndSteps]);
 
   const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
     return [...orderList].sort((a, b) => {
