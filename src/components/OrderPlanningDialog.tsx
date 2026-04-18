@@ -3,14 +3,14 @@ import { formatDateFR } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
-import type { Order } from '@/types/planning';
+import type { Order, ResourceStatus } from '@/types/planning';
 import type { OperationToSchedule } from '@/lib/scheduler';
 import DatePromptDialog from '@/components/DatePromptDialog';
+import ResourceStatusPill from '@/components/ResourceStatusPill';
 
 interface OperationRow {
   id: string;
