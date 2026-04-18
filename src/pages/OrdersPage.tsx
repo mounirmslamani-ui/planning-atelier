@@ -916,6 +916,18 @@ const OrdersPage: React.FC = () => {
       )}
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 
+      {statusDatePrompt && (
+        <DatePromptDialog
+          open={!!statusDatePrompt}
+          label={statusDatePrompt.label}
+          onConfirm={(date) => {
+            applyStatusToOrderAndSteps(statusDatePrompt.orderId, statusDatePrompt.field, statusDatePrompt.status, date);
+            setStatusDatePrompt(null);
+          }}
+          onCancel={() => setStatusDatePrompt(null)}
+        />
+      )}
+
       {/* Move selection by Cn dialog */}
       <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
         <DialogContent className="max-w-sm">
