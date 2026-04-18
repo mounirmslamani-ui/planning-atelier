@@ -199,7 +199,7 @@ export type Database = {
           display_order: number | null
           frozen_order: boolean
           id: string
-          material_available: boolean
+          material_status: Database["public"]["Enums"]["resource_status"]
           observation: string | null
           order_date: string
           order_number: string
@@ -208,8 +208,8 @@ export type Database = {
           prototype_deadline: string | null
           prototype_quantity: number | null
           quantity: number
-          study_ready: boolean
-          tooling_available: boolean
+          study_status: Database["public"]["Enums"]["resource_status"]
+          tooling_status: Database["public"]["Enums"]["resource_status"]
           updated_at: string
         }
         Insert: {
@@ -221,7 +221,7 @@ export type Database = {
           display_order?: number | null
           frozen_order?: boolean
           id?: string
-          material_available?: boolean
+          material_status?: Database["public"]["Enums"]["resource_status"]
           observation?: string | null
           order_date?: string
           order_number: string
@@ -230,8 +230,8 @@ export type Database = {
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
-          study_ready?: boolean
-          tooling_available?: boolean
+          study_status?: Database["public"]["Enums"]["resource_status"]
+          tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
         Update: {
@@ -243,7 +243,7 @@ export type Database = {
           display_order?: number | null
           frozen_order?: boolean
           id?: string
-          material_available?: boolean
+          material_status?: Database["public"]["Enums"]["resource_status"]
           observation?: string | null
           order_date?: string
           order_number?: string
@@ -252,8 +252,8 @@ export type Database = {
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
-          study_ready?: boolean
-          tooling_available?: boolean
+          study_status?: Database["public"]["Enums"]["resource_status"]
+          tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
         Relationships: [
@@ -332,8 +332,8 @@ export type Database = {
           estimated_duration: number
           frozen: boolean
           id: string
-          material_available: boolean
           material_deadline: string | null
+          material_status: Database["public"]["Enums"]["resource_status"]
           operation_id: string
           operator_id: string | null
           order_id: string
@@ -341,12 +341,10 @@ export type Database = {
           start_time: string | null
           step_order: number
           study_deadline: string | null
-          study_ready: boolean
-          subcontracting_deadline: string | null
-          subcontracting_done: boolean
+          study_status: Database["public"]["Enums"]["resource_status"]
           subcontractor_id: string | null
-          tooling_available: boolean
           tooling_deadline: string | null
+          tooling_status: Database["public"]["Enums"]["resource_status"]
           updated_at: string
         }
         Insert: {
@@ -359,8 +357,8 @@ export type Database = {
           estimated_duration?: number
           frozen?: boolean
           id?: string
-          material_available?: boolean
           material_deadline?: string | null
+          material_status?: Database["public"]["Enums"]["resource_status"]
           operation_id: string
           operator_id?: string | null
           order_id: string
@@ -368,12 +366,10 @@ export type Database = {
           start_time?: string | null
           step_order?: number
           study_deadline?: string | null
-          study_ready?: boolean
-          subcontracting_deadline?: string | null
-          subcontracting_done?: boolean
+          study_status?: Database["public"]["Enums"]["resource_status"]
           subcontractor_id?: string | null
-          tooling_available?: boolean
           tooling_deadline?: string | null
+          tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
         Update: {
@@ -386,8 +382,8 @@ export type Database = {
           estimated_duration?: number
           frozen?: boolean
           id?: string
-          material_available?: boolean
           material_deadline?: string | null
+          material_status?: Database["public"]["Enums"]["resource_status"]
           operation_id?: string
           operator_id?: string | null
           order_id?: string
@@ -395,12 +391,10 @@ export type Database = {
           start_time?: string | null
           step_order?: number
           study_deadline?: string | null
-          study_ready?: boolean
-          subcontracting_deadline?: string | null
-          subcontracting_done?: boolean
+          study_status?: Database["public"]["Enums"]["resource_status"]
           subcontractor_id?: string | null
-          tooling_available?: boolean
           tooling_deadline?: string | null
+          tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
         Relationships: [
@@ -541,6 +535,11 @@ export type Database = {
         | "reprise-retouche"
         | "conforme-derogation"
         | "non-conforme"
+      resource_status:
+        | "disponible"
+        | "non-disponible"
+        | "partiel"
+        | "non-applicable"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -700,6 +699,12 @@ export const Constants = {
         "reprise-retouche",
         "conforme-derogation",
         "non-conforme",
+      ],
+      resource_status: [
+        "disponible",
+        "non-disponible",
+        "partiel",
+        "non-applicable",
       ],
     },
   },
