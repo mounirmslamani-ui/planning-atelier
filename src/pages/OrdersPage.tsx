@@ -18,6 +18,9 @@ import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ResourceStatusPill from '@/components/ResourceStatusPill';
+import DatePromptDialog from '@/components/DatePromptDialog';
+import type { ResourceStatus } from '@/types/planning';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
