@@ -333,12 +333,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         onCheckedChange={() => handleCheckboxToggle(row.id, 'toolingAvailable', row.toolingAvailable)}
                       />
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.subcontractingDone}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'subcontractingDone', row.subcontractingDone)}
-                      />
-                    </TableCell>
+                    {/* S-T column removed per spec */}
                     <TableCell>
                       <div className="flex flex-col gap-0.5 items-center">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveRow(row.id, 'up')} disabled={row.order === 1}>
