@@ -108,6 +108,9 @@ export interface ProductionStep {
   studyDeadline?: string; // expected date for study completion
   materialDeadline?: string; // expected date for material purchase
   toolingDeadline?: string; // expected date for tooling purchase
+  // Subcontracting tracking (in-memory only — persisted via production_records validation)
+  subcontractingDone?: boolean;
+  subcontractingDeadline?: string;
 }
 
 export interface Holiday {
