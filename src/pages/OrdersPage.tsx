@@ -627,31 +627,16 @@ const OrdersPage: React.FC = () => {
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
       }
       case 'study': {
-        const needs = orderNeedsMap.get(o.id);
-        const available = needs?.study ?? true;
-        return (
-          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'study')} title="Cliquer pour changer">
-            {available ? '🟢' : '🔴'}
-          </span>
-        );
+        const s = orderStatusMap.get(o.id);
+        return <ResourceStatusPill value={s?.study} onChange={(next) => handleStatusChange(o.id, 'study', next)} />;
       }
       case 'material': {
-        const needs = orderNeedsMap.get(o.id);
-        const available = needs?.material ?? true;
-        return (
-          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'material')} title="Cliquer pour changer">
-            {available ? '🟢' : '🔴'}
-          </span>
-        );
+        const s = orderStatusMap.get(o.id);
+        return <ResourceStatusPill value={s?.material} onChange={(next) => handleStatusChange(o.id, 'material', next)} />;
       }
       case 'tooling': {
-        const needs = orderNeedsMap.get(o.id);
-        const available = needs?.tooling ?? true;
-        return (
-          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'tooling')} title="Cliquer pour changer">
-            {available ? '🟢' : '🔴'}
-          </span>
-        );
+        const s = orderStatusMap.get(o.id);
+        return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
       case 'observation': return <span className="text-xs text-muted-foreground max-w-[170px] truncate block">{o.observation || '—'}</span>;
       default: return null;
