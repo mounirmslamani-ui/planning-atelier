@@ -141,33 +141,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     }));
   };
 
-  const handleCheckboxToggle = (rowId: string, field: 'studyReady' | 'materialAvailable' | 'toolingAvailable' | 'subcontractingDone', currentValue: boolean) => {
-    if (currentValue) {
-      // Unchecking: open date prompt
-      const labels: Record<string, string> = {
-        studyReady: 'Date prévue pour fin Étude',
-        materialAvailable: 'Date prévue pour achat Matière',
-        toolingAvailable: 'Date prévue pour achat Outillage',
-        subcontractingDone: 'Date prévue pour fin Sous-traitance',
+  const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
+    updateRow(rowId, statusKey, status);
+    if (status === 'non-disponible' || status === 'partiel') {
+      const labels = {
+        study: 'Date prévue pour fin Étude',
+        material: 'Date prévue pour disponibilité Matière',
+        tooling: 'Date prévue pour disponibilité Outillage',
       };
-      const deadlineFields: Record<string, 'studyDeadline' | 'materialDeadline' | 'toolingDeadline' | 'subcontractingDeadline'> = {
-        studyReady: 'studyDeadline',
-        materialAvailable: 'materialDeadline',
-        toolingAvailable: 'toolingDeadline',
-        subcontractingDone: 'subcontractingDeadline',
-      };
-      setDatePrompt({ rowId, field: deadlineFields[field], label: labels[field] });
-      updateRow(rowId, field, false);
+      setDatePrompt({ rowId, field: deadlineKey, label: labels[field] });
     } else {
-      // Re-checking: clear the deadline
-      const deadlineClear: Record<string, string> = {
-        studyReady: 'studyDeadline',
-        materialAvailable: 'materialDeadline',
-        toolingAvailable: 'toolingDeadline',
-        subcontractingDone: 'subcontractingDeadline',
-      };
-      updateRow(rowId, field, true);
-      updateRow(rowId, deadlineClear[field] as keyof OperationRow, '');
+      updateRow(rowId, deadlineKey, '');
     }
   };
 
