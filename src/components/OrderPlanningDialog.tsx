@@ -23,14 +23,12 @@ interface OperationRow {
   option2: string;
   option3: string;
   equipmentIds: string[];
-  studyReady: boolean;
-  materialAvailable: boolean;
-  toolingAvailable: boolean;
-  subcontractingDone: boolean;
+  studyStatus: ResourceStatus;
+  materialStatus: ResourceStatus;
+  toolingStatus: ResourceStatus;
   studyDeadline: string;
   materialDeadline: string;
   toolingDeadline: string;
-  subcontractingDeadline: string;
 }
 
 interface Props {
