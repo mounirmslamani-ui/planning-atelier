@@ -301,21 +301,24 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     <TableCell>{renderAssigneeSelect(row, 'option2')}</TableCell>
                     <TableCell>{renderAssigneeSelect(row, 'option3')}</TableCell>
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.studyReady}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'studyReady', row.studyReady)}
+                      <ResourceStatusPill
+                        value={row.studyStatus}
+                        onChange={(s) => handleStatusChange(row.id, 'study', s)}
+                        deadline={row.studyDeadline}
                       />
                     </TableCell>
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.materialAvailable}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'materialAvailable', row.materialAvailable)}
+                      <ResourceStatusPill
+                        value={row.materialStatus}
+                        onChange={(s) => handleStatusChange(row.id, 'material', s)}
+                        deadline={row.materialDeadline}
                       />
                     </TableCell>
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.toolingAvailable}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'toolingAvailable', row.toolingAvailable)}
+                      <ResourceStatusPill
+                        value={row.toolingStatus}
+                        onChange={(s) => handleStatusChange(row.id, 'tooling', s)}
+                        deadline={row.toolingDeadline}
                       />
                     </TableCell>
                     {/* S-T column removed per spec */}
