@@ -374,14 +374,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             setDatePrompt(null);
           }}
           onCancel={() => {
-            // Re-check the box since user cancelled
-            const fieldMap: Record<string, keyof OperationRow> = {
-              studyDeadline: 'studyReady',
-              materialDeadline: 'materialAvailable',
-              toolingDeadline: 'toolingAvailable',
-              subcontractingDeadline: 'subcontractingDone',
+            // Revert status to "disponible" since user cancelled
+            const statusMap: Record<string, 'studyStatus' | 'materialStatus' | 'toolingStatus'> = {
+              studyDeadline: 'studyStatus',
+              materialDeadline: 'materialStatus',
+              toolingDeadline: 'toolingStatus',
             };
-            updateRow(datePrompt.rowId, fieldMap[datePrompt.field], true);
+            updateRow(datePrompt.rowId, statusMap[datePrompt.field], 'disponible');
             setDatePrompt(null);
           }}
         />
