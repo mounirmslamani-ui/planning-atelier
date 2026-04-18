@@ -98,11 +98,13 @@ export interface ProductionStep {
   order: number; // chronological order
   frozen?: boolean; // true if manually placed – excluded from auto-scheduling
   equipmentIds?: string[]; // required equipment for this step
-  subcontractingDone?: boolean; // true when subcontracting is completed
-  subcontractingDeadline?: string; // deadline for subcontracting (date string)
-  studyReady?: boolean; // step-level: study done
-  materialAvailable?: boolean; // step-level: material available
-  toolingAvailable?: boolean; // step-level: tooling available
+  studyReady?: boolean; // step-level: study done (derived from studyStatus)
+  materialAvailable?: boolean; // step-level: material available (derived from materialStatus)
+  toolingAvailable?: boolean; // step-level: tooling available (derived from toolingStatus)
+  /** 4-state status — authoritative for steps too */
+  studyStatus?: ResourceStatus;
+  materialStatus?: ResourceStatus;
+  toolingStatus?: ResourceStatus;
   studyDeadline?: string; // expected date for study completion
   materialDeadline?: string; // expected date for material purchase
   toolingDeadline?: string; // expected date for tooling purchase
