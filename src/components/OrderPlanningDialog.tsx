@@ -353,7 +353,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 ))}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={13} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
                       Ajoutez des opérations pour cette commande.
                     </TableCell>
                   </TableRow>
