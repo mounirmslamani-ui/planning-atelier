@@ -603,6 +603,9 @@ export async function ensureAbsenceOrder(existingOrders: Order[]): Promise<Order
     materialAvailable: true,
     toolingAvailable: true,
     studyReady: true,
+    materialStatus: 'non-applicable',
+    toolingStatus: 'non-applicable',
+    studyStatus: 'non-applicable',
   };
   const { data, error } = await supabase.from('orders').insert(mapOrderToDB(order)).select().single();
   if (error || !data) {
