@@ -78,19 +78,17 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           order: i + 1,
           operationId: s.operationId,
           estimatedDuration: s.estimatedDuration,
-          assignType: isSub ? 'subcontractor' : 'operator',
+          assignType: (isSub ? 'subcontractor' : 'operator') as 'operator' | 'subcontractor',
           option1: isSub ? s.subcontractorId! : s.operatorId,
           option2: '',
           option3: '',
           equipmentIds: s.equipmentIds || [],
-          studyReady: s.studyReady ?? true,
-          materialAvailable: s.materialAvailable ?? true,
-          toolingAvailable: s.toolingAvailable ?? true,
-          subcontractingDone: s.subcontractingDone ?? false,
+          studyStatus: (s.studyStatus ?? 'disponible') as ResourceStatus,
+          materialStatus: (s.materialStatus ?? 'disponible') as ResourceStatus,
+          toolingStatus: (s.toolingStatus ?? 'disponible') as ResourceStatus,
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
-          subcontractingDeadline: s.subcontractingDeadline || '',
         };
       }));
     } else {
@@ -104,11 +102,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order: prev.length + 1,
       operationId: operations.filter(o => o.id !== absenceOperationId)[0]?.id || '',
       estimatedDuration: 60,
-      assignType: 'operator',
+      assignType: 'operator' as 'operator' | 'subcontractor',
       option1: '', option2: '', option3: '',
       equipmentIds: [],
-      studyReady: true, materialAvailable: true, toolingAvailable: true, subcontractingDone: true,
-      studyDeadline: '', materialDeadline: '', toolingDeadline: '', subcontractingDeadline: '',
+      studyStatus: 'disponible' as ResourceStatus,
+      materialStatus: 'disponible' as ResourceStatus,
+      toolingStatus: 'disponible' as ResourceStatus,
+      studyDeadline: '', materialDeadline: '', toolingDeadline: '',
     }]);
   };
 
