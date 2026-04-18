@@ -3,14 +3,14 @@ import { formatDateFR } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
-import type { Order } from '@/types/planning';
+import type { Order, ResourceStatus } from '@/types/planning';
 import type { OperationToSchedule } from '@/lib/scheduler';
 import DatePromptDialog from '@/components/DatePromptDialog';
+import ResourceStatusPill from '@/components/ResourceStatusPill';
 
 interface OperationRow {
   id: string;
@@ -23,14 +23,12 @@ interface OperationRow {
   option2: string;
   option3: string;
   equipmentIds: string[];
-  studyReady: boolean;
-  materialAvailable: boolean;
-  toolingAvailable: boolean;
-  subcontractingDone: boolean;
+  studyStatus: ResourceStatus;
+  materialStatus: ResourceStatus;
+  toolingStatus: ResourceStatus;
   studyDeadline: string;
   materialDeadline: string;
   toolingDeadline: string;
-  subcontractingDeadline: string;
 }
 
 interface Props {
@@ -46,7 +44,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   } = usePlanning();
 
   const [rows, setRows] = useState<OperationRow[]>([]);
-  const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline' | 'subcontractingDeadline'; label: string } | null>(null);
+  const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
 
   // Track whether we've initialized for this dialog open session
   const initializedRef = React.useRef(false);
@@ -80,19 +78,17 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           order: i + 1,
           operationId: s.operationId,
           estimatedDuration: s.estimatedDuration,
-          assignType: isSub ? 'subcontractor' : 'operator',
+          assignType: (isSub ? 'subcontractor' : 'operator') as 'operator' | 'subcontractor',
           option1: isSub ? s.subcontractorId! : s.operatorId,
           option2: '',
           option3: '',
           equipmentIds: s.equipmentIds || [],
-          studyReady: s.studyReady ?? true,
-          materialAvailable: s.materialAvailable ?? true,
-          toolingAvailable: s.toolingAvailable ?? true,
-          subcontractingDone: s.subcontractingDone ?? false,
+          studyStatus: (s.studyStatus ?? 'disponible') as ResourceStatus,
+          materialStatus: (s.materialStatus ?? 'disponible') as ResourceStatus,
+          toolingStatus: (s.toolingStatus ?? 'disponible') as ResourceStatus,
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
-          subcontractingDeadline: s.subcontractingDeadline || '',
         };
       }));
     } else {
@@ -106,11 +102,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order: prev.length + 1,
       operationId: operations.filter(o => o.id !== absenceOperationId)[0]?.id || '',
       estimatedDuration: 60,
-      assignType: 'operator',
+      assignType: 'operator' as 'operator' | 'subcontractor',
       option1: '', option2: '', option3: '',
       equipmentIds: [],
-      studyReady: true, materialAvailable: true, toolingAvailable: true, subcontractingDone: true,
-      studyDeadline: '', materialDeadline: '', toolingDeadline: '', subcontractingDeadline: '',
+      studyStatus: 'disponible' as ResourceStatus,
+      materialStatus: 'disponible' as ResourceStatus,
+      toolingStatus: 'disponible' as ResourceStatus,
+      studyDeadline: '', materialDeadline: '', toolingDeadline: '',
     }]);
   };
 
@@ -143,33 +141,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     }));
   };
 
-  const handleCheckboxToggle = (rowId: string, field: 'studyReady' | 'materialAvailable' | 'toolingAvailable' | 'subcontractingDone', currentValue: boolean) => {
-    if (currentValue) {
-      // Unchecking: open date prompt
-      const labels: Record<string, string> = {
-        studyReady: 'Date prévue pour fin Étude',
-        materialAvailable: 'Date prévue pour achat Matière',
-        toolingAvailable: 'Date prévue pour achat Outillage',
-        subcontractingDone: 'Date prévue pour fin Sous-traitance',
+  const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
+    updateRow(rowId, statusKey, status);
+    if (status === 'non-disponible' || status === 'partiel') {
+      const labels = {
+        study: 'Date prévue pour fin Étude',
+        material: 'Date prévue pour disponibilité Matière',
+        tooling: 'Date prévue pour disponibilité Outillage',
       };
-      const deadlineFields: Record<string, 'studyDeadline' | 'materialDeadline' | 'toolingDeadline' | 'subcontractingDeadline'> = {
-        studyReady: 'studyDeadline',
-        materialAvailable: 'materialDeadline',
-        toolingAvailable: 'toolingDeadline',
-        subcontractingDone: 'subcontractingDeadline',
-      };
-      setDatePrompt({ rowId, field: deadlineFields[field], label: labels[field] });
-      updateRow(rowId, field, false);
+      setDatePrompt({ rowId, field: deadlineKey, label: labels[field] });
     } else {
-      // Re-checking: clear the deadline
-      const deadlineClear: Record<string, string> = {
-        studyReady: 'studyDeadline',
-        materialAvailable: 'materialDeadline',
-        toolingAvailable: 'toolingDeadline',
-        subcontractingDone: 'subcontractingDeadline',
-      };
-      updateRow(rowId, field, true);
-      updateRow(rowId, deadlineClear[field] as keyof OperationRow, '');
+      updateRow(rowId, deadlineKey, '');
     }
   };
 
@@ -204,14 +188,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     // Attach step-level prerequisites from rows
     newSteps.forEach((s, i) => {
       if (rows[i]) {
-        s.studyReady = rows[i].studyReady;
-        s.materialAvailable = rows[i].materialAvailable;
-        s.toolingAvailable = rows[i].toolingAvailable;
-        s.subcontractingDone = rows[i].subcontractingDone;
+        s.studyStatus = rows[i].studyStatus;
+        s.materialStatus = rows[i].materialStatus;
+        s.toolingStatus = rows[i].toolingStatus;
+        s.studyReady = rows[i].studyStatus === 'disponible';
+        s.materialAvailable = rows[i].materialStatus === 'disponible';
+        s.toolingAvailable = rows[i].toolingStatus === 'disponible';
         s.studyDeadline = rows[i].studyDeadline;
         s.materialDeadline = rows[i].materialDeadline;
         s.toolingDeadline = rows[i].toolingDeadline;
-        s.subcontractingDeadline = rows[i].subcontractingDeadline;
       }
       addStep(s);
     });
@@ -316,21 +301,24 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     <TableCell>{renderAssigneeSelect(row, 'option2')}</TableCell>
                     <TableCell>{renderAssigneeSelect(row, 'option3')}</TableCell>
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.studyReady}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'studyReady', row.studyReady)}
+                      <ResourceStatusPill
+                        value={row.studyStatus}
+                        onChange={(s) => handleStatusChange(row.id, 'study', s)}
+                        deadline={row.studyDeadline}
                       />
                     </TableCell>
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.materialAvailable}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'materialAvailable', row.materialAvailable)}
+                      <ResourceStatusPill
+                        value={row.materialStatus}
+                        onChange={(s) => handleStatusChange(row.id, 'material', s)}
+                        deadline={row.materialDeadline}
                       />
                     </TableCell>
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.toolingAvailable}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'toolingAvailable', row.toolingAvailable)}
+                      <ResourceStatusPill
+                        value={row.toolingStatus}
+                        onChange={(s) => handleStatusChange(row.id, 'tooling', s)}
+                        deadline={row.toolingDeadline}
                       />
                     </TableCell>
                     {/* S-T column removed per spec */}
@@ -386,14 +374,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             setDatePrompt(null);
           }}
           onCancel={() => {
-            // Re-check the box since user cancelled
-            const fieldMap: Record<string, keyof OperationRow> = {
-              studyDeadline: 'studyReady',
-              materialDeadline: 'materialAvailable',
-              toolingDeadline: 'toolingAvailable',
-              subcontractingDeadline: 'subcontractingDone',
+            // Revert status to "disponible" since user cancelled
+            const statusMap: Record<string, 'studyStatus' | 'materialStatus' | 'toolingStatus'> = {
+              studyDeadline: 'studyStatus',
+              materialDeadline: 'materialStatus',
+              toolingDeadline: 'toolingStatus',
             };
-            updateRow(datePrompt.rowId, fieldMap[datePrompt.field], true);
+            updateRow(datePrompt.rowId, statusMap[datePrompt.field], 'disponible');
             setDatePrompt(null);
           }}
         />

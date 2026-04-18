@@ -18,6 +18,9 @@ import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ResourceStatusPill from '@/components/ResourceStatusPill';
+import DatePromptDialog from '@/components/DatePromptDialog';
+import type { ResourceStatus } from '@/types/planning';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
@@ -181,45 +184,83 @@ const OrdersPage: React.FC = () => {
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
   // Order-level study/material/tooling status (worst case from steps)
-  const orderNeedsMap = useMemo(() => {
-    const map = new Map<string, { study: boolean; material: boolean; tooling: boolean }>();
+  // Worst order: non-disponible > partiel > disponible > non-applicable
+  const STATUS_RANK: Record<ResourceStatus, number> = {
+    'non-disponible': 3,
+    'partiel': 2,
+    'disponible': 1,
+    'non-applicable': 0,
+  };
+  const orderStatusMap = useMemo(() => {
+    const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
       const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
       if (orderSteps.length === 0) {
-        map.set(o.id, { study: o.studyReady, material: o.materialAvailable, tooling: o.toolingAvailable });
+        map.set(o.id, {
+          study: o.studyStatus ?? 'non-disponible',
+          material: o.materialStatus ?? 'non-disponible',
+          tooling: o.toolingStatus ?? 'non-disponible',
+        });
         return;
       }
-      // If ANY step has it false → order is false (worst case)
-      const study = orderSteps.every(s => s.studyReady !== false);
-      const material = orderSteps.every(s => s.materialAvailable !== false);
-      const tooling = orderSteps.every(s => s.toolingAvailable !== false);
-      map.set(o.id, { study, material, tooling });
+      const worst = (key: 'studyStatus' | 'materialStatus' | 'toolingStatus'): ResourceStatus => {
+        let acc: ResourceStatus = 'non-applicable';
+        orderSteps.forEach(s => {
+          const v = (s[key] ?? 'disponible') as ResourceStatus;
+          if (STATUS_RANK[v] > STATUS_RANK[acc]) acc = v;
+        });
+        return acc;
+      };
+      map.set(o.id, {
+        study: worst('studyStatus'),
+        material: worst('materialStatus'),
+        tooling: worst('toolingStatus'),
+      });
     });
     return map;
   }, [orders, steps, absenceOrderId, absenceOperationId]);
 
-  // Toggle order-level need and propagate to all steps
-  const toggleOrderNeed = useCallback((orderId: string, field: 'study' | 'material' | 'tooling') => {
-    const current = orderNeedsMap.get(orderId);
-    if (!current) return;
-    const newValue = !(current as any)[field];
-    
-    // Update all steps for this order
+  // Date prompt for red/orange transitions
+  const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
+
+  const applyStatusToOrderAndSteps = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
+    const isAvail = status === 'disponible';
+
     const orderSteps = steps.filter(s => s.orderId === orderId && s.operationId !== absenceOperationId);
     orderSteps.forEach(s => {
-      if (field === 'study') updateStep({ ...s, studyReady: newValue, studyDeadline: newValue ? undefined : s.studyDeadline });
-      if (field === 'material') updateStep({ ...s, materialAvailable: newValue, materialDeadline: newValue ? undefined : s.materialDeadline });
-      if (field === 'tooling') updateStep({ ...s, toolingAvailable: newValue, toolingDeadline: newValue ? undefined : s.toolingDeadline });
+      updateStep({
+        ...s,
+        [statusKey]: status,
+        [boolKey]: isAvail,
+        [deadlineKey]: deadline || undefined,
+      } as any);
     });
 
-    // Also update order-level flags
     const order = orders.find(o => o.id === orderId);
     if (order) {
-      if (field === 'study') updateOrder({ ...order, studyReady: newValue });
-      if (field === 'material') updateOrder({ ...order, materialAvailable: newValue });
-      if (field === 'tooling') updateOrder({ ...order, toolingAvailable: newValue });
+      updateOrder({
+        ...order,
+        [statusKey]: status,
+        [boolKey]: isAvail,
+      } as any);
     }
-  }, [orderNeedsMap, steps, orders, absenceOperationId, updateStep, updateOrder]);
+  }, [steps, orders, absenceOperationId, updateStep, updateOrder]);
+
+  const handleStatusChange = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    if (status === 'non-disponible' || status === 'partiel') {
+      const labels = {
+        study: 'Date prévue pour fin Étude',
+        material: 'Date prévue pour disponibilité Matière',
+        tooling: 'Date prévue pour disponibilité Outillage',
+      };
+      setStatusDatePrompt({ orderId, field, status, label: labels[field] });
+    } else {
+      applyStatusToOrderAndSteps(orderId, field, status);
+    }
+  }, [applyStatusToOrderAndSteps]);
 
   const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
     return [...orderList].sort((a, b) => {
@@ -299,13 +340,13 @@ const OrdersPage: React.FC = () => {
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
-      case 'study': { const n = orderNeedsMap.get(o.id); return n?.study ? '1' : '0'; }
-      case 'material': { const n = orderNeedsMap.get(o.id); return n?.material ? '1' : '0'; }
-      case 'tooling': { const n = orderNeedsMap.get(o.id); return n?.tooling ? '1' : '0'; }
+      case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
+      case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
+      case 'tooling': { const n = orderStatusMap.get(o.id); return n?.tooling === 'disponible' ? '3' : n?.tooling === 'partiel' ? '2' : n?.tooling === 'non-applicable' ? '0' : '1'; }
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, crMap, atelierTimeMap, orderNeedsMap]);
+  }, [getClientName, crMap, atelierTimeMap, orderStatusMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
@@ -586,31 +627,16 @@ const OrdersPage: React.FC = () => {
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
       }
       case 'study': {
-        const needs = orderNeedsMap.get(o.id);
-        const available = needs?.study ?? true;
-        return (
-          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'study')} title="Cliquer pour changer">
-            {available ? '🟢' : '🔴'}
-          </span>
-        );
+        const s = orderStatusMap.get(o.id);
+        return <ResourceStatusPill value={s?.study} onChange={(next) => handleStatusChange(o.id, 'study', next)} />;
       }
       case 'material': {
-        const needs = orderNeedsMap.get(o.id);
-        const available = needs?.material ?? true;
-        return (
-          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'material')} title="Cliquer pour changer">
-            {available ? '🟢' : '🔴'}
-          </span>
-        );
+        const s = orderStatusMap.get(o.id);
+        return <ResourceStatusPill value={s?.material} onChange={(next) => handleStatusChange(o.id, 'material', next)} />;
       }
       case 'tooling': {
-        const needs = orderNeedsMap.get(o.id);
-        const available = needs?.tooling ?? true;
-        return (
-          <span className="text-sm cursor-pointer select-none" onClick={() => toggleOrderNeed(o.id, 'tooling')} title="Cliquer pour changer">
-            {available ? '🟢' : '🔴'}
-          </span>
-        );
+        const s = orderStatusMap.get(o.id);
+        return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
       case 'observation': return <span className="text-xs text-muted-foreground max-w-[170px] truncate block">{o.observation || '—'}</span>;
       default: return null;
@@ -889,6 +915,18 @@ const OrdersPage: React.FC = () => {
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
+
+      {statusDatePrompt && (
+        <DatePromptDialog
+          open={!!statusDatePrompt}
+          label={statusDatePrompt.label}
+          onConfirm={(date) => {
+            applyStatusToOrderAndSteps(statusDatePrompt.orderId, statusDatePrompt.field, statusDatePrompt.status, date);
+            setStatusDatePrompt(null);
+          }}
+          onCancel={() => setStatusDatePrompt(null)}
+        />
+      )}
 
       {/* Move selection by Cn dialog */}
       <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
