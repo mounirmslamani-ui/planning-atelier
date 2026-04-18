@@ -75,6 +75,10 @@ export interface Order {
   materialAvailable: boolean;
   toolingAvailable: boolean;
   studyReady: boolean;
+  /** 4-state status — authoritative source. Booleans above are derived (true ⇔ "disponible"). */
+  materialStatus: ResourceStatus;
+  toolingStatus: ResourceStatus;
+  studyStatus: ResourceStatus;
   observation?: string;
 }
 
