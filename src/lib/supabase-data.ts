@@ -209,6 +209,9 @@ export function mapOrderToDB(o: Order) {
 // ───────────────────── ProductionStep ─────────────────────
 
 export function mapStepFromDB(row: any): ProductionStep {
+  const studyStatus    = (row.study_status    || 'disponible') as ResourceStatus;
+  const materialStatus = (row.material_status || 'disponible') as ResourceStatus;
+  const toolingStatus  = (row.tooling_status  || 'disponible') as ResourceStatus;
   return {
     id: row.id,
     orderId: row.order_id,
@@ -225,18 +228,25 @@ export function mapStepFromDB(row: any): ProductionStep {
     order: row.step_order ?? 0,
     frozen: row.frozen ?? false,
     equipmentIds: row.equipment_ids || [],
-    subcontractingDone: row.subcontracting_done ?? false,
-    subcontractingDeadline: row.subcontracting_deadline || undefined,
-    studyReady: row.study_ready ?? true,
-    materialAvailable: row.material_available ?? true,
-    toolingAvailable: row.tooling_available ?? true,
+    studyStatus,
+    materialStatus,
+    toolingStatus,
+    studyReady: statusToBool(studyStatus),
+    materialAvailable: statusToBool(materialStatus),
+    toolingAvailable: statusToBool(toolingStatus),
     studyDeadline: row.study_deadline || undefined,
     materialDeadline: row.material_deadline || undefined,
     toolingDeadline: row.tooling_deadline || undefined,
+    // subcontracting_* dropped from DB — kept in-memory only
+    subcontractingDone: false,
+    subcontractingDeadline: undefined,
   };
 }
 
 export function mapStepToDB(s: ProductionStep) {
+  const study_status    = s.studyStatus    ?? boolToStatus(s.studyReady ?? true);
+  const material_status = s.materialStatus ?? boolToStatus(s.materialAvailable ?? true);
+  const tooling_status  = s.toolingStatus  ?? boolToStatus(s.toolingAvailable ?? true);
   return {
     id: s.id,
     order_id: s.orderId,
@@ -253,11 +263,9 @@ export function mapStepToDB(s: ProductionStep) {
     step_order: s.order,
     frozen: s.frozen ?? false,
     equipment_ids: s.equipmentIds || [],
-    subcontracting_done: s.subcontractingDone ?? false,
-    subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
-    study_ready: s.studyReady ?? true,
-    material_available: s.materialAvailable ?? true,
-    tooling_available: s.toolingAvailable ?? true,
+    study_status,
+    material_status,
+    tooling_status,
     study_deadline: toISODateOrNull(s.studyDeadline),
     material_deadline: toISODateOrNull(s.materialDeadline),
     tooling_deadline: toISODateOrNull(s.toolingDeadline),
