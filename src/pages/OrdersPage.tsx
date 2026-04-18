@@ -340,13 +340,13 @@ const OrdersPage: React.FC = () => {
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
-      case 'study': { const n = orderNeedsMap.get(o.id); return n?.study ? '1' : '0'; }
-      case 'material': { const n = orderNeedsMap.get(o.id); return n?.material ? '1' : '0'; }
-      case 'tooling': { const n = orderNeedsMap.get(o.id); return n?.tooling ? '1' : '0'; }
+      case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
+      case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
+      case 'tooling': { const n = orderStatusMap.get(o.id); return n?.tooling === 'disponible' ? '3' : n?.tooling === 'partiel' ? '2' : n?.tooling === 'non-applicable' ? '0' : '1'; }
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, crMap, atelierTimeMap, orderNeedsMap]);
+  }, [getClientName, crMap, atelierTimeMap, orderStatusMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
