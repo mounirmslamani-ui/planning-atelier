@@ -51,6 +51,12 @@ export interface Client {
 
 export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4';
 
+export type ResourceStatus = 'disponible' | 'non-disponible' | 'partiel' | 'non-applicable';
+
+// Helper: legacy boolean view of a 4-state status (true only when "disponible")
+export const statusToBool = (s: ResourceStatus | undefined): boolean => s === 'disponible';
+export const boolToStatus = (b: boolean | undefined): ResourceStatus => (b ? 'disponible' : 'non-disponible');
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -69,6 +75,10 @@ export interface Order {
   materialAvailable: boolean;
   toolingAvailable: boolean;
   studyReady: boolean;
+  /** 4-state status — authoritative source. Booleans above are derived (true ⇔ "disponible"). */
+  materialStatus: ResourceStatus;
+  toolingStatus: ResourceStatus;
+  studyStatus: ResourceStatus;
   observation?: string;
 }
 
@@ -88,14 +98,19 @@ export interface ProductionStep {
   order: number; // chronological order
   frozen?: boolean; // true if manually placed – excluded from auto-scheduling
   equipmentIds?: string[]; // required equipment for this step
-  subcontractingDone?: boolean; // true when subcontracting is completed
-  subcontractingDeadline?: string; // deadline for subcontracting (date string)
-  studyReady?: boolean; // step-level: study done
-  materialAvailable?: boolean; // step-level: material available
-  toolingAvailable?: boolean; // step-level: tooling available
+  studyReady?: boolean; // step-level: study done (derived from studyStatus)
+  materialAvailable?: boolean; // step-level: material available (derived from materialStatus)
+  toolingAvailable?: boolean; // step-level: tooling available (derived from toolingStatus)
+  /** 4-state status — authoritative for steps too */
+  studyStatus?: ResourceStatus;
+  materialStatus?: ResourceStatus;
+  toolingStatus?: ResourceStatus;
   studyDeadline?: string; // expected date for study completion
   materialDeadline?: string; // expected date for material purchase
   toolingDeadline?: string; // expected date for tooling purchase
+  // Subcontracting tracking (in-memory only — persisted via production_records validation)
+  subcontractingDone?: boolean;
+  subcontractingDeadline?: string;
 }
 
 export interface Holiday {

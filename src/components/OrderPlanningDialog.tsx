@@ -265,7 +265,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                   <TableHead className="w-12 text-center text-xs">Étude</TableHead>
                   <TableHead className="w-12 text-center text-xs">Mat.</TableHead>
                   <TableHead className="w-12 text-center text-xs">Out.</TableHead>
-                  <TableHead className="w-12 text-center text-xs">S-T</TableHead>
+                  
                   <TableHead className="w-12">Ordre</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
@@ -333,12 +333,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         onCheckedChange={() => handleCheckboxToggle(row.id, 'toolingAvailable', row.toolingAvailable)}
                       />
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={row.subcontractingDone}
-                        onCheckedChange={() => handleCheckboxToggle(row.id, 'subcontractingDone', row.subcontractingDone)}
-                      />
-                    </TableCell>
+                    {/* S-T column removed per spec */}
                     <TableCell>
                       <div className="flex flex-col gap-0.5 items-center">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveRow(row.id, 'up')} disabled={row.order === 1}>
@@ -358,7 +353,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 ))}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={13} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
                       Ajoutez des opérations pour cette commande.
                     </TableCell>
                   </TableRow>
