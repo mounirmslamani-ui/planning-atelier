@@ -132,7 +132,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     setRows(prev => prev.map(r => {
       if (r.id !== id) return r;
       const updated = { ...r, [field]: value };
-      if (field === 'assignType') {
+      if (field === 'assignType' || field === 'operationId') {
         updated.option1 = '';
         updated.option2 = '';
         updated.option3 = '';
@@ -157,9 +157,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     }
   };
 
-  const getAssigneeOptions = (type: 'operator' | 'subcontractor') => {
-    if (type === 'operator') return operators.map(op => ({ value: op.id, label: op.name }));
-    return subcontractors.map(s => ({ value: s.id, label: s.companyName }));
+  const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
+    const op = operations.find(o => o.id === operationId);
+    if (!op) return [];
+    const opName = op.name.trim().toLowerCase();
+    const matches = (a: string) => (a || '').trim().toLowerCase() === opName;
+    if (type === 'operator') {
+      return operators
+        .filter(o => matches(o.mainFunction) || (o.secondaryFunctions || []).some(matches))
+        .map(o => ({ value: o.id, label: o.name }));
+    }
+    return subcontractors
+      .filter(s => matches(s.mainActivity) || (s.secondaryActivities || []).some(matches))
+      .map(s => ({ value: s.id, label: s.companyName }));
   };
 
   const handlePlanifier = () => {
@@ -205,14 +215,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   };
 
   const renderAssigneeSelect = (row: OperationRow, field: 'option1' | 'option2' | 'option3') => {
-    const options = getAssigneeOptions(row.assignType);
+    const options = getAssigneeOptions(row.assignType, row.operationId);
+    const placeholder = !row.operationId
+      ? "— Sélectionnez d'abord une opération —"
+      : options.length === 0
+        ? '— Aucune ressource compétente —'
+        : '— Aucun —';
     return (
       <select
         className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
         value={row[field]}
         onChange={e => updateRow(row.id, field, e.target.value)}
       >
-        <option value="">— Aucun —</option>
+        <option value="">{placeholder}</option>
         {options.map(o => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
