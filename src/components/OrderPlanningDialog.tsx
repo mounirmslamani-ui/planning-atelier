@@ -132,7 +132,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     setRows(prev => prev.map(r => {
       if (r.id !== id) return r;
       const updated = { ...r, [field]: value };
-      if (field === 'assignType') {
+      if (field === 'assignType' || field === 'operationId') {
         updated.option1 = '';
         updated.option2 = '';
         updated.option3 = '';
