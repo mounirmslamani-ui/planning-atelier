@@ -1301,6 +1301,24 @@ const PlanningTableauPage: React.FC = () => {
       />
 
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
+
+      {statusDatePrompt && (
+        <DatePromptDialog
+          open={statusDatePrompt.open}
+          label={
+            statusDatePrompt.field === 'study'
+              ? "Date prévue de finalisation de l'étude"
+              : statusDatePrompt.field === 'material'
+                ? 'Date prévue de disponibilité de la matière'
+                : "Date prévue de disponibilité de l'outillage"
+          }
+          onConfirm={(date) => {
+            applyStepStatus(statusDatePrompt.stepId, statusDatePrompt.field, statusDatePrompt.nextStatus, date);
+            setStatusDatePrompt(null);
+          }}
+          onCancel={() => setStatusDatePrompt(null)}
+        />
+      )}
     </div>
   );
 };
