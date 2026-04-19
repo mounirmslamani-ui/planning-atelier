@@ -653,21 +653,7 @@ const PlanningTableauPage: React.FC = () => {
       if (changes.startDate !== undefined) updated.startDate = changes.startDate;
       if (changes.operationId !== undefined) updated.operationId = changes.operationId;
       if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
-      if (changes.studyState !== undefined) {
-        const s = changes.studyState as TrafficState;
-        updated.studyReady = s === 'green' ? true : s === 'na' ? undefined as any : false;
-        updated.studyDeadline = s === 'orange' ? 'pending' : undefined;
-      }
-      if (changes.materialState !== undefined) {
-        const s = changes.materialState as TrafficState;
-        updated.materialAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
-        updated.materialDeadline = s === 'orange' ? 'pending' : undefined;
-      }
-      if (changes.toolingState !== undefined) {
-        const s = changes.toolingState as TrafficState;
-        updated.toolingAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
-        updated.toolingDeadline = s === 'orange' ? 'pending' : undefined;
-      }
+      // Status updates (Étude/Matière/Outillage) are now handled directly by ResourceStatusPill
       // Save to draft only (not DB)
       setDraftSteps(prev => prev.map(s => s.id === stepId ? updated : s));
       setOrderDirty(true);
