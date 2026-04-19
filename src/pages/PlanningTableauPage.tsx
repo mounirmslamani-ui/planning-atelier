@@ -16,6 +16,9 @@ import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import { useConfirm } from '@/hooks/use-confirm';
+import ResourceStatusPill from '@/components/ResourceStatusPill';
+import DatePromptDialog from '@/components/DatePromptDialog';
+import type { ResourceStatus } from '@/types/planning';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
@@ -60,29 +63,42 @@ function cycleState(state: TrafficState): TrafficState {
   return 'green';
 }
 
+type PhaseAmontStatus = 'green' | 'orange' | 'red' | 'na';
+
 function phaseAmontStatus(
   step: ProductionStep,
   allSteps: ProductionStep[],
   productionRecords: { stepId: string; actualDuration: number }[],
-): 'green' | 'red' | 'warning' | 'na' {
+): PhaseAmontStatus {
   const orderSteps = allSteps.filter(s => s.orderId === step.orderId).sort((a, b) => a.order - b.order);
   const currentIdx = orderSteps.findIndex(s => s.id === step.id);
   if (currentIdx <= 0) return 'na';
   const previousSteps = orderSteps.slice(0, currentIdx);
-  const allPreviousDone = previousSteps.every(ps => {
+  let allDone = true;
+  let anyStarted = false;
+  for (const ps of previousSteps) {
     const records = productionRecords.filter(r => r.stepId === ps.id);
     const totalDone = records.reduce((sum, r) => sum + r.actualDuration, 0);
-    return totalDone >= ps.estimatedDuration;
-  });
-  if (allPreviousDone) return 'green';
+    if (totalDone > 0) anyStarted = true;
+    if (totalDone < ps.estimatedDuration) allDone = false;
+  }
+  if (allDone) return 'green';
+  if (anyStarted) return 'orange';
   return 'red';
 }
 
-function phaseAmontEmoji(status: string): string {
+function phaseAmontEmoji(status: PhaseAmontStatus): string {
   if (status === 'green') return '🟢';
+  if (status === 'orange') return '🟠';
   if (status === 'red') return '🔴';
-  if (status === 'warning') return '⚠️';
-  return '⚫';
+  return '⚪';
+}
+
+function phaseAmontLabel(status: PhaseAmontStatus): string {
+  if (status === 'green') return 'Toutes les phases amont sont terminées — étape lançable';
+  if (status === 'orange') return 'Au moins une phase amont a été entamée — étape peut-être lançable';
+  if (status === 'red') return 'Aucune phase amont entamée — étape non lançable';
+  return 'Première étape — pas de phase amont';
 }
 
 /** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
@@ -600,10 +616,13 @@ const PlanningTableauPage: React.FC = () => {
         draft.endDate !== original.endDate ||
         draft.endTime !== original.endTime ||
         draft.frozen !== original.frozen ||
+        draft.studyStatus !== original.studyStatus ||
         draft.studyReady !== original.studyReady ||
         draft.studyDeadline !== original.studyDeadline ||
+        draft.materialStatus !== original.materialStatus ||
         draft.materialAvailable !== original.materialAvailable ||
         draft.materialDeadline !== original.materialDeadline ||
+        draft.toolingStatus !== original.toolingStatus ||
         draft.toolingAvailable !== original.toolingAvailable ||
         draft.toolingDeadline !== original.toolingDeadline ||
         draft.operationId !== original.operationId ||
@@ -637,21 +656,7 @@ const PlanningTableauPage: React.FC = () => {
       if (changes.startDate !== undefined) updated.startDate = changes.startDate;
       if (changes.operationId !== undefined) updated.operationId = changes.operationId;
       if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
-      if (changes.studyState !== undefined) {
-        const s = changes.studyState as TrafficState;
-        updated.studyReady = s === 'green' ? true : s === 'na' ? undefined as any : false;
-        updated.studyDeadline = s === 'orange' ? 'pending' : undefined;
-      }
-      if (changes.materialState !== undefined) {
-        const s = changes.materialState as TrafficState;
-        updated.materialAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
-        updated.materialDeadline = s === 'orange' ? 'pending' : undefined;
-      }
-      if (changes.toolingState !== undefined) {
-        const s = changes.toolingState as TrafficState;
-        updated.toolingAvailable = s === 'green' ? true : s === 'na' ? undefined as any : false;
-        updated.toolingDeadline = s === 'orange' ? 'pending' : undefined;
-      }
+      // Status updates (Étude/Matière/Outillage) are now handled directly by ResourceStatusPill
       // Save to draft only (not DB)
       setDraftSteps(prev => prev.map(s => s.id === stepId ? updated : s));
       setOrderDirty(true);
@@ -666,10 +671,60 @@ const PlanningTableauPage: React.FC = () => {
   };
 
   const isStepBlocked = (step: ProductionStep): boolean => {
-    const matState = getTrafficState(step.materialAvailable, !!step.materialDeadline);
-    const toolState = getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
-    return matState === 'orange' || matState === 'red' || toolState === 'orange' || toolState === 'red';
+    const m = step.materialStatus ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
+    const t = step.toolingStatus ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
+    return m === 'partiel' || m === 'non-disponible' || t === 'partiel' || t === 'non-disponible';
   };
+
+  // ─── Status update for Étude / Matière / Outillage via ResourceStatusPill ───
+  const [statusDatePrompt, setStatusDatePrompt] = useState<{
+    open: boolean;
+    stepId: string;
+    field: 'study' | 'material' | 'tooling';
+    nextStatus: ResourceStatus;
+  } | null>(null);
+
+  const applyStepStatus = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+    setDraftSteps(prev => prev.map(s => {
+      if (s.id !== stepId) return s;
+      const updated = { ...s };
+      if (field === 'study') {
+        updated.studyStatus = status;
+        updated.studyReady = status === 'disponible';
+        if (status === 'partiel' || status === 'non-disponible') {
+          if (deadline) updated.studyDeadline = deadline;
+        } else {
+          updated.studyDeadline = undefined;
+        }
+      } else if (field === 'material') {
+        updated.materialStatus = status;
+        updated.materialAvailable = status === 'disponible';
+        if (status === 'partiel' || status === 'non-disponible') {
+          if (deadline) updated.materialDeadline = deadline;
+        } else {
+          updated.materialDeadline = undefined;
+        }
+      } else {
+        updated.toolingStatus = status;
+        updated.toolingAvailable = status === 'disponible';
+        if (status === 'partiel' || status === 'non-disponible') {
+          if (deadline) updated.toolingDeadline = deadline;
+        } else {
+          updated.toolingDeadline = undefined;
+        }
+      }
+      return updated;
+    }));
+    setOrderDirty(true);
+  }, []);
+
+  const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
+    if (next === 'partiel' || next === 'non-disponible') {
+      setStatusDatePrompt({ open: true, stepId, field, nextStatus: next });
+    } else {
+      applyStepStatus(stepId, field, next);
+    }
+  }, [applyStepStatus]);
 
   // (Drag to Production Register is now integrated in handleDragStart)
 
@@ -989,20 +1044,15 @@ const PlanningTableauPage: React.FC = () => {
                     const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
                     const flowPos = getStepFlowPosition(step, draftSteps);
 
-                    const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
-                    const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
-                    const toolState = step.toolingDeadline === 'warning' ? 'warning' as any : getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
+                    const studyStatus: ResourceStatus = step.studyStatus
+                      ?? (step.studyReady ? 'disponible' : 'non-disponible');
+                    const matStatus: ResourceStatus = step.materialStatus
+                      ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
+                    const toolStatus: ResourceStatus = step.toolingStatus
+                      ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
                     const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
                     const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
-
-                    const editStudyState = inlineEdits[step.id]?.studyState ?? studyState;
-                    const editMatState = inlineEdits[step.id]?.materialState ?? matState;
-                    const editToolState = inlineEdits[step.id]?.toolingState ?? toolState;
-
-                    const studyEmoji = studyState === 'warning' ? '⚠️' : trafficEmoji(studyState);
-                    const matEmoji = matState === 'warning' ? '⚠️' : trafficEmoji(matState);
-                    const toolEmoji = toolState === 'warning' ? '⚠️' : trafficEmoji(toolState);
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
@@ -1104,71 +1154,37 @@ const PlanningTableauPage: React.FC = () => {
                           </div>
                         </TableCell>
                         {/* Étude */}
-                        <TableCell className="py-1.5 px-1 text-center">
-                          <TooltipProvider><Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => {
-                                  e.stopPropagation();
-                                  const cur = editStudyState as TrafficState;
-                                  setStepInlineValue(step.id, 'studyState', cycleState(cur));
-                                } : undefined}
-                              >
-                                {isEditing ? trafficEmoji(editStudyState as TrafficState) : studyEmoji}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Étude{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
-                          </Tooltip></TooltipProvider>
+                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                          <ResourceStatusPill
+                            value={studyStatus}
+                            onChange={(next) => handleStatusChange(step.id, 'study', next)}
+                            deadline={step.studyDeadline}
+                          />
                         </TableCell>
                         {/* Matière */}
-                        <TableCell className="py-1.5 px-1 text-center">
-                          <TooltipProvider><Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => {
-                                  e.stopPropagation();
-                                  const cur = editMatState as TrafficState;
-                                  setStepInlineValue(step.id, 'materialState', cycleState(cur));
-                                } : undefined}
-                              >
-                                {isEditing ? trafficEmoji(editMatState as TrafficState) : matEmoji}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Matière{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
-                          </Tooltip></TooltipProvider>
+                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                          <ResourceStatusPill
+                            value={matStatus}
+                            onChange={(next) => handleStatusChange(step.id, 'material', next)}
+                            deadline={step.materialDeadline}
+                          />
                         </TableCell>
                         {/* Outillage */}
-                        <TableCell className="py-1.5 px-1 text-center">
-                          <TooltipProvider><Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => {
-                                  e.stopPropagation();
-                                  const cur = editToolState as TrafficState;
-                                  setStepInlineValue(step.id, 'toolingState', cycleState(cur));
-                                } : undefined}
-                              >
-                                {isEditing ? trafficEmoji(editToolState as TrafficState) : toolEmoji}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Outillage{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
-                          </Tooltip></TooltipProvider>
+                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                          <ResourceStatusPill
+                            value={toolStatus}
+                            onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
+                            deadline={step.toolingDeadline}
+                          />
                         </TableCell>
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>
-                              {amontStatus === 'na'
-                                ? 'Première étape'
-                                : hasForcedAmontWarning
-                                  ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
-                                  : amontStatus === 'green'
-                                    ? 'Phases précédentes terminées'
-                                    : 'Phases précédentes non terminées'}
+                              {hasForcedAmontWarning
+                                ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
+                                : phaseAmontLabel(amontStatus)}
                             </TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
@@ -1285,6 +1301,24 @@ const PlanningTableauPage: React.FC = () => {
       />
 
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
+
+      {statusDatePrompt && (
+        <DatePromptDialog
+          open={statusDatePrompt.open}
+          label={
+            statusDatePrompt.field === 'study'
+              ? "Date prévue de finalisation de l'étude"
+              : statusDatePrompt.field === 'material'
+                ? 'Date prévue de disponibilité de la matière'
+                : "Date prévue de disponibilité de l'outillage"
+          }
+          onConfirm={(date) => {
+            applyStepStatus(statusDatePrompt.stepId, statusDatePrompt.field, statusDatePrompt.nextStatus, date);
+            setStatusDatePrompt(null);
+          }}
+          onCancel={() => setStatusDatePrompt(null)}
+        />
+      )}
     </div>
   );
 };
