@@ -63,29 +63,42 @@ function cycleState(state: TrafficState): TrafficState {
   return 'green';
 }
 
+type PhaseAmontStatus = 'green' | 'orange' | 'red' | 'na';
+
 function phaseAmontStatus(
   step: ProductionStep,
   allSteps: ProductionStep[],
   productionRecords: { stepId: string; actualDuration: number }[],
-): 'green' | 'red' | 'warning' | 'na' {
+): PhaseAmontStatus {
   const orderSteps = allSteps.filter(s => s.orderId === step.orderId).sort((a, b) => a.order - b.order);
   const currentIdx = orderSteps.findIndex(s => s.id === step.id);
   if (currentIdx <= 0) return 'na';
   const previousSteps = orderSteps.slice(0, currentIdx);
-  const allPreviousDone = previousSteps.every(ps => {
+  let allDone = true;
+  let anyStarted = false;
+  for (const ps of previousSteps) {
     const records = productionRecords.filter(r => r.stepId === ps.id);
     const totalDone = records.reduce((sum, r) => sum + r.actualDuration, 0);
-    return totalDone >= ps.estimatedDuration;
-  });
-  if (allPreviousDone) return 'green';
+    if (totalDone > 0) anyStarted = true;
+    if (totalDone < ps.estimatedDuration) allDone = false;
+  }
+  if (allDone) return 'green';
+  if (anyStarted) return 'orange';
   return 'red';
 }
 
-function phaseAmontEmoji(status: string): string {
+function phaseAmontEmoji(status: PhaseAmontStatus): string {
   if (status === 'green') return '🟢';
+  if (status === 'orange') return '🟠';
   if (status === 'red') return '🔴';
-  if (status === 'warning') return '⚠️';
-  return '⚫';
+  return '⚪';
+}
+
+function phaseAmontLabel(status: PhaseAmontStatus): string {
+  if (status === 'green') return 'Toutes les phases amont sont terminées — étape lançable';
+  if (status === 'orange') return 'Au moins une phase amont a été entamée — étape peut-être lançable';
+  if (status === 'red') return 'Aucune phase amont entamée — étape non lançable';
+  return 'Première étape — pas de phase amont';
 }
 
 /** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
