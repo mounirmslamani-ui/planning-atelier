@@ -1055,20 +1055,15 @@ const PlanningTableauPage: React.FC = () => {
                     const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
                     const flowPos = getStepFlowPosition(step, draftSteps);
 
-                    const studyState = step.studyDeadline === 'warning' ? 'warning' as any : getTrafficState(step.studyReady, !!step.studyDeadline);
-                    const matState = step.materialDeadline === 'warning' ? 'warning' as any : getTrafficState(step.materialAvailable, !!step.materialDeadline);
-                    const toolState = step.toolingDeadline === 'warning' ? 'warning' as any : getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
+                    const studyStatus: ResourceStatus = step.studyStatus
+                      ?? (step.studyReady ? 'disponible' : 'non-disponible');
+                    const matStatus: ResourceStatus = step.materialStatus
+                      ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
+                    const toolStatus: ResourceStatus = step.toolingStatus
+                      ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
                     const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
                     const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
-
-                    const editStudyState = inlineEdits[step.id]?.studyState ?? studyState;
-                    const editMatState = inlineEdits[step.id]?.materialState ?? matState;
-                    const editToolState = inlineEdits[step.id]?.toolingState ?? toolState;
-
-                    const studyEmoji = studyState === 'warning' ? '⚠️' : trafficEmoji(studyState);
-                    const matEmoji = matState === 'warning' ? '⚠️' : trafficEmoji(matState);
-                    const toolEmoji = toolState === 'warning' ? '⚠️' : trafficEmoji(toolState);
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
