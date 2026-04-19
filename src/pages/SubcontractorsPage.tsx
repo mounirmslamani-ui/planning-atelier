@@ -57,9 +57,12 @@ const SubcontractorsPage: React.FC = () => {
     }
   };
 
-  const removeSecondary = (fn: string) => {
-    setSecondaryActivities(prev => prev.filter(f => f !== fn));
+  const accessors = {
+    companyName: (s: Subcontractor) => s.companyName,
+    mainActivity: (s: Subcontractor) => s.mainActivity,
+    secondaryActivities: (s: Subcontractor) => s.secondaryActivities.join(', '),
   };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
 
   return (
     <div className="p-6">
@@ -77,14 +80,14 @@ const SubcontractorsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Raison sociale</TableHead>
-              <TableHead>Activité principale</TableHead>
-              <TableHead>Activités secondaires</TableHead>
+              <TableHead><ColumnHeader label="Raison sociale" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Activité principale" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Activités secondaires" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {subcontractors.map(s => (
+            {processed.map(s => (
               <TableRow key={s.id}>
                 <TableCell className="font-medium">{s.companyName}</TableCell>
                 <TableCell>
