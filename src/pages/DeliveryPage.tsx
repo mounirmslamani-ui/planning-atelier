@@ -4,6 +4,9 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import type { DeliveryEntry } from '@/types/planning';
 
 const priorityColors: Record<string, string> = {
   'P1': 'bg-urgent text-white',
@@ -17,6 +20,19 @@ const DeliveryPage: React.FC = () => {
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
+  const accessors = {
+    priority: (e: DeliveryEntry) => getOrder(e.orderId)?.priority || '',
+    orderNumber: (e: DeliveryEntry) => getOrder(e.orderId)?.orderNumber || '',
+    orderDate: (e: DeliveryEntry) => getOrder(e.orderId)?.orderDate || '',
+    client: (e: DeliveryEntry) => getClientName(getOrder(e.orderId)?.clientId || ''),
+    designation: (e: DeliveryEntry) => getOrder(e.orderId)?.designation || '',
+    quantity: (e: DeliveryEntry) => getOrder(e.orderId)?.quantity ?? 0,
+    deadline: (e: DeliveryEntry) => getOrder(e.orderId)?.plannedDeadline || '',
+    controlDate: (e: DeliveryEntry) => e.controlDate,
+    decision: (e: DeliveryEntry) => e.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation',
+  };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveryEntries, accessors);
+
   return (
     <div className="p-6">
       <PageHeader title="Commandes à livrer" description={`${deliveryEntries.length} commande(s) prête(s)`} />
@@ -25,19 +41,19 @@ const DeliveryPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Priorité</TableHead>
-              <TableHead>N° Cde</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Désignation</TableHead>
-              <TableHead>Quantité</TableHead>
-              <TableHead>Délais</TableHead>
-              <TableHead>Date Contrôle</TableHead>
-              <TableHead>Décision</TableHead>
+              <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="N° Cde" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Date" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Quantité" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Délais" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Date Contrôle" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Décision" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {deliveryEntries.map(entry => {
+            {processed.map(entry => {
               const order = getOrder(entry.orderId);
               if (!order) return null;
               return (
