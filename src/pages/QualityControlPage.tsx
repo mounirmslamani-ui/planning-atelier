@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import type { QCDecision, QualityControlEntry } from '@/types/planning';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 
 const priorityColors: Record<string, string> = {
   'P1': 'bg-urgent text-white',
@@ -76,6 +78,19 @@ const QualityControlPage: React.FC = () => {
     setReworkEntry(null);
   };
 
+  const accessors = {
+    priority: (e: QualityControlEntry) => getOrder(e.orderId)?.priority || '',
+    orderNumber: (e: QualityControlEntry) => getOrder(e.orderId)?.orderNumber || '',
+    orderDate: (e: QualityControlEntry) => getOrder(e.orderId)?.orderDate || '',
+    client: (e: QualityControlEntry) => getClientName(getOrder(e.orderId)?.clientId || ''),
+    designation: (e: QualityControlEntry) => getOrder(e.orderId)?.designation || '',
+    quantity: (e: QualityControlEntry) => getOrder(e.orderId)?.quantity ?? 0,
+    deadline: (e: QualityControlEntry) => getOrder(e.orderId)?.plannedDeadline || '',
+    controlDate: (e: QualityControlEntry) => e.controlDate,
+    decision: (e: QualityControlEntry) => e.decision ? decisionLabels[e.decision] : '',
+  };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(qcEntries, accessors);
+
   return (
     <div className="p-6">
       <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} />
@@ -84,19 +99,19 @@ const QualityControlPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Priorité</TableHead>
-              <TableHead>N° Cde</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Désignation</TableHead>
-              <TableHead>Quantité</TableHead>
-              <TableHead>Délais</TableHead>
-              <TableHead>Date Contrôle</TableHead>
-              <TableHead>Décision</TableHead>
+              <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="N° Cde" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Date" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Quantité" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Délais" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Date Contrôle" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Décision" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {qcEntries.map(entry => {
+            {processed.map(entry => {
               const order = getOrder(entry.orderId);
               if (!order) return null;
               return (

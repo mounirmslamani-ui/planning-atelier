@@ -57,6 +57,10 @@ const SubcontractorsPage: React.FC = () => {
     }
   };
 
+  const removeSecondary = (fn: string) => {
+    setSecondaryActivities(prev => prev.filter(f => f !== fn));
+  };
+
   const accessors = {
     companyName: (s: Subcontractor) => s.companyName,
     mainActivity: (s: Subcontractor) => s.mainActivity,

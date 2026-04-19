@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import type { Operator } from '@/types/planning';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 
 const OperatorsPage: React.FC = () => {
   const { operators, addOperator, updateOperator, deleteOperator, operations, equipments } = usePlanning();
@@ -83,6 +85,15 @@ const OperatorsPage: React.FC = () => {
 
   const getEquipName = (id: string) => equipments.find(e => e.id === id)?.designation || id;
 
+  const accessors = {
+    name: (o: Operator) => o.name,
+    mainFunction: (o: Operator) => o.mainFunction === 'Absence' ? '' : o.mainFunction,
+    secondaryFunctions: (o: Operator) => o.secondaryFunctions.join(', '),
+    mainEquipment: (o: Operator) => o.mainEquipment ? getEquipName(o.mainEquipment) : '',
+    secondaryEquipments: (o: Operator) => (o.secondaryEquipments || []).map(getEquipName).join(', '),
+  };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(operators, accessors);
+
   return (
     <div className="p-6">
       <PageHeader
@@ -99,16 +110,16 @@ const OperatorsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Prénom</TableHead>
-              <TableHead>Compétence principale</TableHead>
-              <TableHead>Compétences secondaires</TableHead>
-              <TableHead>Équipement principal</TableHead>
-              <TableHead>Équipements secondaires</TableHead>
+              <TableHead><ColumnHeader label="Prénom" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Compétence principale" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Compétences secondaires" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Équipement principal" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Équipements secondaires" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {operators.map(op => (
+            {processed.map(op => (
               <TableRow key={op.id}>
                 <TableCell className="font-medium">{op.name}</TableCell>
                 <TableCell>

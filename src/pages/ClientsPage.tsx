@@ -10,6 +10,8 @@ import { Plus, Pencil, Trash2, Star } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import type { Client, ClientClass } from '@/types/planning';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 
 const CLIENT_CLASSES: { value: ClientClass; label: string; description: string; color: string }[] = [
   { value: 'A', label: 'Classe A - Partenaires Stratégiques', description: 'CA élevé, régularité parfaite, paiement souvent anticipé ou à l\'heure, procédures administratives fluides, échanges constructifs.', color: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' },
@@ -47,6 +49,12 @@ const ClientsPage: React.FC = () => {
     setScoreDialogOpen(false);
   };
 
+  const accessors = {
+    name: (c: Client) => c.name,
+    clientClass: (c: Client) => c.clientClass || '',
+  };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
+
   return (
     <div className="p-6">
       <PageHeader title="Clients" description="Liste des clients" actions={
@@ -56,13 +64,13 @@ const ClientsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Classification</TableHead>
+              <TableHead><ColumnHeader label="Nom" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="Classification" columnKey="clientClass" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientClass || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-32">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {clients.map(c => {
+            {processed.map(c => {
               const classInfo = getClassInfo(c.clientClass);
               return (
                 <TableRow key={c.id}>
