@@ -1165,58 +1165,28 @@ const PlanningTableauPage: React.FC = () => {
                           </div>
                         </TableCell>
                         {/* Étude */}
-                        <TableCell className="py-1.5 px-1 text-center">
-                          <TooltipProvider><Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => {
-                                  e.stopPropagation();
-                                  const cur = editStudyState as TrafficState;
-                                  setStepInlineValue(step.id, 'studyState', cycleState(cur));
-                                } : undefined}
-                              >
-                                {isEditing ? trafficEmoji(editStudyState as TrafficState) : studyEmoji}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Étude{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
-                          </Tooltip></TooltipProvider>
+                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                          <ResourceStatusPill
+                            value={studyStatus}
+                            onChange={(next) => handleStatusChange(step.id, 'study', next)}
+                            deadline={step.studyDeadline}
+                          />
                         </TableCell>
                         {/* Matière */}
-                        <TableCell className="py-1.5 px-1 text-center">
-                          <TooltipProvider><Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => {
-                                  e.stopPropagation();
-                                  const cur = editMatState as TrafficState;
-                                  setStepInlineValue(step.id, 'materialState', cycleState(cur));
-                                } : undefined}
-                              >
-                                {isEditing ? trafficEmoji(editMatState as TrafficState) : matEmoji}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Matière{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
-                          </Tooltip></TooltipProvider>
+                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                          <ResourceStatusPill
+                            value={matStatus}
+                            onChange={(next) => handleStatusChange(step.id, 'material', next)}
+                            deadline={step.materialDeadline}
+                          />
                         </TableCell>
                         {/* Outillage */}
-                        <TableCell className="py-1.5 px-1 text-center">
-                          <TooltipProvider><Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={`text-sm ${isEditing ? 'cursor-pointer hover:scale-125 transition-transform' : ''}`}
-                                onClick={isEditing ? (e) => {
-                                  e.stopPropagation();
-                                  const cur = editToolState as TrafficState;
-                                  setStepInlineValue(step.id, 'toolingState', cycleState(cur));
-                                } : undefined}
-                              >
-                                {isEditing ? trafficEmoji(editToolState as TrafficState) : toolEmoji}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Outillage{isEditing ? ' — Cliquer pour changer' : ''}</TooltipContent>
-                          </Tooltip></TooltipProvider>
+                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                          <ResourceStatusPill
+                            value={toolStatus}
+                            onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
+                            deadline={step.toolingDeadline}
+                          />
                         </TableCell>
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
