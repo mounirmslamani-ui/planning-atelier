@@ -1193,13 +1193,9 @@ const PlanningTableauPage: React.FC = () => {
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>
-                              {amontStatus === 'na'
-                                ? 'Première étape'
-                                : hasForcedAmontWarning
-                                  ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
-                                  : amontStatus === 'green'
-                                    ? 'Phases précédentes terminées'
-                                    : 'Phases précédentes non terminées'}
+                              {hasForcedAmontWarning
+                                ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
+                                : phaseAmontLabel(amontStatus)}
                             </TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
