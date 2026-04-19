@@ -215,14 +215,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   };
 
   const renderAssigneeSelect = (row: OperationRow, field: 'option1' | 'option2' | 'option3') => {
-    const options = getAssigneeOptions(row.assignType);
+    const options = getAssigneeOptions(row.assignType, row.operationId);
+    const placeholder = !row.operationId
+      ? "— Sélectionnez d'abord une opération —"
+      : options.length === 0
+        ? '— Aucune ressource compétente —'
+        : '— Aucun —';
     return (
       <select
         className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
         value={row[field]}
         onChange={e => updateRow(row.id, field, e.target.value)}
       >
-        <option value="">— Aucun —</option>
+        <option value="">{placeholder}</option>
         {options.map(o => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
