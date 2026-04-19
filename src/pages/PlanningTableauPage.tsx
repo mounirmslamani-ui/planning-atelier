@@ -682,10 +682,60 @@ const PlanningTableauPage: React.FC = () => {
   };
 
   const isStepBlocked = (step: ProductionStep): boolean => {
-    const matState = getTrafficState(step.materialAvailable, !!step.materialDeadline);
-    const toolState = getTrafficState(step.toolingAvailable, !!step.toolingDeadline);
-    return matState === 'orange' || matState === 'red' || toolState === 'orange' || toolState === 'red';
+    const m = step.materialStatus ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
+    const t = step.toolingStatus ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
+    return m === 'partiel' || m === 'non-disponible' || t === 'partiel' || t === 'non-disponible';
   };
+
+  // ─── Status update for Étude / Matière / Outillage via ResourceStatusPill ───
+  const [statusDatePrompt, setStatusDatePrompt] = useState<{
+    open: boolean;
+    stepId: string;
+    field: 'study' | 'material' | 'tooling';
+    nextStatus: ResourceStatus;
+  } | null>(null);
+
+  const applyStepStatus = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+    setDraftSteps(prev => prev.map(s => {
+      if (s.id !== stepId) return s;
+      const updated = { ...s };
+      if (field === 'study') {
+        updated.studyStatus = status;
+        updated.studyReady = status === 'disponible';
+        if (status === 'partiel' || status === 'non-disponible') {
+          if (deadline) updated.studyDeadline = deadline;
+        } else {
+          updated.studyDeadline = undefined;
+        }
+      } else if (field === 'material') {
+        updated.materialStatus = status;
+        updated.materialAvailable = status === 'disponible';
+        if (status === 'partiel' || status === 'non-disponible') {
+          if (deadline) updated.materialDeadline = deadline;
+        } else {
+          updated.materialDeadline = undefined;
+        }
+      } else {
+        updated.toolingStatus = status;
+        updated.toolingAvailable = status === 'disponible';
+        if (status === 'partiel' || status === 'non-disponible') {
+          if (deadline) updated.toolingDeadline = deadline;
+        } else {
+          updated.toolingDeadline = undefined;
+        }
+      }
+      return updated;
+    }));
+    setOrderDirty(true);
+  }, []);
+
+  const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
+    if (next === 'partiel' || next === 'non-disponible') {
+      setStatusDatePrompt({ open: true, stepId, field, nextStatus: next });
+    } else {
+      applyStepStatus(stepId, field, next);
+    }
+  }, [applyStepStatus]);
 
   // (Drag to Production Register is now integrated in handleDragStart)
 
