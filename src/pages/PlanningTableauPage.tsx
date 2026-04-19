@@ -616,10 +616,13 @@ const PlanningTableauPage: React.FC = () => {
         draft.endDate !== original.endDate ||
         draft.endTime !== original.endTime ||
         draft.frozen !== original.frozen ||
+        draft.studyStatus !== original.studyStatus ||
         draft.studyReady !== original.studyReady ||
         draft.studyDeadline !== original.studyDeadline ||
+        draft.materialStatus !== original.materialStatus ||
         draft.materialAvailable !== original.materialAvailable ||
         draft.materialDeadline !== original.materialDeadline ||
+        draft.toolingStatus !== original.toolingStatus ||
         draft.toolingAvailable !== original.toolingAvailable ||
         draft.toolingDeadline !== original.toolingDeadline ||
         draft.operationId !== original.operationId ||
