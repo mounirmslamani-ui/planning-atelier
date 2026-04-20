@@ -815,7 +815,7 @@ const OrdersPage: React.FC = () => {
                               {hasSteps ? (
                                 <CalendarCheck className="w-3.5 h-3.5" />
                               ) : (
-                                <AlertTriangle className="w-4 h-4 text-priority-p4 fill-priority-p4/30" />
+                                <WarningTriangleIcon className="w-4 h-4" />
                               )}
                             </Button>
                           );
