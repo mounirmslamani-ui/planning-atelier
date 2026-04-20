@@ -1072,9 +1072,9 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
                             {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
-                            {step.frozen && <Lock className="w-3 h-3 text-primary" />}
+                            {step.frozen && <YellowLockIcon className="w-4 h-4" />}
                             <span className="text-xs font-medium text-muted-foreground">
-                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : '⚠️'}
+                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon className="w-3.5 h-3.5 inline-block" />}
                             </span>
                           </div>
                         </TableCell>
