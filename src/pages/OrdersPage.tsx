@@ -639,7 +639,7 @@ const OrdersPage: React.FC = () => {
         const s = orderStatusMap.get(o.id);
         return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
-      case 'observation': return <span className="text-xs text-muted-foreground max-w-[170px] truncate block">{o.observation || '—'}</span>;
+      case 'observation': return <span className="text-xs text-muted-foreground whitespace-normal break-words block">{o.observation || '—'}</span>;
       default: return null;
     }
   };
