@@ -524,7 +524,7 @@ const OrdersPage: React.FC = () => {
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
     { key: 'material', label: 'Mat.', className: 'w-[35px]' },
     { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
-    { key: 'observation', label: 'Observation', className: 'w-[170px]' },
+    { key: 'observation', label: 'Observation', className: 'w-[340px]' },
   ];
 
   const formatCR = (orderId: string) => {
