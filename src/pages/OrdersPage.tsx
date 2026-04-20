@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, AlertTriangle } from 'lucide-react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -783,7 +783,11 @@ const OrdersPage: React.FC = () => {
                     <TableCell className="text-center px-1">
                       <div className="flex items-center justify-center gap-0.5">
                         {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
-                        {o.frozenOrder && <Lock className="w-3 h-3 text-primary" />}
+                        {o.frozenOrder ? (
+                          <Lock className="w-3 h-3 text-primary" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5 text-priority-p4 fill-priority-p4/30" aria-label="Commande non ordonnée" />
+                        )}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
                     </TableCell>
@@ -797,9 +801,24 @@ const OrdersPage: React.FC = () => {
                             <Unlock className="w-3.5 h-3.5 text-primary" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPlanningOrder(o)} title="Affectations">
-                          <CalendarCheck className="w-3.5 h-3.5" />
-                        </Button>
+                        {(() => {
+                          const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
+                          return (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => setPlanningOrder(o)}
+                              title={hasSteps ? 'Affectations' : 'Aucune étape définie — cliquer pour définir'}
+                            >
+                              {hasSteps ? (
+                                <CalendarCheck className="w-3.5 h-3.5" />
+                              ) : (
+                                <AlertTriangle className="w-4 h-4 text-priority-p4 fill-priority-p4/30" />
+                              )}
+                            </Button>
+                          );
+                        })()}
                         {isRowEditing ? (
                           <>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
