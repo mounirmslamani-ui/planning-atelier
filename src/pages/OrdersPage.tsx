@@ -515,7 +515,7 @@ const OrdersPage: React.FC = () => {
     { key: 'orderNumber', label: 'N° Cmd', className: 'w-[90px]' },
     { key: 'orderDate', label: 'Date', className: 'w-[80px]' },
     { key: 'client', label: 'Client', className: 'w-[100px]' },
-    { key: 'designation', label: 'Désignation', className: 'max-w-[120px]' },
+    { key: 'designation', label: 'Désignation', className: 'w-[60px] max-w-[60px]' },
     { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
     { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
@@ -524,7 +524,7 @@ const OrdersPage: React.FC = () => {
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
     { key: 'material', label: 'Mat.', className: 'w-[35px]' },
     { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
-    { key: 'observation', label: 'Observation', className: 'w-[170px]' },
+    { key: 'observation', label: 'Observation', className: 'w-[340px]' },
   ];
 
   const formatCR = (orderId: string) => {
@@ -618,7 +618,7 @@ const OrdersPage: React.FC = () => {
       case 'orderNumber': return <span className="font-heading text-xs">{o.orderNumber}</span>;
       case 'orderDate': return <span className="text-xs">{formatDateFR(o.orderDate)}</span>;
       case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
-      case 'designation': return <span className="text-xs truncate block">{o.designation}</span>;
+      case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge>;
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
@@ -639,7 +639,7 @@ const OrdersPage: React.FC = () => {
         const s = orderStatusMap.get(o.id);
         return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
-      case 'observation': return <span className="text-xs text-muted-foreground max-w-[170px] truncate block">{o.observation || '—'}</span>;
+      case 'observation': return <span className="text-xs text-muted-foreground whitespace-normal break-words block">{o.observation || '—'}</span>;
       default: return null;
     }
   };
