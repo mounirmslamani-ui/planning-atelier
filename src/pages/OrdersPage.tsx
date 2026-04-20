@@ -785,9 +785,9 @@ const OrdersPage: React.FC = () => {
                       <div className="flex items-center justify-center gap-0.5">
                         {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
                         {o.frozenOrder ? (
-                          <Lock className="w-3 h-3 text-primary" />
+                          <YellowLockIcon className="w-4 h-4" />
                         ) : (
-                          <AlertTriangle className="w-3.5 h-3.5 text-priority-p4 fill-priority-p4/30" aria-label="Commande non ordonnée" />
+                          <WarningTriangleIcon className="w-4 h-4" aria-label="Commande non ordonnée" />
                         )}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
