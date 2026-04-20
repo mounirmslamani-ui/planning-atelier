@@ -618,7 +618,7 @@ const OrdersPage: React.FC = () => {
       case 'orderNumber': return <span className="font-heading text-xs">{o.orderNumber}</span>;
       case 'orderDate': return <span className="text-xs">{formatDateFR(o.orderDate)}</span>;
       case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
-      case 'designation': return <span className="text-xs truncate block">{o.designation}</span>;
+      case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge>;
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
