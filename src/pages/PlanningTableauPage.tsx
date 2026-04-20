@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut } from 'lucide-react';
-import { YellowLockIcon, WarningTriangleIcon } from '@/components/icons/StatusIcons';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut } from 'lucide-react';
+import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -1072,7 +1072,7 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
                             {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
-                            {step.frozen && <YellowLockIcon className="w-4 h-4" />}
+                            {step.frozen && <Lock className="w-3 h-3 text-primary" />}
                             <span className="text-xs font-medium text-muted-foreground">
                               {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon className="w-3.5 h-3.5 inline-block" />}
                             </span>
@@ -1192,7 +1192,7 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'Libérer' : 'Verrouiller'}>
-                              {step.frozen ? <YellowLockIcon className="w-4 h-4" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
+                              {step.frozen ? <Lock className="w-3.5 h-3.5 text-primary" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
                             </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="Affectations">
                               <CalendarCheck className="w-3.5 h-3.5" />
