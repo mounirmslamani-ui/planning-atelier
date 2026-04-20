@@ -1192,7 +1192,7 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'Libérer' : 'Verrouiller'}>
-                              {step.frozen ? <YellowLockIcon className="w-4 h-4" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
+                              {step.frozen ? <Lock className="w-3.5 h-3.5 text-primary" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
                             </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="Affectations">
                               <CalendarCheck className="w-3.5 h-3.5" />
