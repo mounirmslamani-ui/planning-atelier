@@ -360,6 +360,9 @@ const PlanningTableauPage: React.FC = () => {
   // Validation state
   const [orderDirty, setOrderDirty] = useState(false);
 
+  // Selected operator tab (null = first available operator shown)
+  const [selectedTabOperatorId, setSelectedTabOperatorId] = useState<string | null>(null);
+
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
   const getClientName = useCallback((clientId: string) => {
@@ -993,12 +996,36 @@ const PlanningTableauPage: React.FC = () => {
         }
       />
 
+      {/* Operator tabs */}
+      <div className="flex items-center gap-1 px-1 py-2 mb-3 border-b overflow-x-auto">
+        <span className="text-xs font-medium text-muted-foreground mr-2 whitespace-nowrap">Opérateur :</span>
+        {operatorTasks.map(group => {
+          const isActive = (selectedTabOperatorId ?? operatorTasks[0]?.operator.id) === group.operator.id;
+          return (
+            <button
+              key={group.operator.id}
+              onClick={() => setSelectedTabOperatorId(group.operator.id)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-background hover:bg-muted text-foreground border'
+              }`}
+            >
+              {group.operator.name}
+              <span className="ml-1.5 opacity-70">({group.tasks.length})</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="space-y-6">
         {operatorTasks.length === 0 && (
           <p className="text-center text-muted-foreground py-12">Aucune tâche planifiée pour cette période</p>
         )}
 
-        {operatorTasks.map(group => {
+        {operatorTasks
+          .filter(group => group.operator.id === (selectedTabOperatorId ?? operatorTasks[0]?.operator.id))
+          .map(group => {
           const filteredTasks = filterTasks(group.tasks);
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
