@@ -674,11 +674,12 @@ const PlanningTableauPage: React.FC = () => {
     setEditingRowId(null);
   };
 
-  const isStepBlocked = (step: ProductionStep): boolean => {
-    const m = step.materialStatus ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
-    const t = step.toolingStatus ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
-    return m === 'partiel' || m === 'non-disponible' || t === 'partiel' || t === 'non-disponible';
-  };
+  // Compute blocked step IDs (violet) — propagates to all successor steps of the same order
+  const blockedStepIds = useMemo(
+    () => computeBlockedStepIds(draftSteps),
+    [draftSteps]
+  );
+  const isStepBlocked = (step: ProductionStep): boolean => blockedStepIds.has(step.id);
 
   // ─── Status update for Étude / Matière / Outillage via ResourceStatusPill ───
   const [statusDatePrompt, setStatusDatePrompt] = useState<{
