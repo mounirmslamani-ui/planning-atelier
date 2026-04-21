@@ -1184,6 +1184,12 @@ const PlanningTableauPage: React.FC = () => {
                             )}
                           </div>
                         </TableCell>
+                        {/* Observation */}
+                        <TableCell className="py-1.5 px-2 w-[200px] min-w-[200px] align-top">
+                          <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white' : 'text-muted-foreground'}`}>
+                            {order.observation || '—'}
+                          </span>
+                        </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
                           <ResourceStatusPill
