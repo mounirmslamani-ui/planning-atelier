@@ -1055,11 +1055,12 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[90px] text-xs">
                       <ColumnHeader label="Client" columnKey="client" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['client'] || ''} onFilter={handleColFilter} />
                     </TableHead>
-                    <TableHead className="text-xs">Désignation</TableHead>
+                    <TableHead className="w-[180px] min-w-[180px] max-w-[180px] text-xs">Désignation</TableHead>
                     <TableHead className="w-[45px] text-xs text-center">Qté</TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[100px] text-xs">Opération</TableHead>
+                    <TableHead className="w-[200px] min-w-[200px] text-xs">Observation</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Outillage">Ou.</TableHead>
@@ -1133,8 +1134,8 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{getClientName(order.clientId)}</span>
                         </TableCell>
-                        <TableCell className={`py-1.5 px-2 ${designBg}`}>
-                          <span className={`text-xs truncate block ${blocked ? 'text-white font-medium' : ''}`}>
+                        <TableCell className={`py-1.5 px-2 w-[180px] min-w-[180px] max-w-[180px] align-top ${designBg}`}>
+                          <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white font-medium' : ''}`}>
                             {order.designation}
                           </span>
                         </TableCell>
