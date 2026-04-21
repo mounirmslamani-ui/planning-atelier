@@ -271,8 +271,23 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map(row => (
-                  <TableRow key={row.id}>
+                {(() => {
+                  // Compute blocked rows: as soon as one row's material OR tooling
+                  // is partiel/non-disponible, that row and all following rows are violet.
+                  const blockedSet = new Set<string>();
+                  let hit = false;
+                  for (const r of rows) {
+                    const bad = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
+                    if (!hit && (bad(r.materialStatus) || bad(r.toolingStatus))) hit = true;
+                    if (hit) blockedSet.add(r.id);
+                  }
+                  return rows.map(row => {
+                    const blocked = blockedSet.has(row.id);
+                    return (
+                  <TableRow
+                    key={row.id}
+                    className={blocked ? 'bg-[hsl(270,55%,50%)] hover:bg-[hsl(270,55%,45%)] [&_*]:!text-white' : ''}
+                  >
                     <TableCell className="text-sm font-medium">{row.order}</TableCell>
                     <TableCell>
                       <select
@@ -353,7 +368,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                    );
+                  });
+                })()}
                 {rows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
