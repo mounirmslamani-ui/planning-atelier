@@ -762,6 +762,7 @@ const OrdersPage: React.FC = () => {
           <TableBody>
             {displayOrders.map((o, index) => {
               const isRowEditing = editingRowId === o.id;
+              const blocked = isOrderBlocked(o.id, steps);
               return (
               <ContextMenu key={o.id}>
                 <ContextMenuTrigger asChild>
@@ -774,10 +775,11 @@ const OrdersPage: React.FC = () => {
                     onDragEnd={handleDragEnd}
                     className={`transition-colors ${
                       !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
-                    } ${dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
+                    } ${blocked ? `${BLOCKED_ROW_CLASS} [&_*]:!text-white` : ''
+                    } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
-                    } ${selectedIds.has(o.id) ? 'bg-primary/5' : ''
-                    } ${isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
+                    } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''
+                    } ${!blocked && isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
                   >
                     <TableCell className="px-1" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
