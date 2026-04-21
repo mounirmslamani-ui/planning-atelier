@@ -20,6 +20,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
+import { computeBlockedStepIds, BLOCKED_BG_CLASS } from '@/lib/blockedSteps';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
