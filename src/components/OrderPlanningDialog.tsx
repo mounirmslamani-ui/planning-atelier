@@ -368,7 +368,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                    );
+                  });
+                })()}
                 {rows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
