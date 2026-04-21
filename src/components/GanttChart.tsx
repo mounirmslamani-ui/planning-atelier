@@ -928,6 +928,40 @@ const GanttChart: React.FC = () => {
         )}
       </div>
 
+      {/* Operator tabs */}
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b bg-muted/30 overflow-x-auto flex-shrink-0">
+        <span className="text-xs font-medium text-muted-foreground mr-2 whitespace-nowrap">Opérateur :</span>
+        <button
+          onClick={() => setSelectedOperatorId(null)}
+          className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
+            !selectedOperatorId
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'bg-background hover:bg-muted text-foreground border'
+          }`}
+        >
+          Tous
+        </button>
+        {[...operators]
+          .sort((a, b) => {
+            const ai = OPERATOR_NAME_ORDER.indexOf(a.name);
+            const bi = OPERATOR_NAME_ORDER.indexOf(b.name);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+          })
+          .map(op => (
+            <button
+              key={op.id}
+              onClick={() => setSelectedOperatorId(op.id)}
+              className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
+                selectedOperatorId === op.id
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-background hover:bg-muted text-foreground border'
+              }`}
+            >
+              {op.name}
+            </button>
+          ))}
+      </div>
+
       {/* Chart area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Operator labels */}
