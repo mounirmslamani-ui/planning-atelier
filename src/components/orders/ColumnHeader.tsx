@@ -35,14 +35,21 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = ({
   };
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div className={cn(
+      "flex items-center gap-1 px-2 py-1 rounded transition-colors",
+      (isActive || hasFilter) && "bg-red-500",
+      className
+    )}>
       <button
         onClick={cycleSort}
-        className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
+        className={cn(
+          "flex items-center gap-1 hover:text-foreground transition-colors text-left",
+          (isActive || hasFilter) && "text-white"
+        )}
       >
         <span className="text-xs font-medium">{label}</span>
-        {isActive && sortDir === 'asc' && <ArrowUp className="w-3 h-3" />}
-        {isActive && sortDir === 'desc' && <ArrowDown className="w-3 h-3" />}
+        {isActive && sortDir === 'asc' && <ArrowUp className={cn("w-3 h-3", (isActive || hasFilter) && "text-white")} />}
+        {isActive && sortDir === 'desc' && <ArrowDown className={cn("w-3 h-3", (isActive || hasFilter) && "text-white")} />}
       </button>
       <Popover open={popOpen} onOpenChange={setPopOpen}>
         <PopoverTrigger asChild>
