@@ -34,6 +34,21 @@ function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], r
   return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
 }
 
+const MAX_SESSION_DURATION_MINUTES = 12 * 60;
+
+function normalizeDurationInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function parseDurationHHMM(value: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  if (minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
 function getPriorityBorderColor(order: Order): string {
   const p = order.priority;
   if (p === 'P1') return 'border-[hsl(0,72%,51%)]'; // red
@@ -203,7 +218,8 @@ const GanttChart: React.FC = () => {
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
   const [validateDialogOpen, setValidateDialogOpen] = useState(false);
   const [validateStepId, setValidateStepId] = useState<string | null>(null);
-  const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
+  const [validateActualDuration, setValidateActualDuration] = useState<string>('00:00');
+  const [validateDurationError, setValidateDurationError] = useState('');
   const [isOverValidateZone, setIsOverValidateZone] = useState(false);
   const validateZoneRef = useRef<HTMLDivElement>(null);
   const [validateWorkDone, setValidateWorkDone] = useState<'done' | 'continue'>('done');
@@ -621,8 +637,11 @@ const GanttChart: React.FC = () => {
           const step = steps.find(s => s.id === dragState.stepId);
           if (step) {
             setValidateStepId(step.id);
-            const actualH = parseFloat((step.estimatedDuration / 60).toFixed(2));
-            setValidateActualDuration(actualH);
+            const cappedDuration = Math.min(step.estimatedDuration, MAX_SESSION_DURATION_MINUTES);
+            const hours = Math.floor(cappedDuration / 60);
+            const minutes = cappedDuration % 60;
+            setValidateActualDuration(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+            setValidateDurationError('');
             setValidateWorkDone('done');
             setValidateRemainingDuration(0);
             // Default continue date: next work day at 08:00
