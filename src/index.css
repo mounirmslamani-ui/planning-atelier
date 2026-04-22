@@ -45,6 +45,8 @@
     --priority-p3: 120 40% 78%;
     --priority-p4: 55 90% 50%;
     --priority-p5: 215 10% 80%;
+    --blocked: 270 55% 50%;
+    --blocked-foreground: 0 0% 0%;
 
     --gantt-header: 215 30% 18%;
     --gantt-header-foreground: 0 0% 95%;

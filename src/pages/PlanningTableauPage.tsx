@@ -1097,7 +1097,7 @@ const PlanningTableauPage: React.FC = () => {
                   {filteredTasks.map(({ step, order }, index) => {
                     const blocked = isStepBlocked(step);
                     const isEditing = editingRowId === step.id;
-                    const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
+                    const designBg = blocked ? 'bg-blocked text-blocked-foreground' : getDesignationBg(order.priority);
                     const flowPos = getStepFlowPosition(step, draftSteps);
 
                     const studyStatus: ResourceStatus = order.studyStatus ?? step.studyStatus
@@ -1122,7 +1122,7 @@ const PlanningTableauPage: React.FC = () => {
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? `${BLOCKED_BG_CLASS} hover:bg-[hsl(270,55%,45%)] [&_*]:!text-white` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
+                        className={`transition-colors ${blocked ? `${BLOCKED_BG_CLASS} hover:bg-blocked/90 [&_*]:!text-blocked-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
                       >
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">

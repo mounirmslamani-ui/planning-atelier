@@ -46,5 +46,5 @@ export function isOrderBlocked(orderId: string, allSteps: ProductionStep[]): boo
 }
 
 /** Tailwind classes to apply to a blocked cell/row. */
-export const BLOCKED_BG_CLASS = 'bg-[hsl(270,55%,50%)] text-white';
-export const BLOCKED_ROW_CLASS = 'bg-[hsl(270,55%,50%)] text-white hover:bg-[hsl(270,55%,45%)]';
+export const BLOCKED_BG_CLASS = 'bg-blocked text-blocked-foreground';
+export const BLOCKED_ROW_CLASS = 'bg-blocked text-blocked-foreground hover:bg-blocked/90';

@@ -39,7 +39,7 @@ interface Props {
 
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
-    operators, subcontractors, operations, steps, orders, holidays, equipments,
+    operators, subcontractors, operations, steps, orders, holidays, equipments, clients,
     addStep, updateStep, deleteStep, absenceOperationId,
   } = usePlanning();
 
@@ -239,6 +239,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const durationStep = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 0.5 : 0.25;
   const durationFactor = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 450 : 60;
   const hasExistingSteps = steps.some(s => s.orderId === order.id && s.operationId !== absenceOperationId);
+  const clientName = clients.find(c => c.id === order.clientId)?.name || '*******';
 
   return (
     <>
@@ -247,7 +248,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           <DialogHeader>
             <DialogTitle className="font-heading">Définition des tâches et affectations</DialogTitle>
             <p className="text-sm text-muted-foreground">
-              {order.orderNumber} — {order.designation} — Qté : {order.quantity} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
+              {clientName} - Commande N° {order.orderNumber} — {order.designation} — Qté : {order.quantity} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
             </p>
           </DialogHeader>
 
@@ -286,7 +287,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     return (
                   <TableRow
                     key={row.id}
-                    className={blocked ? 'bg-[hsl(270,55%,50%)] hover:bg-[hsl(270,55%,45%)] [&_*]:!text-white' : ''}
+                    className={blocked ? 'bg-blocked hover:bg-blocked/90 [&_*]:!text-blocked-foreground' : ''}
                   >
                     <TableCell className="text-sm font-medium">{row.order}</TableCell>
                     <TableCell>
