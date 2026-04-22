@@ -199,8 +199,11 @@ const OrdersPage: React.FC = () => {
 
   // Date prompt for red/orange transitions
   const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
+  const [materialReceivePrompt, setMaterialReceivePrompt] = useState<{ orderId: string; status: ResourceStatus } | null>(null);
+  const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
 
-  const applyStatusToOrderAndSteps = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+  const applyStatusToOrderAndSteps = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
@@ -222,6 +225,7 @@ const OrdersPage: React.FC = () => {
         ...order,
         [statusKey]: status,
         [boolKey]: isAvail,
+        ...(field === 'material' ? { materialReceivedDate: isAvail ? receivedDate : undefined } : {}),
       } as any);
     }
   }, [steps, orders, absenceOperationId, updateStep, updateOrder]);
@@ -234,6 +238,9 @@ const OrdersPage: React.FC = () => {
         tooling: 'Date prévue pour disponibilité Outillage',
       };
       setStatusDatePrompt({ orderId, field, status, label: labels[field] });
+    } else if (field === 'material' && status === 'disponible') {
+      setMaterialReceivePrompt({ orderId, status });
+      setMaterialConfirmOpen(true);
     } else {
       applyStatusToOrderAndSteps(orderId, field, status);
     }
@@ -609,7 +616,7 @@ const OrdersPage: React.FC = () => {
       }
       case 'material': {
         const s = orderStatusMap.get(o.id);
-        return <ResourceStatusPill value={s?.material} onChange={(next) => handleStatusChange(o.id, 'material', next)} />;
+        return <ResourceStatusPill value={s?.material} onChange={(next) => handleStatusChange(o.id, 'material', next)} receivedDate={o.materialReceivedDate} />;
       }
       case 'tooling': {
         const s = orderStatusMap.get(o.id);
@@ -923,6 +930,29 @@ const OrdersPage: React.FC = () => {
             setStatusDatePrompt(null);
           }}
           onCancel={() => setStatusDatePrompt(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={materialConfirmOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setMaterialConfirmOpen(false)}
+        onCancel={() => {
+          setMaterialConfirmOpen(false);
+          setMaterialReceivePrompt(null);
+        }}
+      />
+
+      {materialReceivePrompt && !materialConfirmOpen && (
+        <DatePromptDialog
+          open={!!materialReceivePrompt}
+          label="Date de réception de la matière"
+          defaultDate={orders.find(o => o.id === materialReceivePrompt.orderId)?.materialReceivedDate || today}
+          onConfirm={(date) => {
+            applyStatusToOrderAndSteps(materialReceivePrompt.orderId, 'material', materialReceivePrompt.status, undefined, date);
+            setMaterialReceivePrompt(null);
+          }}
+          onCancel={() => setMaterialReceivePrompt(null)}
         />
       )}
 

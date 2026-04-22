@@ -199,6 +199,7 @@ export type Database = {
           display_order: number | null
           frozen_order: boolean
           id: string
+          material_received_date: string | null
           material_status: Database["public"]["Enums"]["resource_status"]
           observation: string | null
           order_date: string
@@ -221,6 +222,7 @@ export type Database = {
           display_order?: number | null
           frozen_order?: boolean
           id?: string
+          material_received_date?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
           observation?: string | null
           order_date?: string
@@ -243,6 +245,7 @@ export type Database = {
           display_order?: number | null
           frozen_order?: boolean
           id?: string
+          material_received_date?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
           observation?: string | null
           order_date?: string
@@ -342,6 +345,9 @@ export type Database = {
           step_order: number
           study_deadline: string | null
           study_status: Database["public"]["Enums"]["resource_status"]
+          subcontracting_deadline: string | null
+          subcontracting_done: boolean
+          subcontracting_received_date: string | null
           subcontractor_id: string | null
           tooling_deadline: string | null
           tooling_status: Database["public"]["Enums"]["resource_status"]
@@ -367,6 +373,9 @@ export type Database = {
           step_order?: number
           study_deadline?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
+          subcontracting_deadline?: string | null
+          subcontracting_done?: boolean
+          subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
@@ -392,6 +401,9 @@ export type Database = {
           step_order?: number
           study_deadline?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
+          subcontracting_deadline?: string | null
+          subcontracting_done?: boolean
+          subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]

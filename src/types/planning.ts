@@ -79,6 +79,7 @@ export interface Order {
   materialStatus: ResourceStatus;
   toolingStatus: ResourceStatus;
   studyStatus: ResourceStatus;
+  materialReceivedDate?: string;
   observation?: string;
 }
 
@@ -111,6 +112,7 @@ export interface ProductionStep {
   // Subcontracting tracking (in-memory only — persisted via production_records validation)
   subcontractingDone?: boolean;
   subcontractingDeadline?: string;
+  subcontractingReceivedDate?: string;
 }
 
 export interface Holiday {

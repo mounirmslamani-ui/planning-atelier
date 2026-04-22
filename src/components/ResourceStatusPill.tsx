@@ -12,6 +12,7 @@ interface Props {
   value: ResourceStatus | undefined;
   onChange: (next: ResourceStatus) => void;
   deadline?: string;
+  receivedDate?: string;
   size?: 'sm' | 'md';
 }
 
@@ -24,10 +25,15 @@ const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
 
 const ORDER: ResourceStatus[] = ['disponible', 'partiel', 'non-disponible', 'non-applicable'];
 
-const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, size = 'sm' }) => {
+const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receivedDate, size = 'sm' }) => {
   const current = value ?? 'non-disponible';
   const meta = STATUS_META[current];
   const cls = size === 'sm' ? 'text-sm' : 'text-base';
+  const dateInfo = receivedDate
+    ? ` — Reçu : ${formatDateFR(receivedDate)}`
+    : deadline && deadline !== 'warning' && deadline !== 'pending'
+      ? ` — Prévu : ${formatDateFR(deadline)}`
+      : '';
 
   return (
     <DropdownMenu>
@@ -35,7 +41,7 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, size =
         <button
           type="button"
           className={`${cls} cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-ring rounded`}
-          title={meta.label + (deadline && deadline !== 'warning' && deadline !== 'pending' ? ` — Prévu : ${formatDateFR(deadline)}` : '')}
+          title={meta.label + dateInfo}
         >
           {meta.emoji}
         </button>

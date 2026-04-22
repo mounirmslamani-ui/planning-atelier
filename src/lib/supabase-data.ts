@@ -175,6 +175,7 @@ export function mapOrderFromDB(row: any): Order {
     materialAvailable: statusToBool(materialStatus),
     toolingAvailable: statusToBool(toolingStatus),
     studyReady: statusToBool(studyStatus),
+    materialReceivedDate: row.material_received_date || undefined,
     observation: row.observation || undefined,
   };
 }
@@ -202,6 +203,7 @@ export function mapOrderToDB(o: Order) {
     material_status,
     tooling_status,
     study_status,
+    material_received_date: toISODateOrNull(o.materialReceivedDate),
     observation: o.observation || null,
   };
 }
@@ -237,9 +239,9 @@ export function mapStepFromDB(row: any): ProductionStep {
     studyDeadline: row.study_deadline || undefined,
     materialDeadline: row.material_deadline || undefined,
     toolingDeadline: row.tooling_deadline || undefined,
-    // subcontracting_* dropped from DB — kept in-memory only
-    subcontractingDone: false,
-    subcontractingDeadline: undefined,
+    subcontractingDone: row.subcontracting_done ?? false,
+    subcontractingDeadline: row.subcontracting_deadline || undefined,
+    subcontractingReceivedDate: row.subcontracting_received_date || undefined,
   };
 }
 
@@ -269,6 +271,9 @@ export function mapStepToDB(s: ProductionStep) {
     study_deadline: toISODateOrNull(s.studyDeadline),
     material_deadline: toISODateOrNull(s.materialDeadline),
     tooling_deadline: toISODateOrNull(s.toolingDeadline),
+    subcontracting_done: s.subcontractingDone ?? false,
+    subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
+    subcontracting_received_date: toISODateOrNull(s.subcontractingReceivedDate),
   };
 }
 
