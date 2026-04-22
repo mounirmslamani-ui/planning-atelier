@@ -47,6 +47,7 @@
     --priority-p5: 215 10% 80%;
     --blocked: 270 55% 50%;
     --blocked-foreground: 0 0% 0%;
+    --blocked-table-foreground: 0 0% 100%;
 
     --gantt-header: 215 30% 18%;
     --gantt-header-foreground: 0 0% 95%;
@@ -95,6 +96,7 @@
     --sidebar-accent-foreground: 215 10% 90%;
     --sidebar-border: 215 20% 14%;
     --sidebar-ring: 35 90% 52%;
+    --blocked-table-foreground: 0 0% 100%;
   }
 }
 
