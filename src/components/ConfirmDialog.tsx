@@ -13,13 +13,13 @@ interface Props {
 }
 
 const ConfirmDialog: React.FC<Props> = ({ open, title, description, onConfirm, onCancel, confirmLabel = 'Confirmer', cancelLabel = 'Annuler', variant = 'default' }) => {
-  const confirmedRef = useRef(false);
+  const handledRef = useRef(false);
 
   return (
     <AlertDialog open={open} onOpenChange={o => {
       if (o) return;
-      if (confirmedRef.current) {
-        confirmedRef.current = false;
+      if (handledRef.current) {
+        handledRef.current = false;
         return;
       }
       onCancel();
@@ -30,10 +30,13 @@ const ConfirmDialog: React.FC<Props> = ({ open, title, description, onConfirm, o
           {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => {
+            handledRef.current = true;
+            onCancel();
+          }}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
-              confirmedRef.current = true;
+              handledRef.current = true;
               onConfirm();
             }}
             className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
