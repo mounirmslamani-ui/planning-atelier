@@ -2,17 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { formatDateFR } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { OrderPriority } from '@/types/planning';
-
-const priorityColors: Record<OrderPriority, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
+import PriorityBadge from '@/components/orders/PriorityBadge';
 
 interface PurchaseRowDialogProps {
   open: boolean;
@@ -105,7 +97,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
                   <TableCell className="text-sm font-medium">{o.clientName}</TableCell>
                   <TableCell className="text-sm">{o.designation}</TableCell>
                   <TableCell className="text-center text-sm">{o.quantity}</TableCell>
-                  <TableCell>{o.priority ? <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge> : '—'}</TableCell>
+                  <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(o.plannedDeadline)}</TableCell>
                 </TableRow>
               ))}

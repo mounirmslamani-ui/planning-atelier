@@ -1,18 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { OrderPriority } from '@/types/planning';
-
-const priorityColors: Record<OrderPriority, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
+import PriorityBadge from '@/components/orders/PriorityBadge';
 
 interface SubcontractorTableDialogProps {
   open: boolean;
@@ -138,7 +130,7 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
                   <TableCell className="text-sm font-medium">{r.clientName}</TableCell>
                   <TableCell className="text-sm">{r.designation}</TableCell>
                   <TableCell className="text-center text-sm">{r.quantity}</TableCell>
-                  <TableCell>{r.priority ? <Badge className={`${priorityColors[r.priority]} text-xs`}>{r.priority}</Badge> : '—'}</TableCell>
+                  <TableCell><PriorityBadge priority={r.priority} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(r.plannedDeadline) || '—'}</TableCell>
                   <TableCell className="text-sm">{r.operationName}</TableCell>
                   <TableCell className="text-sm font-medium">{r.subcontractorName}</TableCell>
