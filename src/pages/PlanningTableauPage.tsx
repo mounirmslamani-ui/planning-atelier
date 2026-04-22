@@ -142,6 +142,21 @@ function formatMinutesToHM(minutes: number): string {
   return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h00`;
 }
 
+const MAX_SESSION_DURATION_MINUTES = 12 * 60;
+
+function normalizeDurationInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function parseDurationHHMM(value: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  if (minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
 function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
   if (step.subcontractorId) return step.subcontractingDone === true;
   return records.some(record => record.stepId === step.id && record.workStatus === 'done');
@@ -352,6 +367,7 @@ const PlanningTableauPage: React.FC = () => {
   const [prodDialog, setProdDialog] = useState<ProductionDialogState>({
     open: false, step: null, order: null, operatorName: '', operationName: '', durationToday: '', totalDoneAlready: 0,
   });
+  const [prodDurationError, setProdDurationError] = useState('');
   const [completionDialog, setCompletionDialog] = useState<{
     open: boolean;
     stepId: string;
@@ -803,6 +819,7 @@ const PlanningTableauPage: React.FC = () => {
       operationName: getOperationName(step.operationId),
       durationToday: '', totalDoneAlready,
     });
+    setProdDurationError('');
   }, [draftSteps, orders, operators, productionRecords, getOperationName]);
 
   useEffect(() => {
@@ -845,9 +862,12 @@ const PlanningTableauPage: React.FC = () => {
 
   const handleProdDialogOk = useCallback(() => {
     if (!prodDialog.step || !prodDialog.order) return;
-    const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
-    const durationTodayMin = (hh || 0) * 60 + (mm || 0);
-    if (durationTodayMin <= 0) return;
+    const durationTodayMin = parseDurationHHMM(prodDialog.durationToday);
+    if (durationTodayMin === null) return;
+    if (durationTodayMin > MAX_SESSION_DURATION_MINUTES) {
+      setProdDurationError('La durée maximale par session est de 12h00');
+      return;
+    }
 
     const totalDone = prodDialog.totalDoneAlready + durationTodayMin;
     setCompletionDialog({
@@ -1328,7 +1348,7 @@ const PlanningTableauPage: React.FC = () => {
       />
 
       {/* Work register dialog */}
-      <Dialog open={prodDialog.open} onOpenChange={(o) => { if (!o) setProdDialog(prev => ({ ...prev, open: false })); }}>
+      <Dialog open={prodDialog.open} onOpenChange={(o) => { if (!o) { setProdDialog(prev => ({ ...prev, open: false })); setProdDurationError(''); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm font-heading">Enregistrement au registre des travaux effectués</DialogTitle>
@@ -1349,29 +1369,41 @@ const PlanningTableauPage: React.FC = () => {
               <span className="font-medium">{prodDialog.step ? formatMinutesToHM(prodDialog.step.estimatedDuration) : '—'}</span>
             </div>
             <div className="border-t pt-3">
-              <label className="text-sm text-muted-foreground mb-1 block">Durée effectuée aujourd'hui (hh:mm) :</label>
-              <Input type="time" className="h-9 w-32" value={prodDialog.durationToday}
-                onChange={e => setProdDialog(prev => ({ ...prev, durationToday: e.target.value }))} />
+              <label className="text-sm text-muted-foreground mb-1 block">Durée de l'intervention (HH:mm)</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{2}:[0-9]{2}"
+                placeholder="02:30"
+                maxLength={5}
+                className="h-9 w-32 font-mono"
+                value={prodDialog.durationToday}
+                onChange={e => {
+                  const value = normalizeDurationInput(e.target.value);
+                  const minutes = parseDurationHHMM(value);
+                  setProdDialog(prev => ({ ...prev, durationToday: value }));
+                  setProdDurationError(minutes !== null && minutes > MAX_SESSION_DURATION_MINUTES ? 'La durée maximale par session est de 12h00' : '');
+                }}
+              />
+              {prodDurationError && <p className="mt-1 text-xs text-destructive">{prodDurationError}</p>}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2">
               <span className="text-muted-foreground">Durée effectuée totale :</span>
               <span className="font-medium">{(() => {
-                const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
-                const todayMin = (hh || 0) * 60 + (mm || 0);
+                const todayMin = parseDurationHHMM(prodDialog.durationToday) ?? 0;
                 return formatMinutesToHM(prodDialog.totalDoneAlready + todayMin);
               })()}</span>
               <span className="text-muted-foreground">Durée estimée restante :</span>
               <span className="font-medium">{(() => {
-                const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
-                const todayMin = (hh || 0) * 60 + (mm || 0);
+                const todayMin = parseDurationHHMM(prodDialog.durationToday) ?? 0;
                 const remaining = Math.max(0, (prodDialog.step?.estimatedDuration || 0) - prodDialog.totalDoneAlready - todayMin);
                 return formatMinutesToHM(remaining);
               })()}</span>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setProdDialog(prev => ({ ...prev, open: false }))}>Annuler</Button>
-            <Button onClick={handleProdDialogOk} disabled={!prodDialog.durationToday}>OK</Button>
+            <Button variant="outline" onClick={() => { setProdDialog(prev => ({ ...prev, open: false })); setProdDurationError(''); }}>Annuler</Button>
+            <Button onClick={handleProdDialogOk} disabled={parseDurationHHMM(prodDialog.durationToday) === null || !!prodDurationError}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

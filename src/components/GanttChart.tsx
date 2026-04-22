@@ -34,6 +34,21 @@ function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], r
   return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
 }
 
+const MAX_SESSION_DURATION_MINUTES = 12 * 60;
+
+function normalizeDurationInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function parseDurationHHMM(value: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  if (minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
 function getPriorityBorderColor(order: Order): string {
   const p = order.priority;
   if (p === 'P1') return 'border-[hsl(0,72%,51%)]'; // red
@@ -203,7 +218,8 @@ const GanttChart: React.FC = () => {
   const [resizeState, setResizeState] = useState<{ stepId: string; startX: number; startWidth: number } | null>(null);
   const [validateDialogOpen, setValidateDialogOpen] = useState(false);
   const [validateStepId, setValidateStepId] = useState<string | null>(null);
-  const [validateActualDuration, setValidateActualDuration] = useState<number>(0);
+  const [validateActualDuration, setValidateActualDuration] = useState<string>('00:00');
+  const [validateDurationError, setValidateDurationError] = useState('');
   const [isOverValidateZone, setIsOverValidateZone] = useState(false);
   const validateZoneRef = useRef<HTMLDivElement>(null);
   const [validateWorkDone, setValidateWorkDone] = useState<'done' | 'continue'>('done');
@@ -621,8 +637,11 @@ const GanttChart: React.FC = () => {
           const step = steps.find(s => s.id === dragState.stepId);
           if (step) {
             setValidateStepId(step.id);
-            const actualH = parseFloat((step.estimatedDuration / 60).toFixed(2));
-            setValidateActualDuration(actualH);
+            const cappedDuration = Math.min(step.estimatedDuration, MAX_SESSION_DURATION_MINUTES);
+            const hours = Math.floor(cappedDuration / 60);
+            const minutes = cappedDuration % 60;
+            setValidateActualDuration(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+            setValidateDurationError('');
             setValidateWorkDone('done');
             setValidateRemainingDuration(0);
             // Default continue date: next work day at 08:00
@@ -712,13 +731,19 @@ const GanttChart: React.FC = () => {
     if (!validateStepId) return;
     const step = steps.find(s => s.id === validateStepId);
     if (!step) return;
+    const actualDurationMinutes = parseDurationHHMM(validateActualDuration);
+    if (actualDurationMinutes === null) return;
+    if (actualDurationMinutes > MAX_SESSION_DURATION_MINUTES) {
+      setValidateDurationError('La durée maximale par session est de 12h00');
+      return;
+    }
     const record: ProductionRecord = {
       id: crypto.randomUUID(),
       stepId: step.id,
       orderId: step.orderId,
       operatorId: step.operatorId,
       operationId: step.operationId,
-      actualDuration: Math.round(validateActualDuration * 60),
+      actualDuration: actualDurationMinutes,
       validatedAt: new Date().toISOString(),
       workStatus: validateWorkDone === 'continue' ? 'continue' : 'done',
     };
@@ -1284,23 +1309,29 @@ const GanttChart: React.FC = () => {
                   <p><span className="text-muted-foreground">Durée estimée :</span> {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Durée réelle (heures)</label>
+                  <label className="text-sm font-medium mb-1 block">Durée de l'intervention (HH:mm)</label>
                   <Input
-                    type="number"
-                    min={0}
-                    step={0.25}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
+                    placeholder="02:30"
+                    maxLength={5}
+                    className="font-mono"
                     value={validateActualDuration}
                     onChange={e => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setValidateActualDuration(val);
+                      const value = normalizeDurationInput(e.target.value);
+                      const minutes = parseDurationHHMM(value);
+                      setValidateActualDuration(value);
+                      setValidateDurationError(minutes !== null && minutes > MAX_SESSION_DURATION_MINUTES ? 'La durée maximale par session est de 12h00' : '');
                       // Auto-update remaining duration
-                      if (step) {
-                        const remaining = Math.max(0, parseFloat((step.estimatedDuration / 60).toFixed(2)) - val);
-                        setValidateRemainingDuration(parseFloat(remaining.toFixed(2)));
+                      if (step && minutes !== null) {
+                        const remaining = Math.max(0, step.estimatedDuration - minutes);
+                        setValidateRemainingDuration(parseFloat((remaining / 60).toFixed(2)));
                       }
                     }}
                     autoFocus
                   />
+                  {validateDurationError && <p className="mt-1 text-xs text-destructive">{validateDurationError}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">État du travail</label>
@@ -1318,7 +1349,8 @@ const GanttChart: React.FC = () => {
                       onClick={() => {
                         setValidateWorkDone('continue');
                         if (step) {
-                          const remaining = Math.max(0, parseFloat((step.estimatedDuration / 60).toFixed(2)) - validateActualDuration);
+                          const actualMinutes = parseDurationHHMM(validateActualDuration) ?? 0;
+                          const remaining = Math.max(0, (step.estimatedDuration - actualMinutes) / 60);
                           setValidateRemainingDuration(parseFloat(remaining.toFixed(2)));
                         }
                       }}
@@ -1339,7 +1371,7 @@ const GanttChart: React.FC = () => {
                         onChange={e => setValidateRemainingDuration(parseFloat(e.target.value) || 0)}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Estimée initiale: {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h — Passée: {validateActualDuration}h
+                        Estimée initiale: {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h — Passée: {validateActualDuration}
                       </p>
                     </div>
                     <div>
@@ -1365,7 +1397,7 @@ const GanttChart: React.FC = () => {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleValidateSave}>Enregistrer</Button>
+            <Button onClick={handleValidateSave} disabled={parseDurationHHMM(validateActualDuration) === null || !!validateDurationError}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
