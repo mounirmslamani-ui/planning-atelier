@@ -89,9 +89,9 @@ const StudyPage: React.FC = () => {
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
-            ) : filteredRows.map((r, idx) => (
+            ) : filteredRows.map((r) => (
               <TableRow key={r.orderId}>
-                <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
+                <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
                 <TableCell className="text-sm font-medium">{r.order.orderNumber}</TableCell>
                 <TableCell className="text-sm">{getClientName(r.order.clientId)}</TableCell>
                 <TableCell className="text-sm">{r.order.designation}</TableCell>
