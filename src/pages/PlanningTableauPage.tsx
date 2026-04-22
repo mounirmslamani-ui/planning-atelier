@@ -268,7 +268,7 @@ const PlanningTableauPage: React.FC = () => {
   const {
     operators, orders, steps, clients, operations,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
-    holidays, productionRecords, addProductionRecord, deleteStep,
+    holidays, productionRecords, addProductionRecord,
     qcEntries, addQCEntry,
     undo, redo, canUndo, canRedo,
   } = usePlanning();
