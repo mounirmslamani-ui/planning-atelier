@@ -821,22 +821,18 @@ const PlanningTableauPage: React.FC = () => {
     const orderId = step.orderId;
     if (orderId === absenceOrderId) return;
 
-    // Remove ALL remaining steps for this order from draft and DB
-    const orderStepIds = [...draftSteps, ...steps]
-      .filter(s => s.orderId === orderId)
-      .map(s => s.id);
-    const uniqueIds = [...new Set(orderStepIds)];
-    uniqueIds.forEach(id => deleteStep(id));
-    setDraftSteps(prev => prev.filter(s => s.orderId !== orderId));
+    const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
+    if (!areAllOrderStepsFinished(orderId, allKnownSteps, productionRecords, absenceOperationId)) return;
 
-    // Create QC entry
-    addQCEntry({
-      id: crypto.randomUUID(),
-      orderId,
-      controlDate: new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
-    });
-  }, [draftSteps, steps, absenceOrderId, deleteStep, addQCEntry]);
+    if (!qcEntries.some(entry => entry.orderId === orderId)) {
+      addQCEntry({
+        id: crypto.randomUUID(),
+        orderId,
+        controlDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }, [draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -879,6 +875,7 @@ const PlanningTableauPage: React.FC = () => {
     const record: ProductionRecord = {
       id: crypto.randomUUID(), stepId, orderId, operatorId, operationId,
       actualDuration: durationToday, validatedAt: new Date().toISOString(),
+      workStatus: finished ? 'done' : 'continue',
     };
     addProductionRecord(record);
 
