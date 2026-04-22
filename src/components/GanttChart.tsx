@@ -34,7 +34,7 @@ function getPriorityBorderColor(order: Order): string {
 }
 
 function getBlockBg(order: Order, isBlocked: boolean): string {
-  if (isBlocked) return 'bg-[hsl(270,50%,55%)]'; // purple fill when blocked
+  if (isBlocked) return 'bg-blocked'; // purple fill when blocked
   if (order.priority === 'P4') return 'bg-[hsl(55,90%,50%)]'; // yellow fill for P4 available
   return 'bg-white'; // white fill for P1-P3 when available
 }
@@ -120,7 +120,7 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
       style={{ left: `${left}px`, width: `${Math.max(width, 20)}px`, height: `${ROW_HEIGHT - 8}px` }}
       title={tooltipText}
     >
-      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate ${isBlocked ? 'text-white' : 'text-foreground'}`}>
+      <div className={`px-1.5 py-0.5 text-xs leading-tight font-medium truncate ${isBlocked ? 'text-blocked-foreground' : 'text-foreground'}`}>
         {subcontractorName ? (
           <>
             <div className="font-heading font-bold">{order.orderNumber} — {subcontractorName}</div>
