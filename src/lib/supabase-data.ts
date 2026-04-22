@@ -486,6 +486,7 @@ export async function dbInsertOrder(o: Order) {
 export async function dbUpdateOrder(o: Order) {
   const { error } = await supabase.from('orders').update(mapOrderToDB(o)).eq('id', o.id);
   if (error) logError('order', 'update', error);
+  return !error;
 }
 export async function dbDeleteOrder(id: string) {
   const { error } = await supabase.from('orders').delete().eq('id', id);
@@ -512,6 +513,7 @@ export async function dbInsertStep(s: ProductionStep, absenceOpId?: string, abse
 export async function dbUpdateStep(s: ProductionStep) {
   const { error } = await supabase.from('production_steps').update(mapStepToDB(s)).eq('id', s.id);
   if (error) logError('step', 'update', error);
+  return !error;
 }
 export async function dbDeleteStep(id: string) {
   const { error } = await supabase.from('production_steps').delete().eq('id', id);

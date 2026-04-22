@@ -9,6 +9,7 @@ import type { OrderPriority } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
+import { dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -77,7 +78,7 @@ const SubcontractingPage: React.FC = () => {
   }, [steps, orders, subcontractorOpIds, absenceOrderId]);
 
   const filteredRows = useMemo(() => {
-    let result = [...subcontractingRows];
+    let result = subcontractingRows.filter(r => !r.done);
 
     Object.entries(filters).forEach(([key, val]) => {
       if (!val) return;
@@ -123,13 +124,15 @@ const SubcontractingPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const applyDone = (stepIds: string[], done: boolean, receivedDate?: string) => {
-    stepIds.forEach(id => {
+  const applyDone = async (stepIds: string[], done: boolean, receivedDate?: string) => {
+    const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
-      if (step) {
-        updateStep({ ...step, subcontractingDone: done, subcontractingReceivedDate: done ? receivedDate : undefined });
-      }
-    });
+      return step ? { ...step, subcontractingDone: done, subcontractingReceivedDate: done ? receivedDate : undefined } : null;
+    }).filter(Boolean) as typeof steps;
+
+    const saved = await Promise.all(updatedSteps.map(dbUpdateStep));
+    if (saved.some(ok => !ok)) return;
+    updatedSteps.forEach(updateStep);
   };
 
   const toggleDone = (stepIds: string[], currentDone: boolean) => {
