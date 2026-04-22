@@ -48,15 +48,19 @@ export const YellowLockIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
  */
 export const WarningTriangleIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
   className,
+  style,
   ...props
 }) => (
   <svg
+    {...props}
     viewBox="0 0 24 24"
+    width={30}
+    height={30}
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={`shrink-0 align-middle h-10 w-10 ${className ?? ''}`}
+    className={`shrink-0 align-middle ${className ?? ''}`}
+    style={{ ...style, width: 30, height: 30, minWidth: 30, minHeight: 30 }}
     aria-hidden="true"
-    {...props}
   >
     <path
       d="M12 3.2 22 20.5H2L12 3.2Z"
