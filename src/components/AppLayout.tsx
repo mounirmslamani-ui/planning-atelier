@@ -16,15 +16,19 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!step || step.orderId === absenceOrderId) return;
 
     const tryTransfer = async () => {
-      let check = getOrderQualityControlCheck(step.orderId, steps, productionRecords, absenceOperationId);
+      let stepsForCheck = steps;
+      let recordsForCheck = productionRecords;
+      let check = getOrderQualityControlCheck(step.orderId, stepsForCheck, recordsForCheck, absenceOperationId);
 
       if (!check.isReady) {
         const freshData = await fetchAllData();
-        check = getOrderQualityControlCheck(step.orderId, freshData.steps, freshData.productionRecords, absenceOperationId);
+        stepsForCheck = freshData.steps;
+        recordsForCheck = freshData.productionRecords;
+        check = getOrderQualityControlCheck(step.orderId, stepsForCheck, recordsForCheck, absenceOperationId);
       }
 
       if (!check.isReady) {
-        const reason = buildOrderQualityControlErrorMessage(step.orderId, check.details.map(detail => detail.step), productionRecords, absenceOperationId);
+        const reason = buildOrderQualityControlErrorMessage(step.orderId, stepsForCheck, recordsForCheck, absenceOperationId);
         window.alert(`Impossible de transférer : certaines étapes ne sont pas encore terminées. ${reason}`);
         return;
       }
