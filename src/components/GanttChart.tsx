@@ -168,7 +168,7 @@ const GanttChart: React.FC = () => {
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
-    deleteStep, addQCEntry, setSteps,
+    qcEntries, addQCEntry, setSteps,
     undo, redo, canUndo, canRedo,
     absenceOperationId, absenceOrderId, loading,
   } = usePlanning();
@@ -720,6 +720,7 @@ const GanttChart: React.FC = () => {
       operationId: step.operationId,
       actualDuration: Math.round(validateActualDuration * 60),
       validatedAt: new Date().toISOString(),
+      workStatus: validateWorkDone === 'continue' ? 'continue' : 'done',
     };
     addProductionRecord(record);
 
