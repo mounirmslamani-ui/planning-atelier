@@ -1389,6 +1389,29 @@ const PlanningTableauPage: React.FC = () => {
           onCancel={() => setStatusDatePrompt(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={materialConfirmOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setMaterialConfirmOpen(false)}
+        onCancel={() => {
+          setMaterialConfirmOpen(false);
+          setMaterialReceivePrompt(null);
+        }}
+      />
+
+      {materialReceivePrompt && !materialConfirmOpen && (
+        <DatePromptDialog
+          open={!!materialReceivePrompt}
+          label="Date de réception de la matière"
+          defaultDate={orders.find(o => o.id === (draftSteps.find(s => s.id === materialReceivePrompt.stepId) || steps.find(s => s.id === materialReceivePrompt.stepId))?.orderId)?.materialReceivedDate || today}
+          onConfirm={(date) => {
+            applyStepStatus(materialReceivePrompt.stepId, 'material', materialReceivePrompt.nextStatus, undefined, date);
+            setMaterialReceivePrompt(null);
+          }}
+          onCancel={() => setMaterialReceivePrompt(null)}
+        />
+      )}
     </div>
   );
 };
