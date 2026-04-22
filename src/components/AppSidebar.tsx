@@ -22,7 +22,7 @@ const sidebarGroups = [
     title: 'PLANNING & SUIVI',
     items: [
       { to: '/planning-tableau', label: 'Planning Tableau', icon: TableProperties, dropTarget: false as DropTargetType },
-      { to: '/', label: 'Planning (Gantt)', icon: LayoutDashboard, dropTarget: false as DropTargetType },
+      { to: '/planning-gantt', label: 'Planning (Gantt)', icon: LayoutDashboard, dropTarget: false as DropTargetType },
       { to: '/study', label: 'Étude', icon: FileSearch, dropTarget: false as DropTargetType },
       { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus, dropTarget: false as DropTargetType },
       { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer, dropTarget: false as DropTargetType },
