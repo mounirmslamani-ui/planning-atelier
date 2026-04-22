@@ -18,7 +18,7 @@ import {
   workMinutesBetween,
   isWorkDay,
 } from '@/lib/workTime';
-import { getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
+import { getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 
 const MINUTE_WIDTH_DAY = 2;    // px per work-minute in day view
 const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
@@ -762,10 +762,9 @@ const GanttChart: React.FC = () => {
         endTime: `${String(continueEnd.getHours()).padStart(2, '0')}:${String(continueEnd.getMinutes()).padStart(2, '0')}`,
       });
     } else {
-      const allFinished = steps
-        .filter(s => s.orderId === step.orderId && s.operationId !== absenceOperationId)
-        .every(s => s.id === step.id ? true : isStepFinished(s, productionRecords));
-      if (allFinished && step.orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === step.orderId)) {
+      const recordsAfterInsert = [...productionRecords, record];
+      const qcCheck = getOrderQualityControlCheck(step.orderId, steps, recordsAfterInsert, absenceOperationId);
+      if (qcCheck.isReady && step.orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === step.orderId)) {
         // Move order to Quality Control
         addQCEntry({
           id: crypto.randomUUID(),
