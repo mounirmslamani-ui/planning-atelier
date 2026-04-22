@@ -40,9 +40,10 @@ interface Props {
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
-    addStep, updateStep, deleteStep, absenceOperationId,
+    addStep, updateStep, deleteStep, updateOrder, absenceOperationId,
   } = usePlanning();
 
+  const currentOrder = orders.find(o => o.id === order.id) || order;
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
 
@@ -81,9 +82,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           assignType: (isSub ? 'subcontractor' : 'operator') as 'operator' | 'subcontractor',
           option1: isSub ? s.subcontractorId! : s.operatorId,
           equipmentIds: s.equipmentIds || [],
-          studyStatus: (s.studyStatus ?? order.studyStatus ?? 'non-disponible') as ResourceStatus,
-          materialStatus: (s.materialStatus ?? order.materialStatus ?? 'non-disponible') as ResourceStatus,
-          toolingStatus: (s.toolingStatus ?? order.toolingStatus ?? 'non-disponible') as ResourceStatus,
+          studyStatus: (currentOrder.studyStatus ?? s.studyStatus ?? 'non-disponible') as ResourceStatus,
+          materialStatus: (currentOrder.materialStatus ?? s.materialStatus ?? 'non-disponible') as ResourceStatus,
+          toolingStatus: (currentOrder.toolingStatus ?? s.toolingStatus ?? 'non-disponible') as ResourceStatus,
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
@@ -92,7 +93,23 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     } else {
       setRows([]);
     }
-  }, [open, order.id, steps, absenceOperationId]);
+  }, [open, order.id, steps, absenceOperationId, currentOrder.studyStatus, currentOrder.materialStatus, currentOrder.toolingStatus]);
+
+  useEffect(() => {
+    if (!open || rows.length === 0) return;
+    setRows(prev => prev.map(row => {
+      const step = row.stepId ? steps.find(s => s.id === row.stepId) : undefined;
+      return {
+        ...row,
+        studyStatus: (currentOrder.studyStatus ?? step?.studyStatus ?? row.studyStatus) as ResourceStatus,
+        materialStatus: (currentOrder.materialStatus ?? step?.materialStatus ?? row.materialStatus) as ResourceStatus,
+        toolingStatus: (currentOrder.toolingStatus ?? step?.toolingStatus ?? row.toolingStatus) as ResourceStatus,
+        studyDeadline: step?.studyDeadline || row.studyDeadline,
+        materialDeadline: step?.materialDeadline || row.materialDeadline,
+        toolingDeadline: step?.toolingDeadline || row.toolingDeadline,
+      };
+    }));
+  }, [open, steps, currentOrder.studyStatus, currentOrder.materialStatus, currentOrder.toolingStatus]);
 
   const addRow = () => {
     setRows(prev => [...prev, {
@@ -103,9 +120,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       assignType: 'operator' as 'operator' | 'subcontractor',
       option1: '',
       equipmentIds: [],
-      studyStatus: order.studyStatus ?? 'non-disponible' as ResourceStatus,
-      materialStatus: order.materialStatus ?? 'non-disponible' as ResourceStatus,
-      toolingStatus: order.toolingStatus ?? 'non-disponible' as ResourceStatus,
+      studyStatus: currentOrder.studyStatus ?? 'non-disponible' as ResourceStatus,
+      materialStatus: currentOrder.materialStatus ?? 'non-disponible' as ResourceStatus,
+      toolingStatus: currentOrder.toolingStatus ?? 'non-disponible' as ResourceStatus,
       studyDeadline: '', materialDeadline: '', toolingDeadline: '',
     }]);
   };
@@ -140,7 +157,22 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    updateRow(rowId, statusKey, status);
+    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+    const isAvailable = status === 'disponible';
+    const updatedOrder = {
+      ...currentOrder,
+      [statusKey]: status,
+      [boolKey]: isAvailable,
+      ...(field === 'material' && !isAvailable ? { materialReceivedDate: undefined } : {}),
+    } as Order;
+
+    updateOrder(updatedOrder);
+    setRows(prev => prev.map(row => ({
+      ...row,
+      [statusKey]: status,
+      ...(status === 'disponible' || status === 'non-applicable' ? { [deadlineKey]: '' } : {}),
+    } as OperationRow)));
+
     if (status === 'non-disponible' || status === 'partiel') {
       const labels = {
         study: 'Date prévue pour fin Étude',
@@ -148,8 +180,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         tooling: 'Date prévue pour disponibilité Outillage',
       };
       setDatePrompt({ rowId, field: deadlineKey, label: labels[field] });
-    } else {
-      updateRow(rowId, deadlineKey, '');
     }
   };
 
@@ -194,12 +224,12 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     // Attach step-level prerequisites from rows
     newSteps.forEach((s, i) => {
       if (rows[i]) {
-        s.studyStatus = rows[i].studyStatus;
-        s.materialStatus = rows[i].materialStatus;
-        s.toolingStatus = rows[i].toolingStatus;
-        s.studyReady = rows[i].studyStatus === 'disponible';
-        s.materialAvailable = rows[i].materialStatus === 'disponible';
-        s.toolingAvailable = rows[i].toolingStatus === 'disponible';
+        s.studyStatus = currentOrder.studyStatus ?? rows[i].studyStatus;
+        s.materialStatus = currentOrder.materialStatus ?? rows[i].materialStatus;
+        s.toolingStatus = currentOrder.toolingStatus ?? rows[i].toolingStatus;
+        s.studyReady = s.studyStatus === 'disponible';
+        s.materialAvailable = s.materialStatus === 'disponible';
+        s.toolingAvailable = s.toolingStatus === 'disponible';
         s.studyDeadline = rows[i].studyDeadline;
         s.materialDeadline = rows[i].materialDeadline;
         s.toolingDeadline = rows[i].toolingDeadline;
@@ -415,7 +445,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           open={!!datePrompt}
           label={datePrompt.label}
           onConfirm={(date) => {
-            updateRow(datePrompt.rowId, datePrompt.field, date);
+            setRows(prev => prev.map(row => ({ ...row, [datePrompt.field]: date } as OperationRow)));
             setDatePrompt(null);
           }}
           onCancel={() => {
@@ -425,7 +455,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
               materialDeadline: 'materialStatus',
               toolingDeadline: 'toolingStatus',
             };
-            updateRow(datePrompt.rowId, statusMap[datePrompt.field], 'disponible');
+            const statusKey = statusMap[datePrompt.field];
+            const field = statusKey.replace('Status', '') as 'study' | 'material' | 'tooling';
+            const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+            updateOrder({ ...currentOrder, [statusKey]: 'disponible', [boolKey]: true } as Order);
+            setRows(prev => prev.map(row => ({ ...row, [statusKey]: 'disponible', [datePrompt.field]: '' } as OperationRow)));
             setDatePrompt(null);
           }}
         />
