@@ -7,6 +7,9 @@ import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import type { OrderPriority } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import DatePromptDialog from '@/components/DatePromptDialog';
+import { dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -20,7 +23,10 @@ const ToolingPurchasesPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [pendingReceipt, setPendingReceipt] = useState<{ stepIds: string[] } | null>(null);
+  const [datePromptOpen, setDatePromptOpen] = useState(false);
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+  const today = new Date().toISOString().split('T')[0];
 
   const rows = useMemo(() => {
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
@@ -58,11 +64,17 @@ const ToolingPurchasesPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const markDone = (stepIds: string[]) => {
-    stepIds.forEach(id => {
+  const markDone = async (stepIds: string[], receivedDate: string) => {
+    const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
-      if (step) updateStep({ ...step, toolingAvailable: true, toolingDeadline: undefined });
-    });
+      return step ? { ...step, toolingStatus: 'disponible' as const, toolingAvailable: true, toolingDeadline: undefined, toolingReceivedDate: receivedDate } : null;
+    }).filter(Boolean) as typeof steps;
+
+    const saved = await Promise.all(updatedSteps.map(dbUpdateStep));
+    if (saved.some(ok => !ok)) return false;
+
+    updatedSteps.forEach(updateStep);
+    return true;
   };
 
   return (
@@ -96,12 +108,40 @@ const ToolingPurchasesPage: React.FC = () => {
                 <TableCell>{r.order.priority ? <Badge className={`${priorityColors[r.order.priority]} text-xs`}>{r.order.priority}</Badge> : '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
-                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => markDone(r.stepIds)} /></TableCell>
+                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingReceipt({ stepIds: r.stepIds })} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingReceipt && !datePromptOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setDatePromptOpen(true)}
+        onCancel={() => {
+          setDatePromptOpen(false);
+          setPendingReceipt(null);
+        }}
+      />
+
+      {pendingReceipt && datePromptOpen && (
+        <DatePromptDialog
+          open={datePromptOpen}
+          label="Date de réception de l'outillage"
+          defaultDate={today}
+          onConfirm={async (date) => {
+            const saved = await markDone(pendingReceipt.stepIds, date);
+            if (!saved) return;
+            setDatePromptOpen(false);
+            setPendingReceipt(null);
+          }}
+          onCancel={() => {
+            setDatePromptOpen(false);
+            setPendingReceipt(null);
+          }}
+        />
+      )}
     </div>
   );
 };
