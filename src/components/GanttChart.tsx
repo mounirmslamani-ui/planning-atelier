@@ -24,6 +24,16 @@ const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
 const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
 
+function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
+  if (step.subcontractorId) return step.subcontractingDone === true;
+  return records.some(record => record.stepId === step.id && record.workStatus === 'done');
+}
+
+function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], records: ProductionRecord[], absenceOperationId: string): boolean {
+  const orderSteps = allSteps.filter(step => step.orderId === orderId && step.operationId !== absenceOperationId);
+  return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
+}
+
 function getPriorityBorderColor(order: Order): string {
   const p = order.priority;
   if (p === 'P1') return 'border-[hsl(0,72%,51%)]'; // red
