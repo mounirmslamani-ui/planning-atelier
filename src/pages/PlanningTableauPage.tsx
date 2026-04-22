@@ -1018,6 +1018,7 @@ const PlanningTableauPage: React.FC = () => {
           case 'designation': return t.order.designation.toLowerCase().includes(needle);
           case 'quantity': return String(t.order.quantity).includes(needle);
           case 'priority': return t.order.priority === value;
+          case 'globalStatus': return getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId) === value;
           case 'machine': return getMachineName(t.step) === value;
           case 'status': return getStepProgressStatus(t.step, productionRecords) === value;
           case 'operation': return getOperationName(t.step.operationId) === value;
@@ -1037,6 +1038,7 @@ const PlanningTableauPage: React.FC = () => {
           case 'designation': cmp = a.order.designation.localeCompare(b.order.designation, 'fr'); break;
           case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
           case 'priority': cmp = (priorityRank[a.order.priority] ?? 9) - (priorityRank[b.order.priority] ?? 9); break;
+          case 'globalStatus': cmp = getOrderGlobalStatus(a.order.id, draftSteps, productionRecords, absenceOperationId).localeCompare(getOrderGlobalStatus(b.order.id, draftSteps, productionRecords, absenceOperationId), 'fr'); break;
           case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
           case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
           case 'operation': cmp = getOperationName(a.step.operationId).localeCompare(getOperationName(b.step.operationId), 'fr'); break;
@@ -1046,7 +1048,7 @@ const PlanningTableauPage: React.FC = () => {
     }
 
     return result;
-  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords]);
+  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords, draftSteps, absenceOperationId]);
 
   const hasActiveFilters = Object.values(colFilters).some(Boolean) || !!colSortKey;
 

@@ -284,6 +284,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
+      case 'globalStatus': return getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
@@ -292,7 +293,7 @@ const OrdersPage: React.FC = () => {
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, atelierTimeMap, orderStatusMap]);
+  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
@@ -463,6 +464,7 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'Désignation', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
     { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
+    { key: 'globalStatus', label: 'Statut', className: 'w-[105px] min-w-[105px]' },
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
     { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
@@ -547,6 +549,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
+      case 'globalStatus': return <GlobalStatusBadge status={getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)} />;
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
