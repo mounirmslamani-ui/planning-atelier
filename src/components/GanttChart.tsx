@@ -1371,7 +1371,7 @@ const GanttChart: React.FC = () => {
                         onChange={e => setValidateRemainingDuration(parseFloat(e.target.value) || 0)}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Estimée initiale: {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h — Passée: {validateActualDuration}h
+                        Estimée initiale: {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h — Passée: {validateActualDuration}
                       </p>
                     </div>
                     <div>
@@ -1397,7 +1397,7 @@ const GanttChart: React.FC = () => {
           })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleValidateSave}>Enregistrer</Button>
+            <Button onClick={handleValidateSave} disabled={parseDurationHHMM(validateActualDuration) === null || !!validateDurationError}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
