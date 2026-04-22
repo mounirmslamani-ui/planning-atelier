@@ -7,6 +7,9 @@ import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import type { OrderPriority, ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import DatePromptDialog from '@/components/DatePromptDialog';
+import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -20,7 +23,10 @@ const MaterialPurchasesPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [pendingReceipt, setPendingReceipt] = useState<{ orderId: string; stepIds: string[] } | null>(null);
+  const [datePromptOpen, setDatePromptOpen] = useState(false);
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+  const today = new Date().toISOString().split('T')[0];
 
   const rows = useMemo(() => {
     const isMaterialBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
@@ -61,13 +67,28 @@ const MaterialPurchasesPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const markDone = (orderId: string, stepIds: string[]) => {
-    stepIds.forEach(id => {
+  const markDone = async (orderId: string, stepIds: string[], receivedDate: string) => {
+    const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
-      if (step) updateStep({ ...step, materialStatus: 'disponible', materialAvailable: true, materialDeadline: undefined });
-    });
+      return step ? { ...step, materialStatus: 'disponible' as ResourceStatus, materialAvailable: true, materialDeadline: undefined } : null;
+    }).filter(Boolean) as typeof steps;
+
     const order = orders.find(o => o.id === orderId);
-    if (order) updateOrder({ ...order, materialStatus: 'disponible', materialAvailable: true });
+    if (!order) return false;
+
+    const updatedOrder = {
+      ...order,
+      materialStatus: 'disponible' as ResourceStatus,
+      materialAvailable: true,
+      materialReceivedDate: receivedDate,
+    };
+
+    const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
+    if (saved.some(ok => !ok)) return false;
+
+    updatedSteps.forEach(updateStep);
+    updateOrder(updatedOrder);
+    return true;
   };
 
   return (
@@ -101,12 +122,40 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableCell>{r.order.priority ? <Badge className={`${priorityColors[r.order.priority]} text-xs`}>{r.order.priority}</Badge> : '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
-                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => markDone(r.orderId, r.stepIds)} /></TableCell>
+                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingReceipt({ orderId: r.orderId, stepIds: r.stepIds })} title={`Client : ${getClientName(r.order.clientId)}`} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingReceipt && !datePromptOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setDatePromptOpen(true)}
+        onCancel={() => {
+          setDatePromptOpen(false);
+          setPendingReceipt(null);
+        }}
+      />
+
+      {pendingReceipt && datePromptOpen && (
+        <DatePromptDialog
+          open={datePromptOpen}
+          label="Date de réception de la matière"
+          defaultDate={orders.find(o => o.id === pendingReceipt.orderId)?.materialReceivedDate || today}
+          onConfirm={async (date) => {
+            const saved = await markDone(pendingReceipt.orderId, pendingReceipt.stepIds, date);
+            if (!saved) return;
+            setDatePromptOpen(false);
+            setPendingReceipt(null);
+          }}
+          onCancel={() => {
+            setDatePromptOpen(false);
+            setPendingReceipt(null);
+          }}
+        />
+      )}
     </div>
   );
 };

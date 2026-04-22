@@ -26,6 +26,7 @@ const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
 const ORDER: ResourceStatus[] = ['disponible', 'partiel', 'non-disponible', 'non-applicable'];
 
 const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receivedDate, size = 'sm' }) => {
+  const [open, setOpen] = React.useState(false);
   const current = value ?? 'non-disponible';
   const meta = STATUS_META[current];
   const cls = size === 'sm' ? 'text-sm' : 'text-base';
@@ -36,7 +37,7 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receiv
       : '';
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -50,7 +51,11 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receiv
         {ORDER.map(s => (
           <DropdownMenuItem
             key={s}
-            onClick={() => onChange(s)}
+            onSelect={(event) => {
+              event.preventDefault();
+              if (current !== s) onChange(s);
+              setOpen(false);
+            }}
             className={current === s ? 'bg-accent' : ''}
           >
             <span className="mr-2">{STATUS_META[s].emoji}</span>
