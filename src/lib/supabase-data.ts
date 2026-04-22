@@ -302,6 +302,7 @@ export function mapRecordFromDB(row: any): ProductionRecord {
     operationId: row.operation_id,
     actualDuration: row.actual_duration ?? 0,
     validatedAt: row.validated_at || row.created_at || '',
+    workStatus: row.work_status || 'done',
   };
 }
 
@@ -314,6 +315,7 @@ export function mapRecordToDB(r: ProductionRecord) {
     operation_id: r.operationId,
     actual_duration: r.actualDuration,
     validated_at: r.validatedAt || new Date().toISOString(),
+    work_status: r.workStatus || 'done',
   };
 }
 
