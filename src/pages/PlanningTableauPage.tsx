@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut, X } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
@@ -200,6 +200,8 @@ interface TaskItem {
   order: Order;
 }
 
+type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'machine' | 'status' | 'operation';
+
 /**
  * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
  * at the TOP of their priority group.
@@ -281,6 +283,7 @@ const NUMDAYS_STORAGE_KEY = 'planning-tableau-numdays';
 const PlanningTableauPage: React.FC = () => {
   const {
     operators, orders, steps, clients, operations,
+    equipments,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord,
     qcEntries, addQCEntry,
@@ -400,6 +403,15 @@ const PlanningTableauPage: React.FC = () => {
   const getOperationName = useCallback((opId: string) => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
+
+  const getMachineName = useCallback((step: ProductionStep) => {
+    const equipmentNames = (step.equipmentIds || [])
+      .map(id => equipments.find(equipment => equipment.id === id)?.designation)
+      .filter(Boolean) as string[];
+    if (equipmentNames.length > 0) return equipmentNames.join(', ');
+    const operatorName = step.operatorId ? operators.find(op => op.id === step.operatorId)?.name : '';
+    return operatorName || '—';
+  }, [equipments, operators]);
 
   // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
@@ -983,35 +995,61 @@ const PlanningTableauPage: React.FC = () => {
     setColFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const clearPlanningFilters = useCallback(() => {
+    setColFilters({});
+    setColSortKey(null);
+    setColSortDir(null);
+  }, []);
+
+  const operationFilterOptions = useMemo(() => (
+    Array.from(new Set(operations.filter(o => o.category === 'operator' && o.id !== absenceOperationId).map(o => o.name))).sort((a, b) => a.localeCompare(b, 'fr'))
+  ), [operations, absenceOperationId]);
+
+  const machineFilterOptions = useMemo(() => (
+    Array.from(new Set(operatorTasks.flatMap(group => group.tasks.map(task => getMachineName(task.step))))).filter(value => value && value !== '—').sort((a, b) => a.localeCompare(b, 'fr'))
+  ), [operatorTasks, getMachineName]);
+
   // Apply filters to tasks within a group
   const filterTasks = useCallback((tasks: TaskItem[]): TaskItem[] => {
     let result = tasks;
-    const clientFilter = colFilters['client']?.toLowerCase();
-    const cmdFilter = colFilters['orderNumber']?.toLowerCase();
+    const normalizedFilters = Object.entries(colFilters).filter(([, value]) => !!value);
 
-    if (clientFilter) {
-      result = result.filter(t => getClientName(t.order.clientId).toLowerCase().includes(clientFilter));
-    }
-    if (cmdFilter) {
-      result = result.filter(t => t.order.orderNumber.toLowerCase().includes(cmdFilter));
-    }
+    normalizedFilters.forEach(([key, value]) => {
+      const needle = value.toLowerCase();
+      result = result.filter(t => {
+        switch (key as PlanningFilterKey) {
+          case 'startDate': return t.step.startDate === value;
+          case 'endDate': return t.step.endDate === value;
+          case 'orderNumber': return t.order.orderNumber.toLowerCase().includes(needle);
+          case 'client': return getClientName(t.order.clientId).toLowerCase().includes(needle);
+          case 'machine': return getMachineName(t.step) === value;
+          case 'status': return getStepProgressStatus(t.step, productionRecords) === value;
+          case 'operation': return getOperationName(t.step.operationId) === value;
+          default: return true;
+        }
+      });
+    });
 
     if (colSortKey && colSortDir) {
       result = [...result].sort((a, b) => {
         let cmp = 0;
-        if (colSortKey === 'client') {
-          cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId));
-        } else if (colSortKey === 'orderNumber') {
-          cmp = a.order.orderNumber.localeCompare(b.order.orderNumber, 'fr', { numeric: true });
+        switch (colSortKey as PlanningFilterKey) {
+          case 'startDate': cmp = a.step.startDate.localeCompare(b.step.startDate); break;
+          case 'endDate': cmp = a.step.endDate.localeCompare(b.step.endDate); break;
+          case 'client': cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId), 'fr'); break;
+          case 'orderNumber': cmp = a.order.orderNumber.localeCompare(b.order.orderNumber, 'fr', { numeric: true }); break;
+          case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
+          case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
+          case 'operation': cmp = getOperationName(a.step.operationId).localeCompare(getOperationName(b.step.operationId), 'fr'); break;
         }
         return colSortDir === 'desc' ? -cmp : cmp;
       });
     }
 
     return result;
-  }, [colFilters, colSortKey, colSortDir, getClientName]);
+  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords]);
 
-  const hasActiveFilters = !!(colFilters['client'] || colFilters['orderNumber'] || colSortKey);
+  const hasActiveFilters = Object.values(colFilters).some(Boolean) || !!colSortKey;
 
   return (
     <div className="p-6">
@@ -1053,6 +1091,11 @@ const PlanningTableauPage: React.FC = () => {
                 </span>
               ))}
             </div>
+            {hasActiveFilters && (
+              <Button variant="outline" size="sm" onClick={clearPlanningFilters}>
+                <X className="w-4 h-4 mr-1" /> Effacer tous les filtres
+              </Button>
+            )}
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-1" /> Exporter Excel
             </Button>
@@ -1115,7 +1158,12 @@ const PlanningTableauPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10 px-1 text-center text-xs">Ordre</TableHead>
-                    <TableHead className="w-[70px] text-xs">Date début</TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="Date début" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} filterMode="date" />
+                    </TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="Date fin" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} filterMode="date" />
+                    </TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[80px] text-xs">
                       <ColumnHeader label="N° Cmd" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} />
@@ -1127,7 +1175,15 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[45px] text-xs text-center">Qté</TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
-                    <TableHead className="w-[100px] text-xs">Opération</TableHead>
+                    <TableHead className="w-[110px] text-xs">
+                      <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
+                    </TableHead>
+                    <TableHead className="w-[105px] text-xs">
+                      <ColumnHeader label="Statut" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['Non entamée', 'En cours', 'Terminée']} />
+                    </TableHead>
+                    <TableHead className="w-[120px] text-xs">
+                      <ColumnHeader label="Opération" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={operationFilterOptions} />
+                    </TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">Observation</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
@@ -1186,6 +1242,16 @@ const PlanningTableauPage: React.FC = () => {
                             <span className="text-xs">{formatDateFR(step.startDate)}</span>
                           )}
                         </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          {isEditing ? (
+                            <Input type="date" className="h-7 text-xs w-[110px]"
+                              value={getStepInlineValue(step, 'endDate') || ''}
+                              onChange={e => setStepInlineValue(step.id, 'endDate', e.target.value)}
+                              onClick={e => e.stopPropagation()} />
+                          ) : (
+                            <span className="text-xs">{formatDateFR(step.endDate)}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           {isEditing ? (
                             <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
@@ -1215,6 +1281,12 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{getMachineName(step)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <div className="flex items-center gap-1">
