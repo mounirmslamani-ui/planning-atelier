@@ -22,8 +22,6 @@ interface OperationRow {
   estimatedDuration: number;
   assignType: 'operator' | 'subcontractor';
   option1: string;
-  option2: string;
-  option3: string;
   equipmentIds: string[];
   studyStatus: ResourceStatus;
   materialStatus: ResourceStatus;
@@ -82,8 +80,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           estimatedDuration: s.estimatedDuration,
           assignType: (isSub ? 'subcontractor' : 'operator') as 'operator' | 'subcontractor',
           option1: isSub ? s.subcontractorId! : s.operatorId,
-          option2: '',
-          option3: '',
           equipmentIds: s.equipmentIds || [],
           studyStatus: (s.studyStatus ?? order.studyStatus ?? 'non-disponible') as ResourceStatus,
           materialStatus: (s.materialStatus ?? order.materialStatus ?? 'non-disponible') as ResourceStatus,
@@ -105,7 +101,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       operationId: operations.filter(o => o.id !== absenceOperationId)[0]?.id || '',
       estimatedDuration: 60,
       assignType: 'operator' as 'operator' | 'subcontractor',
-      option1: '', option2: '', option3: '',
+      option1: '',
       equipmentIds: [],
       studyStatus: order.studyStatus ?? 'non-disponible' as ResourceStatus,
       materialStatus: order.materialStatus ?? 'non-disponible' as ResourceStatus,
@@ -136,8 +132,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       const updated = { ...r, [field]: value };
       if (field === 'assignType' || field === 'operationId') {
         updated.option1 = '';
-        updated.option2 = '';
-        updated.option3 = '';
       }
       return updated;
     }));
@@ -182,7 +176,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === absenceOperationId);
     const opsToSchedule: OperationToSchedule[] = rows.map(row => {
       const isSub = row.assignType === 'subcontractor';
-      const options = [row.option1, row.option2, row.option3]
+      const options = [row.option1]
         .filter(Boolean)
         .map(id => ({ id, isSub }));
       return {
@@ -216,7 +210,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     onOpenChange(false);
   };
 
-  const renderAssigneeSelect = (row: OperationRow, field: 'option1' | 'option2' | 'option3') => {
+  const renderAssigneeSelect = (row: OperationRow) => {
     const options = getAssigneeOptions(row.assignType, row.operationId);
     const placeholder = !row.operationId
       ? "— Sélectionnez d'abord une opération —"
@@ -225,9 +219,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         : '— Aucun —';
     return (
       <select
-        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
-        value={row[field]}
-        onChange={e => updateRow(row.id, field, e.target.value)}
+        className="h-9 w-full min-w-64 rounded-md border border-input bg-background px-3 py-2 text-sm"
+        value={row.option1}
+        onChange={e => updateRow(row.id, 'option1', e.target.value)}
       >
         <option value="">{placeholder}</option>
         {options.map(o => (
