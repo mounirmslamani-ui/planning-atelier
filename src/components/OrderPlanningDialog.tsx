@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
-import type { Order, ResourceStatus } from '@/types/planning';
+import type { Order, ProductionRecord, ResourceStatus } from '@/types/planning';
 import type { OperationToSchedule } from '@/lib/scheduler';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
@@ -40,7 +40,7 @@ interface Props {
 
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
-    operators, subcontractors, operations, steps, orders, holidays, equipments, clients,
+    operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
     addStep, updateStep, deleteStep, absenceOperationId,
   } = usePlanning();
 
@@ -239,6 +239,27 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const durationUnit = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 'j' : 'h';
   const durationStep = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 0.5 : 0.25;
   const durationFactor = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 450 : 60;
+  const getRowRecords = (row: OperationRow): ProductionRecord[] => {
+    if (!row.stepId) return [];
+    return productionRecords.filter(record => record.stepId === row.stepId);
+  };
+  const getRowProgressStatus = (row: OperationRow): 'Non entamée' | 'En cours' | 'Terminée' => {
+    if (row.assignType === 'subcontractor' && row.stepId) {
+      const step = steps.find(s => s.id === row.stepId);
+      if (step?.subcontractingDone) return 'Terminée';
+    }
+    const records = getRowRecords(row);
+    if (records.some(record => record.workStatus === 'done')) return 'Terminée';
+    if (records.some(record => record.workStatus === 'continue')) return 'En cours';
+    return 'Non entamée';
+  };
+  const getRowActualDuration = (row: OperationRow): string => {
+    if (row.assignType === 'subcontractor') return 'NA';
+    const total = getRowRecords(row).reduce((sum, record) => sum + record.actualDuration, 0);
+    const hours = Math.floor(total / 60);
+    const minutes = total % 60;
+    return `${hours}:${String(minutes).padStart(2, '0')}`;
+  };
   const hasExistingSteps = steps.some(s => s.orderId === order.id && s.operationId !== absenceOperationId);
   const clientName = clients.find(c => c.id === order.clientId)?.name || '*******';
 
