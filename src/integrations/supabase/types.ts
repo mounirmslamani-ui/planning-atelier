@@ -343,6 +343,7 @@ export type Database = {
           start_date: string | null
           start_time: string | null
           step_order: number
+          study_completed_date: string | null
           study_deadline: string | null
           study_status: Database["public"]["Enums"]["resource_status"]
           subcontracting_deadline: string | null
@@ -350,6 +351,7 @@ export type Database = {
           subcontracting_received_date: string | null
           subcontractor_id: string | null
           tooling_deadline: string | null
+          tooling_received_date: string | null
           tooling_status: Database["public"]["Enums"]["resource_status"]
           updated_at: string
         }
@@ -371,6 +373,7 @@ export type Database = {
           start_date?: string | null
           start_time?: string | null
           step_order?: number
+          study_completed_date?: string | null
           study_deadline?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
           subcontracting_deadline?: string | null
@@ -378,6 +381,7 @@ export type Database = {
           subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
+          tooling_received_date?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
@@ -399,6 +403,7 @@ export type Database = {
           start_date?: string | null
           start_time?: string | null
           step_order?: number
+          study_completed_date?: string | null
           study_deadline?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
           subcontracting_deadline?: string | null
@@ -406,6 +411,7 @@ export type Database = {
           subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
+          tooling_received_date?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
