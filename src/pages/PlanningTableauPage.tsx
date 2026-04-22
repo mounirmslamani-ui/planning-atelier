@@ -142,6 +142,21 @@ function formatMinutesToHM(minutes: number): string {
   return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h00`;
 }
 
+const MAX_SESSION_DURATION_MINUTES = 12 * 60;
+
+function normalizeDurationInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+function parseDurationHHMM(value: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  if (minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
 function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
   if (step.subcontractorId) return step.subcontractingDone === true;
   return records.some(record => record.stepId === step.id && record.workStatus === 'done');
@@ -352,6 +367,7 @@ const PlanningTableauPage: React.FC = () => {
   const [prodDialog, setProdDialog] = useState<ProductionDialogState>({
     open: false, step: null, order: null, operatorName: '', operationName: '', durationToday: '', totalDoneAlready: 0,
   });
+  const [prodDurationError, setProdDurationError] = useState('');
   const [completionDialog, setCompletionDialog] = useState<{
     open: boolean;
     stepId: string;
@@ -803,6 +819,7 @@ const PlanningTableauPage: React.FC = () => {
       operationName: getOperationName(step.operationId),
       durationToday: '', totalDoneAlready,
     });
+    setProdDurationError('');
   }, [draftSteps, orders, operators, productionRecords, getOperationName]);
 
   useEffect(() => {
@@ -845,9 +862,12 @@ const PlanningTableauPage: React.FC = () => {
 
   const handleProdDialogOk = useCallback(() => {
     if (!prodDialog.step || !prodDialog.order) return;
-    const [hh, mm] = (prodDialog.durationToday || '0:0').split(':').map(Number);
-    const durationTodayMin = (hh || 0) * 60 + (mm || 0);
-    if (durationTodayMin <= 0) return;
+    const durationTodayMin = parseDurationHHMM(prodDialog.durationToday);
+    if (durationTodayMin === null) return;
+    if (durationTodayMin > MAX_SESSION_DURATION_MINUTES) {
+      setProdDurationError('La durée maximale par session est de 12h00');
+      return;
+    }
 
     const totalDone = prodDialog.totalDoneAlready + durationTodayMin;
     setCompletionDialog({
