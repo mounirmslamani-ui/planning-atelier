@@ -7,6 +7,8 @@ import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import type { OrderPriority } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import DatePromptDialog from '@/components/DatePromptDialog';
 
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -22,6 +24,9 @@ const SubcontractingPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [pendingDone, setPendingDone] = useState<{ stepIds: string[] } | null>(null);
+  const [datePromptOpen, setDatePromptOpen] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
 
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
   const getSubcontractorName = useCallback((id: string | undefined) => {
@@ -61,7 +66,6 @@ const SubcontractingPage: React.FC = () => {
     });
 
     const rows = Array.from(orderMap.entries()).map(([orderId, info]) => {
-      if (info.done) return null;
       const order = orders.find(o => o.id === orderId);
       if (!order || order.id === absenceOrderId) return null;
       return { order, ...info };
@@ -119,13 +123,21 @@ const SubcontractingPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const toggleDone = (stepIds: string[], currentDone: boolean) => {
+  const applyDone = (stepIds: string[], done: boolean, receivedDate?: string) => {
     stepIds.forEach(id => {
       const step = steps.find(s => s.id === id);
       if (step) {
-        updateStep({ ...step, subcontractingDone: !currentDone });
+        updateStep({ ...step, subcontractingDone: done, subcontractingReceivedDate: done ? receivedDate : undefined });
       }
     });
+  };
+
+  const toggleDone = (stepIds: string[], currentDone: boolean) => {
+    if (currentDone) {
+      applyDone(stepIds, false);
+      return;
+    }
+    setPendingDone({ stepIds });
   };
 
   return (
@@ -176,6 +188,7 @@ const SubcontractingPage: React.FC = () => {
                     <Checkbox
                       checked={row.done}
                       onCheckedChange={() => toggleDone(row.stepIds, row.done)}
+                      title={row.done ? `Reçu le ${formatDateFR(steps.find(s => row.stepIds.includes(s.id))?.subcontractingReceivedDate) || '—'}` : 'Sous-traitance effectuée'}
                     />
                   </TableCell>
                 </TableRow>
@@ -184,6 +197,30 @@ const SubcontractingPage: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDone && !datePromptOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setDatePromptOpen(true)}
+        onCancel={() => setPendingDone(null)}
+      />
+
+      {pendingDone && datePromptOpen && (
+        <DatePromptDialog
+          open={datePromptOpen}
+          label="Date de réception de la sous-traitance"
+          defaultDate={today}
+          onConfirm={(date) => {
+            applyDone(pendingDone.stepIds, true, date);
+            setDatePromptOpen(false);
+            setPendingDone(null);
+          }}
+          onCancel={() => {
+            setDatePromptOpen(false);
+            setPendingDone(null);
+          }}
+        />
+      )}
     </div>
   );
 };
