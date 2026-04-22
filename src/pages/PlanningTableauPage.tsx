@@ -678,8 +678,8 @@ const PlanningTableauPage: React.FC = () => {
 
   // Compute blocked step IDs (violet) — propagates to all successor steps of the same order
   const blockedStepIds = useMemo(
-    () => computeBlockedStepIds(draftSteps),
-    [draftSteps]
+    () => computeBlockedStepIds(draftSteps, orders),
+    [draftSteps, orders]
   );
   const isStepBlocked = (step: ProductionStep): boolean => blockedStepIds.has(step.id);
 

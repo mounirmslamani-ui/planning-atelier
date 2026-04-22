@@ -681,7 +681,7 @@ const OrdersPage: React.FC = () => {
           <TableBody>
             {displayOrders.map((o, index) => {
               const isRowEditing = editingRowId === o.id;
-              const blocked = isOrderBlocked(o.id, steps);
+              const blocked = isOrderBlocked(o.id, steps, orders);
               return (
               <ContextMenu key={o.id}>
                 <ContextMenuTrigger asChild>

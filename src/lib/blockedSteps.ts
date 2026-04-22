@@ -1,4 +1,4 @@
-import type { ProductionStep, ResourceStatus } from '@/types/planning';
+import type { Order, ProductionStep, ResourceStatus } from '@/types/planning';
 
 /**
  * A step is considered "blocked" when its Matière OR Outillage status
@@ -14,6 +14,14 @@ export function isStepSelfBlocked(step: ProductionStep): boolean {
   return bad(m) || bad(t);
 }
 
+/** A command is blocked immediately when Matière OR Outillage is red/orange, even before steps exist. */
+export function isOrderSelfBlocked(order: Order): boolean {
+  const m: ResourceStatus = order.materialStatus ?? (order.materialAvailable ? 'disponible' : 'non-disponible');
+  const t: ResourceStatus = order.toolingStatus ?? (order.toolingAvailable ? 'disponible' : 'non-disponible');
+  const bad = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
+  return bad(m) || bad(t);
+}
+
 /**
  * Returns the set of step IDs (across all orders) that must be displayed in
  * "blocked" (violet) style: as soon as one step in an order is self-blocked,
@@ -21,8 +29,9 @@ export function isStepSelfBlocked(step: ProductionStep): boolean {
  *
  * If ALL steps of an order have material AND tooling green, none are blocked.
  */
-export function computeBlockedStepIds(allSteps: ProductionStep[]): Set<string> {
+export function computeBlockedStepIds(allSteps: ProductionStep[], allOrders: Order[] = []): Set<string> {
   const blocked = new Set<string>();
+  const blockedOrderIds = new Set(allOrders.filter(isOrderSelfBlocked).map(o => o.id));
   // Group by orderId
   const byOrder = new Map<string, ProductionStep[]>();
   for (const s of allSteps) {
@@ -31,7 +40,7 @@ export function computeBlockedStepIds(allSteps: ProductionStep[]): Set<string> {
   }
   for (const [, steps] of byOrder) {
     const ordered = [...steps].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    let hit = false;
+    let hit = blockedOrderIds.has(ordered[0]?.orderId);
     for (const s of ordered) {
       if (!hit && isStepSelfBlocked(s)) hit = true;
       if (hit) blocked.add(s.id);
@@ -41,8 +50,9 @@ export function computeBlockedStepIds(allSteps: ProductionStep[]): Set<string> {
 }
 
 /** Returns true if the given order has at least one self-blocked step. */
-export function isOrderBlocked(orderId: string, allSteps: ProductionStep[]): boolean {
-  return allSteps.some(s => s.orderId === orderId && isStepSelfBlocked(s));
+export function isOrderBlocked(orderId: string, allSteps: ProductionStep[], allOrders: Order[] = []): boolean {
+  const order = allOrders.find(o => o.id === orderId);
+  return (order ? isOrderSelfBlocked(order) : false) || allSteps.some(s => s.orderId === orderId && isStepSelfBlocked(s));
 }
 
 /** Tailwind classes to apply to blocked cells/rows in synthesis tables (white text). */
