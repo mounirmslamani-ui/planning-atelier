@@ -1,6 +1,7 @@
 import type { ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type StepProgressStatus = 'Non entamée' | 'En cours' | 'Terminée';
+export type OrderGlobalStatus = 'En attente' | 'En cours' | 'Terminée';
 
 export interface OrderStepStatusDetail {
   step: ProductionStep;
@@ -82,6 +83,19 @@ export function getOrderQualityControlCheck(
     blocker,
     details,
   };
+}
+
+export function getOrderGlobalStatus(
+  orderId: string,
+  allSteps: ProductionStep[],
+  records: ProductionRecord[],
+  absenceOperationId: string,
+): OrderGlobalStatus {
+  const details = getOrderStepStatusDetails(orderId, allSteps, records, absenceOperationId);
+  if (details.length === 0) return 'En attente';
+  if (details.every(detail => detail.status === 'Terminée')) return 'Terminée';
+  if (details.some(detail => detail.status === 'En cours' || detail.status === 'Terminée')) return 'En cours';
+  return 'En attente';
 }
 
 export function buildOrderQualityControlErrorMessage(

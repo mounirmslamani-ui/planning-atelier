@@ -21,7 +21,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
-import { getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
+import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import * as XLSX from 'xlsx';
 
@@ -193,7 +193,7 @@ interface TaskItem {
   order: Order;
 }
 
-type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'machine' | 'status' | 'operation';
+type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
  * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
@@ -1018,6 +1018,7 @@ const PlanningTableauPage: React.FC = () => {
           case 'designation': return t.order.designation.toLowerCase().includes(needle);
           case 'quantity': return String(t.order.quantity).includes(needle);
           case 'priority': return t.order.priority === value;
+          case 'globalStatus': return getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId) === value;
           case 'machine': return getMachineName(t.step) === value;
           case 'status': return getStepProgressStatus(t.step, productionRecords) === value;
           case 'operation': return getOperationName(t.step.operationId) === value;
@@ -1037,6 +1038,7 @@ const PlanningTableauPage: React.FC = () => {
           case 'designation': cmp = a.order.designation.localeCompare(b.order.designation, 'fr'); break;
           case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
           case 'priority': cmp = (priorityRank[a.order.priority] ?? 9) - (priorityRank[b.order.priority] ?? 9); break;
+          case 'globalStatus': cmp = getOrderGlobalStatus(a.order.id, draftSteps, productionRecords, absenceOperationId).localeCompare(getOrderGlobalStatus(b.order.id, draftSteps, productionRecords, absenceOperationId), 'fr'); break;
           case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
           case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
           case 'operation': cmp = getOperationName(a.step.operationId).localeCompare(getOperationName(b.step.operationId), 'fr'); break;
@@ -1046,7 +1048,7 @@ const PlanningTableauPage: React.FC = () => {
     }
 
     return result;
-  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords]);
+  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords, draftSteps, absenceOperationId]);
 
   const hasActiveFilters = Object.values(colFilters).some(Boolean) || !!colSortKey;
 
@@ -1179,6 +1181,9 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[70px] text-xs text-center">
                       <ColumnHeader label="Priorité" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
                     </TableHead>
+                    <TableHead className="w-[105px] text-xs">
+                      <ColumnHeader label="Statut" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['En attente', 'En cours', 'Terminée']} />
+                    </TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[110px] text-xs">
                       <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
@@ -1283,6 +1288,11 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           <PriorityBadge priority={order.priority} />
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="inline-flex items-center justify-center rounded-full border border-muted-foreground/30 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
+                            {getOrderGlobalStatus(order.id, draftSteps, productionRecords, absenceOperationId)}
+                          </span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>

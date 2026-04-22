@@ -22,6 +22,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
+import { getOrderGlobalStatus, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
@@ -32,7 +33,17 @@ const priorityConfig: Record<OrderPriority, { label: string; description: string
 };
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+
+const globalStatusClass: Record<OrderGlobalStatus, string> = {
+  'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
+  'En cours': 'border-accent/30 bg-accent/10 text-accent',
+  'Terminée': 'border-primary/30 bg-primary/10 text-primary',
+};
+
+function GlobalStatusBadge({ status }: { status: OrderGlobalStatus }) {
+  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{status}</span>;
+}
 
 function computeAtelierTime(
   orderId: string,
@@ -52,7 +63,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, qcEntries } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, qcEntries, productionRecords } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -273,6 +284,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
+      case 'globalStatus': return getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
@@ -281,7 +293,7 @@ const OrdersPage: React.FC = () => {
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, atelierTimeMap, orderStatusMap]);
+  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
@@ -452,6 +464,7 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'Désignation', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
     { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
+    { key: 'globalStatus', label: 'Statut', className: 'w-[105px] min-w-[105px]' },
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
     { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
@@ -536,6 +549,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
+      case 'globalStatus': return <GlobalStatusBadge status={getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)} />;
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
@@ -666,7 +680,7 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-14 text-center text-xs px-1">Ordre</TableHead>
               {columns.map(col => (
                 <TableHead key={col.key} className={col.className}>
-                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} />
+                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['En attente', 'En cours', 'Terminée'] : []} />
                 </TableHead>
               ))}
               <TableHead className="w-24 text-xs px-1">Actions</TableHead>
