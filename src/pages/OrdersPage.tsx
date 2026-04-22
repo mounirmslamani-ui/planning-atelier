@@ -933,6 +933,29 @@ const OrdersPage: React.FC = () => {
         />
       )}
 
+      <ConfirmDialog
+        open={materialConfirmOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setMaterialConfirmOpen(false)}
+        onCancel={() => {
+          setMaterialConfirmOpen(false);
+          setMaterialReceivePrompt(null);
+        }}
+      />
+
+      {materialReceivePrompt && !materialConfirmOpen && (
+        <DatePromptDialog
+          open={!!materialReceivePrompt}
+          label="Date de réception de la matière"
+          defaultDate={orders.find(o => o.id === materialReceivePrompt.orderId)?.materialReceivedDate || today}
+          onConfirm={(date) => {
+            applyStatusToOrderAndSteps(materialReceivePrompt.orderId, 'material', materialReceivePrompt.status, undefined, date);
+            setMaterialReceivePrompt(null);
+          }}
+          onCancel={() => setMaterialReceivePrompt(null)}
+        />
+      )}
+
       {/* Move selection by Cn dialog */}
       <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
         <DialogContent className="max-w-sm">
