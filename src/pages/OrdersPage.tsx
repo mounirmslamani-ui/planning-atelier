@@ -11,14 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, HelpCircle, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
@@ -26,7 +25,7 @@ import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
-  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
+  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
   'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
   'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
   'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
@@ -40,47 +39,7 @@ const priorityColors: Record<OrderPriority, string> = {
 
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'cr' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
-
-function computeCR(
-  order: Order,
-  steps: { orderId: string; operationId: string; estimatedDuration: number; subcontractorId?: string }[],
-  productionRecords: { orderId: string; actualDuration: number }[],
-  holidays: { date: string; name: string }[],
-  absenceOpId: string,
-): number | null {
-  // Only operator steps (no subcontractor, no absence)
-  const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOpId && !s.subcontractorId);
-  const totalAllocated = orderSteps.reduce((sum, s) => sum + s.estimatedDuration, 0);
-  if (totalAllocated === 0) return null;
-  const totalDone = productionRecords.filter(r => r.orderId === order.id).reduce((sum, r) => sum + r.actualDuration, 0);
-  const remainingAllocated = Math.max(0, totalAllocated - totalDone);
-  const deadline = order.deliveryDeadline || order.plannedDeadline;
-  if (!deadline) return null;
-  const deadlineDate = new Date(deadline + 'T16:00:00');
-  const now = new Date();
-  let availableMinutes = 0;
-  if (now <= deadlineDate) {
-    const today = new Date(now); today.setHours(0, 0, 0, 0);
-    const deadlineDay = new Date(deadlineDate); deadlineDay.setHours(0, 0, 0, 0);
-    const isWorkDayFn = (d: Date) => {
-      const day = d.getDay();
-      if (day === 5 || day === 6) return false;
-      const str = d.toISOString().split('T')[0];
-      return !holidays.some(h => h.date === str);
-    };
-    if (isWorkDayFn(today)) {
-      const nowTotalMin = now.getHours() * 60 + now.getMinutes();
-      if (nowTotalMin < 12 * 60) { availableMinutes += Math.max(0, 12 * 60 - nowTotalMin) + 210; }
-      else if (nowTotalMin < 12.5 * 60) { availableMinutes += 210; }
-      else if (nowTotalMin < 16 * 60) { availableMinutes += Math.max(0, 16 * 60 - nowTotalMin); }
-    }
-    const cursor = new Date(today); cursor.setDate(cursor.getDate() + 1);
-    while (cursor <= deadlineDay) { if (isWorkDayFn(cursor)) availableMinutes += 450; cursor.setDate(cursor.getDate() + 1); }
-  }
-  if (availableMinutes <= 0) return remainingAllocated > 0 ? 999 : 0;
-  return remainingAllocated / availableMinutes;
-}
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 function computeAtelierTime(
   orderId: string,
