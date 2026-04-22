@@ -1,11 +1,30 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import AppSidebar from './AppSidebar';
 import { usePlanning } from '@/context/PlanningContext';
 import { buildOrderQualityControlErrorMessage, getOrderQualityControlCheck } from '@/lib/stepProgress';
 import { fetchAllData } from '@/lib/supabase-data';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { loading, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry } = usePlanning();
+  const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry } = usePlanning();
+
+  const transferOrderToQualityControl = useCallback((orderId: string) => {
+    if (orderId === absenceOrderId || qcEntries.some(entry => entry.orderId === orderId)) return;
+    addQCEntry({
+      id: crypto.randomUUID(),
+      orderId,
+      controlDate: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
+    });
+  }, [absenceOrderId, qcEntries, addQCEntry]);
+
+  useEffect(() => {
+    if (loading) return;
+    orders.forEach(order => {
+      if (order.id === absenceOrderId || qcEntries.some(entry => entry.orderId === order.id)) return;
+      const check = getOrderQualityControlCheck(order.id, steps, productionRecords, absenceOperationId);
+      if (check.isReady) transferOrderToQualityControl(order.id);
+    });
+  }, [loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, transferOrderToQualityControl]);
 
   const handleProdDrop = useCallback((stepId: string) => {
     window.dispatchEvent(new CustomEvent('prod-register-drop', { detail: { stepId } }));
@@ -33,18 +52,11 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         return;
       }
 
-      if (!qcEntries.some(entry => entry.orderId === step.orderId)) {
-        addQCEntry({
-          id: crypto.randomUUID(),
-          orderId: step.orderId,
-          controlDate: new Date().toISOString().split('T')[0],
-          createdAt: new Date().toISOString(),
-        });
-      }
+      transferOrderToQualityControl(step.orderId);
     };
 
     void tryTransfer();
-  }, [steps, absenceOrderId, productionRecords, absenceOperationId, qcEntries, addQCEntry]);
+  }, [steps, absenceOrderId, productionRecords, absenceOperationId, transferOrderToQualityControl]);
 
   if (loading) {
     return (
