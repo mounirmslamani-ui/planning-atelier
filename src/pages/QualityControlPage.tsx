@@ -13,6 +13,7 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
+import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
 
 const priorityColors: Record<string, string> = {
   'P1': 'bg-urgent text-white',
@@ -40,6 +41,7 @@ const QualityControlPage: React.FC = () => {
     qcEntries, updateQCEntry, orders, clients,
     addDeliveryEntry, deleteQCEntry, deleteOrder,
     addStep, steps, holidays, operations, operators,
+    productionRecords, absenceOperationId,
   } = usePlanning();
 
   const getOrder = (id: string) => orders.find(o => o.id === id);
@@ -102,10 +104,30 @@ const QualityControlPage: React.FC = () => {
     decision: (e: QualityControlEntry) => e.decision ? decisionLabels[e.decision] : '',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(qcEntries, accessors);
+  const testDiagnostic = (() => {
+    const testOrders = orders.filter(order => order.orderNumber.trim().toLowerCase() === 'test');
+    if (testOrders.length === 0) return null;
+    const candidates = testOrders
+      .map(order => ({ order, check: getOrderQualityControlCheck(order.id, steps, productionRecords, absenceOperationId) }))
+      .sort((a, b) => b.check.totalSteps - a.check.totalSteps);
+    const current = candidates[0];
+    if (!current) return null;
+    if (current.check.isReady) {
+      const inQc = qcEntries.some(entry => entry.orderId === current.order.id);
+      return `Diagnostic Test : ${current.check.completedSteps}/${current.check.totalSteps} étape(s) terminée(s). ${inQc ? 'Transfert vers Contrôle Qualité effectué.' : 'Prête pour transfert automatique.'}`;
+    }
+    const reason = buildOrderQualityControlErrorMessage(current.order.id, steps, productionRecords, absenceOperationId);
+    return `Diagnostic Test : ${current.check.completedSteps}/${current.check.totalSteps} étape(s) terminée(s). Blocage : ${reason}`;
+  })();
 
   return (
     <div className="p-6">
       <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} />
+      {testDiagnostic && (
+        <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground">
+          {testDiagnostic}
+        </div>
+      )}
 
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
