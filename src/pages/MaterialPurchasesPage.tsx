@@ -31,6 +31,9 @@ const MaterialPurchasesPage: React.FC = () => {
   const rows = useMemo(() => {
     const isMaterialBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
+    orders
+      .filter(o => o.id !== absenceOrderId && isMaterialBlocked(o.materialStatus))
+      .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
       if (!order || !isMaterialBlocked(order.materialStatus)) return;
