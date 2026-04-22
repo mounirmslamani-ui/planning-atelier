@@ -724,7 +724,7 @@ const OrdersPage: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-9 w-9 min-w-9"
                               onClick={() => setPlanningOrder(o)}
                               title={hasSteps ? 'Affectations' : 'Aucune étape définie — cliquer pour définir'}
                             >
