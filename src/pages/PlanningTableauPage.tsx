@@ -283,6 +283,7 @@ const NUMDAYS_STORAGE_KEY = 'planning-tableau-numdays';
 const PlanningTableauPage: React.FC = () => {
   const {
     operators, orders, steps, clients, operations,
+    equipments,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord,
     qcEntries, addQCEntry,
@@ -404,10 +405,13 @@ const PlanningTableauPage: React.FC = () => {
   }, [operations]);
 
   const getMachineName = useCallback((step: ProductionStep) => {
+    const equipmentNames = (step.equipmentIds || [])
+      .map(id => equipments.find(equipment => equipment.id === id)?.designation)
+      .filter(Boolean) as string[];
+    if (equipmentNames.length > 0) return equipmentNames.join(', ');
     const operatorName = step.operatorId ? operators.find(op => op.id === step.operatorId)?.name : '';
-    if (!step.equipmentIds?.length) return operatorName || '—';
-    return step.equipmentIds.join(', ');
-  }, [operators]);
+    return operatorName || '—';
+  }, [equipments, operators]);
 
   // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
