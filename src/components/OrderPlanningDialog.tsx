@@ -12,6 +12,7 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
+import { getStepProgressStatus } from '@/lib/stepProgress';
 
 interface OperationRow {
   id: string;
@@ -244,14 +245,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     return productionRecords.filter(record => record.stepId === row.stepId);
   };
   const getRowProgressStatus = (row: OperationRow): 'Non entamée' | 'En cours' | 'Terminée' => {
-    if (row.assignType === 'subcontractor' && row.stepId) {
-      const step = steps.find(s => s.id === row.stepId);
-      if (step?.subcontractingDone) return 'Terminée';
-    }
-    const records = getRowRecords(row);
-    if (records.some(record => record.workStatus === 'done')) return 'Terminée';
-    if (records.some(record => record.workStatus === 'continue')) return 'En cours';
-    return 'Non entamée';
+    if (!row.stepId) return 'Non entamée';
+    const step = steps.find(s => s.id === row.stepId);
+    return step ? getStepProgressStatus(step, productionRecords) : 'Non entamée';
   };
   const getRowActualDuration = (row: OperationRow): string => {
     if (row.assignType === 'subcontractor') return 'NA';

@@ -21,6 +21,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
+import { getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import * as XLSX from 'xlsx';
 
@@ -158,13 +159,11 @@ function parseDurationHHMM(value: string): number | null {
 }
 
 function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
-  if (step.subcontractorId) return step.subcontractingDone === true;
-  return records.some(record => record.stepId === step.id && record.workStatus === 'done');
+  return getStepProgressStatus(step, records) === 'Terminée';
 }
 
 function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], records: ProductionRecord[], absenceOperationId: string): boolean {
-  const orderSteps = allSteps.filter(step => step.orderId === orderId && step.operationId !== absenceOperationId);
-  return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
+  return isOrderReadyForQualityControl(orderId, allSteps, records, absenceOperationId);
 }
 
 function recalcStartDates(

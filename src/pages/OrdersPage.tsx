@@ -59,7 +59,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, qcEntries } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -232,11 +232,12 @@ const OrdersPage: React.FC = () => {
   // Sort by displayOrder ascending (playlist style)
   // IDs of orders that have been delivered (conforme / conforme-derogation)
   const deliveredOrderIds = useMemo(() => new Set(deliveryEntries.map(de => de.orderId)), [deliveryEntries]);
+  const qualityControlOrderIds = useMemo(() => new Set(qcEntries.map(entry => entry.orderId)), [qcEntries]);
 
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
+    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id));
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-  }, [orders, absenceOrderId, deliveredOrderIds]);
+  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds]);
 
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
