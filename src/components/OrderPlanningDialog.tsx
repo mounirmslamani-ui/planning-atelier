@@ -445,7 +445,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           open={!!datePrompt}
           label={datePrompt.label}
           onConfirm={(date) => {
-            updateRow(datePrompt.rowId, datePrompt.field, date);
+            setRows(prev => prev.map(row => ({ ...row, [datePrompt.field]: date } as OperationRow)));
             setDatePrompt(null);
           }}
           onCancel={() => {
@@ -455,7 +455,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
               materialDeadline: 'materialStatus',
               toolingDeadline: 'toolingStatus',
             };
-            updateRow(datePrompt.rowId, statusMap[datePrompt.field], 'disponible');
+            const statusKey = statusMap[datePrompt.field];
+            const field = statusKey.replace('Status', '') as 'study' | 'material' | 'tooling';
+            const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+            updateOrder({ ...currentOrder, [statusKey]: 'disponible', [boolKey]: true } as Order);
+            setRows(prev => prev.map(row => ({ ...row, [statusKey]: 'disponible', [datePrompt.field]: '' } as OperationRow)));
             setDatePrompt(null);
           }}
         />
