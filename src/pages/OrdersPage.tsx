@@ -300,7 +300,7 @@ const OrdersPage: React.FC = () => {
       list.sort((a, b) => {
         const va = getColValue(a, sortKey as ColumnKey);
         const vb = getColValue(b, sortKey as ColumnKey);
-        if (sortKey === 'quantity' || sortKey === 'cr' || sortKey === 'atelierTime') {
+        if (sortKey === 'quantity' || sortKey === 'atelierTime') {
           const diff = (Number(va) || 0) - (Number(vb) || 0);
           return sortDir === 'asc' ? diff : -diff;
         }
@@ -459,31 +459,12 @@ const OrdersPage: React.FC = () => {
     { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
     { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
     { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
-    { key: 'cr', label: 'CR', className: 'w-[50px]' },
     { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
     { key: 'material', label: 'Mat.', className: 'w-[35px]' },
     { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
     { key: 'observation', label: 'Observation', className: 'w-[340px]' },
   ];
-
-  const formatCR = (orderId: string) => {
-    const cr = crMap.get(orderId);
-    if (cr == null) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <HelpCircle className="w-4 h-4 text-destructive" />
-            </TooltipTrigger>
-            <TooltipContent>Indéfini — aucune étape planifiée</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-    const color = cr >= 2 ? 'text-urgent' : cr >= 1 ? 'text-urgent-moderate' : 'text-normal';
-    return <span className={`text-xs font-bold ${color}`}>{cr.toFixed(2)}</span>;
-  };
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
@@ -562,7 +543,6 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge>;
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
-      case 'cr': return formatCR(o.id);
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
