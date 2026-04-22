@@ -1091,6 +1091,11 @@ const PlanningTableauPage: React.FC = () => {
                 </span>
               ))}
             </div>
+            {hasActiveFilters && (
+              <Button variant="outline" size="sm" onClick={clearPlanningFilters}>
+                <X className="w-4 h-4 mr-1" /> Effacer tous les filtres
+              </Button>
+            )}
             <Button variant="outline" onClick={handleExport}>
               <Download className="w-4 h-4 mr-1" /> Exporter Excel
             </Button>
@@ -1153,7 +1158,12 @@ const PlanningTableauPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10 px-1 text-center text-xs">Ordre</TableHead>
-                    <TableHead className="w-[70px] text-xs">Date début</TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="Date début" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} filterMode="date" />
+                    </TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="Date fin" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} filterMode="date" />
+                    </TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[80px] text-xs">
                       <ColumnHeader label="N° Cmd" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} />
@@ -1165,7 +1175,15 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[45px] text-xs text-center">Qté</TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
-                    <TableHead className="w-[100px] text-xs">Opération</TableHead>
+                    <TableHead className="w-[110px] text-xs">
+                      <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
+                    </TableHead>
+                    <TableHead className="w-[105px] text-xs">
+                      <ColumnHeader label="Statut" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['Non entamée', 'En cours', 'Terminée']} />
+                    </TableHead>
+                    <TableHead className="w-[120px] text-xs">
+                      <ColumnHeader label="Opération" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={operationFilterOptions} />
+                    </TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">Observation</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
