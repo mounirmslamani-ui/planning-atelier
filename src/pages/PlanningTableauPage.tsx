@@ -995,35 +995,61 @@ const PlanningTableauPage: React.FC = () => {
     setColFilters(prev => ({ ...prev, [key]: value }));
   }, []);
 
+  const clearPlanningFilters = useCallback(() => {
+    setColFilters({});
+    setColSortKey(null);
+    setColSortDir(null);
+  }, []);
+
+  const operationFilterOptions = useMemo(() => (
+    Array.from(new Set(operations.filter(o => o.category === 'operator' && o.id !== absenceOperationId).map(o => o.name))).sort((a, b) => a.localeCompare(b, 'fr'))
+  ), [operations, absenceOperationId]);
+
+  const machineFilterOptions = useMemo(() => (
+    Array.from(new Set(operatorTasks.flatMap(group => group.tasks.map(task => getMachineName(task.step))))).filter(value => value && value !== '—').sort((a, b) => a.localeCompare(b, 'fr'))
+  ), [operatorTasks, getMachineName]);
+
   // Apply filters to tasks within a group
   const filterTasks = useCallback((tasks: TaskItem[]): TaskItem[] => {
     let result = tasks;
-    const clientFilter = colFilters['client']?.toLowerCase();
-    const cmdFilter = colFilters['orderNumber']?.toLowerCase();
+    const normalizedFilters = Object.entries(colFilters).filter(([, value]) => !!value);
 
-    if (clientFilter) {
-      result = result.filter(t => getClientName(t.order.clientId).toLowerCase().includes(clientFilter));
-    }
-    if (cmdFilter) {
-      result = result.filter(t => t.order.orderNumber.toLowerCase().includes(cmdFilter));
-    }
+    normalizedFilters.forEach(([key, value]) => {
+      const needle = value.toLowerCase();
+      result = result.filter(t => {
+        switch (key as PlanningFilterKey) {
+          case 'startDate': return t.step.startDate === value;
+          case 'endDate': return t.step.endDate === value;
+          case 'orderNumber': return t.order.orderNumber.toLowerCase().includes(needle);
+          case 'client': return getClientName(t.order.clientId).toLowerCase().includes(needle);
+          case 'machine': return getMachineName(t.step) === value;
+          case 'status': return getStepProgressStatus(t.step, productionRecords) === value;
+          case 'operation': return getOperationName(t.step.operationId) === value;
+          default: return true;
+        }
+      });
+    });
 
     if (colSortKey && colSortDir) {
       result = [...result].sort((a, b) => {
         let cmp = 0;
-        if (colSortKey === 'client') {
-          cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId));
-        } else if (colSortKey === 'orderNumber') {
-          cmp = a.order.orderNumber.localeCompare(b.order.orderNumber, 'fr', { numeric: true });
+        switch (colSortKey as PlanningFilterKey) {
+          case 'startDate': cmp = a.step.startDate.localeCompare(b.step.startDate); break;
+          case 'endDate': cmp = a.step.endDate.localeCompare(b.step.endDate); break;
+          case 'client': cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId), 'fr'); break;
+          case 'orderNumber': cmp = a.order.orderNumber.localeCompare(b.order.orderNumber, 'fr', { numeric: true }); break;
+          case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
+          case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
+          case 'operation': cmp = getOperationName(a.step.operationId).localeCompare(getOperationName(b.step.operationId), 'fr'); break;
         }
         return colSortDir === 'desc' ? -cmp : cmp;
       });
     }
 
     return result;
-  }, [colFilters, colSortKey, colSortDir, getClientName]);
+  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords]);
 
-  const hasActiveFilters = !!(colFilters['client'] || colFilters['orderNumber'] || colSortKey);
+  const hasActiveFilters = Object.values(colFilters).some(Boolean) || !!colSortKey;
 
   return (
     <div className="p-6">
