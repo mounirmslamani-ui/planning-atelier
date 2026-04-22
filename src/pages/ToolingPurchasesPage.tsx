@@ -23,7 +23,7 @@ const ToolingPurchasesPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [pendingReceipt, setPendingReceipt] = useState<{ stepIds: string[] } | null>(null);
+  const [pendingReceipt, setPendingReceipt] = useState<{ orderId: string; stepIds: string[] } | null>(null);
   const [datePromptOpen, setDatePromptOpen] = useState(false);
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
   const today = new Date().toISOString().split('T')[0];
@@ -114,7 +114,7 @@ const ToolingPurchasesPage: React.FC = () => {
                 <TableCell>{r.order.priority ? <Badge className={`${priorityColors[r.order.priority]} text-xs`}>{r.order.priority}</Badge> : '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
-                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingReceipt({ stepIds: r.stepIds })} /></TableCell>
+                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingReceipt({ orderId: r.orderId, stepIds: r.stepIds })} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -137,7 +137,7 @@ const ToolingPurchasesPage: React.FC = () => {
           label="Date de réception de l'outillage"
           defaultDate={today}
           onConfirm={async (date) => {
-            const saved = await markDone(pendingReceipt.stepIds, date);
+            const saved = await markDone(pendingReceipt.orderId, pendingReceipt.stepIds, date);
             if (!saved) return;
             setDatePromptOpen(false);
             setPendingReceipt(null);
