@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut, X } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
@@ -199,6 +199,8 @@ interface TaskItem {
   step: ProductionStep;
   order: Order;
 }
+
+type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'machine' | 'status' | 'operation';
 
 /**
  * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
@@ -400,6 +402,12 @@ const PlanningTableauPage: React.FC = () => {
   const getOperationName = useCallback((opId: string) => {
     return operations.find(o => o.id === opId)?.name || '—';
   }, [operations]);
+
+  const getMachineName = useCallback((step: ProductionStep) => {
+    const operatorName = step.operatorId ? operators.find(op => op.id === step.operatorId)?.name : '';
+    if (!step.equipmentIds?.length) return operatorName || '—';
+    return step.equipmentIds.join(', ');
+  }, [operators]);
 
   // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
