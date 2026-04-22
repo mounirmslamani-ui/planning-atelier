@@ -19,7 +19,7 @@ const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = 'te
   if (!priority) {
     return (
       <span className="flex w-full items-center justify-center" title="Priorité non renseignée">
-        <WarningTriangleIcon className="h-14 w-14" />
+        <WarningTriangleIcon />
       </span>
     );
   }

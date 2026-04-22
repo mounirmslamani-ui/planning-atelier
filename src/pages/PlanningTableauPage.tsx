@@ -1233,7 +1233,7 @@ const PlanningTableauPage: React.FC = () => {
                             {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
                             {step.frozen && <Lock className="w-3 h-3 text-primary" />}
                             <span className="text-xs font-medium text-muted-foreground">
-                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon className="inline-block h-5 w-5" />}
+                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
                             </span>
                           </div>
                         </TableCell>
