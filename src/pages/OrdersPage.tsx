@@ -703,7 +703,7 @@ const OrdersPage: React.FC = () => {
                         {o.frozenOrder ? (
                           <Lock className="w-3 h-3 text-primary" />
                         ) : (
-                          <WarningTriangleIcon className="h-8 w-8" aria-label="Commande non ordonnée" />
+                          <WarningTriangleIcon className="h-16 w-16" aria-label="Commande non ordonnée" />
                         )}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
@@ -731,7 +731,7 @@ const OrdersPage: React.FC = () => {
                               {hasSteps ? (
                                 <CalendarCheck className="w-3.5 h-3.5" />
                               ) : (
-                                <WarningTriangleIcon className="h-8 w-8" />
+                                <WarningTriangleIcon className="h-16 w-16" />
                               )}
                             </Button>
                           );
