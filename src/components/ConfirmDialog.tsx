@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Props {
@@ -12,21 +12,38 @@ interface Props {
   variant?: 'destructive' | 'default';
 }
 
-const ConfirmDialog: React.FC<Props> = ({ open, title, description, onConfirm, onCancel, confirmLabel = 'Confirmer', cancelLabel = 'Annuler', variant = 'default' }) => (
-  <AlertDialog open={open} onOpenChange={o => { if (!o) onCancel(); }}>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{title}</AlertDialogTitle>
-        {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel onClick={onCancel}>{cancelLabel}</AlertDialogCancel>
-        <AlertDialogAction onClick={onConfirm} className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}>
-          {confirmLabel}
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-);
+const ConfirmDialog: React.FC<Props> = ({ open, title, description, onConfirm, onCancel, confirmLabel = 'Confirmer', cancelLabel = 'Annuler', variant = 'default' }) => {
+  const confirmedRef = useRef(false);
+
+  return (
+    <AlertDialog open={open} onOpenChange={o => {
+      if (o) return;
+      if (confirmedRef.current) {
+        confirmedRef.current = false;
+        return;
+      }
+      onCancel();
+    }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              confirmedRef.current = true;
+              onConfirm();
+            }}
+            className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+          >
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
 
 export default ConfirmDialog;
