@@ -64,7 +64,7 @@ export interface Order {
   clientId: string;
   designation: string;
   quantity: number;
-  priority: OrderPriority;
+  priority?: OrderPriority;
   displayOrder?: number;
   frozenOrder?: boolean;
   plannedDeadline: string;
