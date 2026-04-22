@@ -69,6 +69,10 @@ export default {
         "priority-p3": "hsl(var(--priority-p3))",
         "priority-p4": "hsl(var(--priority-p4))",
         "priority-p5": "hsl(var(--priority-p5))",
+        blocked: {
+          DEFAULT: "hsl(var(--blocked))",
+          foreground: "hsl(var(--blocked-foreground))",
+        },
         gantt: {
           header: "hsl(var(--gantt-header))",
           "header-foreground": "hsl(var(--gantt-header-foreground))",
