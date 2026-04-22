@@ -1181,6 +1181,9 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[70px] text-xs text-center">
                       <ColumnHeader label="Priorité" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
                     </TableHead>
+                    <TableHead className="w-[105px] text-xs">
+                      <ColumnHeader label="Statut" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['En attente', 'En cours', 'Terminée']} />
+                    </TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[110px] text-xs">
                       <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
@@ -1285,6 +1288,11 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           <PriorityBadge priority={order.priority} />
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="inline-flex items-center justify-center rounded-full border border-muted-foreground/30 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
+                            {getOrderGlobalStatus(order.id, draftSteps, productionRecords, absenceOperationId)}
+                          </span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
