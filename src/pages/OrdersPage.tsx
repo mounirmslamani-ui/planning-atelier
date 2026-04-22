@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
@@ -18,6 +17,7 @@ import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
+import PriorityBadge from '@/components/orders/PriorityBadge';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
@@ -30,13 +30,6 @@ const priorityConfig: Record<OrderPriority, { label: string; description: string
   'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
   'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
 };
-const priorityColors: Record<OrderPriority, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
-
 const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
@@ -542,7 +535,7 @@ const OrdersPage: React.FC = () => {
       case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
       case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
-      case 'priority': return <Badge className={`${priorityColors[o.priority]} text-xs`}>{o.priority}</Badge>;
+      case 'priority': return <PriorityBadge priority={o.priority} />;
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
