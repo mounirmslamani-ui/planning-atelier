@@ -64,6 +64,8 @@ const StudyPage: React.FC = () => {
         if (key === 'orderNumber') return r.order.orderNumber.toLowerCase().includes(lv);
         if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
+        if (key === 'quantity') return String(r.order.quantity).includes(val);
+        if (key === 'priority') return r.order.priority === val;
         return true;
       });
     });
@@ -100,9 +102,9 @@ const StudyPage: React.FC = () => {
               <TableHead className="w-12 text-center">#</TableHead>
               <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="text-center">Qté.</TableHead>
-              <TableHead>Priorité</TableHead>
+                <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
               <TableHead>Délai promis</TableHead>
               <TableHead>Date prévue fin étude</TableHead>
               <TableHead className="text-center w-16">Fait</TableHead>
