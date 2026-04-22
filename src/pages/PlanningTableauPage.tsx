@@ -691,8 +691,16 @@ const PlanningTableauPage: React.FC = () => {
   } | null>(null);
 
   const applyStepStatus = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+    const sourceStep = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
+    if (!sourceStep) return;
+
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
+    const isAvailable = status === 'disponible';
+
     setDraftSteps(prev => prev.map(s => {
-      if (s.id !== stepId) return s;
+      if (s.orderId !== sourceStep.orderId || s.operationId === absenceOperationId) return s;
       const updated = { ...s };
       if (field === 'study') {
         updated.studyStatus = status;
@@ -721,8 +729,25 @@ const PlanningTableauPage: React.FC = () => {
       }
       return updated;
     }));
-    setOrderDirty(true);
-  }, []);
+
+    steps
+      .filter(s => s.orderId === sourceStep.orderId && s.operationId !== absenceOperationId)
+      .forEach(s => updateStep({
+        ...s,
+        [statusKey]: status,
+        [boolKey]: isAvailable,
+        [deadlineKey]: (status === 'partiel' || status === 'non-disponible') ? deadline || undefined : undefined,
+      } as ProductionStep));
+
+    const order = orders.find(o => o.id === sourceStep.orderId);
+    if (order) {
+      updateOrder({
+        ...order,
+        [statusKey]: status,
+        [boolKey]: isAvailable,
+      } as Order);
+    }
+  }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder]);
 
   const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
     if (next === 'partiel' || next === 'non-disponible') {
@@ -1075,12 +1100,12 @@ const PlanningTableauPage: React.FC = () => {
                     const designBg = blocked ? 'bg-[hsl(270,50%,55%)] text-white' : getDesignationBg(order.priority);
                     const flowPos = getStepFlowPosition(step, draftSteps);
 
-                    const studyStatus: ResourceStatus = step.studyStatus
-                      ?? (step.studyReady ? 'disponible' : 'non-disponible');
-                    const matStatus: ResourceStatus = step.materialStatus
-                      ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
-                    const toolStatus: ResourceStatus = step.toolingStatus
-                      ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
+                    const studyStatus: ResourceStatus = order.studyStatus ?? step.studyStatus
+                      ?? (order.studyReady || step.studyReady ? 'disponible' : 'non-disponible');
+                    const matStatus: ResourceStatus = order.materialStatus ?? step.materialStatus
+                      ?? (order.materialAvailable || step.materialAvailable ? 'disponible' : 'non-disponible');
+                    const toolStatus: ResourceStatus = order.toolingStatus ?? step.toolingStatus
+                      ?? (order.toolingAvailable || step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
                     const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
                     const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);

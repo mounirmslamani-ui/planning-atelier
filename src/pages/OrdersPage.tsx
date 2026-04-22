@@ -185,42 +185,17 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
-  // Order-level study/material/tooling status (worst case from steps)
-  // Worst order: non-disponible > partiel > disponible > non-applicable
-  const STATUS_RANK: Record<ResourceStatus, number> = {
-    'non-disponible': 3,
-    'partiel': 2,
-    'disponible': 1,
-    'non-applicable': 0,
-  };
   const orderStatusMap = useMemo(() => {
     const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
-      const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
-      if (orderSteps.length === 0) {
-        map.set(o.id, {
-          study: o.studyStatus ?? 'non-disponible',
-          material: o.materialStatus ?? 'non-disponible',
-          tooling: o.toolingStatus ?? 'non-disponible',
-        });
-        return;
-      }
-      const worst = (key: 'studyStatus' | 'materialStatus' | 'toolingStatus'): ResourceStatus => {
-        let acc: ResourceStatus = 'non-applicable';
-        orderSteps.forEach(s => {
-          const v = (s[key] ?? 'disponible') as ResourceStatus;
-          if (STATUS_RANK[v] > STATUS_RANK[acc]) acc = v;
-        });
-        return acc;
-      };
       map.set(o.id, {
-        study: worst('studyStatus'),
-        material: worst('materialStatus'),
-        tooling: worst('toolingStatus'),
+        study: o.studyStatus ?? 'non-disponible',
+        material: o.materialStatus ?? 'non-disponible',
+        tooling: o.toolingStatus ?? 'non-disponible',
       });
     });
     return map;
-  }, [orders, steps, absenceOrderId, absenceOperationId]);
+  }, [orders, absenceOrderId]);
 
   // Date prompt for red/orange transitions
   const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);

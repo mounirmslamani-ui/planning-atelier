@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { OrderPriority } from '@/types/planning';
+import type { OrderPriority, ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
 
 const priorityColors: Record<OrderPriority, string> = {
@@ -16,15 +16,18 @@ const priorityColors: Record<OrderPriority, string> = {
 };
 
 const MaterialPurchasesPage: React.FC = () => {
-  const { orders, clients, steps, updateStep, absenceOrderId, absenceOperationId } = usePlanning();
+  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
 
   const rows = useMemo(() => {
+    const isMaterialBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
-    steps.filter(s => s.operationId !== absenceOperationId && !(s.materialAvailable ?? true)).forEach(s => {
+    steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
+      const order = orders.find(o => o.id === s.orderId);
+      if (!order || !isMaterialBlocked(order.materialStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.materialDeadline || '' });
@@ -58,11 +61,13 @@ const MaterialPurchasesPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const markDone = (stepIds: string[]) => {
+  const markDone = (orderId: string, stepIds: string[]) => {
     stepIds.forEach(id => {
       const step = steps.find(s => s.id === id);
-      if (step) updateStep({ ...step, materialAvailable: true, materialDeadline: undefined });
+      if (step) updateStep({ ...step, materialStatus: 'disponible', materialAvailable: true, materialDeadline: undefined });
     });
+    const order = orders.find(o => o.id === orderId);
+    if (order) updateOrder({ ...order, materialStatus: 'disponible', materialAvailable: true });
   };
 
   return (
@@ -96,7 +101,7 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableCell>{r.order.priority ? <Badge className={`${priorityColors[r.order.priority]} text-xs`}>{r.order.priority}</Badge> : '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
-                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => markDone(r.stepIds)} /></TableCell>
+                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => markDone(r.orderId, r.stepIds)} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
