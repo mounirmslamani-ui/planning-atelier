@@ -1177,9 +1177,15 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[90px] text-xs">
                       <ColumnHeader label="Client" columnKey="client" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['client'] || ''} onFilter={handleColFilter} />
                     </TableHead>
-                    <TableHead className="w-[180px] min-w-[180px] max-w-[180px] text-xs">Désignation</TableHead>
-                    <TableHead className="w-[45px] text-xs text-center">Qté</TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
+                    <TableHead className="w-[180px] min-w-[180px] max-w-[180px] text-xs">
+                      <ColumnHeader label="Désignation" columnKey="designation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['designation'] || ''} onFilter={handleColFilter} />
+                    </TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">
+                      <ColumnHeader label="Qté" columnKey="quantity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['quantity'] || ''} onFilter={handleColFilter} />
+                    </TableHead>
+                    <TableHead className="w-[70px] text-xs text-center">
+                      <ColumnHeader label="Priorité" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
+                    </TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[110px] text-xs">
                       <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
