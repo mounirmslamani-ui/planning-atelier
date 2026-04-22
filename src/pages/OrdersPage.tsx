@@ -59,7 +59,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, productionRecords, holidays, absenceOperationId, absenceOrderId, deliveryEntries } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -128,14 +128,6 @@ const OrdersPage: React.FC = () => {
     if (!id) return '*******';
     return clients.find(c => c.id === id)?.name || '*******';
   }, [clients]);
-
-  const crMap = useMemo(() => {
-    const map = new Map<string, number | null>();
-    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
-      map.set(o.id, computeCR(o, steps, productionRecords, holidays, absenceOperationId));
-    });
-    return map;
-  }, [orders, steps, productionRecords, holidays, absenceOrderId, absenceOperationId]);
 
   const atelierTimeMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -288,7 +280,6 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
-      case 'cr': { const cr = crMap.get(o.id); return cr != null ? cr.toFixed(2) : ''; }
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
       case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
@@ -296,7 +287,7 @@ const OrdersPage: React.FC = () => {
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, crMap, atelierTimeMap, orderStatusMap]);
+  }, [getClientName, atelierTimeMap, orderStatusMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
