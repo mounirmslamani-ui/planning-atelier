@@ -142,6 +142,16 @@ function formatMinutesToHM(minutes: number): string {
   return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h00`;
 }
 
+function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
+  if (step.subcontractorId) return step.subcontractingDone === true;
+  return records.some(record => record.stepId === step.id && record.workStatus === 'done');
+}
+
+function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], records: ProductionRecord[], absenceOperationId: string): boolean {
+  const orderSteps = allSteps.filter(step => step.orderId === orderId && step.operationId !== absenceOperationId);
+  return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
+}
+
 function recalcStartDates(
   tasks: { step: ProductionStep; order: Order }[],
   holidays: Holiday[],
