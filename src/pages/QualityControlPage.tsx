@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { QCDecision, QualityControlEntry } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import DatePromptDialog from '@/components/DatePromptDialog';
 
 const priorityColors: Record<string, string> = {
   'P1': 'bg-urgent text-white',
@@ -46,11 +48,16 @@ const QualityControlPage: React.FC = () => {
   const [reworkDialogOpen, setReworkDialogOpen] = useState(false);
   const [reworkEntry, setReworkEntry] = useState<QualityControlEntry | null>(null);
   const [reworkNotes, setReworkNotes] = useState('');
+  const [pendingDecision, setPendingDecision] = useState<{ entry: QualityControlEntry; decision: QCDecision } | null>(null);
+  const [datePromptOpen, setDatePromptOpen] = useState(false);
 
-  const handleDecisionChange = (entry: QualityControlEntry, decision: QCDecision) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  const applyDecisionChange = (entry: QualityControlEntry, decision: QCDecision, controlDate: string) => {
+    const datedEntry = { ...entry, controlDate };
     if (decision === 'reprise-retouche') {
-      setReworkEntry(entry);
-      setReworkNotes(entry.reworkNotes || '');
+      setReworkEntry(datedEntry);
+      setReworkNotes(datedEntry.reworkNotes || '');
       setReworkDialogOpen(true);
       return;
     }
@@ -58,16 +65,21 @@ const QualityControlPage: React.FC = () => {
     if (decision === 'conforme' || decision === 'conforme-derogation') {
       addDeliveryEntry({
         id: crypto.randomUUID(),
-        orderId: entry.orderId,
-        controlDate: entry.controlDate,
+        orderId: datedEntry.orderId,
+        controlDate,
         decision,
         movedAt: new Date().toISOString(),
       });
-      deleteQCEntry(entry.id);
+      deleteQCEntry(datedEntry.id);
       return;
     }
 
-    updateQCEntry({ ...entry, decision });
+    updateQCEntry({ ...datedEntry, decision });
+  };
+
+  const handleDecisionChange = (entry: QualityControlEntry, decision: QCDecision) => {
+    if (!decision) return;
+    setPendingDecision({ entry, decision });
   };
 
   const handleReworkSave = () => {
@@ -196,6 +208,30 @@ const QualityControlPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!pendingDecision && !datePromptOpen}
+        title="Confirmez-vous cette action ?"
+        onConfirm={() => setDatePromptOpen(true)}
+        onCancel={() => setPendingDecision(null)}
+      />
+
+      {pendingDecision && datePromptOpen && (
+        <DatePromptDialog
+          open={datePromptOpen}
+          label="Date du contrôle qualité"
+          defaultDate={pendingDecision.entry.controlDate || today}
+          onConfirm={(date) => {
+            applyDecisionChange(pendingDecision.entry, pendingDecision.decision, date);
+            setDatePromptOpen(false);
+            setPendingDecision(null);
+          }}
+          onCancel={() => {
+            setDatePromptOpen(false);
+            setPendingDecision(null);
+          }}
+        />
+      )}
     </div>
   );
 };
