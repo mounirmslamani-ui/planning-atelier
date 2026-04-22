@@ -1309,23 +1309,29 @@ const GanttChart: React.FC = () => {
                   <p><span className="text-muted-foreground">Durée estimée :</span> {step ? (step.estimatedDuration / 60).toFixed(2) : 0}h</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Durée réelle (heures)</label>
+                  <label className="text-sm font-medium mb-1 block">Durée de l'intervention (HH:mm)</label>
                   <Input
-                    type="number"
-                    min={0}
-                    step={0.25}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
+                    placeholder="02:30"
+                    maxLength={5}
+                    className="font-mono"
                     value={validateActualDuration}
                     onChange={e => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setValidateActualDuration(val);
+                      const value = normalizeDurationInput(e.target.value);
+                      const minutes = parseDurationHHMM(value);
+                      setValidateActualDuration(value);
+                      setValidateDurationError(minutes !== null && minutes > MAX_SESSION_DURATION_MINUTES ? 'La durée maximale par session est de 12h00' : '');
                       // Auto-update remaining duration
-                      if (step) {
-                        const remaining = Math.max(0, parseFloat((step.estimatedDuration / 60).toFixed(2)) - val);
-                        setValidateRemainingDuration(parseFloat(remaining.toFixed(2)));
+                      if (step && minutes !== null) {
+                        const remaining = Math.max(0, step.estimatedDuration - minutes);
+                        setValidateRemainingDuration(parseFloat((remaining / 60).toFixed(2)));
                       }
                     }}
                     autoFocus
                   />
+                  {validateDurationError && <p className="mt-1 text-xs text-destructive">{validateDurationError}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">État du travail</label>
@@ -1343,7 +1349,8 @@ const GanttChart: React.FC = () => {
                       onClick={() => {
                         setValidateWorkDone('continue');
                         if (step) {
-                          const remaining = Math.max(0, parseFloat((step.estimatedDuration / 60).toFixed(2)) - validateActualDuration);
+                          const actualMinutes = parseDurationHHMM(validateActualDuration) ?? 0;
+                          const remaining = Math.max(0, (step.estimatedDuration - actualMinutes) / 60);
                           setValidateRemainingDuration(parseFloat(remaining.toFixed(2)));
                         }
                       }}
