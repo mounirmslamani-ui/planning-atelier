@@ -731,13 +731,19 @@ const GanttChart: React.FC = () => {
     if (!validateStepId) return;
     const step = steps.find(s => s.id === validateStepId);
     if (!step) return;
+    const actualDurationMinutes = parseDurationHHMM(validateActualDuration);
+    if (actualDurationMinutes === null) return;
+    if (actualDurationMinutes > MAX_SESSION_DURATION_MINUTES) {
+      setValidateDurationError('La durée maximale par session est de 12h00');
+      return;
+    }
     const record: ProductionRecord = {
       id: crypto.randomUUID(),
       stepId: step.id,
       orderId: step.orderId,
       operatorId: step.operatorId,
       operationId: step.operationId,
-      actualDuration: Math.round(validateActualDuration * 60),
+      actualDuration: actualDurationMinutes,
       validatedAt: new Date().toISOString(),
       workStatus: validateWorkDone === 'continue' ? 'continue' : 'done',
     };
