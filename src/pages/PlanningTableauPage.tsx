@@ -1236,6 +1236,7 @@ const PlanningTableauPage: React.FC = () => {
                             value={matStatus}
                             onChange={(next) => handleStatusChange(step.id, 'material', next)}
                             deadline={step.materialDeadline}
+                            receivedDate={order.materialReceivedDate}
                           />
                         </TableCell>
                         {/* Outillage */}
