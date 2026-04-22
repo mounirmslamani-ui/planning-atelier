@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import type { QCDecision, QualityControlEntry } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
+import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
@@ -151,9 +152,7 @@ const QualityControlPage: React.FC = () => {
               return (
                 <TableRow key={entry.id}>
                   <TableCell>
-                    {order.priority ? (
-                      <Badge className={priorityColors[order.priority] || ''}>{order.priority}</Badge>
-                    ) : <span className="text-muted-foreground text-xs">—</span>}
+                    <PriorityBadge priority={order.priority} className="" />
                   </TableCell>
                   <TableCell className="font-heading text-sm">{order.orderNumber}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(order.orderDate)}</TableCell>

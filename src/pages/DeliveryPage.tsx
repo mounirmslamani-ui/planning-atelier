@@ -5,6 +5,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import ColumnHeader from '@/components/orders/ColumnHeader';
+import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveryEntry } from '@/types/planning';
 
@@ -59,9 +60,7 @@ const DeliveryPage: React.FC = () => {
               return (
                 <TableRow key={entry.id}>
                   <TableCell>
-                    {order.priority ? (
-                      <Badge className={priorityColors[order.priority] || ''}>{order.priority}</Badge>
-                    ) : <span className="text-muted-foreground text-xs">—</span>}
+                    <PriorityBadge priority={order.priority} className="" />
                   </TableCell>
                   <TableCell className="font-heading text-sm">{order.orderNumber}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(order.orderDate)}</TableCell>

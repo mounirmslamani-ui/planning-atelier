@@ -1,17 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { Order, OrderPriority } from '@/types/planning';
-
-const priorityColors: Record<OrderPriority, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
+import PriorityBadge from '@/components/orders/PriorityBadge';
+import type { Order } from '@/types/planning';
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline';
 
@@ -101,9 +94,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
                 <TableCell className="text-sm">{order.designation}</TableCell>
                 <TableCell className="text-center text-sm">{order.quantity}</TableCell>
                 <TableCell>
-                  {order.priority ? (
-                    <Badge className={`${priorityColors[order.priority]} text-xs`}>{order.priority}</Badge>
-                  ) : '—'}
+                  <PriorityBadge priority={order.priority} />
                 </TableCell>
                 <TableCell className="text-sm">{formatDateFR(order.plannedDeadline) || '—'}</TableCell>
               </TableRow>
