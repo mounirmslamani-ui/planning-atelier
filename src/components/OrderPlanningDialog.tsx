@@ -157,7 +157,22 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    updateRow(rowId, statusKey, status);
+    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+    const isAvailable = status === 'disponible';
+    const updatedOrder = {
+      ...currentOrder,
+      [statusKey]: status,
+      [boolKey]: isAvailable,
+      ...(field === 'material' && !isAvailable ? { materialReceivedDate: undefined } : {}),
+    } as Order;
+
+    updateOrder(updatedOrder);
+    setRows(prev => prev.map(row => ({
+      ...row,
+      [statusKey]: status,
+      ...(status === 'disponible' || status === 'non-applicable' ? { [deadlineKey]: '' } : {}),
+    } as OperationRow)));
+
     if (status === 'non-disponible' || status === 'partiel') {
       const labels = {
         study: 'Date prévue pour fin Étude',
@@ -165,8 +180,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         tooling: 'Date prévue pour disponibilité Outillage',
       };
       setDatePrompt({ rowId, field: deadlineKey, label: labels[field] });
-    } else {
-      updateRow(rowId, deadlineKey, '');
     }
   };
 
@@ -211,12 +224,12 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     // Attach step-level prerequisites from rows
     newSteps.forEach((s, i) => {
       if (rows[i]) {
-        s.studyStatus = rows[i].studyStatus;
-        s.materialStatus = rows[i].materialStatus;
-        s.toolingStatus = rows[i].toolingStatus;
-        s.studyReady = rows[i].studyStatus === 'disponible';
-        s.materialAvailable = rows[i].materialStatus === 'disponible';
-        s.toolingAvailable = rows[i].toolingStatus === 'disponible';
+        s.studyStatus = currentOrder.studyStatus ?? rows[i].studyStatus;
+        s.materialStatus = currentOrder.materialStatus ?? rows[i].materialStatus;
+        s.toolingStatus = currentOrder.toolingStatus ?? rows[i].toolingStatus;
+        s.studyReady = s.studyStatus === 'disponible';
+        s.materialAvailable = s.materialStatus === 'disponible';
+        s.toolingAvailable = s.toolingStatus === 'disponible';
         s.studyDeadline = rows[i].studyDeadline;
         s.materialDeadline = rows[i].materialDeadline;
         s.toolingDeadline = rows[i].toolingDeadline;
