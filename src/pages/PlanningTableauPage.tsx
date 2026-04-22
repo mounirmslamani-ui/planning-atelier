@@ -881,13 +881,13 @@ const PlanningTableauPage: React.FC = () => {
 
     if (finished) {
       // Remove from local draftSteps immediately so it disappears from Planning Tableau
-      setDraftSteps(prev => prev.filter(s => s.id !== stepId));
-      deleteStep(stepId);
+      setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: true } : s));
 
-      // Check if this was the last step for the order → move to Quality Control
-      const remainingSteps = steps.filter(s => s.id !== stepId && s.orderId === orderId && s.orderId !== absenceOrderId);
-      const remainingDraft = draftSteps.filter(s => s.id !== stepId && s.orderId === orderId);
-      if (remainingSteps.length === 0 && remainingDraft.length === 0) {
+      const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
+      const allFinished = allKnownSteps
+        .filter(s => s.orderId === orderId && s.operationId !== absenceOperationId)
+        .every(s => s.id === stepId ? true : isStepFinished(s, productionRecords));
+      if (allFinished && orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === orderId)) {
         addQCEntry({
           id: crypto.randomUUID(),
           orderId,
@@ -909,7 +909,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     }
     setCompletionDialog(null);
-  }, [completionDialog, addProductionRecord, deleteStep, draftSteps, steps, absenceOrderId, addQCEntry, updateStep, holidays]);
+  }, [completionDialog, addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep, holidays]);
 
   // Export to Excel
   const handleExport = useCallback(() => {
