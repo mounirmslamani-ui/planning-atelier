@@ -24,6 +24,16 @@ const MINUTE_WIDTH_WEEK = 0.36; // px per work-minute in week view
 const MINUTE_WIDTH_MONTH = 0.09; // px per work-minute in month view
 const ROW_HEIGHT = 52;
 
+function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
+  if (step.subcontractorId) return step.subcontractingDone === true;
+  return records.some(record => record.stepId === step.id && record.workStatus === 'done');
+}
+
+function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], records: ProductionRecord[], absenceOperationId: string): boolean {
+  const orderSteps = allSteps.filter(step => step.orderId === orderId && step.operationId !== absenceOperationId);
+  return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
+}
+
 function getPriorityBorderColor(order: Order): string {
   const p = order.priority;
   if (p === 'P1') return 'border-[hsl(0,72%,51%)]'; // red
@@ -153,12 +163,12 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
 
 const GanttChart: React.FC = () => {
   const {
-    operators, operations, orders, steps, holidays, clients, subcontractors, equipments,
+    operators, operations, orders, steps, holidays, clients, subcontractors, equipments, productionRecords,
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
-    deleteStep, addQCEntry, setSteps,
+    deleteStep, qcEntries, addQCEntry, setSteps,
     undo, redo, canUndo, canRedo,
     absenceOperationId, absenceOrderId, loading,
   } = usePlanning();
@@ -454,11 +464,11 @@ const GanttChart: React.FC = () => {
   }, []);
 
   const filteredSteps = useMemo(() => {
-    let result = steps;
+    let result = steps.filter(s => !isStepFinished(s, productionRecords));
     if (selectedOperatorId) result = result.filter(s => s.operatorId === selectedOperatorId);
     if (selectedOrderId) result = result.filter(s => s.orderId === selectedOrderId);
     return result;
-  }, [steps, selectedOperatorId, selectedOrderId]);
+  }, [steps, productionRecords, selectedOperatorId, selectedOrderId]);
 
   // Determine how many work days to show based on view
   const numWorkDays = useMemo(() => {
@@ -710,6 +720,7 @@ const GanttChart: React.FC = () => {
       operationId: step.operationId,
       actualDuration: Math.round(validateActualDuration * 60),
       validatedAt: new Date().toISOString(),
+      workStatus: validateWorkDone === 'continue' ? 'continue' : 'done',
     };
     addProductionRecord(record);
 
@@ -718,9 +729,8 @@ const GanttChart: React.FC = () => {
       const remainingMin = Math.round(validateRemainingDuration * 60);
       const continueStart = new Date(`${validateContinueDate}T${validateContinueTime || '08:00'}`);
       const continueEnd = addWorkMinutes(continueStart, remainingMin, holidays);
-      addStep({
+      updateStep({
         ...step,
-        id: crypto.randomUUID(),
         estimatedDuration: remainingMin,
         startDate: continueStart.toISOString().split('T')[0],
         startTime: `${String(continueStart.getHours()).padStart(2, '0')}:${String(continueStart.getMinutes()).padStart(2, '0')}`,
@@ -728,9 +738,10 @@ const GanttChart: React.FC = () => {
         endTime: `${String(continueEnd.getHours()).padStart(2, '0')}:${String(continueEnd.getMinutes()).padStart(2, '0')}`,
       });
     } else {
-      // Check if this was the last step for the order (no other steps remaining on planning after removal)
-      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== absenceOperationId);
-      if (otherSteps.length === 0 && step.orderId !== absenceOrderId) {
+      const allFinished = steps
+        .filter(s => s.orderId === step.orderId && s.operationId !== absenceOperationId)
+        .every(s => s.id === step.id ? true : isStepFinished(s, productionRecords));
+      if (allFinished && step.orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === step.orderId)) {
         // Move order to Quality Control
         addQCEntry({
           id: crypto.randomUUID(),
@@ -741,12 +752,9 @@ const GanttChart: React.FC = () => {
       }
     }
 
-    // Remove the validated step from the planning
-    deleteStep(step.id);
-
     setValidateDialogOpen(false);
     setValidateStepId(null);
-  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, holidays, addProductionRecord, addStep, deleteStep, addQCEntry]);
+  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, productionRecords, holidays, addProductionRecord, updateStep, absenceOperationId, absenceOrderId, qcEntries, addQCEntry]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';

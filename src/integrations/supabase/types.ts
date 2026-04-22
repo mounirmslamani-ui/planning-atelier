@@ -279,6 +279,7 @@ export type Database = {
           order_id: string
           step_id: string
           validated_at: string
+          work_status: string
         }
         Insert: {
           actual_duration?: number
@@ -289,6 +290,7 @@ export type Database = {
           order_id: string
           step_id: string
           validated_at?: string
+          work_status?: string
         }
         Update: {
           actual_duration?: number
@@ -299,6 +301,7 @@ export type Database = {
           order_id?: string
           step_id?: string
           validated_at?: string
+          work_status?: string
         }
         Relationships: [
           {

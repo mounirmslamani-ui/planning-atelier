@@ -142,6 +142,16 @@ function formatMinutesToHM(minutes: number): string {
   return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h00`;
 }
 
+function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
+  if (step.subcontractorId) return step.subcontractingDone === true;
+  return records.some(record => record.stepId === step.id && record.workStatus === 'done');
+}
+
+function areAllOrderStepsFinished(orderId: string, allSteps: ProductionStep[], records: ProductionRecord[], absenceOperationId: string): boolean {
+  const orderSteps = allSteps.filter(step => step.orderId === orderId && step.operationId !== absenceOperationId);
+  return orderSteps.length > 0 && orderSteps.every(step => isStepFinished(step, records));
+}
+
 function recalcStartDates(
   tasks: { step: ProductionStep; order: Order }[],
   holidays: Holiday[],
@@ -258,8 +268,8 @@ const PlanningTableauPage: React.FC = () => {
   const {
     operators, orders, steps, clients, operations,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
-    holidays, productionRecords, addProductionRecord, deleteStep,
-    addQCEntry,
+    holidays, productionRecords, addProductionRecord,
+    qcEntries, addQCEntry,
     undo, redo, canUndo, canRedo,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
@@ -390,6 +400,7 @@ const PlanningTableauPage: React.FC = () => {
     draftSteps.forEach(step => {
       if (step.operationId === absenceOperationId) return;
       if (step.orderId === absenceOrderId) return;
+      if (isStepFinished(step, productionRecords)) return;
       if (!step.operatorId) return;
       if (!step.startDate || !step.endDate) return;
       if (step.subcontractorId) return;
@@ -429,7 +440,7 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId]);
+  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
@@ -810,22 +821,18 @@ const PlanningTableauPage: React.FC = () => {
     const orderId = step.orderId;
     if (orderId === absenceOrderId) return;
 
-    // Remove ALL remaining steps for this order from draft and DB
-    const orderStepIds = [...draftSteps, ...steps]
-      .filter(s => s.orderId === orderId)
-      .map(s => s.id);
-    const uniqueIds = [...new Set(orderStepIds)];
-    uniqueIds.forEach(id => deleteStep(id));
-    setDraftSteps(prev => prev.filter(s => s.orderId !== orderId));
+    const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
+    if (!areAllOrderStepsFinished(orderId, allKnownSteps, productionRecords, absenceOperationId)) return;
 
-    // Create QC entry
-    addQCEntry({
-      id: crypto.randomUUID(),
-      orderId,
-      controlDate: new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
-    });
-  }, [draftSteps, steps, absenceOrderId, deleteStep, addQCEntry]);
+    if (!qcEntries.some(entry => entry.orderId === orderId)) {
+      addQCEntry({
+        id: crypto.randomUUID(),
+        orderId,
+        controlDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }, [draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -868,18 +875,19 @@ const PlanningTableauPage: React.FC = () => {
     const record: ProductionRecord = {
       id: crypto.randomUUID(), stepId, orderId, operatorId, operationId,
       actualDuration: durationToday, validatedAt: new Date().toISOString(),
+      workStatus: finished ? 'done' : 'continue',
     };
     addProductionRecord(record);
 
     if (finished) {
       // Remove from local draftSteps immediately so it disappears from Planning Tableau
-      setDraftSteps(prev => prev.filter(s => s.id !== stepId));
-      deleteStep(stepId);
+      setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: true } : s));
 
-      // Check if this was the last step for the order → move to Quality Control
-      const remainingSteps = steps.filter(s => s.id !== stepId && s.orderId === orderId && s.orderId !== absenceOrderId);
-      const remainingDraft = draftSteps.filter(s => s.id !== stepId && s.orderId === orderId);
-      if (remainingSteps.length === 0 && remainingDraft.length === 0) {
+      const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
+      const allFinished = allKnownSteps
+        .filter(s => s.orderId === orderId && s.operationId !== absenceOperationId)
+        .every(s => s.id === stepId ? true : isStepFinished(s, productionRecords));
+      if (allFinished && orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === orderId)) {
         addQCEntry({
           id: crypto.randomUUID(),
           orderId,
@@ -901,7 +909,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     }
     setCompletionDialog(null);
-  }, [completionDialog, addProductionRecord, deleteStep, draftSteps, steps, absenceOrderId, addQCEntry, updateStep, holidays]);
+  }, [completionDialog, addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep, holidays]);
 
   // Export to Excel
   const handleExport = useCallback(() => {
