@@ -1242,6 +1242,16 @@ const PlanningTableauPage: React.FC = () => {
                             <span className="text-xs">{formatDateFR(step.startDate)}</span>
                           )}
                         </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          {isEditing ? (
+                            <Input type="date" className="h-7 text-xs w-[110px]"
+                              value={getStepInlineValue(step, 'endDate') || ''}
+                              onChange={e => setStepInlineValue(step.id, 'endDate', e.target.value)}
+                              onClick={e => e.stopPropagation()} />
+                          ) : (
+                            <span className="text-xs">{formatDateFR(step.endDate)}</span>
+                          )}
+                        </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           {isEditing ? (
                             <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
@@ -1271,6 +1281,12 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{getMachineName(step)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <div className="flex items-center gap-1">
