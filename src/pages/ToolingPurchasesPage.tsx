@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { OrderPriority } from '@/types/planning';
+import type { OrderPriority, ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
@@ -29,8 +29,14 @@ const ToolingPurchasesPage: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
 
   const rows = useMemo(() => {
+    const isToolingBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
-    steps.filter(s => s.operationId !== absenceOperationId && !(s.toolingAvailable ?? true)).forEach(s => {
+    orders
+      .filter(o => o.id !== absenceOrderId && isToolingBlocked(o.toolingStatus))
+      .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
+    steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
+      const order = orders.find(o => o.id === s.orderId);
+      if (!order || !isToolingBlocked(s.toolingStatus ?? order.toolingStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.toolingDeadline || '' });
@@ -64,7 +70,7 @@ const ToolingPurchasesPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const markDone = async (stepIds: string[], receivedDate: string) => {
+  const markDone = async (orderId: string, stepIds: string[], receivedDate: string) => {
     const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
       return step ? { ...step, toolingStatus: 'disponible' as const, toolingAvailable: true, toolingDeadline: undefined, toolingReceivedDate: receivedDate } : null;
