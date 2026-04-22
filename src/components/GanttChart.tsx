@@ -168,7 +168,7 @@ const GanttChart: React.FC = () => {
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
     updateStep, addStep, addProductionRecord,
-    qcEntries, addQCEntry, setSteps,
+    deleteStep, qcEntries, addQCEntry, setSteps,
     undo, redo, canUndo, canRedo,
     absenceOperationId, absenceOrderId, loading,
   } = usePlanning();
