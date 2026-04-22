@@ -61,6 +61,8 @@ const ToolingPurchasesPage: React.FC = () => {
         if (key === 'orderNumber') return r.order.orderNumber.toLowerCase().includes(lv);
         if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
+        if (key === 'quantity') return String(r.order.quantity).includes(val);
+        if (key === 'priority') return r.order.priority === val;
         return true;
       });
     });
