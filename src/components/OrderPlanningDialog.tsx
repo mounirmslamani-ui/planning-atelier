@@ -285,6 +285,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                   <TableHead>Option 1</TableHead>
                   <TableHead>Option 2</TableHead>
                   <TableHead>Option 3</TableHead>
+                  <TableHead className="w-28">Statut</TableHead>
+                  <TableHead className="w-20">Durée</TableHead>
                   <TableHead className="w-12 text-center text-xs">Étude</TableHead>
                   <TableHead className="w-12 text-center text-xs">Mat.</TableHead>
                   <TableHead className="w-12 text-center text-xs">Out.</TableHead>
@@ -353,6 +355,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     <TableCell>{renderAssigneeSelect(row, 'option1')}</TableCell>
                     <TableCell>{renderAssigneeSelect(row, 'option2')}</TableCell>
                     <TableCell>{renderAssigneeSelect(row, 'option3')}</TableCell>
+                    <TableCell className="text-xs font-medium">{getRowProgressStatus(row)}</TableCell>
+                    <TableCell className="text-xs font-mono">{getRowActualDuration(row)}</TableCell>
                     <TableCell className="text-center">
                       <ResourceStatusPill
                         value={row.studyStatus}
@@ -396,7 +400,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 })()}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={14} className="text-center text-muted-foreground py-6">
                       Ajoutez des opérations pour cette commande.
                     </TableCell>
                   </TableRow>
