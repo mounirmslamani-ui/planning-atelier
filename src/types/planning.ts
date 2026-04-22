@@ -131,6 +131,7 @@ export interface ProductionRecord {
   operationId: string;
   actualDuration: number; // in minutes
   validatedAt: string; // ISO date-time
+  workStatus?: 'done' | 'continue';
 }
 
 export type GanttView = 'day' | 'week' | 'month';
