@@ -5,21 +5,27 @@ import type { Order, ProductionStep, ResourceStatus } from '@/types/planning';
  * is red (non-disponible) or orange (partiel).
  * Étude is intentionally NOT considered here per spec.
  */
-export function isStepSelfBlocked(step: ProductionStep): boolean {
+const isBlockingStatus = (status: ResourceStatus): boolean => status === 'partiel' || status === 'non-disponible';
+
+function getOrderResourceStatus(order: Order | undefined, field: 'material' | 'tooling'): ResourceStatus | undefined {
+  if (!order) return undefined;
+  if (field === 'material') return order.materialStatus ?? (order.materialAvailable ? 'disponible' : 'non-disponible');
+  return order.toolingStatus ?? (order.toolingAvailable ? 'disponible' : 'non-disponible');
+}
+
+export function isStepSelfBlocked(step: ProductionStep, order?: Order): boolean {
   const m: ResourceStatus =
-    step.materialStatus ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
+    getOrderResourceStatus(order, 'material') ?? step.materialStatus ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
   const t: ResourceStatus =
-    step.toolingStatus ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
-  const bad = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
-  return bad(m) || bad(t);
+    getOrderResourceStatus(order, 'tooling') ?? step.toolingStatus ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
+  return isBlockingStatus(m) || isBlockingStatus(t);
 }
 
 /** A command is blocked immediately when Matière OR Outillage is red/orange, even before steps exist. */
 export function isOrderSelfBlocked(order: Order): boolean {
   const m: ResourceStatus = order.materialStatus ?? (order.materialAvailable ? 'disponible' : 'non-disponible');
   const t: ResourceStatus = order.toolingStatus ?? (order.toolingAvailable ? 'disponible' : 'non-disponible');
-  const bad = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
-  return bad(m) || bad(t);
+  return isBlockingStatus(m) || isBlockingStatus(t);
 }
 
 /**
@@ -31,6 +37,7 @@ export function isOrderSelfBlocked(order: Order): boolean {
  */
 export function computeBlockedStepIds(allSteps: ProductionStep[], allOrders: Order[] = []): Set<string> {
   const blocked = new Set<string>();
+  const ordersById = new Map(allOrders.map(o => [o.id, o]));
   const blockedOrderIds = new Set(allOrders.filter(isOrderSelfBlocked).map(o => o.id));
   // Group by orderId
   const byOrder = new Map<string, ProductionStep[]>();
@@ -40,9 +47,10 @@ export function computeBlockedStepIds(allSteps: ProductionStep[], allOrders: Ord
   }
   for (const [, steps] of byOrder) {
     const ordered = [...steps].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const order = ordersById.get(ordered[0]?.orderId);
     let hit = blockedOrderIds.has(ordered[0]?.orderId);
     for (const s of ordered) {
-      if (!hit && isStepSelfBlocked(s)) hit = true;
+      if (!hit && isStepSelfBlocked(s, order)) hit = true;
       if (hit) blocked.add(s.id);
     }
   }
@@ -52,7 +60,8 @@ export function computeBlockedStepIds(allSteps: ProductionStep[], allOrders: Ord
 /** Returns true if the given order has at least one self-blocked step. */
 export function isOrderBlocked(orderId: string, allSteps: ProductionStep[], allOrders: Order[] = []): boolean {
   const order = allOrders.find(o => o.id === orderId);
-  return (order ? isOrderSelfBlocked(order) : false) || allSteps.some(s => s.orderId === orderId && isStepSelfBlocked(s));
+  if (order) return isOrderSelfBlocked(order);
+  return allSteps.some(s => s.orderId === orderId && isStepSelfBlocked(s));
 }
 
 /** Tailwind classes to apply to blocked cells/rows in synthesis tables (white text). */
