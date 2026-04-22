@@ -689,8 +689,11 @@ const PlanningTableauPage: React.FC = () => {
     field: 'study' | 'material' | 'tooling';
     nextStatus: ResourceStatus;
   } | null>(null);
+  const [materialReceivePrompt, setMaterialReceivePrompt] = useState<{ stepId: string; nextStatus: ResourceStatus } | null>(null);
+  const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
 
-  const applyStepStatus = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string) => {
+  const applyStepStatus = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
     const sourceStep = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
     if (!sourceStep) return;
 
@@ -745,6 +748,7 @@ const PlanningTableauPage: React.FC = () => {
         ...order,
         [statusKey]: status,
         [boolKey]: isAvailable,
+        ...(field === 'material' ? { materialReceivedDate: isAvailable ? receivedDate : undefined } : {}),
       } as Order);
     }
   }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder]);
@@ -752,6 +756,9 @@ const PlanningTableauPage: React.FC = () => {
   const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
     if (next === 'partiel' || next === 'non-disponible') {
       setStatusDatePrompt({ open: true, stepId, field, nextStatus: next });
+    } else if (field === 'material' && next === 'disponible') {
+      setMaterialReceivePrompt({ stepId, nextStatus: next });
+      setMaterialConfirmOpen(true);
     } else {
       applyStepStatus(stepId, field, next);
     }
