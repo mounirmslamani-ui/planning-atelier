@@ -20,7 +20,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
-import { computeBlockedStepIds, BLOCKED_BG_CLASS } from '@/lib/blockedSteps';
+import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
@@ -1097,7 +1097,7 @@ const PlanningTableauPage: React.FC = () => {
                   {filteredTasks.map(({ step, order }, index) => {
                     const blocked = isStepBlocked(step);
                     const isEditing = editingRowId === step.id;
-                    const designBg = blocked ? 'bg-blocked text-blocked-foreground' : getDesignationBg(order.priority);
+                    const designBg = blocked ? BLOCKED_TABLE_BG_CLASS : getDesignationBg(order.priority);
                     const flowPos = getStepFlowPosition(step, draftSteps);
 
                     const studyStatus: ResourceStatus = order.studyStatus ?? step.studyStatus
@@ -1122,7 +1122,7 @@ const PlanningTableauPage: React.FC = () => {
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? `${BLOCKED_BG_CLASS} hover:bg-blocked/90 [&_*]:!text-blocked-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
+                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
                       >
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
