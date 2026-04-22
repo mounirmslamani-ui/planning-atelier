@@ -464,11 +464,11 @@ const GanttChart: React.FC = () => {
   }, []);
 
   const filteredSteps = useMemo(() => {
-    let result = steps;
+    let result = steps.filter(s => !isStepFinished(s, productionRecords));
     if (selectedOperatorId) result = result.filter(s => s.operatorId === selectedOperatorId);
     if (selectedOrderId) result = result.filter(s => s.orderId === selectedOrderId);
     return result;
-  }, [steps, selectedOperatorId, selectedOrderId]);
+  }, [steps, productionRecords, selectedOperatorId, selectedOrderId]);
 
   // Determine how many work days to show based on view
   const numWorkDays = useMemo(() => {
