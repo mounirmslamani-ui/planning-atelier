@@ -29,7 +29,7 @@ const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد ال�
 
 const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-function getDesignationBg(priority: string): string {
+function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
   if (priority === 'P2') return 'bg-[hsl(30,90%,50%)]/10';
   if (priority === 'P3') return 'bg-[hsl(160,60%,40%)]/10';

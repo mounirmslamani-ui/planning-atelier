@@ -9,13 +9,6 @@ import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveryEntry } from '@/types/planning';
 
-const priorityColors: Record<string, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
-
 const DeliveryPage: React.FC = () => {
   const { deliveryEntries, orders, clients } = usePlanning();
   const getOrder = (id: string) => orders.find(o => o.id === id);

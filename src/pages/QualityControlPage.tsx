@@ -16,13 +16,6 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
 
-const priorityColors: Record<string, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
-
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'Conforme',
   'reprise-retouche': 'Reprise/Retouche',
