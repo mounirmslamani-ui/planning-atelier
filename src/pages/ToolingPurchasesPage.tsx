@@ -9,7 +9,7 @@ import type { OrderPriority, ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
-import { dbUpdateStep } from '@/lib/supabase-data';
+import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -19,7 +19,7 @@ const priorityColors: Record<OrderPriority, string> = {
 };
 
 const ToolingPurchasesPage: React.FC = () => {
-  const { orders, clients, steps, updateStep, absenceOrderId, absenceOperationId } = usePlanning();
+  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -75,11 +75,15 @@ const ToolingPurchasesPage: React.FC = () => {
       const step = steps.find(s => s.id === id);
       return step ? { ...step, toolingStatus: 'disponible' as const, toolingAvailable: true, toolingDeadline: undefined, toolingReceivedDate: receivedDate } : null;
     }).filter(Boolean) as typeof steps;
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return false;
+    const updatedOrder = { ...order, toolingStatus: 'disponible' as ResourceStatus, toolingAvailable: true };
 
-    const saved = await Promise.all(updatedSteps.map(dbUpdateStep));
+    const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
     if (saved.some(ok => !ok)) return false;
 
     updatedSteps.forEach(updateStep);
+    updateOrder(updatedOrder);
     return true;
   };
 

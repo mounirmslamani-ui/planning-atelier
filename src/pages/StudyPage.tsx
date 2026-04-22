@@ -5,11 +5,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { OrderPriority } from '@/types/planning';
+import type { OrderPriority, ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
-import { dbUpdateStep } from '@/lib/supabase-data';
+import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityColors: Record<OrderPriority, string> = {
   'P1': 'bg-urgent text-white',
@@ -19,7 +19,7 @@ const priorityColors: Record<OrderPriority, string> = {
 };
 
 const StudyPage: React.FC = () => {
-  const { orders, clients, steps, updateStep, absenceOrderId, absenceOperationId } = usePlanning();
+  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -29,10 +29,16 @@ const StudyPage: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
 
   const rows = useMemo(() => {
+    const isStudyBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const result: { orderId: string; stepIds: string[]; deadline: string; done: boolean }[] = [];
     const orderMap = new Map<string, { stepIds: string[]; deadline: string; done: boolean }>();
+    orders
+      .filter(o => o.id !== absenceOrderId && isStudyBlocked(o.studyStatus))
+      .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '', done: false }));
 
-    steps.filter(s => s.operationId !== absenceOperationId && !(s.studyReady ?? true)).forEach(s => {
+    steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
+      const order = orders.find(o => o.id === s.orderId);
+      if (!order || !isStudyBlocked(s.studyStatus ?? order.studyStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.studyDeadline || '', done: false });
@@ -67,16 +73,20 @@ const StudyPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
-  const markDone = async (stepIds: string[], completedDate: string) => {
+  const markDone = async (orderId: string, stepIds: string[], completedDate: string) => {
     const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
       return step ? { ...step, studyStatus: 'disponible' as const, studyReady: true, studyDeadline: undefined, studyCompletedDate: completedDate } : null;
     }).filter(Boolean) as typeof steps;
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return false;
+    const updatedOrder = { ...order, studyStatus: 'disponible' as ResourceStatus, studyReady: true };
 
-    const saved = await Promise.all(updatedSteps.map(dbUpdateStep));
+    const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
     if (saved.some(ok => !ok)) return false;
 
     updatedSteps.forEach(updateStep);
+    updateOrder(updatedOrder);
     return true;
   };
 
@@ -111,7 +121,7 @@ const StudyPage: React.FC = () => {
                 <TableCell>{r.order.priority ? <Badge className={`${priorityColors[r.order.priority]} text-xs`}>{r.order.priority}</Badge> : '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
-                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingStudy({ stepIds: r.stepIds })} /></TableCell>
+                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingStudy({ orderId: r.orderId, stepIds: r.stepIds })} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -134,7 +144,7 @@ const StudyPage: React.FC = () => {
           label="Date de fin d'étude"
           defaultDate={today}
           onConfirm={async (date) => {
-            const saved = await markDone(pendingStudy.stepIds, date);
+            const saved = await markDone(pendingStudy.orderId, pendingStudy.stepIds, date);
             if (!saved) return;
             setDatePromptOpen(false);
             setPendingStudy(null);
