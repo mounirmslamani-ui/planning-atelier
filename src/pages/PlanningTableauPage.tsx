@@ -690,13 +690,14 @@ const PlanningTableauPage: React.FC = () => {
     field: 'study' | 'material' | 'tooling';
     nextStatus: ResourceStatus;
   } | null>(null);
-  const [materialReceivePrompt, setMaterialReceivePrompt] = useState<{ stepId: string; nextStatus: ResourceStatus } | null>(null);
+  const [pendingMaterialStatus, setPendingMaterialStatus] = useState<{ stepId: string; nextStatus: ResourceStatus } | null>(null);
   const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
+  const [materialDatePromptOpen, setMaterialDatePromptOpen] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
   const applyStepStatus = useCallback(async (stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
     const sourceStep = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
-    if (!sourceStep) return;
+    if (!sourceStep) return false;
 
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
@@ -744,7 +745,7 @@ const PlanningTableauPage: React.FC = () => {
       } as ProductionStep));
 
     const order = orders.find(o => o.id === sourceStep.orderId);
-    if (!order) return;
+    if (!order) return false;
     const updatedOrder = {
       ...order,
       [statusKey]: status,
@@ -753,18 +754,20 @@ const PlanningTableauPage: React.FC = () => {
     } as Order;
 
     const saved = await Promise.all([...updatedContextSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
-    if (saved.some(ok => !ok)) return;
+    if (saved.some(ok => !ok)) return false;
 
     setDraftSteps(updatedDraftSteps);
     updatedContextSteps.forEach(updateStep);
     updateOrder(updatedOrder);
+    return true;
   }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder]);
 
   const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
     if (next === 'partiel' || next === 'non-disponible') {
       setStatusDatePrompt({ open: true, stepId, field, nextStatus: next });
     } else if (field === 'material' && next === 'disponible') {
-      setMaterialReceivePrompt({ stepId, nextStatus: next });
+      setPendingMaterialStatus({ stepId, nextStatus: next });
+      setMaterialDatePromptOpen(false);
       setMaterialConfirmOpen(true);
     } else {
       applyStepStatus(stepId, field, next);
@@ -1389,9 +1392,9 @@ const PlanningTableauPage: React.FC = () => {
                 ? 'Date prévue de disponibilité de la matière'
                 : "Date prévue de disponibilité de l'outillage"
           }
-          onConfirm={(date) => {
-            applyStepStatus(statusDatePrompt.stepId, statusDatePrompt.field, statusDatePrompt.nextStatus, date);
-            setStatusDatePrompt(null);
+          onConfirm={async (date) => {
+            const saved = await applyStepStatus(statusDatePrompt.stepId, statusDatePrompt.field, statusDatePrompt.nextStatus, date);
+            if (saved) setStatusDatePrompt(null);
           }}
           onCancel={() => setStatusDatePrompt(null)}
         />
@@ -1400,23 +1403,32 @@ const PlanningTableauPage: React.FC = () => {
       <ConfirmDialog
         open={materialConfirmOpen}
         title="Confirmez-vous cette action ?"
-        onConfirm={() => setMaterialConfirmOpen(false)}
+        onConfirm={() => {
+          setMaterialConfirmOpen(false);
+          setMaterialDatePromptOpen(true);
+        }}
         onCancel={() => {
           setMaterialConfirmOpen(false);
-          setMaterialReceivePrompt(null);
+          setMaterialDatePromptOpen(false);
+          setPendingMaterialStatus(null);
         }}
       />
 
-      {materialReceivePrompt && !materialConfirmOpen && (
+      {pendingMaterialStatus && materialDatePromptOpen && (
         <DatePromptDialog
-          open={!!materialReceivePrompt}
+          open={materialDatePromptOpen}
           label="Date de réception de la matière"
-          defaultDate={orders.find(o => o.id === (draftSteps.find(s => s.id === materialReceivePrompt.stepId) || steps.find(s => s.id === materialReceivePrompt.stepId))?.orderId)?.materialReceivedDate || today}
-          onConfirm={(date) => {
-            applyStepStatus(materialReceivePrompt.stepId, 'material', materialReceivePrompt.nextStatus, undefined, date);
-            setMaterialReceivePrompt(null);
+          defaultDate={orders.find(o => o.id === (draftSteps.find(s => s.id === pendingMaterialStatus.stepId) || steps.find(s => s.id === pendingMaterialStatus.stepId))?.orderId)?.materialReceivedDate || today}
+          onConfirm={async (date) => {
+            const saved = await applyStepStatus(pendingMaterialStatus.stepId, 'material', pendingMaterialStatus.nextStatus, undefined, date);
+            if (!saved) return;
+            setMaterialDatePromptOpen(false);
+            setPendingMaterialStatus(null);
           }}
-          onCancel={() => setMaterialReceivePrompt(null)}
+          onCancel={() => {
+            setMaterialDatePromptOpen(false);
+            setPendingMaterialStatus(null);
+          }}
         />
       )}
     </div>

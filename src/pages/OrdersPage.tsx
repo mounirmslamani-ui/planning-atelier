@@ -200,8 +200,9 @@ const OrdersPage: React.FC = () => {
 
   // Date prompt for red/orange transitions
   const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
-  const [materialReceivePrompt, setMaterialReceivePrompt] = useState<{ orderId: string; status: ResourceStatus } | null>(null);
+  const [pendingMaterialStatus, setPendingMaterialStatus] = useState<{ orderId: string; status: ResourceStatus } | null>(null);
   const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
+  const [materialDatePromptOpen, setMaterialDatePromptOpen] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
   const applyStatusToOrderAndSteps = useCallback(async (orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
@@ -219,7 +220,7 @@ const OrdersPage: React.FC = () => {
       } as any));
 
     const order = orders.find(o => o.id === orderId);
-    if (!order) return;
+    if (!order) return false;
     const updatedOrder = {
       ...order,
       [statusKey]: status,
@@ -228,10 +229,11 @@ const OrdersPage: React.FC = () => {
     } as any;
 
     const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
-    if (saved.some(ok => !ok)) return;
+    if (saved.some(ok => !ok)) return false;
 
     updatedSteps.forEach(updateStep);
     updateOrder(updatedOrder);
+    return true;
   }, [steps, orders, absenceOperationId, updateStep, updateOrder]);
 
   const handleStatusChange = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
@@ -243,7 +245,8 @@ const OrdersPage: React.FC = () => {
       };
       setStatusDatePrompt({ orderId, field, status, label: labels[field] });
     } else if (field === 'material' && status === 'disponible') {
-      setMaterialReceivePrompt({ orderId, status });
+      setPendingMaterialStatus({ orderId, status });
+      setMaterialDatePromptOpen(false);
       setMaterialConfirmOpen(true);
     } else {
       applyStatusToOrderAndSteps(orderId, field, status);
@@ -929,9 +932,9 @@ const OrdersPage: React.FC = () => {
         <DatePromptDialog
           open={!!statusDatePrompt}
           label={statusDatePrompt.label}
-          onConfirm={(date) => {
-            applyStatusToOrderAndSteps(statusDatePrompt.orderId, statusDatePrompt.field, statusDatePrompt.status, date);
-            setStatusDatePrompt(null);
+          onConfirm={async (date) => {
+            const saved = await applyStatusToOrderAndSteps(statusDatePrompt.orderId, statusDatePrompt.field, statusDatePrompt.status, date);
+            if (saved) setStatusDatePrompt(null);
           }}
           onCancel={() => setStatusDatePrompt(null)}
         />
@@ -940,23 +943,32 @@ const OrdersPage: React.FC = () => {
       <ConfirmDialog
         open={materialConfirmOpen}
         title="Confirmez-vous cette action ?"
-        onConfirm={() => setMaterialConfirmOpen(false)}
+        onConfirm={() => {
+          setMaterialConfirmOpen(false);
+          setMaterialDatePromptOpen(true);
+        }}
         onCancel={() => {
           setMaterialConfirmOpen(false);
-          setMaterialReceivePrompt(null);
+          setMaterialDatePromptOpen(false);
+          setPendingMaterialStatus(null);
         }}
       />
 
-      {materialReceivePrompt && !materialConfirmOpen && (
+      {pendingMaterialStatus && materialDatePromptOpen && (
         <DatePromptDialog
-          open={!!materialReceivePrompt}
+          open={materialDatePromptOpen}
           label="Date de réception de la matière"
-          defaultDate={orders.find(o => o.id === materialReceivePrompt.orderId)?.materialReceivedDate || today}
-          onConfirm={(date) => {
-            applyStatusToOrderAndSteps(materialReceivePrompt.orderId, 'material', materialReceivePrompt.status, undefined, date);
-            setMaterialReceivePrompt(null);
+          defaultDate={orders.find(o => o.id === pendingMaterialStatus.orderId)?.materialReceivedDate || today}
+          onConfirm={async (date) => {
+            const saved = await applyStatusToOrderAndSteps(pendingMaterialStatus.orderId, 'material', pendingMaterialStatus.status, undefined, date);
+            if (!saved) return;
+            setMaterialDatePromptOpen(false);
+            setPendingMaterialStatus(null);
           }}
-          onCancel={() => setMaterialReceivePrompt(null)}
+          onCancel={() => {
+            setMaterialDatePromptOpen(false);
+            setPendingMaterialStatus(null);
+          }}
         />
       )}
 
