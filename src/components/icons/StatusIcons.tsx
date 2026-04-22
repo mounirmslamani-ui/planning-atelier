@@ -54,7 +54,7 @@ export const WarningTriangleIcon: React.FC<React.SVGProps<SVGSVGElement>> = ({
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={className}
+    className={`shrink-0 align-middle ${className ?? ''}`}
     aria-hidden="true"
     {...props}
   >
