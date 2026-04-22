@@ -729,9 +729,8 @@ const GanttChart: React.FC = () => {
       const remainingMin = Math.round(validateRemainingDuration * 60);
       const continueStart = new Date(`${validateContinueDate}T${validateContinueTime || '08:00'}`);
       const continueEnd = addWorkMinutes(continueStart, remainingMin, holidays);
-      addStep({
+      updateStep({
         ...step,
-        id: crypto.randomUUID(),
         estimatedDuration: remainingMin,
         startDate: continueStart.toISOString().split('T')[0],
         startTime: `${String(continueStart.getHours()).padStart(2, '0')}:${String(continueStart.getMinutes()).padStart(2, '0')}`,
@@ -755,7 +754,7 @@ const GanttChart: React.FC = () => {
 
     setValidateDialogOpen(false);
     setValidateStepId(null);
-  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, productionRecords, holidays, addProductionRecord, addStep, absenceOperationId, absenceOrderId, qcEntries, addQCEntry]);
+  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, productionRecords, holidays, addProductionRecord, updateStep, absenceOperationId, absenceOrderId, qcEntries, addQCEntry]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
