@@ -200,7 +200,7 @@ interface TaskItem {
   order: Order;
 }
 
-type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'machine' | 'status' | 'operation';
+type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'machine' | 'status' | 'operation';
 
 /**
  * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
@@ -1022,6 +1022,9 @@ const PlanningTableauPage: React.FC = () => {
           case 'endDate': return t.step.endDate === value;
           case 'orderNumber': return t.order.orderNumber.toLowerCase().includes(needle);
           case 'client': return getClientName(t.order.clientId).toLowerCase().includes(needle);
+          case 'designation': return t.order.designation.toLowerCase().includes(needle);
+          case 'quantity': return String(t.order.quantity).includes(needle);
+          case 'priority': return t.order.priority === value;
           case 'machine': return getMachineName(t.step) === value;
           case 'status': return getStepProgressStatus(t.step, productionRecords) === value;
           case 'operation': return getOperationName(t.step.operationId) === value;
@@ -1038,6 +1041,9 @@ const PlanningTableauPage: React.FC = () => {
           case 'endDate': cmp = a.step.endDate.localeCompare(b.step.endDate); break;
           case 'client': cmp = getClientName(a.order.clientId).localeCompare(getClientName(b.order.clientId), 'fr'); break;
           case 'orderNumber': cmp = a.order.orderNumber.localeCompare(b.order.orderNumber, 'fr', { numeric: true }); break;
+          case 'designation': cmp = a.order.designation.localeCompare(b.order.designation, 'fr'); break;
+          case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
+          case 'priority': cmp = (priorityRank[a.order.priority] ?? 9) - (priorityRank[b.order.priority] ?? 9); break;
           case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
           case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
           case 'operation': cmp = getOperationName(a.step.operationId).localeCompare(getOperationName(b.step.operationId), 'fr'); break;
@@ -1171,9 +1177,15 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[90px] text-xs">
                       <ColumnHeader label="Client" columnKey="client" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['client'] || ''} onFilter={handleColFilter} />
                     </TableHead>
-                    <TableHead className="w-[180px] min-w-[180px] max-w-[180px] text-xs">Désignation</TableHead>
-                    <TableHead className="w-[45px] text-xs text-center">Qté</TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">Priorité</TableHead>
+                    <TableHead className="w-[180px] min-w-[180px] max-w-[180px] text-xs">
+                      <ColumnHeader label="Désignation" columnKey="designation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['designation'] || ''} onFilter={handleColFilter} />
+                    </TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">
+                      <ColumnHeader label="Qté" columnKey="quantity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['quantity'] || ''} onFilter={handleColFilter} />
+                    </TableHead>
+                    <TableHead className="w-[70px] text-xs text-center">
+                      <ColumnHeader label="Priorité" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
+                    </TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
                     <TableHead className="w-[110px] text-xs">
                       <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
