@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
-import { isOrderBlocked, BLOCKED_ROW_CLASS } from '@/lib/blockedSteps';
+import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
@@ -750,7 +750,7 @@ const OrdersPage: React.FC = () => {
                     onDragEnd={handleDragEnd}
                     className={`transition-colors ${
                       !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
-                    } ${blocked ? `${BLOCKED_ROW_CLASS} [&_*]:!text-blocked-foreground` : ''
+                    } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_*]:!text-blocked-table-foreground` : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
                     } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''

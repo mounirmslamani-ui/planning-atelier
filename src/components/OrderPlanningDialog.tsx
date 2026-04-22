@@ -11,6 +11,7 @@ import type { Order, ResourceStatus } from '@/types/planning';
 import type { OperationToSchedule } from '@/lib/scheduler';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
+import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 
 interface OperationRow {
   id: string;
@@ -287,7 +288,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     return (
                   <TableRow
                     key={row.id}
-                    className={blocked ? 'bg-blocked hover:bg-blocked/90 [&_*]:!text-blocked-foreground' : ''}
+                    className={blocked ? `${BLOCKED_MODAL_ROW_CLASS} [&_*]:!text-blocked-foreground` : ''}
                   >
                     <TableCell className="text-sm font-medium">{row.order}</TableCell>
                     <TableCell>

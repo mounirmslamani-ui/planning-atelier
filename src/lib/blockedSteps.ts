@@ -45,6 +45,13 @@ export function isOrderBlocked(orderId: string, allSteps: ProductionStep[]): boo
   return allSteps.some(s => s.orderId === orderId && isStepSelfBlocked(s));
 }
 
-/** Tailwind classes to apply to a blocked cell/row. */
-export const BLOCKED_BG_CLASS = 'bg-blocked text-blocked-foreground';
-export const BLOCKED_ROW_CLASS = 'bg-blocked text-blocked-foreground hover:bg-blocked/90';
+/** Tailwind classes to apply to blocked cells/rows in synthesis tables (white text). */
+export const BLOCKED_TABLE_BG_CLASS = 'bg-blocked text-blocked-table-foreground';
+export const BLOCKED_TABLE_ROW_CLASS = 'bg-blocked text-blocked-table-foreground hover:bg-blocked/90';
+
+/** Tailwind classes to apply to blocked rows in input modals (black text). */
+export const BLOCKED_MODAL_ROW_CLASS = 'bg-blocked text-blocked-foreground hover:bg-blocked/90';
+
+/** Backward-compatible aliases for table usage. */
+export const BLOCKED_BG_CLASS = BLOCKED_TABLE_BG_CLASS;
+export const BLOCKED_ROW_CLASS = BLOCKED_TABLE_ROW_CLASS;
