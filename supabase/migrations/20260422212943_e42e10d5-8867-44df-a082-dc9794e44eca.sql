@@ -1,0 +1,3 @@
+ALTER TABLE public.orders
+  ALTER COLUMN priority DROP DEFAULT,
+  ALTER COLUMN priority DROP NOT NULL;

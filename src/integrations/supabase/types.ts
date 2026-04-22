@@ -205,7 +205,7 @@ export type Database = {
           order_date: string
           order_number: string
           planned_deadline: string
-          priority: Database["public"]["Enums"]["order_priority"]
+          priority: Database["public"]["Enums"]["order_priority"] | null
           prototype_deadline: string | null
           prototype_quantity: number | null
           quantity: number
@@ -228,7 +228,7 @@ export type Database = {
           order_date?: string
           order_number: string
           planned_deadline?: string
-          priority?: Database["public"]["Enums"]["order_priority"]
+          priority?: Database["public"]["Enums"]["order_priority"] | null
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
@@ -251,7 +251,7 @@ export type Database = {
           order_date?: string
           order_number?: string
           planned_deadline?: string
-          priority?: Database["public"]["Enums"]["order_priority"]
+          priority?: Database["public"]["Enums"]["order_priority"] | null
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
