@@ -15,7 +15,7 @@ const sidebarGroups = [
     items: [
       { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart, dropTarget: false as DropTargetType },
       { to: '/absences', label: 'Absences', icon: UserX, dropTarget: false as DropTargetType },
-      { to: '/production-register', label: 'Registre de Production', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
+      { to: '/production-register', label: 'Registre des travaux effectués', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
     ],
   },
   {

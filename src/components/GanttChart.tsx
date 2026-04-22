@@ -1256,11 +1256,11 @@ const GanttChart: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Validate Production Dialog */}
+      {/* Validate work dialog */}
       <Dialog open={validateDialogOpen} onOpenChange={setValidateDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-heading">Valider la production</DialogTitle>
+            <DialogTitle className="font-heading">Valider le travail effectué</DialogTitle>
           </DialogHeader>
           {validateStepId && (() => {
             const step = steps.find(s => s.id === validateStepId);

@@ -212,11 +212,11 @@ const ProductionRegisterPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Registre de Production" description="Travaux validés classés par opérateur" />
+      <PageHeader title="Registre des travaux effectués" description="Travaux effectués classés par opérateur" />
 
       {operatorsWithRecords.length === 0 ? (
         <p className="text-muted-foreground text-sm px-4 py-8 text-center">
-          Aucun travail validé. Glissez un bloc du planning vers l'icône ⚙✓ pour enregistrer une production.
+          Aucun travail effectué. Glissez un bloc du planning vers l'icône ⚙✓ pour l'ajouter au registre des travaux effectués.
         </p>
       ) : (
         <>

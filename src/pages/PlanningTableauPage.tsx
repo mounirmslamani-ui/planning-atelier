@@ -1319,11 +1319,11 @@ const PlanningTableauPage: React.FC = () => {
         variant="default"
       />
 
-      {/* Production Register Dialog */}
+      {/* Work register dialog */}
       <Dialog open={prodDialog.open} onOpenChange={(o) => { if (!o) setProdDialog(prev => ({ ...prev, open: false })); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-heading">Enregistrement Production</DialogTitle>
+            <DialogTitle className="text-sm font-heading">Enregistrement au registre des travaux effectués</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
