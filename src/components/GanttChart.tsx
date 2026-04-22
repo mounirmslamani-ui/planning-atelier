@@ -163,7 +163,7 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
 
 const GanttChart: React.FC = () => {
   const {
-    operators, operations, orders, steps, holidays, clients, subcontractors, equipments,
+    operators, operations, orders, steps, holidays, clients, subcontractors, equipments, productionRecords,
     ganttView, setGanttView, ganttZeroDate, setGanttZeroDate,
     selectedOperatorId, setSelectedOperatorId,
     selectedOrderId, setSelectedOrderId,
@@ -739,9 +739,10 @@ const GanttChart: React.FC = () => {
         endTime: `${String(continueEnd.getHours()).padStart(2, '0')}:${String(continueEnd.getMinutes()).padStart(2, '0')}`,
       });
     } else {
-      // Check if this was the last step for the order (no other steps remaining on planning after removal)
-      const otherSteps = steps.filter(s => s.orderId === step.orderId && s.id !== step.id && s.operationId !== absenceOperationId);
-      if (otherSteps.length === 0 && step.orderId !== absenceOrderId) {
+      const allFinished = steps
+        .filter(s => s.orderId === step.orderId && s.operationId !== absenceOperationId)
+        .every(s => s.id === step.id ? true : isStepFinished(s, productionRecords));
+      if (allFinished && step.orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === step.orderId)) {
         // Move order to Quality Control
         addQCEntry({
           id: crypto.randomUUID(),
@@ -752,12 +753,9 @@ const GanttChart: React.FC = () => {
       }
     }
 
-    // Remove the validated step from the planning
-    deleteStep(step.id);
-
     setValidateDialogOpen(false);
     setValidateStepId(null);
-  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, holidays, addProductionRecord, addStep, deleteStep, addQCEntry]);
+  }, [validateStepId, validateActualDuration, validateWorkDone, validateRemainingDuration, validateContinueDate, validateContinueTime, steps, productionRecords, holidays, addProductionRecord, addStep, absenceOperationId, absenceOrderId, qcEntries, addQCEntry]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '';
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
