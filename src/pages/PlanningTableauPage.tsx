@@ -269,7 +269,7 @@ const PlanningTableauPage: React.FC = () => {
     operators, orders, steps, clients, operations,
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord, deleteStep,
-    addQCEntry,
+    qcEntries, addQCEntry,
     undo, redo, canUndo, canRedo,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
@@ -400,6 +400,7 @@ const PlanningTableauPage: React.FC = () => {
     draftSteps.forEach(step => {
       if (step.operationId === absenceOperationId) return;
       if (step.orderId === absenceOrderId) return;
+      if (isStepFinished(step, productionRecords)) return;
       if (!step.operatorId) return;
       if (!step.startDate || !step.endDate) return;
       if (step.subcontractorId) return;
@@ -439,7 +440,7 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId]);
+  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
