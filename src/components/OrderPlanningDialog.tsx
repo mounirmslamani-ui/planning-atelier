@@ -256,7 +256,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[96vw] max-w-[1500px] max-h-[88vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">Définition des tâches et affectations</DialogTitle>
             <p className="text-sm text-muted-foreground">
@@ -265,16 +265,14 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           </DialogHeader>
 
           <div className="bg-card rounded-lg border overflow-x-auto">
-            <Table>
+            <Table className="min-w-[1360px] table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead>Opération</TableHead>
-                  <TableHead className="w-24">Type</TableHead>
+                  <TableHead className="w-72">Opération</TableHead>
+                  <TableHead className="w-36">Type</TableHead>
                   <TableHead className="w-24">Durée est.</TableHead>
-                  <TableHead>Option 1</TableHead>
-                  <TableHead>Option 2</TableHead>
-                  <TableHead>Option 3</TableHead>
+                  <TableHead className="w-80">Opérateur</TableHead>
                   <TableHead className="w-28">Statut</TableHead>
                   <TableHead className="w-20">Durée</TableHead>
                   <TableHead className="w-12 text-center text-xs">Étude</TableHead>
@@ -306,7 +304,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     <TableCell className="text-sm font-medium">{row.order}</TableCell>
                     <TableCell>
                       <select
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        className="h-9 w-full min-w-72 rounded-md border border-input bg-background px-3 py-2 text-sm"
                         value={row.operationId}
                         onChange={e => updateRow(row.id, 'operationId', e.target.value)}
                       >
@@ -319,7 +317,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                     </TableCell>
                     <TableCell>
                       <select
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        className="h-9 w-full min-w-36 rounded-md border border-input bg-background px-3 py-2 text-sm"
                         value={row.assignType}
                         onChange={e => updateRow(row.id, 'assignType', e.target.value)}
                       >
@@ -342,9 +340,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         <span className="text-xs text-muted-foreground">{durationUnit(row.assignType)}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{renderAssigneeSelect(row, 'option1')}</TableCell>
-                    <TableCell>{renderAssigneeSelect(row, 'option2')}</TableCell>
-                    <TableCell>{renderAssigneeSelect(row, 'option3')}</TableCell>
+                    <TableCell>{renderAssigneeSelect(row)}</TableCell>
                     <TableCell className="text-xs font-medium">{getRowProgressStatus(row)}</TableCell>
                     <TableCell className="text-xs font-mono">{getRowActualDuration(row)}</TableCell>
                     <TableCell className="text-center">
