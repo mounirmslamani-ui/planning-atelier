@@ -23,6 +23,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
+import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, en retard CR<1, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
@@ -203,31 +204,34 @@ const OrdersPage: React.FC = () => {
   const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
-  const applyStatusToOrderAndSteps = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
+  const applyStatusToOrderAndSteps = useCallback(async (orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
     const isAvail = status === 'disponible';
 
     const orderSteps = steps.filter(s => s.orderId === orderId && s.operationId !== absenceOperationId);
-    orderSteps.forEach(s => {
-      updateStep({
+    const updatedSteps = orderSteps.map(s => ({
         ...s,
         [statusKey]: status,
         [boolKey]: isAvail,
         [deadlineKey]: deadline || undefined,
-      } as any);
-    });
+      } as any));
 
     const order = orders.find(o => o.id === orderId);
-    if (order) {
-      updateOrder({
-        ...order,
-        [statusKey]: status,
-        [boolKey]: isAvail,
-        ...(field === 'material' ? { materialReceivedDate: isAvail ? receivedDate : undefined } : {}),
-      } as any);
-    }
+    if (!order) return;
+    const updatedOrder = {
+      ...order,
+      [statusKey]: status,
+      [boolKey]: isAvail,
+      ...(field === 'material' ? { materialReceivedDate: isAvail ? receivedDate : undefined } : {}),
+    } as any;
+
+    const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
+    if (saved.some(ok => !ok)) return;
+
+    updatedSteps.forEach(updateStep);
+    updateOrder(updatedOrder);
   }, [steps, orders, absenceOperationId, updateStep, updateOrder]);
 
   const handleStatusChange = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {

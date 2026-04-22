@@ -21,6 +21,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
+import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
@@ -693,7 +694,7 @@ const PlanningTableauPage: React.FC = () => {
   const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
-  const applyStepStatus = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
+  const applyStepStatus = useCallback(async (stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
     const sourceStep = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
     if (!sourceStep) return;
 
@@ -702,7 +703,7 @@ const PlanningTableauPage: React.FC = () => {
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
     const isAvailable = status === 'disponible';
 
-    setDraftSteps(prev => prev.map(s => {
+    const updatedDraftSteps = draftSteps.map(s => {
       if (s.orderId !== sourceStep.orderId || s.operationId === absenceOperationId) return s;
       const updated = { ...s };
       if (field === 'study') {
@@ -731,11 +732,11 @@ const PlanningTableauPage: React.FC = () => {
         }
       }
       return updated;
-    }));
+    });
 
-    steps
+    const updatedContextSteps = steps
       .filter(s => s.orderId === sourceStep.orderId && s.operationId !== absenceOperationId)
-      .forEach(s => updateStep({
+      .map(s => ({
         ...s,
         [statusKey]: status,
         [boolKey]: isAvailable,
@@ -743,14 +744,20 @@ const PlanningTableauPage: React.FC = () => {
       } as ProductionStep));
 
     const order = orders.find(o => o.id === sourceStep.orderId);
-    if (order) {
-      updateOrder({
-        ...order,
-        [statusKey]: status,
-        [boolKey]: isAvailable,
-        ...(field === 'material' ? { materialReceivedDate: isAvailable ? receivedDate : undefined } : {}),
-      } as Order);
-    }
+    if (!order) return;
+    const updatedOrder = {
+      ...order,
+      [statusKey]: status,
+      [boolKey]: isAvailable,
+      ...(field === 'material' ? { materialReceivedDate: isAvailable ? receivedDate : undefined } : {}),
+    } as Order;
+
+    const saved = await Promise.all([...updatedContextSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
+    if (saved.some(ok => !ok)) return;
+
+    setDraftSteps(updatedDraftSteps);
+    updatedContextSteps.forEach(updateStep);
+    updateOrder(updatedOrder);
   }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder]);
 
   const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
