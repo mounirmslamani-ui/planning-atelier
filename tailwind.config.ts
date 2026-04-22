@@ -72,6 +72,7 @@ export default {
         blocked: {
           DEFAULT: "hsl(var(--blocked))",
           foreground: "hsl(var(--blocked-foreground))",
+          "table-foreground": "hsl(var(--blocked-table-foreground))",
         },
         gantt: {
           header: "hsl(var(--gantt-header))",
