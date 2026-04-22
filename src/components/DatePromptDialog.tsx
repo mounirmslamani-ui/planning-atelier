@@ -8,10 +8,15 @@ interface Props {
   label: string;
   onConfirm: (date: string) => void;
   onCancel: () => void;
+  defaultDate?: string;
 }
 
-const DatePromptDialog: React.FC<Props> = ({ open, label, onConfirm, onCancel }) => {
-  const [date, setDate] = useState('');
+const DatePromptDialog: React.FC<Props> = ({ open, label, onConfirm, onCancel, defaultDate }) => {
+  const [date, setDate] = useState(defaultDate || '');
+
+  React.useEffect(() => {
+    if (open) setDate(defaultDate || '');
+  }, [open, defaultDate]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
