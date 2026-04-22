@@ -37,7 +37,9 @@ export function getOrderProductionSteps(
   allSteps: ProductionStep[],
   absenceOperationId: string,
 ): ProductionStep[] {
-  return allSteps.filter(step => step.orderId === orderId && step.operationId !== absenceOperationId);
+  return allSteps
+    .filter(step => step.orderId === orderId && step.operationId !== absenceOperationId)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 }
 
 export function isOrderReadyForQualityControl(
