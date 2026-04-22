@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
 import AppSidebar from './AppSidebar';
 import { usePlanning } from '@/context/PlanningContext';
-import { isOrderReadyForQualityControl } from '@/lib/stepProgress';
+import { buildOrderQualityControlErrorMessage, getOrderQualityControlCheck } from '@/lib/stepProgress';
+import { fetchAllData } from '@/lib/supabase-data';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry } = usePlanning();
@@ -14,19 +15,35 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const step = steps.find(s => s.id === stepId);
     if (!step || step.orderId === absenceOrderId) return;
 
-    if (!isOrderReadyForQualityControl(step.orderId, steps, productionRecords, absenceOperationId)) {
-      window.alert('Impossible de transférer : certaines étapes ne sont pas encore terminées.');
-      return;
-    }
+    const tryTransfer = async () => {
+      let stepsForCheck = steps;
+      let recordsForCheck = productionRecords;
+      let check = getOrderQualityControlCheck(step.orderId, stepsForCheck, recordsForCheck, absenceOperationId);
 
-    if (!qcEntries.some(entry => entry.orderId === step.orderId)) {
-      addQCEntry({
-        id: crypto.randomUUID(),
-        orderId: step.orderId,
-        controlDate: new Date().toISOString().split('T')[0],
-        createdAt: new Date().toISOString(),
-      });
-    }
+      if (!check.isReady) {
+        const freshData = await fetchAllData();
+        stepsForCheck = freshData.steps;
+        recordsForCheck = freshData.productionRecords;
+        check = getOrderQualityControlCheck(step.orderId, stepsForCheck, recordsForCheck, absenceOperationId);
+      }
+
+      if (!check.isReady) {
+        const reason = buildOrderQualityControlErrorMessage(step.orderId, stepsForCheck, recordsForCheck, absenceOperationId);
+        window.alert(`Impossible de transférer : certaines étapes ne sont pas encore terminées. ${reason}`);
+        return;
+      }
+
+      if (!qcEntries.some(entry => entry.orderId === step.orderId)) {
+        addQCEntry({
+          id: crypto.randomUUID(),
+          orderId: step.orderId,
+          controlDate: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+        });
+      }
+    };
+
+    void tryTransfer();
   }, [steps, absenceOrderId, productionRecords, absenceOperationId, qcEntries, addQCEntry]);
 
   if (loading) {

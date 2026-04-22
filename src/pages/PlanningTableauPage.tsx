@@ -21,7 +21,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
-import { getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
+import { getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import * as XLSX from 'xlsx';
 
@@ -903,10 +903,9 @@ const PlanningTableauPage: React.FC = () => {
       setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: true } : s));
 
       const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
-      const allFinished = allKnownSteps
-        .filter(s => s.orderId === orderId && s.operationId !== absenceOperationId)
-        .every(s => s.id === stepId ? true : isStepFinished(s, productionRecords));
-      if (allFinished && orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === orderId)) {
+      const recordsAfterInsert = [...productionRecords, record];
+      const qcCheck = getOrderQualityControlCheck(orderId, allKnownSteps, recordsAfterInsert, absenceOperationId);
+      if (qcCheck.isReady && orderId !== absenceOrderId && !qcEntries.some(entry => entry.orderId === orderId)) {
         addQCEntry({
           id: crypto.randomUUID(),
           orderId,
