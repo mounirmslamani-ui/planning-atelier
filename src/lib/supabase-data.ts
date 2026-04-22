@@ -211,9 +211,9 @@ export function mapOrderToDB(o: Order) {
 // ───────────────────── ProductionStep ─────────────────────
 
 export function mapStepFromDB(row: any): ProductionStep {
-  const studyStatus    = (row.study_status    || 'disponible') as ResourceStatus;
-  const materialStatus = (row.material_status || 'disponible') as ResourceStatus;
-  const toolingStatus  = (row.tooling_status  || 'disponible') as ResourceStatus;
+  const studyStatus    = (row.study_status    || 'non-disponible') as ResourceStatus;
+  const materialStatus = (row.material_status || 'non-disponible') as ResourceStatus;
+  const toolingStatus  = (row.tooling_status  || 'non-disponible') as ResourceStatus;
   return {
     id: row.id,
     orderId: row.order_id,
@@ -248,9 +248,9 @@ export function mapStepFromDB(row: any): ProductionStep {
 }
 
 export function mapStepToDB(s: ProductionStep) {
-  const study_status    = s.studyStatus    ?? boolToStatus(s.studyReady ?? true);
-  const material_status = s.materialStatus ?? boolToStatus(s.materialAvailable ?? true);
-  const tooling_status  = s.toolingStatus  ?? boolToStatus(s.toolingAvailable ?? true);
+  const study_status    = s.studyStatus    ?? boolToStatus(s.studyReady ?? false);
+  const material_status = s.materialStatus ?? boolToStatus(s.materialAvailable ?? false);
+  const tooling_status  = s.toolingStatus  ?? boolToStatus(s.toolingAvailable ?? false);
   return {
     id: s.id,
     order_id: s.orderId,
