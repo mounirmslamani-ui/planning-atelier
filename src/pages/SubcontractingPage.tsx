@@ -1,22 +1,14 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import type { OrderPriority } from '@/types/planning';
+import PriorityBadge from '@/components/orders/PriorityBadge';
 import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { dbUpdateStep } from '@/lib/supabase-data';
-
-const priorityColors: Record<OrderPriority, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
@@ -180,9 +172,7 @@ const SubcontractingPage: React.FC = () => {
                   <TableCell className="text-sm">{row.order.designation}</TableCell>
                   <TableCell className="text-center text-sm">{row.order.quantity}</TableCell>
                   <TableCell>
-                    {row.order.priority ? (
-                      <Badge className={`${priorityColors[row.order.priority]} text-xs`}>{row.order.priority}</Badge>
-                    ) : '—'}
+                    <PriorityBadge priority={row.order.priority} />
                   </TableCell>
                   <TableCell className="text-sm font-medium">{getSubcontractorName(row.subcontractorId)}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.plannedDeadline) || '—'}</TableCell>

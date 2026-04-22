@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ClipboardPaste, AlertCircle } from 'lucide-react';
 import type { Order, OrderPriority } from '@/types/planning';
+import PriorityBadge from '@/components/orders/PriorityBadge';
 
 interface ExcelPasteDialogProps {
   open: boolean;
@@ -16,12 +17,14 @@ interface ExcelPasteDialogProps {
 
 const EXPECTED_COLUMNS = ['N° Commande', 'Date', 'Client', 'Désignation', 'Quantité', 'Priorité', 'Délai'];
 
-const parsePriority = (val: string): OrderPriority => {
+const parsePriority = (val: string): OrderPriority | undefined => {
   const lower = val.toLowerCase().trim();
+  if (!lower) return undefined;
   if (lower.includes('قصوى') || lower === 'p1' || lower === 'critical') return 'P1';
   if (lower.includes('نسبيا') || lower === 'p2' || lower === 'moderate') return 'P2';
   if (lower.includes('تعليق') || lower === 'p4' || lower === 'pending') return 'P4';
-  return 'P3';
+  if (lower.includes('غير مستعجل') || lower === 'p3' || lower === 'normal') return 'P3';
+  return undefined;
 };
 
 const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange, onImport, clients, nextDisplayOrder }) => {
@@ -129,7 +132,9 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
                   {parsedRows.map((row, i) => (
                     <TableRow key={i}>
                       {EXPECTED_COLUMNS.map((_, j) => (
-                        <TableCell key={j} className="text-xs py-1.5">{row[j] || '—'}</TableCell>
+                        <TableCell key={j} className="text-xs py-1.5">
+                          {j === 5 ? <PriorityBadge priority={parsePriority(row[j] || '')} /> : row[j] || '—'}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}

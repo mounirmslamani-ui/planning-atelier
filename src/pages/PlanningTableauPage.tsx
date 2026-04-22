@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
@@ -16,6 +15,7 @@ import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/p
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
+import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useConfirm } from '@/hooks/use-confirm';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
@@ -29,14 +29,7 @@ const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد ال�
 
 const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-const priorityColors: Record<string, string> = {
-  'P1': 'bg-urgent text-white',
-  'P2': 'bg-urgent-moderate text-white',
-  'P3': 'bg-priority-p3 text-foreground',
-  'P4': 'bg-priority-p4 text-foreground',
-};
-
-function getDesignationBg(priority: string): string {
+function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
   if (priority === 'P2') return 'bg-[hsl(30,90%,50%)]/10';
   if (priority === 'P3') return 'bg-[hsl(160,60%,40%)]/10';
@@ -1289,7 +1282,7 @@ const PlanningTableauPage: React.FC = () => {
                           <span className="text-xs">{order.quantity}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
-                          <Badge className={`${priorityColors[order.priority]} text-xs`}>{order.priority}</Badge>
+                          <PriorityBadge priority={order.priority} />
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
