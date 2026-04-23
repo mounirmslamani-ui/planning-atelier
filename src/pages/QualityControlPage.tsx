@@ -15,6 +15,8 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
+import { Download } from 'lucide-react';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'Conforme',
@@ -98,6 +100,23 @@ const QualityControlPage: React.FC = () => {
     decision: (e: QualityControlEntry) => e.decision ? decisionLabels[e.decision] : '',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(qcEntries, accessors);
+
+  const handleExportExcel = () => {
+    exportTableToExcel('Contrôle Qualité', processed.map(entry => {
+      const order = getOrder(entry.orderId);
+      return {
+        Priorité: order?.priority || '—',
+        'N° Cde': order?.orderNumber || '—',
+        Date: order ? formatDateFR(order.orderDate) : '—',
+        Client: order ? getClientName(order.clientId) : '—',
+        Désignation: order?.designation || '—',
+        Quantité: order?.quantity ?? '—',
+        Délais: order ? formatDateFR(order.plannedDeadline) : '—',
+        'Date Contrôle': formatDateFR(entry.controlDate),
+        Décision: entry.decision ? decisionLabels[entry.decision] : '—',
+      };
+    }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
+  };
   const testDiagnostic = (() => {
     const testOrders = orders.filter(order => order.orderNumber.trim().toLowerCase() === 'test');
     if (testOrders.length === 0) return null;
@@ -117,7 +136,11 @@ const QualityControlPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} />
+        <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} actions={
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+          </Button>
+        } />
         {testDiagnostic && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground">
             {testDiagnostic}

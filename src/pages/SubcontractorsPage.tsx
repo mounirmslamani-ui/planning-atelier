@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
 import type { Subcontractor } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 const SubcontractorsPage: React.FC = () => {
   const { subcontractors, addSubcontractor, updateSubcontractor, deleteSubcontractor, operations } = usePlanning();
@@ -68,6 +69,14 @@ const SubcontractorsPage: React.FC = () => {
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
 
+  const handleExportExcel = () => {
+    exportTableToExcel('Sous-traitants', processed.map(s => ({
+      'Raison sociale': s.companyName,
+      'Activité principale': s.mainActivity,
+      'Activités secondaires': s.secondaryActivities.join(', '),
+    })), [32, 28, 45]);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
@@ -75,9 +84,14 @@ const SubcontractorsPage: React.FC = () => {
           title="Sous-traitants"
           description={`${subcontractors.length} sous-traitant(s)`}
           actions={
-            <Button onClick={openNew} size="sm">
-              <Plus className="w-4 h-4 mr-1" /> Ajouter
-            </Button>
+            <>
+              <Button onClick={handleExportExcel} variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-1" /> Exporter Excel
+              </Button>
+              <Button onClick={openNew} size="sm">
+                <Plus className="w-4 h-4 mr-1" /> Ajouter
+              </Button>
+            </>
           }
         />
       </div>

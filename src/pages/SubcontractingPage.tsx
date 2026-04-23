@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
@@ -9,6 +10,8 @@ import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { dbUpdateStep } from '@/lib/supabase-data';
+import { Download } from 'lucide-react';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
@@ -116,6 +119,22 @@ const SubcontractingPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
+  const handleExportExcel = () => {
+    exportTableToExcel('Sous-traitance', filteredRows.map(row => ({
+      Cn: row.order.displayOrder ?? '—',
+      'N° Commande': row.order.orderNumber,
+      Date: formatDateFR(row.order.orderDate) || '—',
+      Client: getClientName(row.order.clientId),
+      Désignation: row.order.designation,
+      'Qté.': row.order.quantity,
+      Priorité: row.order.priority || '—',
+      'Sous-traitant': getSubcontractorName(row.subcontractorId),
+      'Délai promis': formatDateFR(row.order.plannedDeadline) || '—',
+      'Délai sous-traitance': formatDateFR(row.deadline) || '—',
+      Fait: row.done ? 'Oui' : 'Non',
+    })), [8, 20, 14, 24, 45, 10, 12, 24, 16, 22, 10]);
+  };
+
   const applyDone = async (stepIds: string[], done: boolean, receivedDate?: string) => {
     const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
@@ -138,7 +157,11 @@ const SubcontractingPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Sous-traitance" description="Suivi des opérations sous-traitées planifiées" />
+        <PageHeader title="Sous-traitance" description="Suivi des opérations sous-traitées planifiées" actions={
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+          </Button>
+        } />
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
