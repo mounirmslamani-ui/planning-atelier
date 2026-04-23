@@ -885,7 +885,7 @@ const PlanningTableauPage: React.FC = () => {
         [deadlineKey]: (status === 'partiel' || status === 'non-disponible') ? deadline || undefined : undefined,
       } as ProductionStep));
 
-    const order = orders.find(o => o.id === sourceStep.orderId);
+    const order = draftOrders.find(o => o.id === sourceStep.orderId) || orders.find(o => o.id === sourceStep.orderId);
     if (!order) return false;
     const updatedOrder = {
       ...order,
@@ -897,7 +897,11 @@ const PlanningTableauPage: React.FC = () => {
     const saved = await Promise.all([...updatedContextSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
     if (saved.some(ok => !ok)) return false;
 
+    const nextDraftOrders = draftOrders.map(existingOrder => existingOrder.id === updatedOrder.id ? updatedOrder : existingOrder);
     setDraftSteps(updatedDraftSteps);
+    setDraftOrders(nextDraftOrders);
+    commitPlanningHistory(updatedDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
+    setOrderDirty(true);
     updatedContextSteps.forEach(updateStep);
     updateOrder(updatedOrder);
     return true;
@@ -920,7 +924,7 @@ const PlanningTableauPage: React.FC = () => {
   const openProdDialog = useCallback((stepId: string) => {
     const step = draftSteps.find(s => s.id === stepId);
     if (!step) return;
-    const order = orders.find(o => o.id === step.orderId);
+    const order = draftOrders.find(o => o.id === step.orderId);
     if (!order) return;
     const operator = operators.find(o => o.id === step.operatorId);
     const totalDoneAlready = productionRecords
@@ -934,7 +938,7 @@ const PlanningTableauPage: React.FC = () => {
       durationToday: '', totalDoneAlready,
     });
     setProdDurationError('');
-  }, [draftSteps, orders, operators, productionRecords, getOperationName]);
+  }, [draftSteps, draftOrders, operators, productionRecords, getOperationName]);
 
   useEffect(() => {
     const handler = (e: Event) => {
