@@ -69,18 +69,20 @@ const SubcontractorsPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
 
   return (
-    <div className="p-6">
-      <PageHeader
-        title="Sous-traitants"
-        description={`${subcontractors.length} sous-traitant(s)`}
-        actions={
-          <Button onClick={openNew} size="sm">
-            <Plus className="w-4 h-4 mr-1" /> Ajouter
-          </Button>
-        }
-      />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader
+          title="Sous-traitants"
+          description={`${subcontractors.length} sous-traitant(s)`}
+          actions={
+            <Button onClick={openNew} size="sm">
+              <Plus className="w-4 h-4 mr-1" /> Ajouter
+            </Button>
+          }
+        />
+      </div>
 
-      <div className="bg-card rounded-lg border">
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

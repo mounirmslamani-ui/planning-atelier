@@ -28,10 +28,12 @@ const DeliveryPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveryEntries, accessors);
 
   return (
-    <div className="p-6">
-      <PageHeader title="Commandes à livrer" description={`${deliveryEntries.length} commande(s) prête(s)`} />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="Commandes à livrer" description={`${deliveryEntries.length} commande(s) prête(s)`} />
+      </div>
 
-      <div className="bg-card rounded-lg border overflow-x-auto">
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

@@ -95,18 +95,20 @@ const OperatorsPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(operators, accessors);
 
   return (
-    <div className="p-6">
-      <PageHeader
-        title="Opérateurs"
-        description={`${operators.length} opérateur(s) enregistré(s) — max 25`}
-        actions={
-          <Button onClick={openNew} disabled={operators.length >= 25} size="sm">
-            <Plus className="w-4 h-4 mr-1" /> Ajouter
-          </Button>
-        }
-      />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader
+          title="Opérateurs"
+          description={`${operators.length} opérateur(s) enregistré(s) — max 25`}
+          actions={
+            <Button onClick={openNew} disabled={operators.length >= 25} size="sm">
+              <Plus className="w-4 h-4 mr-1" /> Ajouter
+            </Button>
+          }
+        />
+      </div>
 
-      <div className="bg-card rounded-lg border">
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>

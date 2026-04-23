@@ -90,11 +90,15 @@ const OperationsPage: React.FC = () => {
   );
 
   return (
-    <div className="p-6 space-y-8">
-      <PageHeader title="Opérations" description="Définir les opérations pour les opérateurs et les sous-traitants" />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="Opérations" description="Définir les opérations pour les opérateurs et les sous-traitants" />
+      </div>
 
-      {renderTable('Opérations opérateurs', operatorOps, 'operator')}
-      {renderTable('Opérations sous-traitants', subcontractorOps, 'subcontractor')}
+      <div className="min-h-0 flex-1 space-y-8 overflow-auto">
+        {renderTable('Opérations opérateurs', operatorOps, 'operator')}
+        {renderTable('Opérations sous-traitants', subcontractorOps, 'subcontractor')}
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

@@ -86,9 +86,11 @@ const StudyPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader title="Études" description="Étapes dont l'étude n'est pas encore faite" />
-      <div className="rounded-lg border bg-card overflow-auto">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="Études" description="Étapes dont l'étude n'est pas encore faite" />
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
