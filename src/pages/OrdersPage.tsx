@@ -10,7 +10,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
@@ -24,6 +24,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import * as XLSX from 'xlsx';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
