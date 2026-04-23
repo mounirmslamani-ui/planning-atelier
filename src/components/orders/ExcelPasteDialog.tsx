@@ -13,6 +13,7 @@ interface ExcelPasteDialogProps {
   onImport: (orders: Omit<Order, 'id'>[]) => void;
   clients: { id: string; name: string }[];
   nextDisplayOrder: number;
+  existingOrderNumbers: string[];
 }
 
 const EXPECTED_COLUMNS = ['N° Commande', 'Date', 'Client', 'Désignation', 'Quantité', 'Priorité', 'Délai'];
@@ -27,10 +28,27 @@ const parsePriority = (val: string): OrderPriority | undefined => {
   return undefined;
 };
 
-const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange, onImport, clients, nextDisplayOrder }) => {
+const normalizeOrderNumber = (value: string) => value.trim().toLowerCase();
+
+const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange, onImport, clients, nextDisplayOrder, existingOrderNumbers }) => {
   const [rawText, setRawText] = useState('');
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
   const [step, setStep] = useState<'paste' | 'preview'>('paste');
+  const [duplicateMessage, setDuplicateMessage] = useState('');
+
+  const getDuplicateNumbers = (rows: string[][]) => {
+    const existing = new Set(existingOrderNumbers.map(normalizeOrderNumber).filter(Boolean));
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    rows.forEach(row => {
+      const raw = row[0] || '';
+      const normalized = normalizeOrderNumber(raw);
+      if (!normalized) return;
+      if (existing.has(normalized) || seen.has(normalized)) duplicates.add(raw.trim());
+      seen.add(normalized);
+    });
+    return duplicates;
+  };
 
   const handleParse = () => {
     const lines = rawText.trim().split('\n').filter(l => l.trim());
@@ -51,11 +69,18 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
       return r.slice(0, Math.max(end, EXPECTED_COLUMNS.length));
     });
     setParsedRows(rows);
+    const duplicates = getDuplicateNumbers(rows);
+    setDuplicateMessage(duplicates.size > 0 ? `Erreur : Ce numéro de commande existe déjà. Veuillez utiliser un identifiant unique. Numéros rejetés : ${Array.from(duplicates).join(', ')}` : '');
     setStep('preview');
   };
 
   const handleImport = () => {
-    const orders: Omit<Order, 'id'>[] = parsedRows.map((row, i) => {
+    const duplicates = getDuplicateNumbers(parsedRows);
+    const validRows = parsedRows.filter(row => !duplicates.has((row[0] || '').trim()));
+    if (duplicates.size > 0) {
+      setDuplicateMessage(`Erreur : Ce numéro de commande existe déjà. Veuillez utiliser un identifiant unique. Numéros rejetés : ${Array.from(duplicates).join(', ')}`);
+    }
+    const orders: Omit<Order, 'id'>[] = validRows.map((row, i) => {
       const clientName = row[2] || '';
       const matchedClient = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
       return {
@@ -75,7 +100,11 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
         displayOrder: nextDisplayOrder + i,
       };
     });
-    onImport(orders);
+    if (orders.length > 0) onImport(orders);
+    if (duplicates.size > 0) {
+      setParsedRows(parsedRows.filter(row => duplicates.has((row[0] || '').trim())));
+      return;
+    }
     setRawText('');
     setParsedRows([]);
     setStep('paste');
@@ -86,6 +115,7 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
     setRawText('');
     setParsedRows([]);
     setStep('paste');
+    setDuplicateMessage('');
     onOpenChange(false);
   };
 
@@ -118,6 +148,11 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
 
         {step === 'preview' && (
           <div className="space-y-3">
+            {duplicateMessage && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {duplicateMessage}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">{parsedRows.length} ligne(s) détectée(s). Vérifiez avant d'importer :</p>
             <div className="border rounded-lg overflow-x-auto max-h-[400px] overflow-y-auto">
               <Table>
