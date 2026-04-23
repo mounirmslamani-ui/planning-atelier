@@ -364,6 +364,9 @@ const PlanningTableauPage: React.FC = () => {
     setNumDaysInput(String(numDays));
   }, [numDays]);
 
+  // Validation state
+  const [orderDirty, setOrderDirty] = useState(false);
+
   const history = useHistoryStack<PlanningDraftSnapshot>({
     initialPresent: createPlanningSnapshot(insertNewStepsAtPriorityTop(steps, orders), orders, {}, false),
     limit: PLANNING_HISTORY_LIMIT,
@@ -473,9 +476,6 @@ const PlanningTableauPage: React.FC = () => {
   const dragRef = useRef<{ operatorId: string; index: number } | null>(null);
   const [dragOverState, setDragOverState] = useState<{ operatorId: string; index: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  // Validation state
-  const [orderDirty, setOrderDirty] = useState(false);
 
   // Selected operator tab (null = first available operator shown)
   const [selectedTabOperatorId, setSelectedTabOperatorId] = useState<string | null>(null);
