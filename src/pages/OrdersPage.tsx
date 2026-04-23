@@ -716,6 +716,9 @@ const OrdersPage: React.FC = () => {
           <Button onClick={() => setPasteDialogOpen(true)} variant="outline" size="sm">
             <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
           </Button>
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+          </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
         } />
