@@ -5,11 +5,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Trash2, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
+import { Trash2, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -186,6 +187,22 @@ const ProductionRegisterPage: React.FC = () => {
     setFilterOperations(new Set());
   };
 
+  const handleExportExcel = () => {
+    exportTableToExcel('Registre des travaux effectués', sortedRecords.map(rec => {
+      const order = getOrder(rec.orderId);
+      return {
+        Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        Heure: new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        Commande: order?.orderNumber || '—',
+        Client: order ? getClientName(order.clientId) : '—',
+        Désignation: order?.designation || '—',
+        Quantité: order?.quantity ?? '—',
+        Opération: getOperationName(rec.operationId),
+        'Durée (h)': Number((rec.actualDuration / 60).toFixed(2)),
+      };
+    }), [12, 10, 18, 24, 45, 10, 24, 12]);
+  };
+
   const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
     const dt = new Date(rec.validatedAt);
     const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
@@ -261,6 +278,9 @@ const ProductionRegisterPage: React.FC = () => {
                     <X className="w-3 h-3" /> Effacer filtres
                   </button>
                 )}
+                <Button onClick={handleExportExcel} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-1" /> Exporter Excel
+                </Button>
                 <span className="text-xs text-muted-foreground">{sortedRecords.length} entrée(s)</span>
                 <span className="text-xs font-medium text-primary">Total : {totalHours.toFixed(2)}h</span>
               </div>
