@@ -23,6 +23,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import { useHistoryStack } from '@/hooks/useHistoryStack';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
@@ -274,6 +275,45 @@ function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Orde
   return result;
 }
 
+function createPlanningSnapshot(
+  nextDraftSteps: ProductionStep[],
+  nextDraftOrders: Order[],
+  nextForcedWarnings: Record<string, boolean>,
+  nextOrderDirty: boolean,
+): PlanningDraftSnapshot {
+  return {
+    draftSteps: nextDraftSteps.map(step => ({ ...step })),
+    draftOrders: nextDraftOrders.map(order => ({ ...order })),
+    forcedPhaseAmontWarnings: { ...nextForcedWarnings },
+    orderDirty: nextOrderDirty,
+  };
+}
+
+function areSnapshotsEqual(a: PlanningDraftSnapshot, b: PlanningDraftSnapshot): boolean {
+  if (a.draftSteps.length !== b.draftSteps.length) return false;
+
+  for (let index = 0; index < a.draftSteps.length; index += 1) {
+    const left = a.draftSteps[index];
+    const right = b.draftSteps[index];
+    if (JSON.stringify(left) !== JSON.stringify(right)) return false;
+  }
+
+  if (a.draftOrders.length !== b.draftOrders.length) return false;
+
+  for (let index = 0; index < a.draftOrders.length; index += 1) {
+    const left = a.draftOrders[index];
+    const right = b.draftOrders[index];
+    if (JSON.stringify(left) !== JSON.stringify(right)) return false;
+  }
+
+  const leftWarningKeys = Object.keys(a.forcedPhaseAmontWarnings).sort();
+  const rightWarningKeys = Object.keys(b.forcedPhaseAmontWarnings).sort();
+  if (leftWarningKeys.length !== rightWarningKeys.length) return false;
+
+  return a.orderDirty === b.orderDirty
+    && leftWarningKeys.every((key, index) => key === rightWarningKeys[index] && a.forcedPhaseAmontWarnings[key] === b.forcedPhaseAmontWarnings[key]);
+}
+
 interface ProductionDialogState {
   open: boolean;
   step: ProductionStep | null;
@@ -285,6 +325,14 @@ interface ProductionDialogState {
 }
 
 const NUMDAYS_STORAGE_KEY = 'planning-tableau-numdays';
+const PLANNING_HISTORY_LIMIT = 50;
+
+interface PlanningDraftSnapshot {
+  draftSteps: ProductionStep[];
+  draftOrders: Order[];
+  forcedPhaseAmontWarnings: Record<string, boolean>;
+  orderDirty: boolean;
+}
 
 const PlanningTableauPage: React.FC = () => {
   const {
@@ -293,7 +341,6 @@ const PlanningTableauPage: React.FC = () => {
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord,
     qcEntries, addQCEntry,
-    undo, redo, canUndo, canRedo,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [numDays, setNumDays] = useState(() => {
@@ -304,6 +351,7 @@ const PlanningTableauPage: React.FC = () => {
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
+  const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
 
   // Column filters for the operator tables
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
@@ -315,6 +363,17 @@ const PlanningTableauPage: React.FC = () => {
     localStorage.setItem(NUMDAYS_STORAGE_KEY, String(numDays));
     setNumDaysInput(String(numDays));
   }, [numDays]);
+
+  // Validation state
+  const [orderDirty, setOrderDirty] = useState(false);
+
+  const history = useHistoryStack<PlanningDraftSnapshot>({
+    initialPresent: createPlanningSnapshot(insertNewStepsAtPriorityTop(steps, orders), orders, {}, false),
+    limit: PLANNING_HISTORY_LIMIT,
+    isEqual: areSnapshotsEqual,
+  });
+  const canUndo = history.canUndo;
+  const canRedo = history.canRedo;
 
   const handleNumDaysInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNumDaysInput(e.target.value);
@@ -338,27 +397,57 @@ const PlanningTableauPage: React.FC = () => {
   // ─── DRAFT STEPS: local layer that defers DB writes until "Valider" ───
   const [draftSteps, setDraftSteps] = useState<ProductionStep[]>(steps);
   const draftInitialized = useRef(false);
+  const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
+
+  const commitPlanningHistory = useCallback((
+    nextDraftSteps: ProductionStep[],
+    nextDraftOrders: Order[],
+    nextForcedWarnings: Record<string, boolean>,
+    nextOrderDirty: boolean,
+  ) => {
+    history.commit(createPlanningSnapshot(nextDraftSteps, nextDraftOrders, nextForcedWarnings, nextOrderDirty));
+  }, [history]);
 
   // Sync from context whenever steps change, including Undo/Redo restores.
   useEffect(() => {
+    const syncedDraftSteps = insertNewStepsAtPriorityTop(steps, orders);
     if (!draftInitialized.current) {
-      setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
+      setDraftOrders(orders);
+      setDraftSteps(syncedDraftSteps);
+      setForcedPhaseAmontWarnings({});
+      setOrderDirty(false);
+      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
       draftInitialized.current = true;
       return;
     }
-    setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
+
+    if (!orderDirty) {
+      setDraftOrders(orders);
+      setDraftSteps(syncedDraftSteps);
+      setForcedPhaseAmontWarnings({});
+      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
+    }
+
     setOrderDirty(false);
-  }, [steps, orders]);
+  }, [steps, orders, orderDirty, history]);
 
   const handleUndo = useCallback(() => {
-    setOrderDirty(false);
-    undo();
-  }, [undo]);
+    const previous = history.undo();
+    if (!previous) return;
+    setDraftSteps(previous.draftSteps.map(step => ({ ...step })));
+    setDraftOrders(previous.draftOrders.map(order => ({ ...order })));
+    setForcedPhaseAmontWarnings({ ...previous.forcedPhaseAmontWarnings });
+    setOrderDirty(previous.orderDirty);
+  }, [history]);
 
   const handleRedo = useCallback(() => {
-    setOrderDirty(false);
-    redo();
-  }, [redo]);
+    const next = history.redo();
+    if (!next) return;
+    setDraftSteps(next.draftSteps.map(step => ({ ...step })));
+    setDraftOrders(next.draftOrders.map(order => ({ ...order })));
+    setForcedPhaseAmontWarnings({ ...next.forcedPhaseAmontWarnings });
+    setOrderDirty(next.orderDirty);
+  }, [history]);
 
   // Chained confirm dialogs for drag-up checks
   const [pendingDrop, setPendingDrop] = useState<{
@@ -389,10 +478,6 @@ const PlanningTableauPage: React.FC = () => {
   const dragRef = useRef<{ operatorId: string; index: number } | null>(null);
   const [dragOverState, setDragOverState] = useState<{ operatorId: string; index: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
-
-  // Validation state
-  const [orderDirty, setOrderDirty] = useState(false);
 
   // Selected operator tab (null = first available operator shown)
   const [selectedTabOperatorId, setSelectedTabOperatorId] = useState<string | null>(null);
@@ -437,7 +522,7 @@ const PlanningTableauPage: React.FC = () => {
       if (step.subcontractorId) return;
 
       if (step.startDate <= lastDay && step.endDate >= firstDay) {
-        const order = orders.find(o => o.id === step.orderId);
+        const order = draftOrders.find(o => o.id === step.orderId);
         if (!order) return;
         if (result[step.operatorId]) {
           result[step.operatorId].tasks.push({ step, order });
@@ -474,10 +559,15 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
+  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
-  const applyReorder = useCallback((tasks: TaskItem[], targetStepId?: string) => {
+  const applyReorder = useCallback((
+    tasks: TaskItem[],
+    targetStepId?: string,
+    nextDraftOrdersOverride?: Order[],
+    nextForcedWarningsOverride?: Record<string, boolean>,
+  ) => {
     const reorderedTasks = tasks.map(({ step, order }, idx) => {
       const reorderedStep: ProductionStep = {
         ...step,
@@ -498,9 +588,16 @@ const PlanningTableauPage: React.FC = () => {
       const unchanged = prev.filter(s => !updatedIds.has(s.id));
       return [...unchanged, ...finalSteps];
     });
-    finalSteps.forEach(updateStep);
+    const nextDraftOrders = nextDraftOrdersOverride ?? draftOrders;
+    const nextForcedWarnings = nextForcedWarningsOverride ?? forcedPhaseAmontWarnings;
+    commitPlanningHistory(
+      [...draftSteps.filter(s => !updatedIds.has(s.id)), ...finalSteps],
+      nextDraftOrders,
+      nextForcedWarnings,
+      true,
+    );
     setOrderDirty(true);
-  }, [holidays, updateStep]);
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
@@ -541,12 +638,19 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    applyReorder(items, dragged.step.id);
-    if (!dragged.order.frozenOrder) updateOrder({ ...dragged.order, frozenOrder: true });
+    const nextDraftOrders = dragged.order.frozenOrder
+      ? draftOrders
+      : draftOrders.map(order => order.id === dragged.order.id ? { ...order, frozenOrder: true } : order);
+
+    if (!dragged.order.frozenOrder) {
+      setDraftOrders(nextDraftOrders);
+    }
+
+    applyReorder(items, dragged.step.id, nextDraftOrders);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, applyReorder, updateOrder]);
+  }, [operatorTasks, applyReorder, draftOrders]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -567,13 +671,17 @@ const PlanningTableauPage: React.FC = () => {
     if (nextCheck < checks.length) {
       setPendingDrop({ ...pendingDrop, currentCheck: nextCheck, warnings: newWarnings });
     } else {
+      const nextForcedWarnings = newWarnings.has('phaseAmont')
+        ? { ...forcedPhaseAmontWarnings, [stepId]: true }
+        : forcedPhaseAmontWarnings;
+
       if (newWarnings.has('phaseAmont')) {
-        setForcedPhaseAmontWarnings(prev => ({ ...prev, [stepId]: true }));
+        setForcedPhaseAmontWarnings(nextForcedWarnings);
       }
-      applyReorder(tasks, stepId);
+      applyReorder(tasks, stepId, undefined, nextForcedWarnings);
       setPendingDrop(null);
     }
-  }, [pendingDrop, applyReorder]);
+  }, [pendingDrop, applyReorder, forcedPhaseAmontWarnings]);
 
   const handlePendingCancel = useCallback(() => {
     setPendingDrop(null);
@@ -612,6 +720,15 @@ const PlanningTableauPage: React.FC = () => {
   const handleValidate = useCallback(() => {
     // Commit every draft step that differs from the context steps
     const contextMap = new Map(steps.map(s => [s.id, s]));
+    const contextOrderMap = new Map(orders.map(order => [order.id, order]));
+
+    draftOrders.forEach(draftOrder => {
+      const originalOrder = contextOrderMap.get(draftOrder.id);
+      if (!originalOrder || draftOrder.frozenOrder !== originalOrder.frozenOrder) {
+        updateOrder(draftOrder);
+      }
+    });
+
     draftSteps.forEach(draft => {
       const original = contextMap.get(draft.id);
       if (!original ||
@@ -637,7 +754,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
     setOrderDirty(false);
-  }, [draftSteps, steps, updateStep]);
+  }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
@@ -645,19 +762,28 @@ const PlanningTableauPage: React.FC = () => {
       const target = prev.find(s => s.id === stepId);
       if (!target) return prev;
       const unlocked = prev.map(s => s.id === stepId ? { ...s, frozen: false } : s);
-      if (!target.frozen) return prev.map(s => s.id === stepId ? { ...s, frozen: true } : s);
+      const nextDraftSteps = !target.frozen
+        ? prev.map(s => s.id === stepId ? { ...s, frozen: true } : s)
+        : (() => {
+          const operatorSteps = unlocked
+            .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
+            .map(step => ({ step, order: draftOrders.find(o => o.id === step.orderId) }))
+            .filter((item): item is TaskItem => !!item.order)
+            .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
+            .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
+          const byId = new Map(operatorSteps.map(s => [s.id, s]));
+          return unlocked.map(s => byId.get(s.id) ?? s);
+        })();
 
-      const operatorSteps = unlocked
-        .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
-        .map(step => ({ step, order: orders.find(o => o.id === step.orderId) }))
-        .filter((item): item is TaskItem => !!item.order)
-        .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
-        .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
-      const byId = new Map(operatorSteps.map(s => [s.id, s]));
-      return unlocked.map(s => byId.get(s.id) ?? s);
+      const nextDraftOrders = draftOrders.map(order => order.id === target.orderId
+        ? { ...order, frozenOrder: !target.frozen }
+        : order);
+      setDraftOrders(nextDraftOrders);
+      commitPlanningHistory(nextDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
+      return nextDraftSteps;
     });
     setOrderDirty(true);
-  }, [orders, absenceOperationId, absenceOrderId]);
+  }, [draftOrders, absenceOperationId, absenceOrderId, forcedPhaseAmontWarnings, commitPlanningHistory]);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
@@ -677,7 +803,9 @@ const PlanningTableauPage: React.FC = () => {
       if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
       // Status updates (Étude/Matière/Outillage) are now handled directly by ResourceStatusPill
       // Save to draft only (not DB)
-      setDraftSteps(prev => prev.map(s => s.id === stepId ? updated : s));
+      const nextDraftSteps = draftSteps.map(s => s.id === stepId ? updated : s);
+      setDraftSteps(nextDraftSteps);
+      commitPlanningHistory(nextDraftSteps, draftOrders, forcedPhaseAmontWarnings, true);
       setOrderDirty(true);
     }
     setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
@@ -691,8 +819,8 @@ const PlanningTableauPage: React.FC = () => {
 
   // Compute blocked step IDs (violet) — propagates to all successor steps of the same order
   const blockedStepIds = useMemo(
-    () => computeBlockedStepIds(draftSteps, orders),
-    [draftSteps, orders]
+    () => computeBlockedStepIds(draftSteps, draftOrders),
+    [draftSteps, draftOrders]
   );
   const isStepBlocked = (step: ProductionStep): boolean => blockedStepIds.has(step.id);
 
@@ -757,7 +885,7 @@ const PlanningTableauPage: React.FC = () => {
         [deadlineKey]: (status === 'partiel' || status === 'non-disponible') ? deadline || undefined : undefined,
       } as ProductionStep));
 
-    const order = orders.find(o => o.id === sourceStep.orderId);
+    const order = draftOrders.find(o => o.id === sourceStep.orderId) || orders.find(o => o.id === sourceStep.orderId);
     if (!order) return false;
     const updatedOrder = {
       ...order,
@@ -769,11 +897,15 @@ const PlanningTableauPage: React.FC = () => {
     const saved = await Promise.all([...updatedContextSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
     if (saved.some(ok => !ok)) return false;
 
+    const nextDraftOrders = draftOrders.map(existingOrder => existingOrder.id === updatedOrder.id ? updatedOrder : existingOrder);
     setDraftSteps(updatedDraftSteps);
+    setDraftOrders(nextDraftOrders);
+    commitPlanningHistory(updatedDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
+    setOrderDirty(true);
     updatedContextSteps.forEach(updateStep);
     updateOrder(updatedOrder);
     return true;
-  }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder]);
+  }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder, draftOrders, forcedPhaseAmontWarnings, commitPlanningHistory]);
 
   const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
     if (next === 'partiel' || next === 'non-disponible') {
@@ -792,7 +924,7 @@ const PlanningTableauPage: React.FC = () => {
   const openProdDialog = useCallback((stepId: string) => {
     const step = draftSteps.find(s => s.id === stepId);
     if (!step) return;
-    const order = orders.find(o => o.id === step.orderId);
+    const order = draftOrders.find(o => o.id === step.orderId);
     if (!order) return;
     const operator = operators.find(o => o.id === step.operatorId);
     const totalDoneAlready = productionRecords
@@ -806,7 +938,7 @@ const PlanningTableauPage: React.FC = () => {
       durationToday: '', totalDoneAlready,
     });
     setProdDurationError('');
-  }, [draftSteps, orders, operators, productionRecords, getOperationName]);
+  }, [draftSteps, draftOrders, operators, productionRecords, getOperationName]);
 
   useEffect(() => {
     const handler = (e: Event) => {
