@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, LogIn, LogOut, X } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut, X } from 'lucide-react';
 import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
@@ -542,41 +542,7 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    // If moved UP, check prerequisites
-    if (dropIndex < dragIndex) {
-      const checks: { type: 'study' | 'material' | 'tooling' | 'phaseAmont'; message: string }[] = [];
-
-      const amontSt = phaseAmontStatus(dragged.step, draftSteps, productionRecords);
-      if (amontSt === 'red') {
-        checks.push({ type: 'phaseAmont', message: "Attention : phase amont n'est pas encore effectuée. Reprogrammer quand même cette étape ?" });
-      }
-      if (dragged.step.studyReady === false) {
-        checks.push({ type: 'study', message: "Attention : étude non finalisée. Reprogrammer quand même cette étape ?" });
-      }
-      if (dragged.step.materialAvailable === false) {
-        checks.push({ type: 'material', message: "Attention : matière première non disponible. Reprogrammer quand même cette étape ?" });
-      }
-      if (dragged.step.toolingAvailable === false) {
-        checks.push({ type: 'tooling', message: "Attention : outillage non disponible. Reprogrammer quand même cette étape ?" });
-      }
-
-      const draggedPriority = priorityRank[dragged.order.priority] ?? 9;
-      const jumpedOverItems = items.slice(0, dropIndex);
-      const hasHigherPriorityAbove = jumpedOverItems.some(t => (priorityRank[t.order.priority] ?? 9) < draggedPriority);
-      if (hasHigherPriorityAbove) {
-        checks.push({ type: 'study' as any, message: "Attention l'ordre d'exécution ne respecte pas l'ordre défini dans les priorités commerciales. Reprogrammer quand même cette étape ?" });
-      }
-
-      if (checks.length > 0) {
-        setPendingDrop({ tasks: items, stepId: dragged.step.id, checks, currentCheck: 0, warnings: new Set() });
-        dragRef.current = null;
-        setDragOverState(null);
-        setIsDragging(false);
-        return;
-      }
-    }
-
-    applyReorder(items);
+    applyReorder(items, dragged.step.id);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
@@ -604,7 +570,7 @@ const PlanningTableauPage: React.FC = () => {
       if (newWarnings.has('phaseAmont')) {
         setForcedPhaseAmontWarnings(prev => ({ ...prev, [stepId]: true }));
       }
-      applyReorder(tasks, newWarnings, stepId);
+      applyReorder(tasks, stepId);
       setPendingDrop(null);
     }
   }, [pendingDrop, applyReorder]);
