@@ -500,8 +500,9 @@ const PlanningTableauPage: React.FC = () => {
       const unchanged = prev.filter(s => !updatedIds.has(s.id));
       return [...unchanged, ...finalSteps];
     });
+    finalSteps.forEach(updateStep);
     setOrderDirty(true);
-  }, [holidays]);
+  }, [holidays, updateStep]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
@@ -543,10 +544,11 @@ const PlanningTableauPage: React.FC = () => {
     items.splice(dropIndex, 0, dragged);
 
     applyReorder(items, dragged.step.id);
+    if (!dragged.order.frozenOrder) updateOrder({ ...dragged.order, frozenOrder: true });
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, draftSteps, productionRecords, applyReorder]);
+  }, [operatorTasks, applyReorder, updateOrder]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
