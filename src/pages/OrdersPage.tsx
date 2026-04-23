@@ -24,6 +24,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
@@ -521,14 +522,7 @@ const OrdersPage: React.FC = () => {
       { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 45 },
     ];
     XLSX.utils.book_append_sheet(wb, ws, 'Commandes en cours');
-
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    XLSX.writeFile(wb, `Liste des commandes en cours.${day}.${month}.${year}_${hours}:${minutes}.xlsx`);
+    XLSX.writeFile(wb, getExportFilename('Commandes en cours'));
   }, [displayOrders, orderStatusMap, atelierTimeMap, getClientName, steps, productionRecords, absenceOperationId]);
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
