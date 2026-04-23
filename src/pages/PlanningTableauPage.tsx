@@ -1304,9 +1304,6 @@ const PlanningTableauPage: React.FC = () => {
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{getMachineName(step)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
