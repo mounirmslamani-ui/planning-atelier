@@ -729,7 +729,10 @@ const PlanningTableauPage: React.FC = () => {
 
     draftOrders.forEach(draftOrder => {
       const originalOrder = contextOrderMap.get(draftOrder.id);
-      if (!originalOrder || draftOrder.frozenOrder !== originalOrder.frozenOrder) {
+      if (!originalOrder ||
+        draftOrder.frozenOrder !== originalOrder.frozenOrder ||
+        draftOrder.manualSortOrder !== originalOrder.manualSortOrder
+      ) {
         updateOrder(draftOrder);
       }
     });
@@ -781,7 +784,11 @@ const PlanningTableauPage: React.FC = () => {
         })();
 
       const nextDraftOrders = draftOrders.map(order => order.id === target.orderId
-        ? { ...order, frozenOrder: !target.frozen }
+        ? {
+          ...order,
+          frozenOrder: !target.frozen,
+          manualSortOrder: target.frozen ? undefined : (order.manualSortOrder ?? target.order),
+        }
         : order);
       setDraftOrders(nextDraftOrders);
       commitPlanningHistory(nextDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
