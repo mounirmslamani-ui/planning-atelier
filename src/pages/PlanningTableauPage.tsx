@@ -277,11 +277,15 @@ function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Orde
 
 function createPlanningSnapshot(
   nextDraftSteps: ProductionStep[],
+  nextDraftOrders: Order[],
   nextForcedWarnings: Record<string, boolean>,
+  nextOrderDirty: boolean,
 ): PlanningDraftSnapshot {
   return {
     draftSteps: nextDraftSteps.map(step => ({ ...step })),
+    draftOrders: nextDraftOrders.map(order => ({ ...order })),
     forcedPhaseAmontWarnings: { ...nextForcedWarnings },
+    orderDirty: nextOrderDirty,
   };
 }
 
@@ -294,11 +298,20 @@ function areSnapshotsEqual(a: PlanningDraftSnapshot, b: PlanningDraftSnapshot): 
     if (JSON.stringify(left) !== JSON.stringify(right)) return false;
   }
 
+  if (a.draftOrders.length !== b.draftOrders.length) return false;
+
+  for (let index = 0; index < a.draftOrders.length; index += 1) {
+    const left = a.draftOrders[index];
+    const right = b.draftOrders[index];
+    if (JSON.stringify(left) !== JSON.stringify(right)) return false;
+  }
+
   const leftWarningKeys = Object.keys(a.forcedPhaseAmontWarnings).sort();
   const rightWarningKeys = Object.keys(b.forcedPhaseAmontWarnings).sort();
   if (leftWarningKeys.length !== rightWarningKeys.length) return false;
 
-  return leftWarningKeys.every((key, index) => key === rightWarningKeys[index] && a.forcedPhaseAmontWarnings[key] === b.forcedPhaseAmontWarnings[key]);
+  return a.orderDirty === b.orderDirty
+    && leftWarningKeys.every((key, index) => key === rightWarningKeys[index] && a.forcedPhaseAmontWarnings[key] === b.forcedPhaseAmontWarnings[key]);
 }
 
 interface ProductionDialogState {
@@ -316,7 +329,9 @@ const PLANNING_HISTORY_LIMIT = 50;
 
 interface PlanningDraftSnapshot {
   draftSteps: ProductionStep[];
+  draftOrders: Order[];
   forcedPhaseAmontWarnings: Record<string, boolean>;
+  orderDirty: boolean;
 }
 
 const PlanningTableauPage: React.FC = () => {
