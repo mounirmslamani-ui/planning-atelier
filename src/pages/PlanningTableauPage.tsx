@@ -392,27 +392,57 @@ const PlanningTableauPage: React.FC = () => {
   // ─── DRAFT STEPS: local layer that defers DB writes until "Valider" ───
   const [draftSteps, setDraftSteps] = useState<ProductionStep[]>(steps);
   const draftInitialized = useRef(false);
+  const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
+
+  const commitPlanningHistory = useCallback((
+    nextDraftSteps: ProductionStep[],
+    nextDraftOrders: Order[],
+    nextForcedWarnings: Record<string, boolean>,
+    nextOrderDirty: boolean,
+  ) => {
+    history.commit(createPlanningSnapshot(nextDraftSteps, nextDraftOrders, nextForcedWarnings, nextOrderDirty));
+  }, [history]);
 
   // Sync from context whenever steps change, including Undo/Redo restores.
   useEffect(() => {
+    const syncedDraftSteps = insertNewStepsAtPriorityTop(steps, orders);
     if (!draftInitialized.current) {
-      setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
+      setDraftOrders(orders);
+      setDraftSteps(syncedDraftSteps);
+      setForcedPhaseAmontWarnings({});
+      setOrderDirty(false);
+      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
       draftInitialized.current = true;
       return;
     }
-    setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
+
+    if (!orderDirty) {
+      setDraftOrders(orders);
+      setDraftSteps(syncedDraftSteps);
+      setForcedPhaseAmontWarnings({});
+      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
+    }
+
     setOrderDirty(false);
-  }, [steps, orders]);
+  }, [steps, orders, orderDirty, history]);
 
   const handleUndo = useCallback(() => {
-    setOrderDirty(false);
-    undo();
-  }, [undo]);
+    const previous = history.undo();
+    if (!previous) return;
+    setDraftSteps(previous.draftSteps.map(step => ({ ...step })));
+    setDraftOrders(previous.draftOrders.map(order => ({ ...order })));
+    setForcedPhaseAmontWarnings({ ...previous.forcedPhaseAmontWarnings });
+    setOrderDirty(previous.orderDirty);
+  }, [history]);
 
   const handleRedo = useCallback(() => {
-    setOrderDirty(false);
-    redo();
-  }, [redo]);
+    const next = history.redo();
+    if (!next) return;
+    setDraftSteps(next.draftSteps.map(step => ({ ...step })));
+    setDraftOrders(next.draftOrders.map(order => ({ ...order })));
+    setForcedPhaseAmontWarnings({ ...next.forcedPhaseAmontWarnings });
+    setOrderDirty(next.orderDirty);
+  }, [history]);
 
   // Chained confirm dialogs for drag-up checks
   const [pendingDrop, setPendingDrop] = useState<{
@@ -443,7 +473,6 @@ const PlanningTableauPage: React.FC = () => {
   const dragRef = useRef<{ operatorId: string; index: number } | null>(null);
   const [dragOverState, setDragOverState] = useState<{ operatorId: string; index: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
 
   // Validation state
   const [orderDirty, setOrderDirty] = useState(false);
