@@ -67,6 +67,7 @@ export interface Order {
   priority?: OrderPriority;
   displayOrder?: number;
   frozenOrder?: boolean;
+  manualSortOrder?: number;
   plannedDeadline: string;
   prototypeQuantity?: number;
   prototypeDeadline?: string;
