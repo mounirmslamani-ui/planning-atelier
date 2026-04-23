@@ -688,6 +688,12 @@ const OrdersPage: React.FC = () => {
         </div>
       )}
 
+      {orderNumberError && !dialogOpen && (
+        <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+          {orderNumberError}
+        </div>
+      )}
+
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>

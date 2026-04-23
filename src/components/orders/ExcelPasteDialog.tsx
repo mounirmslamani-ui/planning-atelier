@@ -38,14 +38,18 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
 
   const getDuplicateNumbers = (rows: string[][]) => {
     const existing = new Set(existingOrderNumbers.map(normalizeOrderNumber).filter(Boolean));
-    const seen = new Set<string>();
+    const counts = new Map<string, number>();
     const duplicates = new Set<string>();
     rows.forEach(row => {
       const raw = row[0] || '';
       const normalized = normalizeOrderNumber(raw);
       if (!normalized) return;
-      if (existing.has(normalized) || seen.has(normalized)) duplicates.add(raw.trim());
-      seen.add(normalized);
+      counts.set(normalized, (counts.get(normalized) || 0) + 1);
+    });
+    rows.forEach(row => {
+      const raw = row[0] || '';
+      const normalized = normalizeOrderNumber(raw);
+      if (normalized && (existing.has(normalized) || (counts.get(normalized) || 0) > 1)) duplicates.add(raw.trim());
     });
     return duplicates;
   };
