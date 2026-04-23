@@ -1194,9 +1194,6 @@ const PlanningTableauPage: React.FC = () => {
                       <ColumnHeader label="Statut" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['En attente', 'En cours', 'Terminée']} />
                     </TableHead>
                     <TableHead className="w-[80px] text-xs">Délai</TableHead>
-                    <TableHead className="w-[110px] text-xs">
-                      <ColumnHeader label="Machine" columnKey="machine" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['machine'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={machineFilterOptions} />
-                    </TableHead>
                     <TableHead className="w-[105px] text-xs">
                       <ColumnHeader label="Statut" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['Non entamée', 'En cours', 'Terminée']} />
                     </TableHead>
@@ -1305,9 +1302,6 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{getMachineName(step)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
