@@ -1364,7 +1364,7 @@ const PlanningTableauPage: React.FC = () => {
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
+                            <TooltipTrigger><span className="text-sm">{phaseWarning ? <WarningTriangleIcon /> : amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>
                               {phaseWarning
                                 ? '⚠️ Phase amont non terminée mais position forcée'
