@@ -488,6 +488,7 @@ export async function dbDeleteClient(id: string) {
 export async function dbInsertOrder(o: Order) {
   const { error } = await supabase.from('orders').insert(mapOrderToDB(o));
   if (error) logError('order', 'insert', error);
+  return !error;
 }
 export async function dbUpdateOrder(o: Order) {
   const { error } = await supabase.from('orders').update(mapOrderToDB(o)).eq('id', o.id);
@@ -503,6 +504,7 @@ export async function dbBulkUpdateOrders(orders: Order[]) {
   const mapped = orders.map(mapOrderToDB);
   const { error } = await supabase.from('orders').upsert(mapped);
   if (error) logError('orders', 'bulk update', error);
+  return !error;
 }
 
 // Step

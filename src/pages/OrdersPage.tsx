@@ -73,6 +73,7 @@ const OrdersPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [orderNumberError, setOrderNumberError] = useState('');
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -377,9 +378,21 @@ const OrdersPage: React.FC = () => {
   });
   const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
 
-  const openNew = () => { setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
-  const openEdit = (o: Order) => { setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
+  const normalizeOrderNumber = (value: string) => value.trim().toLowerCase();
+  const duplicateOrderError = 'Erreur : Ce numéro de commande existe déjà. Veuillez utiliser un identifiant unique.';
+  const isDuplicateOrderNumber = useCallback((value: string, currentId?: string) => {
+    const normalized = normalizeOrderNumber(value);
+    if (!normalized) return false;
+    return orders.some(o => o.id !== absenceOrderId && o.id !== currentId && normalizeOrderNumber(o.orderNumber) === normalized);
+  }, [orders, absenceOrderId]);
+
+  const openNew = () => { setOrderNumberError(''); setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
+  const openEdit = (o: Order) => { setOrderNumberError(''); setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
   const handleSave = () => {
+    if (isDuplicateOrderNumber(form.orderNumber, editing?.id)) {
+      setOrderNumberError(duplicateOrderError);
+      return;
+    }
     const data: Order = { id: editing?.id || crypto.randomUUID(), ...form };
     if (editing) updateOrder(data); else addOrder(data);
     setDialogOpen(false);
@@ -402,6 +415,11 @@ const OrdersPage: React.FC = () => {
     const changes = inlineEdits[id];
     const order = orders.find(o => o.id === id);
     if (order && changes && Object.keys(changes).length > 0) {
+      const nextOrderNumber = typeof changes.orderNumber === 'string' ? changes.orderNumber : order.orderNumber;
+      if (isDuplicateOrderNumber(nextOrderNumber, id)) {
+        setOrderNumberError(duplicateOrderError);
+        return;
+      }
       updateOrder({ ...order, ...changes });
     }
     setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
@@ -670,6 +688,12 @@ const OrdersPage: React.FC = () => {
         </div>
       )}
 
+      {orderNumberError && !dialogOpen && (
+        <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+          {orderNumberError}
+        </div>
+      )}
+
       <div className="bg-card rounded-lg border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -797,8 +821,13 @@ const OrdersPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">N° Commande</label>
-              <Input value={form.orderNumber} onChange={e => updateForm('orderNumber', e.target.value)} />
+              <Input value={form.orderNumber} onChange={e => { setOrderNumberError(''); updateForm('orderNumber', e.target.value); }} />
             </div>
+            {orderNumberError && (
+              <div className="col-span-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {orderNumberError}
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium mb-1 block">Date de commande</label>
               <Input type="date" value={form.orderDate} onChange={e => updateForm('orderDate', e.target.value)} />
@@ -859,7 +888,7 @@ const OrdersPage: React.FC = () => {
       </Dialog>
 
       {/* Excel Paste Dialog */}
-      <ExcelPasteDialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen} onImport={handleExcelImport} clients={clients} nextDisplayOrder={baseSorted.length + 1} />
+      <ExcelPasteDialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen} onImport={handleExcelImport} clients={clients} nextDisplayOrder={baseSorted.length + 1} existingOrderNumbers={orders.filter(o => o.id !== absenceOrderId).map(o => o.orderNumber)} />
 
       {planningOrder && (
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
