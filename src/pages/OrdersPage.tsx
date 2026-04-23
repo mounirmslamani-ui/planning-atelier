@@ -771,7 +771,7 @@ const OrdersPage: React.FC = () => {
                     onDragEnd={handleDragEnd}
                     className={`transition-colors ${
                       !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
-                    } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_*]:!text-blocked-table-foreground` : ''
+                    } ${blocked ? 'bg-blocked hover:bg-blocked/90' : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
                     } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''

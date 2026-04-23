@@ -1240,7 +1240,7 @@ const PlanningTableauPage: React.FC = () => {
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
+                        className={`transition-colors ${blocked ? 'bg-blocked hover:bg-blocked/90' : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
                       >
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
