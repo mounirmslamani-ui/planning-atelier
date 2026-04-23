@@ -492,6 +492,45 @@ const OrdersPage: React.FC = () => {
     { key: 'observation', label: 'Observation', className: 'w-[340px]' },
   ];
 
+  const handleExportExcel = useCallback(() => {
+    const rows = displayOrders.map((o, index) => {
+      const status = orderStatusMap.get(o.id);
+      const atelierMinutes = atelierTimeMap.get(o.id) || 0;
+      return {
+        'Ordre': o.displayOrder ?? index + 1,
+        'Numéro de commande': o.orderNumber,
+        'Date de commande': formatDateFR(o.orderDate),
+        'Client': getClientName(o.clientId),
+        'Désignation': o.designation,
+        'Quantité': o.quantity,
+        'Priorité': o.priority || '',
+        'Statut': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
+        'Délai': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
+        'Temps atelier': formatMinutesToHM(atelierMinutes),
+        'Étude': status?.study || '',
+        'Matière': status?.material || '',
+        'Outillage': status?.tooling || '',
+        'Observation': o.observation || '',
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 8 }, { wch: 20 }, { wch: 16 }, { wch: 24 }, { wch: 45 }, { wch: 10 }, { wch: 10 },
+      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 45 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Commandes en cours');
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    XLSX.writeFile(wb, `Liste des commandes en cours.${day}.${month}.${year}_${hours}:${minutes}.xlsx`);
+  }, [displayOrders, orderStatusMap, atelierTimeMap, getClientName, steps, productionRecords, absenceOperationId]);
+
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
     const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client'];
