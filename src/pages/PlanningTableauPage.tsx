@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut, X } from 'lucide-react';
-import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut, X } from 'lucide-react';
+import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -96,6 +96,19 @@ function phaseAmontLabel(status: PhaseAmontStatus): string {
   if (status === 'orange') return 'Au moins une phase amont a été entamée — étape peut-être lançable';
   if (status === 'red') return 'Aucune phase amont entamée — étape non lançable';
   return 'Première étape — pas de phase amont';
+}
+
+const isBlockingResourceStatus = (status: ResourceStatus | undefined): boolean =>
+  status === 'non-disponible' || status === 'partiel';
+
+function isManualOrderViolation(tasks: TaskItem[], index: number): boolean {
+  const currentCn = tasks[index]?.order.displayOrder || 0;
+  if (currentCn <= 0) return true;
+  return tasks.some((task, taskIndex) => {
+    const cn = task.order.displayOrder || 0;
+    if (cn <= 0 || taskIndex === index) return false;
+    return (taskIndex < index && cn > currentCn) || (taskIndex > index && cn < currentCn);
+  });
 }
 
 /** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
@@ -434,11 +447,14 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by order.displayOrder (Cn from Commandes en cours)
-    // Frozen steps keep their position; others sort by Cn ascending.
+    // Sort tasks within each operator by order.displayOrder (Cn from Commandes en cours).
+    // Manually frozen steps keep their saved step_order position.
     // Steps without a Cn (displayOrder === 0 or null) go to the top of their priority group.
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
+        if (a.step.frozen && b.step.frozen) return a.step.order - b.step.order;
+        if (a.step.frozen && !b.step.frozen) return a.step.order - (b.order.displayOrder || b.step.order || 0);
+        if (!a.step.frozen && b.step.frozen) return (a.order.displayOrder || a.step.order || 0) - b.step.order;
         const cnA = a.order.displayOrder || 0;
         const cnB = b.order.displayOrder || 0;
         // Steps without Cn: sort by priority then keep natural order
@@ -463,27 +479,13 @@ const PlanningTableauPage: React.FC = () => {
   }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
-  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
+  const applyReorder = useCallback((tasks: TaskItem[], targetStepId?: string) => {
     const reorderedTasks = tasks.map(({ step, order }, idx) => {
       const reorderedStep: ProductionStep = {
         ...step,
         order: idx + 1,
+        frozen: step.id === targetStepId ? true : step.frozen,
       };
-
-      if (step.id === targetStepId && warningFields) {
-        if (warningFields.has('study')) {
-          reorderedStep.studyReady = false;
-          reorderedStep.studyDeadline = 'warning';
-        }
-        if (warningFields.has('material')) {
-          reorderedStep.materialAvailable = false;
-          reorderedStep.materialDeadline = 'warning';
-        }
-        if (warningFields.has('tooling')) {
-          reorderedStep.toolingAvailable = false;
-          reorderedStep.toolingDeadline = 'warning';
-        }
-      }
 
       return { order, step: reorderedStep };
     });
@@ -498,8 +500,9 @@ const PlanningTableauPage: React.FC = () => {
       const unchanged = prev.filter(s => !updatedIds.has(s.id));
       return [...unchanged, ...finalSteps];
     });
+    finalSteps.forEach(updateStep);
     setOrderDirty(true);
-  }, [holidays]);
+  }, [holidays, updateStep]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
@@ -540,45 +543,12 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    // If moved UP, check prerequisites
-    if (dropIndex < dragIndex) {
-      const checks: { type: 'study' | 'material' | 'tooling' | 'phaseAmont'; message: string }[] = [];
-
-      const amontSt = phaseAmontStatus(dragged.step, draftSteps, productionRecords);
-      if (amontSt === 'red') {
-        checks.push({ type: 'phaseAmont', message: "Attention : phase amont n'est pas encore effectuée. Reprogrammer quand même cette étape ?" });
-      }
-      if (dragged.step.studyReady === false) {
-        checks.push({ type: 'study', message: "Attention : étude non finalisée. Reprogrammer quand même cette étape ?" });
-      }
-      if (dragged.step.materialAvailable === false) {
-        checks.push({ type: 'material', message: "Attention : matière première non disponible. Reprogrammer quand même cette étape ?" });
-      }
-      if (dragged.step.toolingAvailable === false) {
-        checks.push({ type: 'tooling', message: "Attention : outillage non disponible. Reprogrammer quand même cette étape ?" });
-      }
-
-      const draggedPriority = priorityRank[dragged.order.priority] ?? 9;
-      const jumpedOverItems = items.slice(0, dropIndex);
-      const hasHigherPriorityAbove = jumpedOverItems.some(t => (priorityRank[t.order.priority] ?? 9) < draggedPriority);
-      if (hasHigherPriorityAbove) {
-        checks.push({ type: 'study' as any, message: "Attention l'ordre d'exécution ne respecte pas l'ordre défini dans les priorités commerciales. Reprogrammer quand même cette étape ?" });
-      }
-
-      if (checks.length > 0) {
-        setPendingDrop({ tasks: items, stepId: dragged.step.id, checks, currentCheck: 0, warnings: new Set() });
-        dragRef.current = null;
-        setDragOverState(null);
-        setIsDragging(false);
-        return;
-      }
-    }
-
-    applyReorder(items);
+    applyReorder(items, dragged.step.id);
+    if (!dragged.order.frozenOrder) updateOrder({ ...dragged.order, frozenOrder: true });
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, draftSteps, productionRecords, applyReorder]);
+  }, [operatorTasks, applyReorder, updateOrder]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -602,7 +572,7 @@ const PlanningTableauPage: React.FC = () => {
       if (newWarnings.has('phaseAmont')) {
         setForcedPhaseAmontWarnings(prev => ({ ...prev, [stepId]: true }));
       }
-      applyReorder(tasks, newWarnings, stepId);
+      applyReorder(tasks, stepId);
       setPendingDrop(null);
     }
   }, [pendingDrop, applyReorder]);
@@ -673,9 +643,23 @@ const PlanningTableauPage: React.FC = () => {
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
-    setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: !s.frozen } : s));
+    setDraftSteps(prev => {
+      const target = prev.find(s => s.id === stepId);
+      if (!target) return prev;
+      const unlocked = prev.map(s => s.id === stepId ? { ...s, frozen: false } : s);
+      if (!target.frozen) return prev.map(s => s.id === stepId ? { ...s, frozen: true } : s);
+
+      const operatorSteps = unlocked
+        .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
+        .map(step => ({ step, order: orders.find(o => o.id === step.orderId) }))
+        .filter((item): item is TaskItem => !!item.order)
+        .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
+        .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
+      const byId = new Map(operatorSteps.map(s => [s.id, s]));
+      return unlocked.map(s => byId.get(s.id) ?? s);
+    });
     setOrderDirty(true);
-  }, []);
+  }, [orders, absenceOperationId, absenceOrderId]);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
@@ -1222,8 +1206,12 @@ const PlanningTableauPage: React.FC = () => {
                     const toolStatus: ResourceStatus = order.toolingStatus ?? step.toolingStatus
                       ?? (order.toolingAvailable || step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
-                    const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
-                    const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
+                    const orderWarning = step.frozen && isManualOrderViolation(group.tasks, index);
+                    const studyWarning = step.frozen && studyStatus !== 'disponible' && studyStatus !== 'non-applicable';
+                    const materialWarning = step.frozen && isBlockingResourceStatus(matStatus);
+                    const toolingWarning = step.frozen && isBlockingResourceStatus(toolStatus);
+                    const phaseWarning = step.frozen && amontStatus !== 'green' && amontStatus !== 'na';
+                    const amontEmoji = phaseWarning ? null : phaseAmontEmoji(amontStatus);
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
@@ -1242,9 +1230,9 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
                             {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
-                            {step.frozen && <Lock className="w-3 h-3 text-primary" />}
+                            {step.frozen && <YellowLockIcon className="h-5 w-5" />}
                             <span className="text-xs font-medium text-muted-foreground">
-                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
+                              {orderWarning ? <WarningTriangleIcon /> : order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
                             </span>
                           </div>
                         </TableCell>
@@ -1350,36 +1338,36 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          <ResourceStatusPill
+                          {studyWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
                             value={studyStatus}
                             onChange={(next) => handleStatusChange(step.id, 'study', next)}
                             deadline={step.studyDeadline}
-                          />
+                          />}
                         </TableCell>
                         {/* Matière */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          <ResourceStatusPill
+                          {materialWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
                             value={matStatus}
                             onChange={(next) => handleStatusChange(step.id, 'material', next)}
                             deadline={step.materialDeadline}
                             receivedDate={order.materialReceivedDate}
-                          />
+                          />}
                         </TableCell>
                         {/* Outillage */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          <ResourceStatusPill
+                          {toolingWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
                             value={toolStatus}
                             onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
                             deadline={step.toolingDeadline}
-                          />
+                          />}
                         </TableCell>
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
+                            <TooltipTrigger><span className="text-sm">{phaseWarning ? <WarningTriangleIcon /> : amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>
-                              {hasForcedAmontWarning
-                                ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
+                              {phaseWarning
+                                ? '⚠️ Phase amont non terminée mais position forcée'
                                 : phaseAmontLabel(amontStatus)}
                             </TooltipContent>
                           </Tooltip></TooltipProvider>
@@ -1387,7 +1375,7 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'Libérer' : 'Verrouiller'}>
-                              {step.frozen ? <Lock className="w-3.5 h-3.5 text-primary" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
+                              {step.frozen ? <YellowLockIcon className="h-5 w-5" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
                             </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="Affectations">
                               <CalendarCheck className="w-3.5 h-3.5" />
