@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Lock, Unlock, LogIn, LogOut, X } from 'lucide-react';
-import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, LogIn, LogOut, X } from 'lucide-react';
+import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -96,6 +96,19 @@ function phaseAmontLabel(status: PhaseAmontStatus): string {
   if (status === 'orange') return 'Au moins une phase amont a été entamée — étape peut-être lançable';
   if (status === 'red') return 'Aucune phase amont entamée — étape non lançable';
   return 'Première étape — pas de phase amont';
+}
+
+const isBlockingResourceStatus = (status: ResourceStatus | undefined): boolean =>
+  status === 'non-disponible' || status === 'partiel';
+
+function isManualOrderViolation(tasks: TaskItem[], index: number): boolean {
+  const currentCn = tasks[index]?.order.displayOrder || 0;
+  if (currentCn <= 0) return true;
+  return tasks.some((task, taskIndex) => {
+    const cn = task.order.displayOrder || 0;
+    if (cn <= 0 || taskIndex === index) return false;
+    return (taskIndex < index && cn > currentCn) || (taskIndex > index && cn < currentCn);
+  });
 }
 
 /** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
