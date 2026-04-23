@@ -24,6 +24,7 @@ import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedStep
 import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
+import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
@@ -1107,15 +1108,8 @@ const PlanningTableauPage: React.FC = () => {
     ws['!merges'] = merges;
     ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 45 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 8 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Planning');
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const filename = `Planning.${numDays}J_${day}.${month}.${year}_${hours}:${minutes}.xlsx`;
-    XLSX.writeFile(wb, filename);
-  }, [operatorTasks, numDays, getClientName, getOperationName]);
+    XLSX.writeFile(wb, getExportFilename('Planning'));
+  }, [operatorTasks, getClientName, getOperationName]);
 
   const periodLabel = workingDays.length > 0
     ? `${formatDateFR(workingDays[0])} → ${formatDateFR(workingDays[workingDays.length - 1])}`
