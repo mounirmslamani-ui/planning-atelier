@@ -1204,8 +1204,12 @@ const PlanningTableauPage: React.FC = () => {
                     const toolStatus: ResourceStatus = order.toolingStatus ?? step.toolingStatus
                       ?? (order.toolingAvailable || step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
-                    const hasForcedAmontWarning = !!forcedPhaseAmontWarnings[step.id] && amontStatus === 'red';
-                    const amontEmoji = hasForcedAmontWarning ? '⚠️' : phaseAmontEmoji(amontStatus);
+                    const orderWarning = step.frozen && isManualOrderViolation(group.tasks, index);
+                    const studyWarning = step.frozen && studyStatus !== 'disponible' && studyStatus !== 'non-applicable';
+                    const materialWarning = step.frozen && isBlockingResourceStatus(matStatus);
+                    const toolingWarning = step.frozen && isBlockingResourceStatus(toolStatus);
+                    const phaseWarning = step.frozen && amontStatus !== 'green' && amontStatus !== 'na';
+                    const amontEmoji = phaseWarning ? null : phaseAmontEmoji(amontStatus);
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
@@ -1224,9 +1228,9 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
                             {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
-                            {step.frozen && <Lock className="w-3 h-3 text-primary" />}
+                            {step.frozen && <YellowLockIcon className="h-5 w-5" />}
                             <span className="text-xs font-medium text-muted-foreground">
-                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
+                              {orderWarning ? <WarningTriangleIcon /> : order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
                             </span>
                           </div>
                         </TableCell>
@@ -1332,28 +1336,28 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          <ResourceStatusPill
+                          {studyWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
                             value={studyStatus}
                             onChange={(next) => handleStatusChange(step.id, 'study', next)}
                             deadline={step.studyDeadline}
-                          />
+                          />}
                         </TableCell>
                         {/* Matière */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          <ResourceStatusPill
+                          {materialWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
                             value={matStatus}
                             onChange={(next) => handleStatusChange(step.id, 'material', next)}
                             deadline={step.materialDeadline}
                             receivedDate={order.materialReceivedDate}
-                          />
+                          />}
                         </TableCell>
                         {/* Outillage */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          <ResourceStatusPill
+                          {toolingWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
                             value={toolStatus}
                             onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
                             deadline={step.toolingDeadline}
-                          />
+                          />}
                         </TableCell>
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
