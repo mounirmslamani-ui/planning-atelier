@@ -251,6 +251,12 @@ const ProductionRegisterPage: React.FC = () => {
         </p>
       ) : (
         <>
+          <div className="flex-none flex justify-end pt-2 pb-3">
+            <Button onClick={handleExportExcel} variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            </Button>
+          </div>
+
           {/* Tabs */}
           <div className="flex-none flex items-end gap-0 pt-4 border-b border-border">
             {operatorsWithRecords.map(op => {
@@ -290,9 +296,6 @@ const ProductionRegisterPage: React.FC = () => {
                     <X className="w-3 h-3" /> Effacer filtres
                   </button>
                 )}
-                <Button onClick={handleExportExcel} variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-1" /> Exporter Excel
-                </Button>
                 <span className="text-xs text-muted-foreground">{sortedRecords.length} entrée(s)</span>
                 <span className="text-xs font-medium text-primary">Total : {totalHours.toFixed(2)}h</span>
               </div>
