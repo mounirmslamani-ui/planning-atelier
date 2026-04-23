@@ -562,7 +562,12 @@ const PlanningTableauPage: React.FC = () => {
   }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
-  const applyReorder = useCallback((tasks: TaskItem[], targetStepId?: string) => {
+  const applyReorder = useCallback((
+    tasks: TaskItem[],
+    targetStepId?: string,
+    nextDraftOrdersOverride?: Order[],
+    nextForcedWarningsOverride?: Record<string, boolean>,
+  ) => {
     const reorderedTasks = tasks.map(({ step, order }, idx) => {
       const reorderedStep: ProductionStep = {
         ...step,
@@ -583,9 +588,16 @@ const PlanningTableauPage: React.FC = () => {
       const unchanged = prev.filter(s => !updatedIds.has(s.id));
       return [...unchanged, ...finalSteps];
     });
-    finalSteps.forEach(updateStep);
+    const nextDraftOrders = nextDraftOrdersOverride ?? draftOrders;
+    const nextForcedWarnings = nextForcedWarningsOverride ?? forcedPhaseAmontWarnings;
+    commitPlanningHistory(
+      [...draftSteps.filter(s => !updatedIds.has(s.id)), ...finalSteps],
+      nextDraftOrders,
+      nextForcedWarnings,
+      true,
+    );
     setOrderDirty(true);
-  }, [holidays, updateStep]);
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
