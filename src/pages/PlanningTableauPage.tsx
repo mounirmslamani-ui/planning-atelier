@@ -372,6 +372,8 @@ const PlanningTableauPage: React.FC = () => {
     limit: PLANNING_HISTORY_LIMIT,
     isEqual: areSnapshotsEqual,
   });
+  const canUndo = history.canUndo;
+  const canRedo = history.canRedo;
 
   const handleNumDaysInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNumDaysInput(e.target.value);
