@@ -529,14 +529,15 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by order.displayOrder (Cn from Commandes en cours).
-    // Manually frozen steps keep their saved step_order position.
-    // Steps without a Cn (displayOrder === 0 or null) go to the top of their priority group.
+    // Manual positions always win when present: this preserves exact D&D order after reload.
+    // Otherwise fall back to the standard Cn / priority ordering.
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
-        if (a.step.frozen && b.step.frozen) return a.step.order - b.step.order;
-        if (a.step.frozen && !b.step.frozen) return a.step.order - (b.order.displayOrder || b.step.order || 0);
-        if (!a.step.frozen && b.step.frozen) return (a.order.displayOrder || a.step.order || 0) - b.step.order;
+        const manualA = a.order.manualSortOrder;
+        const manualB = b.order.manualSortOrder;
+        if (manualA !== undefined || manualB !== undefined) {
+          return (manualA ?? Number.MAX_SAFE_INTEGER) - (manualB ?? Number.MAX_SAFE_INTEGER);
+        }
         const cnA = a.order.displayOrder || 0;
         const cnB = b.order.displayOrder || 0;
         // Steps without Cn: sort by priority then keep natural order
@@ -637,13 +638,18 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    const nextDraftOrders = dragged.order.frozenOrder
-      ? draftOrders
-      : draftOrders.map(order => order.id === dragged.order.id ? { ...order, frozenOrder: true } : order);
+    const manualPositions = new Map(items.map((item, index) => [item.order.id, index + 1]));
+    const nextDraftOrders = draftOrders.map(order => {
+      const manualSortOrder = manualPositions.get(order.id);
+      if (manualSortOrder === undefined) return order;
+      return {
+        ...order,
+        frozenOrder: order.id === dragged.order.id ? true : order.frozenOrder,
+        manualSortOrder,
+      };
+    });
 
-    if (!dragged.order.frozenOrder) {
-      setDraftOrders(nextDraftOrders);
-    }
+    setDraftOrders(nextDraftOrders);
 
     applyReorder(items, dragged.step.id, nextDraftOrders);
     dragRef.current = null;
