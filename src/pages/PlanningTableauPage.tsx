@@ -341,7 +341,6 @@ const PlanningTableauPage: React.FC = () => {
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord,
     qcEntries, addQCEntry,
-    undo, redo, canUndo, canRedo,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [numDays, setNumDays] = useState(() => {
@@ -352,6 +351,7 @@ const PlanningTableauPage: React.FC = () => {
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
+  const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
 
   // Column filters for the operator tables
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
@@ -363,6 +363,12 @@ const PlanningTableauPage: React.FC = () => {
     localStorage.setItem(NUMDAYS_STORAGE_KEY, String(numDays));
     setNumDaysInput(String(numDays));
   }, [numDays]);
+
+  const history = useHistoryStack<PlanningDraftSnapshot>({
+    initialPresent: createPlanningSnapshot(insertNewStepsAtPriorityTop(steps, orders), orders, {}, false),
+    limit: PLANNING_HISTORY_LIMIT,
+    isEqual: areSnapshotsEqual,
+  });
 
   const handleNumDaysInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setNumDaysInput(e.target.value);
