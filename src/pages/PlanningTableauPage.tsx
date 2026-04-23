@@ -803,7 +803,9 @@ const PlanningTableauPage: React.FC = () => {
       if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
       // Status updates (Étude/Matière/Outillage) are now handled directly by ResourceStatusPill
       // Save to draft only (not DB)
-      setDraftSteps(prev => prev.map(s => s.id === stepId ? updated : s));
+      const nextDraftSteps = draftSteps.map(s => s.id === stepId ? updated : s);
+      setDraftSteps(nextDraftSteps);
+      commitPlanningHistory(nextDraftSteps, draftOrders, forcedPhaseAmontWarnings, true);
       setOrderDirty(true);
     }
     setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
@@ -899,7 +901,7 @@ const PlanningTableauPage: React.FC = () => {
     updatedContextSteps.forEach(updateStep);
     updateOrder(updatedOrder);
     return true;
-  }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder]);
+  }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder, draftOrders, forcedPhaseAmontWarnings, commitPlanningHistory]);
 
   const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
     if (next === 'partiel' || next === 'non-disponible') {
