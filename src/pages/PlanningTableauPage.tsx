@@ -23,6 +23,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import { useHistoryStack } from '@/hooks/useHistoryStack';
 import * as XLSX from 'xlsx';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
@@ -285,6 +286,12 @@ interface ProductionDialogState {
 }
 
 const NUMDAYS_STORAGE_KEY = 'planning-tableau-numdays';
+const PLANNING_HISTORY_LIMIT = 50;
+
+interface PlanningDraftSnapshot {
+  draftSteps: ProductionStep[];
+  forcedPhaseAmontWarnings: Record<string, boolean>;
+}
 
 const PlanningTableauPage: React.FC = () => {
   const {
