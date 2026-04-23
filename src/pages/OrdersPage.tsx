@@ -624,16 +624,15 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  // Compute last order numbers for each series (F, P, numeric) — priorité à l'année (après /), puis au numéro (avant /)
+  // Compute last order numbers for each series (F, P, numeric, S) — priorité à l'année (avant /), puis au numéro (après /)
   const lastSeriesNumbers = useMemo(() => {
-    // Returns [year, num] or null
-    const parse = (on: string, prefix: 'F' | 'P' | '') => {
+    const parse = (on: string, prefix: 'F' | 'P' | 'S' | '') => {
       const re = prefix
-        ? new RegExp(`^${prefix}(\\d+)\\s*/\\s*(\\d+)`, 'i')
-        : /^(\d+)\s*\/\s*(\d+)/;
+        ? new RegExp(`^(\\d+)\\s*/\\s*${prefix}(\\d+)\\b`, 'i')
+        : /^(\d+)\s*\/\s*(\d+)\b/;
       const m = on.match(re);
       if (!m) return null;
-      return { num: parseInt(m[1], 10), year: parseInt(m[2], 10) };
+      return { year: parseInt(m[1], 10), num: parseInt(m[2], 10) };
     };
     const isBetter = (a: { num: number; year: number }, b: { num: number; year: number } | null) => {
       if (!b) return true;
@@ -641,24 +640,28 @@ const OrdersPage: React.FC = () => {
       return a.num > b.num;
     };
     const allOrders = orders.filter(o => o.orderNumber !== 'ABS');
-    let lastF = '', lastP = '', lastNum = '';
+    let lastF = '', lastP = '', lastNum = '', lastS = '';
     let bestF: { num: number; year: number } | null = null;
     let bestP: { num: number; year: number } | null = null;
     let bestN: { num: number; year: number } | null = null;
+    let bestS: { num: number; year: number } | null = null;
     for (const o of allOrders) {
       const on = o.orderNumber.trim();
-      if (/^F\d/i.test(on)) {
+      if (/^\d+\s*\/\s*F\d+/i.test(on)) {
         const p = parse(on, 'F');
         if (p && isBetter(p, bestF)) { bestF = p; lastF = on; }
-      } else if (/^P\d/i.test(on)) {
+      } else if (/^\d+\s*\/\s*P\d+/i.test(on)) {
         const p = parse(on, 'P');
         if (p && isBetter(p, bestP)) { bestP = p; lastP = on; }
-      } else if (/^\d/.test(on)) {
+      } else if (/^\d+\s*\/\s*S\d+/i.test(on)) {
+        const p = parse(on, 'S');
+        if (p && isBetter(p, bestS)) { bestS = p; lastS = on; }
+      } else if (/^\d+\s*\/\s*\d+\b/.test(on)) {
         const p = parse(on, '');
         if (p && isBetter(p, bestN)) { bestN = p; lastNum = on; }
       }
     }
-    return { lastF, lastP, lastNum };
+    return { lastF, lastP, lastNum, lastS };
   }, [orders]);
 
   return (
@@ -680,6 +683,11 @@ const OrdersPage: React.FC = () => {
           {lastSeriesNumbers.lastNum && (
             <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
               {lastSeriesNumbers.lastNum}
+            </span>
+          )}
+          {lastSeriesNumbers.lastS && (
+            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
+              {lastSeriesNumbers.lastS}
             </span>
           )}
         </div>
