@@ -447,11 +447,14 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Sort tasks within each operator by order.displayOrder (Cn from Commandes en cours)
-    // Frozen steps keep their position; others sort by Cn ascending.
+    // Sort tasks within each operator by order.displayOrder (Cn from Commandes en cours).
+    // Manually frozen steps keep their saved step_order position.
     // Steps without a Cn (displayOrder === 0 or null) go to the top of their priority group.
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
+        if (a.step.frozen && b.step.frozen) return a.step.order - b.step.order;
+        if (a.step.frozen && !b.step.frozen) return a.step.order - (b.order.displayOrder || b.step.order || 0);
+        if (!a.step.frozen && b.step.frozen) return (a.order.displayOrder || a.step.order || 0) - b.step.order;
         const cnA = a.order.displayOrder || 0;
         const cnB = b.order.displayOrder || 0;
         // Steps without Cn: sort by priority then keep natural order
@@ -476,27 +479,13 @@ const PlanningTableauPage: React.FC = () => {
   }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
-  const applyReorder = useCallback((tasks: TaskItem[], warningFields?: Set<string>, targetStepId?: string) => {
+  const applyReorder = useCallback((tasks: TaskItem[], targetStepId?: string) => {
     const reorderedTasks = tasks.map(({ step, order }, idx) => {
       const reorderedStep: ProductionStep = {
         ...step,
         order: idx + 1,
+        frozen: step.id === targetStepId ? true : step.frozen,
       };
-
-      if (step.id === targetStepId && warningFields) {
-        if (warningFields.has('study')) {
-          reorderedStep.studyReady = false;
-          reorderedStep.studyDeadline = 'warning';
-        }
-        if (warningFields.has('material')) {
-          reorderedStep.materialAvailable = false;
-          reorderedStep.materialDeadline = 'warning';
-        }
-        if (warningFields.has('tooling')) {
-          reorderedStep.toolingAvailable = false;
-          reorderedStep.toolingDeadline = 'warning';
-        }
-      }
 
       return { order, step: reorderedStep };
     });
