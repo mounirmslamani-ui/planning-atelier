@@ -522,7 +522,7 @@ const PlanningTableauPage: React.FC = () => {
       if (step.subcontractorId) return;
 
       if (step.startDate <= lastDay && step.endDate >= firstDay) {
-        const order = orders.find(o => o.id === step.orderId);
+        const order = draftOrders.find(o => o.id === step.orderId);
         if (!order) return;
         if (result[step.operatorId]) {
           result[step.operatorId].tasks.push({ step, order });
@@ -559,7 +559,7 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, orders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
+  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((
@@ -819,8 +819,8 @@ const PlanningTableauPage: React.FC = () => {
 
   // Compute blocked step IDs (violet) — propagates to all successor steps of the same order
   const blockedStepIds = useMemo(
-    () => computeBlockedStepIds(draftSteps, orders),
-    [draftSteps, orders]
+    () => computeBlockedStepIds(draftSteps, draftOrders),
+    [draftSteps, draftOrders]
   );
   const isStepBlocked = (step: ProductionStep): boolean => blockedStepIds.has(step.id);
 
