@@ -638,12 +638,19 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    applyReorder(items, dragged.step.id);
-    if (!dragged.order.frozenOrder) updateOrder({ ...dragged.order, frozenOrder: true });
+    const nextDraftOrders = dragged.order.frozenOrder
+      ? draftOrders
+      : draftOrders.map(order => order.id === dragged.order.id ? { ...order, frozenOrder: true } : order);
+
+    if (!dragged.order.frozenOrder) {
+      setDraftOrders(nextDraftOrders);
+    }
+
+    applyReorder(items, dragged.step.id, nextDraftOrders);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, applyReorder, updateOrder]);
+  }, [operatorTasks, applyReorder, draftOrders]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -664,13 +671,17 @@ const PlanningTableauPage: React.FC = () => {
     if (nextCheck < checks.length) {
       setPendingDrop({ ...pendingDrop, currentCheck: nextCheck, warnings: newWarnings });
     } else {
+      const nextForcedWarnings = newWarnings.has('phaseAmont')
+        ? { ...forcedPhaseAmontWarnings, [stepId]: true }
+        : forcedPhaseAmontWarnings;
+
       if (newWarnings.has('phaseAmont')) {
-        setForcedPhaseAmontWarnings(prev => ({ ...prev, [stepId]: true }));
+        setForcedPhaseAmontWarnings(nextForcedWarnings);
       }
-      applyReorder(tasks, stepId);
+      applyReorder(tasks, stepId, undefined, nextForcedWarnings);
       setPendingDrop(null);
     }
-  }, [pendingDrop, applyReorder]);
+  }, [pendingDrop, applyReorder, forcedPhaseAmontWarnings]);
 
   const handlePendingCancel = useCallback(() => {
     setPendingDrop(null);
