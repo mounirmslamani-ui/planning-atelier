@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
-import { exportTableToExcel } from '@/lib/excelExport';
+import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -187,8 +187,8 @@ const ProductionRegisterPage: React.FC = () => {
     setFilterOperations(new Set());
   };
 
-  const handleExportExcel = () => {
-    exportTableToExcel('Registre des travaux effectués', sortedRecords.map(rec => {
+  const buildExportRows = useCallback((records: typeof productionRecords): ExcelRow[] => {
+    return records.map(rec => {
       const order = getOrder(rec.orderId);
       return {
         Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -200,7 +200,19 @@ const ProductionRegisterPage: React.FC = () => {
         Opération: getOperationName(rec.operationId),
         'Durée (h)': Number((rec.actualDuration / 60).toFixed(2)),
       };
-    }), [12, 10, 18, 24, 45, 10, 24, 12]);
+    });
+  }, [orders, clients, operations]);
+
+  const handleExportExcel = () => {
+    exportSheetsToExcel('Registre des travaux effectués', operatorsWithRecords.map(op => ({
+      name: op.name,
+      rows: buildExportRows(
+        productionRecords
+          .filter(r => r.operatorId === op.id)
+          .sort((a, b) => new Date(b.validatedAt).getTime() - new Date(a.validatedAt).getTime())
+      ),
+      columnWidths: [12, 10, 18, 24, 45, 10, 24, 12],
+    })));
   };
 
   const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
@@ -239,6 +251,12 @@ const ProductionRegisterPage: React.FC = () => {
         </p>
       ) : (
         <>
+          <div className="flex-none flex justify-end pt-2 pb-3">
+            <Button onClick={handleExportExcel} variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            </Button>
+          </div>
+
           {/* Tabs */}
           <div className="flex-none flex items-end gap-0 pt-4 border-b border-border">
             {operatorsWithRecords.map(op => {
@@ -278,9 +296,6 @@ const ProductionRegisterPage: React.FC = () => {
                     <X className="w-3 h-3" /> Effacer filtres
                   </button>
                 )}
-                <Button onClick={handleExportExcel} variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-1" /> Exporter Excel
-                </Button>
                 <span className="text-xs text-muted-foreground">{sortedRecords.length} entrée(s)</span>
                 <span className="text-xs font-medium text-primary">Total : {totalHours.toFixed(2)}h</span>
               </div>
