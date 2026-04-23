@@ -426,9 +426,8 @@ const PlanningTableauPage: React.FC = () => {
       setDraftSteps(syncedDraftSteps);
       setForcedPhaseAmontWarnings({});
       history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
+      setOrderDirty(false);
     }
-
-    setOrderDirty(false);
   }, [steps, orders, orderDirty, history]);
 
   const handleUndo = useCallback(() => {
@@ -1349,7 +1348,7 @@ const PlanningTableauPage: React.FC = () => {
                     return (
                       <TableRow
                         key={step.id}
-                        draggable={!isEditing && !step.frozen && !hasActiveFilters}
+                        draggable={!isEditing && !hasActiveFilters}
                         onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverState(null)}
@@ -1359,7 +1358,7 @@ const PlanningTableauPage: React.FC = () => {
                       >
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
-                            {!step.frozen && !hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
+                            {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
                             {step.frozen && <YellowLockIcon className="h-5 w-5" />}
                             <span className="text-xs font-medium text-muted-foreground">
                               {orderWarning ? <WarningTriangleIcon /> : order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
