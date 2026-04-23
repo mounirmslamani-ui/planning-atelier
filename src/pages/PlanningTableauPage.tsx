@@ -1049,10 +1049,10 @@ const PlanningTableauPage: React.FC = () => {
         actions={
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title="Annuler (Ctrl+Z)">
                 <Undo2 className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
                 <Redo2 className="w-4 h-4" />
               </Button>
             </div>
