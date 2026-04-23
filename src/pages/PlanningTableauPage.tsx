@@ -1240,7 +1240,7 @@ const PlanningTableauPage: React.FC = () => {
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? 'bg-blocked hover:bg-blocked/90' : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
+                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
                       >
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
@@ -1295,10 +1295,10 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="py-1.5 px-2 text-center">
                           <span className="text-xs">{order.quantity}</span>
                         </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
+                        <TableCell className="py-1.5 px-2 text-center preserve-status-color">
                           <PriorityBadge priority={order.priority} />
                         </TableCell>
-                        <TableCell className="py-1.5 px-2">
+                        <TableCell className="py-1.5 px-2 preserve-status-color">
                           <span className="inline-flex items-center justify-center rounded-full border border-muted-foreground/30 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
                             {getOrderGlobalStatus(order.id, draftSteps, productionRecords, absenceOperationId)}
                           </span>
