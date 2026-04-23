@@ -339,28 +339,26 @@ const PlanningTableauPage: React.FC = () => {
   const [draftSteps, setDraftSteps] = useState<ProductionStep[]>(steps);
   const draftInitialized = useRef(false);
 
-  // Sync from context on initial load or when steps change from outside (e.g. OrderPlanningDialog)
+  // Sync from context whenever steps change, including Undo/Redo restores.
   useEffect(() => {
     if (!draftInitialized.current) {
       setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
       draftInitialized.current = true;
       return;
     }
-    // If not dirty, accept upstream changes
-    if (!orderDirty) {
-      setDraftSteps(prev => {
-        // Detect truly new steps (exist in steps but not in prev)
-        const prevIds = new Set(prev.map(s => s.id));
-        const newSteps = steps.filter(s => !prevIds.has(s.id));
-        if (newSteps.length === 0) {
-          // No new steps – just accept upstream
-          return insertNewStepsAtPriorityTop(steps, orders);
-        }
-        // Merge: keep existing ordered steps, insert new ones at top of their priority group
-        return insertNewStepsAtPriorityTop(steps, orders);
-      });
-    }
-  }, [steps]); // intentionally exclude orderDirty to avoid loops
+    setDraftSteps(insertNewStepsAtPriorityTop(steps, orders));
+    setOrderDirty(false);
+  }, [steps, orders]);
+
+  const handleUndo = useCallback(() => {
+    setOrderDirty(false);
+    undo();
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    setOrderDirty(false);
+    redo();
+  }, [redo]);
 
   // Chained confirm dialogs for drag-up checks
   const [pendingDrop, setPendingDrop] = useState<{
