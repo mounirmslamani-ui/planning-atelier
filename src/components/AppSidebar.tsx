@@ -45,11 +45,12 @@ const sidebarGroups = [
 ];
 
 interface AppSidebarProps {
+  isOpen?: boolean;
   onProdDrop?: (stepId: string) => void;
   onQcDrop?: (stepId: string) => void;
 }
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop, onQcDrop }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQcDrop }) => {
   const location = useLocation();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
@@ -73,7 +74,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ onProdDrop, onQcDrop }) => {
   };
 
   return (
-    <aside className="w-60 h-screen sticky top-0 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0">
+    <aside className={`fixed inset-y-0 left-0 z-40 w-60 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0 transition-transform duration-200 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-6 h-6 text-sidebar-primary" />
         <h1 className="font-heading text-sm font-bold text-sidebar-foreground tracking-wider uppercase">

@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AppSidebar from './AppSidebar';
 import { usePlanning } from '@/context/PlanningContext';
 import { buildOrderQualityControlErrorMessage, getOrderQualityControlCheck } from '@/lib/stepProgress';
 import { fetchAllData } from '@/lib/supabase-data';
+import { PanelLeftOpen } from 'lucide-react';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry } = usePlanning();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const transferOrderToQualityControl = useCallback((orderId: string) => {
     if (orderId === absenceOrderId || qcEntries.some(entry => entry.orderId === orderId)) return;
@@ -71,7 +73,15 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
+      <button
+        type="button"
+        aria-label={isSidebarOpen ? 'Masquer le menu' : 'Afficher le menu'}
+        onClick={() => setIsSidebarOpen(open => !open)}
+        className={`fixed left-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground shadow-sm transition-transform hover:bg-accent hover:text-accent-foreground ${isSidebarOpen ? 'translate-x-60' : 'translate-x-0'}`}
+      >
+        <PanelLeftOpen className="h-5 w-5" />
+      </button>
+      <AppSidebar isOpen={isSidebarOpen} onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
       <main className="flex-1 overflow-auto h-screen">
         {children}
       </main>
