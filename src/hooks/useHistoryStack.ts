@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 interface UseHistoryStackOptions<T> {
   initialPresent: T;
@@ -77,12 +77,12 @@ export function useHistoryStack<T>({
     return historyRef.current[indexRef.current];
   }, [syncFlags]);
 
-  return {
+  return useMemo(() => ({
     canUndo,
     canRedo,
     commit,
     undo,
     redo,
     reset,
-  };
+  }), [canUndo, canRedo, commit, undo, redo, reset]);
 }
