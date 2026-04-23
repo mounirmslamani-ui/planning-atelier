@@ -10,7 +10,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
@@ -24,6 +24,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import * as XLSX from 'xlsx';
 
 const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
@@ -491,6 +492,45 @@ const OrdersPage: React.FC = () => {
     { key: 'observation', label: 'Observation', className: 'w-[340px]' },
   ];
 
+  const handleExportExcel = useCallback(() => {
+    const rows = displayOrders.map((o, index) => {
+      const status = orderStatusMap.get(o.id);
+      const atelierMinutes = atelierTimeMap.get(o.id) || 0;
+      return {
+        'Ordre': o.displayOrder ?? index + 1,
+        'Numéro de commande': o.orderNumber,
+        'Date de commande': formatDateFR(o.orderDate),
+        'Client': getClientName(o.clientId),
+        'Désignation': o.designation,
+        'Quantité': o.quantity,
+        'Priorité': o.priority || '',
+        'Statut': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
+        'Délai': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
+        'Temps atelier': formatMinutesToHM(atelierMinutes),
+        'Étude': status?.study || '',
+        'Matière': status?.material || '',
+        'Outillage': status?.tooling || '',
+        'Observation': o.observation || '',
+      };
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      { wch: 8 }, { wch: 20 }, { wch: 16 }, { wch: 24 }, { wch: 45 }, { wch: 10 }, { wch: 10 },
+      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 45 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Commandes en cours');
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    XLSX.writeFile(wb, `Liste des commandes en cours.${day}.${month}.${year}_${hours}:${minutes}.xlsx`);
+  }, [displayOrders, orderStatusMap, atelierTimeMap, getClientName, steps, productionRecords, absenceOperationId]);
+
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
     const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client'];
@@ -675,6 +715,9 @@ const OrdersPage: React.FC = () => {
           )}
           <Button onClick={() => setPasteDialogOpen(true)} variant="outline" size="sm">
             <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
+          </Button>
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> Exporter Excel
           </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
