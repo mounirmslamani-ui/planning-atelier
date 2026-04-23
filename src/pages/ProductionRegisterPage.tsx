@@ -211,8 +211,10 @@ const ProductionRegisterPage: React.FC = () => {
   }, [editRecord, productionRecords, updateProductionRecord]);
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader title="Registre des travaux effectués" description="Travaux effectués classés par opérateur" />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="Registre des travaux effectués" description="Travaux effectués classés par opérateur" />
+      </div>
 
       {operatorsWithRecords.length === 0 ? (
         <p className="text-muted-foreground text-sm px-4 py-8 text-center">
@@ -221,7 +223,7 @@ const ProductionRegisterPage: React.FC = () => {
       ) : (
         <>
           {/* Tabs */}
-          <div className="flex items-end gap-0 px-4 pt-4 border-b border-border">
+          <div className="flex-none flex items-end gap-0 pt-4 border-b border-border">
             {operatorsWithRecords.map(op => {
               const isActive = op.id === validTab;
               const opRecords = productionRecords.filter(r => r.operatorId === op.id);
@@ -244,8 +246,8 @@ const ProductionRegisterPage: React.FC = () => {
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-auto px-4 py-3">
-            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex-none py-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="text-sm">
                 <span className="font-heading font-bold">{activeOperator?.name}</span>
                 <span className="text-muted-foreground ml-2 text-xs">({activeOperator?.mainFunction})</span>
@@ -263,7 +265,9 @@ const ProductionRegisterPage: React.FC = () => {
                 <span className="text-xs font-medium text-primary">Total : {totalHours.toFixed(2)}h</span>
               </div>
             </div>
+          </div>
 
+          <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
             <Table>
               <TableHeader>
                 <TableRow>

@@ -1053,8 +1053,9 @@ const PlanningTableauPage: React.FC = () => {
   const hasActiveFilters = Object.values(colFilters).some(Boolean) || !!colSortKey;
 
   return (
-    <div className="p-6">
-      <PageHeader
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader
         title="Planning Tableau"
         actions={
           <div className="flex items-center gap-3 flex-wrap">
@@ -1107,11 +1108,11 @@ const PlanningTableauPage: React.FC = () => {
               <Check className="w-4 h-4 mr-1" /> Valider
             </Button>
           </div>
-        }
-      />
+          }
+        />
 
-      {/* Operator tabs */}
-      <div className="flex items-center gap-1 px-1 py-2 mb-3 border-b overflow-x-auto">
+        {/* Operator tabs */}
+        <div className="flex items-center gap-1 px-1 py-2 border-b overflow-x-auto">
         <span className="text-xs font-medium text-muted-foreground mr-2 whitespace-nowrap">Opérateur :</span>
         {operatorTasks.map(group => {
           const isActive = (selectedTabOperatorId ?? operatorTasks[0]?.operator.id) === group.operator.id;
@@ -1130,9 +1131,10 @@ const PlanningTableauPage: React.FC = () => {
             </button>
           );
         })}
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="min-h-0 flex-1 space-y-6 overflow-auto pt-3">
         {operatorTasks.length === 0 && (
           <p className="text-center text-muted-foreground py-12">Aucune tâche planifiée pour cette période</p>
         )}
