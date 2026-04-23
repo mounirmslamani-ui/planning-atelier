@@ -6,7 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -628,8 +628,9 @@ const OrdersPage: React.FC = () => {
   }, [orders]);
 
   return (
-    <div className="p-6">
-      <PageHeader title="Commandes en cours" description={
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="Commandes en cours" description={
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
@@ -677,25 +678,26 @@ const OrdersPage: React.FC = () => {
           </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
-      } />
+        } />
 
-      {hasActiveFilters && (
-        <div className="mb-3 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Tri/filtre actif — le glisser-déposer est désactivé.</span>
-          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setSortKey(null); setSortDir(null); setFilters({}); }}>
-            Réinitialiser
-          </Button>
-        </div>
-      )}
+        {hasActiveFilters && (
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Tri/filtre actif — le glisser-déposer est désactivé.</span>
+            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setSortKey(null); setSortDir(null); setFilters({}); }}>
+              Réinitialiser
+            </Button>
+          </div>
+        )}
 
-      {orderNumberError && !dialogOpen && (
-        <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-          {orderNumberError}
-        </div>
-      )}
+        {orderNumberError && !dialogOpen && (
+          <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+            {orderNumberError}
+          </div>
+        )}
+      </div>
 
-      <div className="bg-card rounded-lg border overflow-x-auto">
-        <Table>
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead className="w-8 px-1">
@@ -811,7 +813,7 @@ const OrdersPage: React.FC = () => {
               <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       {/* Add/Edit Dialog */}
