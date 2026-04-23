@@ -275,6 +275,32 @@ function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Orde
   return result;
 }
 
+function createPlanningSnapshot(
+  nextDraftSteps: ProductionStep[],
+  nextForcedWarnings: Record<string, boolean>,
+): PlanningDraftSnapshot {
+  return {
+    draftSteps: nextDraftSteps.map(step => ({ ...step })),
+    forcedPhaseAmontWarnings: { ...nextForcedWarnings },
+  };
+}
+
+function areSnapshotsEqual(a: PlanningDraftSnapshot, b: PlanningDraftSnapshot): boolean {
+  if (a.draftSteps.length !== b.draftSteps.length) return false;
+
+  for (let index = 0; index < a.draftSteps.length; index += 1) {
+    const left = a.draftSteps[index];
+    const right = b.draftSteps[index];
+    if (JSON.stringify(left) !== JSON.stringify(right)) return false;
+  }
+
+  const leftWarningKeys = Object.keys(a.forcedPhaseAmontWarnings).sort();
+  const rightWarningKeys = Object.keys(b.forcedPhaseAmontWarnings).sort();
+  if (leftWarningKeys.length !== rightWarningKeys.length) return false;
+
+  return leftWarningKeys.every((key, index) => key === rightWarningKeys[index] && a.forcedPhaseAmontWarnings[key] === b.forcedPhaseAmontWarnings[key]);
+}
+
 interface ProductionDialogState {
   open: boolean;
   step: ProductionStep | null;
