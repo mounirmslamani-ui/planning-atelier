@@ -720,6 +720,15 @@ const PlanningTableauPage: React.FC = () => {
   const handleValidate = useCallback(() => {
     // Commit every draft step that differs from the context steps
     const contextMap = new Map(steps.map(s => [s.id, s]));
+    const contextOrderMap = new Map(orders.map(order => [order.id, order]));
+
+    draftOrders.forEach(draftOrder => {
+      const originalOrder = contextOrderMap.get(draftOrder.id);
+      if (!originalOrder || draftOrder.frozenOrder !== originalOrder.frozenOrder) {
+        updateOrder(draftOrder);
+      }
+    });
+
     draftSteps.forEach(draft => {
       const original = contextMap.get(draft.id);
       if (!original ||
@@ -745,7 +754,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
     setOrderDirty(false);
-  }, [draftSteps, steps, updateStep]);
+  }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
@@ -753,19 +762,28 @@ const PlanningTableauPage: React.FC = () => {
       const target = prev.find(s => s.id === stepId);
       if (!target) return prev;
       const unlocked = prev.map(s => s.id === stepId ? { ...s, frozen: false } : s);
-      if (!target.frozen) return prev.map(s => s.id === stepId ? { ...s, frozen: true } : s);
+      const nextDraftSteps = !target.frozen
+        ? prev.map(s => s.id === stepId ? { ...s, frozen: true } : s)
+        : (() => {
+          const operatorSteps = unlocked
+            .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
+            .map(step => ({ step, order: draftOrders.find(o => o.id === step.orderId) }))
+            .filter((item): item is TaskItem => !!item.order)
+            .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
+            .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
+          const byId = new Map(operatorSteps.map(s => [s.id, s]));
+          return unlocked.map(s => byId.get(s.id) ?? s);
+        })();
 
-      const operatorSteps = unlocked
-        .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
-        .map(step => ({ step, order: orders.find(o => o.id === step.orderId) }))
-        .filter((item): item is TaskItem => !!item.order)
-        .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
-        .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
-      const byId = new Map(operatorSteps.map(s => [s.id, s]));
-      return unlocked.map(s => byId.get(s.id) ?? s);
+      const nextDraftOrders = draftOrders.map(order => order.id === target.orderId
+        ? { ...order, frozenOrder: !target.frozen }
+        : order);
+      setDraftOrders(nextDraftOrders);
+      commitPlanningHistory(nextDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
+      return nextDraftSteps;
     });
     setOrderDirty(true);
-  }, [orders, absenceOperationId, absenceOrderId]);
+  }, [draftOrders, absenceOperationId, absenceOrderId, forcedPhaseAmontWarnings, commitPlanningHistory]);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
