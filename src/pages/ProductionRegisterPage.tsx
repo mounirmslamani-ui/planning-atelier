@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
-import { exportTableToExcel } from '@/lib/excelExport';
+import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -187,8 +187,8 @@ const ProductionRegisterPage: React.FC = () => {
     setFilterOperations(new Set());
   };
 
-  const handleExportExcel = () => {
-    exportTableToExcel('Registre des travaux effectués', sortedRecords.map(rec => {
+  const buildExportRows = useCallback((records: typeof productionRecords): ExcelRow[] => {
+    return records.map(rec => {
       const order = getOrder(rec.orderId);
       return {
         Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -200,7 +200,19 @@ const ProductionRegisterPage: React.FC = () => {
         Opération: getOperationName(rec.operationId),
         'Durée (h)': Number((rec.actualDuration / 60).toFixed(2)),
       };
-    }), [12, 10, 18, 24, 45, 10, 24, 12]);
+    });
+  }, [orders, clients, operations]);
+
+  const handleExportExcel = () => {
+    exportSheetsToExcel('Registre des travaux effectués', operatorsWithRecords.map(op => ({
+      name: op.name,
+      rows: buildExportRows(
+        productionRecords
+          .filter(r => r.operatorId === op.id)
+          .sort((a, b) => new Date(b.validatedAt).getTime() - new Date(a.validatedAt).getTime())
+      ),
+      columnWidths: [12, 10, 18, 24, 45, 10, 24, 12],
+    })));
   };
 
   const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
