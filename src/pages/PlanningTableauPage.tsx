@@ -24,8 +24,7 @@ import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedStep
 import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
-import { getExportFilename } from '@/lib/excelExport';
-import * as XLSX from 'xlsx';
+import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 
 const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
 
@@ -1080,35 +1079,21 @@ const PlanningTableauPage: React.FC = () => {
 
   // Export to Excel
   const handleExport = useCallback(() => {
-    const wb = XLSX.utils.book_new();
-    const wsData: any[][] = [];
-    const merges: XLSX.Range[] = [];
-    let rowIdx = 0;
-
-    operatorTasks.forEach(group => {
-      wsData.push([group.operator.name]);
-      merges.push({ s: { r: rowIdx, c: 0 }, e: { r: rowIdx, c: 8 } });
-      rowIdx++;
-      wsData.push(['Date début', 'N° Cmd', 'Client', 'Désignation', 'Qté', 'Priorité', 'Délai', 'Opération', 'Durée']);
-      rowIdx++;
-      group.tasks.forEach(({ step, order }) => {
-        wsData.push([
-          formatDateFR(step.startDate), order.orderNumber, getClientName(order.clientId),
-          order.designation, order.quantity, order.priority,
-          formatDateFR(order.deliveryDeadline || order.plannedDeadline),
-          getOperationName(step.operationId), formatMinutesToHM(step.estimatedDuration),
-        ]);
-        rowIdx++;
-      });
-      wsData.push([]);
-      rowIdx++;
-    });
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!merges'] = merges;
-    ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 45 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 8 }];
-    XLSX.utils.book_append_sheet(wb, ws, 'Planning');
-    XLSX.writeFile(wb, getExportFilename('Planning'));
+    exportSheetsToExcel('Planning', operatorTasks.map(group => ({
+      name: group.operator.name,
+      rows: group.tasks.map(({ step, order }): ExcelRow => ({
+        'Date début': formatDateFR(step.startDate),
+        'N° Cmd': order.orderNumber,
+        Client: getClientName(order.clientId),
+        Désignation: order.designation,
+        Qté: order.quantity,
+        Priorité: order.priority,
+        Délai: formatDateFR(order.deliveryDeadline || order.plannedDeadline),
+        Opération: getOperationName(step.operationId),
+        Durée: formatMinutesToHM(step.estimatedDuration),
+      })),
+      columnWidths: [12, 12, 18, 45, 8, 8, 12, 20, 8],
+    })));
   }, [operatorTasks, getClientName, getOperationName]);
 
   const periodLabel = workingDays.length > 0
