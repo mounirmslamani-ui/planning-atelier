@@ -583,21 +583,38 @@ const PlanningTableauPage: React.FC = () => {
 
     const updatedIds = new Set(reorderedTasks.map(t => t.step.id));
     const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
+    const nextDraftOrders = nextDraftOrdersOverride ?? draftOrders;
+    const nextForcedWarnings = nextForcedWarningsOverride ?? forcedPhaseAmontWarnings;
+
+    setOrderDirty(true);
 
     setDraftSteps(prev => {
       const unchanged = prev.filter(s => !updatedIds.has(s.id));
       return [...unchanged, ...finalSteps];
     });
-    const nextDraftOrders = nextDraftOrdersOverride ?? draftOrders;
-    const nextForcedWarnings = nextForcedWarningsOverride ?? forcedPhaseAmontWarnings;
     commitPlanningHistory(
       [...draftSteps.filter(s => !updatedIds.has(s.id)), ...finalSteps],
       nextDraftOrders,
       nextForcedWarnings,
       true,
     );
-    setOrderDirty(true);
-  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory]);
+
+    const currentStepsById = new Map(draftSteps.map(step => [step.id, step]));
+    finalSteps.forEach(finalStep => {
+      const currentStep = currentStepsById.get(finalStep.id);
+      if (!currentStep || JSON.stringify(currentStep) !== JSON.stringify(finalStep)) {
+        updateStep(finalStep);
+      }
+    });
+
+    const currentOrdersById = new Map(draftOrders.map(order => [order.id, order]));
+    nextDraftOrders.forEach(nextOrder => {
+      const currentOrder = currentOrdersById.get(nextOrder.id);
+      if (!currentOrder || currentOrder.frozenOrder !== nextOrder.frozenOrder || currentOrder.manualSortOrder !== nextOrder.manualSortOrder) {
+        updateOrder(nextOrder);
+      }
+    });
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, updateOrder]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
