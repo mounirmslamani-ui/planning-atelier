@@ -771,7 +771,7 @@ const OrdersPage: React.FC = () => {
                     onDragEnd={handleDragEnd}
                     className={`transition-colors ${
                       !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
-                    } ${blocked ? 'bg-blocked hover:bg-blocked/90' : ''
+                    } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
                     } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''
@@ -792,7 +792,7 @@ const OrdersPage: React.FC = () => {
                       </div>
                     </TableCell>
                     {columns.map(col => (
-                      <TableCell key={col.key} className="py-1.5 px-2">{renderCell(o, col.key, index)}</TableCell>
+                      <TableCell key={col.key} className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>{renderCell(o, col.key, index)}</TableCell>
                     ))}
                     <TableCell className="px-1">
                       <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
