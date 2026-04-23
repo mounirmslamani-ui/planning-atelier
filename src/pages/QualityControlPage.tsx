@@ -115,15 +115,17 @@ const QualityControlPage: React.FC = () => {
   })();
 
   return (
-    <div className="p-6">
-      <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} />
-      {testDiagnostic && (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} />
+        {testDiagnostic && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground">
-          {testDiagnostic}
-        </div>
-      )}
+            {testDiagnostic}
+          </div>
+        )}
+      </div>
 
-      <div className="bg-card rounded-lg border overflow-x-auto">
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
