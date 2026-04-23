@@ -4,10 +4,13 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveryEntry } from '@/types/planning';
+import { Download } from 'lucide-react';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 const DeliveryPage: React.FC = () => {
   const { deliveryEntries, orders, clients } = usePlanning();
@@ -27,10 +30,31 @@ const DeliveryPage: React.FC = () => {
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveryEntries, accessors);
 
+  const handleExportExcel = () => {
+    exportTableToExcel('Commandes à livrer', processed.map(entry => {
+      const order = getOrder(entry.orderId);
+      return {
+        Priorité: order?.priority || '—',
+        'N° Cde': order?.orderNumber || '—',
+        Date: order ? formatDateFR(order.orderDate) : '—',
+        Client: order ? getClientName(order.clientId) : '—',
+        Désignation: order?.designation || '—',
+        Quantité: order?.quantity ?? '—',
+        Délais: order ? formatDateFR(order.plannedDeadline) : '—',
+        'Date Contrôle': formatDateFR(entry.controlDate),
+        Décision: entry.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation',
+      };
+    }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Commandes à livrer" description={`${deliveryEntries.length} commande(s) prête(s)`} />
+        <PageHeader title="Commandes à livrer" description={`${deliveryEntries.length} commande(s) prête(s)`} actions={
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+          </Button>
+        } />
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">

@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Download } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import type { Client, ClientClass } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 const CLIENT_CLASSES: { value: ClientClass; label: string; description: string; color: string }[] = [
   { value: 'A', label: 'Classe A - Partenaires Stratégiques', description: 'CA élevé, régularité parfaite, paiement souvent anticipé ou à l\'heure, procédures administratives fluides, échanges constructifs.', color: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' },
@@ -55,11 +56,24 @@ const ClientsPage: React.FC = () => {
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
 
+  const handleExportExcel = () => {
+    exportTableToExcel('Clients', processed.map(c => {
+      const classInfo = getClassInfo(c.clientClass);
+      return {
+        Nom: c.name,
+        Classification: classInfo ? `${classInfo.value} - ${classInfo.label.split(' - ')[1]}` : 'Non classé',
+      };
+    }), [32, 36]);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader title="Clients" description="Liste des clients" actions={
-          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
+          <>
+            <Button onClick={handleExportExcel} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> Exporter Excel</Button>
+            <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
+          </>
         } />
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">

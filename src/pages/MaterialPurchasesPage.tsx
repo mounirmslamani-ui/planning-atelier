@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
@@ -10,6 +11,8 @@ import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import { Download } from 'lucide-react';
+import { exportTableToExcel } from '@/lib/excelExport';
 
 const MaterialPurchasesPage: React.FC = () => {
   const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId } = usePlanning();
@@ -65,6 +68,20 @@ const MaterialPurchasesPage: React.FC = () => {
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
+  const handleExportExcel = () => {
+    exportTableToExcel('Achats Matière', filteredRows.map((r: any) => ({
+      '#': r.order.displayOrder ?? '—',
+      'N° Commande': r.order.orderNumber,
+      Client: getClientName(r.order.clientId),
+      Désignation: r.order.designation,
+      'Qté.': r.order.quantity,
+      Priorité: r.order.priority || '—',
+      'Délai promis': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
+      'Date prévue achat matière': formatDateFR(r.deadline) || '—',
+      Fait: 'Non',
+    })), [8, 20, 24, 45, 10, 12, 16, 26, 10]);
+  };
+
   const markDone = async (orderId: string, stepIds: string[], receivedDate: string) => {
     const updatedSteps = stepIds.map(id => {
       const step = steps.find(s => s.id === id);
@@ -92,7 +109,11 @@ const MaterialPurchasesPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Achats Matière" description="Étapes dont la matière n'est pas encore disponible" />
+        <PageHeader title="Achats Matière" description="Étapes dont la matière n'est pas encore disponible" actions={
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+          </Button>
+        } />
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
