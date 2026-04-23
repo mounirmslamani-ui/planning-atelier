@@ -74,7 +74,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
   };
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-40 w-60 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0 transition-transform duration-200 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <aside className={`h-screen flex-shrink-0 overflow-hidden bg-sidebar transition-[width] duration-200 ease-out ${isOpen ? 'w-60 border-r border-sidebar-border' : 'w-0 border-r-0'}`}>
+      <div className="flex h-full w-60 flex-col">
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-6 h-6 text-sidebar-primary" />
         <h1 className="font-heading text-sm font-bold text-sidebar-foreground tracking-wider uppercase">
@@ -119,6 +120,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
       </nav>
       <div className="p-4 border-t border-sidebar-border">
         <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — Atelier</p>
+      </div>
       </div>
     </aside>
   );
