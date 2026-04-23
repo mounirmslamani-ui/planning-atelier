@@ -1364,8 +1364,8 @@ const PlanningTableauPage: React.FC = () => {
                           <TooltipProvider><Tooltip>
                             <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>
-                              {hasForcedAmontWarning
-                                ? '⚠️ Phase amont non terminée mais reprogrammation forcée'
+                              {phaseWarning
+                                ? '⚠️ Phase amont non terminée mais position forcée'
                                 : phaseAmontLabel(amontStatus)}
                             </TooltipContent>
                           </Tooltip></TooltipProvider>
@@ -1373,7 +1373,7 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'Libérer' : 'Verrouiller'}>
-                              {step.frozen ? <Lock className="w-3.5 h-3.5 text-primary" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
+                              {step.frozen ? <YellowLockIcon className="h-5 w-5" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
                             </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="Affectations">
                               <CalendarCheck className="w-3.5 h-3.5" />
