@@ -889,11 +889,34 @@ const OrdersPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Priorité</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.priority} onChange={e => updateForm('priority', e.target.value)}>
-                {Object.entries(priorityConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              <Select value={form.priority || 'undetermined'} onValueChange={val => updateForm('priority', val)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {form.priority === 'undetermined' ? (
+                      <span className="flex items-center gap-2">
+                        <WarningTriangleIcon className="w-[30px] h-[30px]" />
+                        <span>À déterminer plus tard</span>
+                      </span>
+                    ) : form.priority ? (
+                      <span className={priorityConfig[form.priority]?.color}>{priorityConfig[form.priority]?.label}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Choisir une priorité</span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(priorityConfig).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>
+                      <div className="flex items-center gap-2">
+                        {k === 'undetermined' && <WarningTriangleIcon className="w-[30px] h-[30px]" />}
+                        <span className={v.color}>{v.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Désignation</label>
