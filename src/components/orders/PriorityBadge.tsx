@@ -17,7 +17,7 @@ interface PriorityBadgeProps {
 }
 
 const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = 'text-xs' }) => {
-  if (!priority) {
+  if (!priority || priority === 'undetermined') {
     return (
       <span className="flex w-full items-center justify-center" title="Priorité non renseignée">
         <WarningTriangleIcon />
