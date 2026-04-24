@@ -127,6 +127,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [productionRecords, setProductionRecords] = useState<ProductionRecord[]>([]);
   const [qcEntries, setQCEntries] = useState<QualityControlEntry[]>([]);
   const [deliveryEntries, setDeliveryEntries] = useState<DeliveryEntry[]>([]);
+  const [deliveredOrders, setDeliveredOrders] = useState<DeliveredOrder[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [ganttView, setGanttView] = useState<GanttView>('day');
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
@@ -149,8 +150,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     productionRecords: [...productionRecords],
     qcEntries: [...qcEntries],
     deliveryEntries: [...deliveryEntries],
+    deliveredOrders: [...deliveredOrders],
     equipments: [...equipments],
-  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, equipments]);
+  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, deliveredOrders, equipments]);
 
   const pushUndo = useCallback(() => {
     const snap = takeSnapshot();
@@ -170,6 +172,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setProductionRecords(snap.productionRecords);
     setQCEntries(snap.qcEntries);
     setDeliveryEntries(snap.deliveryEntries);
+    setDeliveredOrders(snap.deliveredOrders);
     setEquipments(snap.equipments);
   }, []);
 
