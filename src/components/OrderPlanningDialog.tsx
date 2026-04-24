@@ -160,6 +160,31 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     }));
   };
 
+  const updateNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds', index: number, value: string) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = [...(r[field] || [''])];
+      arr[index] = value;
+      return { ...r, [field]: arr };
+    }));
+  };
+
+  const addNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds') => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = [...(r[field] || []), ''];
+      return { ...r, [field]: arr };
+    }));
+  };
+
+  const removeNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds', index: number) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = (r[field] || []).filter((_, i) => i !== index);
+      return { ...r, [field]: arr.length > 0 ? arr : [''] };
+    }));
+  };
+
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
