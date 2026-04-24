@@ -4,7 +4,7 @@ import {
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
-  PackagePlus, Hammer, FileSearch, Cog, TableProperties
+  PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive
 } from 'lucide-react';
 
 type DropTargetType = false | 'prod' | 'qc';
@@ -29,6 +29,7 @@ const sidebarGroups = [
       { to: '/subcontracting', label: 'Sous-traitance', icon: Factory, dropTarget: false as DropTargetType },
       { to: '/quality-control', label: 'Contrôle Qualité', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
       { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck, dropTarget: false as DropTargetType },
+      { to: '/delivered-orders', label: 'Commandes livrées', icon: Archive, dropTarget: false as DropTargetType },
     ],
   },
   {
