@@ -633,6 +633,15 @@ const OrdersPage: React.FC = () => {
             onClick={e => e.stopPropagation()} />
         );
       }
+      if (col === 'clientRepresentative' || col === 'instructions' || col === 'drawingModel') {
+        const fieldKey = col as 'clientRepresentative' | 'instructions' | 'drawingModel';
+        return (
+          <Input className="h-7 text-xs"
+            value={(getInlineValue(o, fieldKey) as string) || ''}
+            onChange={e => setInlineValue(o.id, fieldKey, e.target.value)}
+            onClick={e => e.stopPropagation()} />
+        );
+      }
     }
 
     // Read-only display
@@ -662,6 +671,9 @@ const OrdersPage: React.FC = () => {
         return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
       case 'observation': return <span className="text-xs text-muted-foreground whitespace-normal break-words block">{o.observation || '—'}</span>;
+      case 'clientRepresentative': return <span className="text-xs whitespace-normal break-words block">{o.clientRepresentative || '—'}</span>;
+      case 'instructions': return <span className="text-xs whitespace-normal break-words block">{o.instructions || '—'}</span>;
+      case 'drawingModel': return <span className="text-xs whitespace-normal break-words block">{o.drawingModel || '—'}</span>;
       default: return null;
     }
   };
