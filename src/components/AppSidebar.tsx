@@ -120,7 +120,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
         ))}
       </nav>
       <div className="p-4 border-t border-sidebar-border">
-        <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — Atelier</p>
+        <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — الورشة</p>
       </div>
       </div>
     </aside>
