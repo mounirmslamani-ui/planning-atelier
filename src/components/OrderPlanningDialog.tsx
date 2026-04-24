@@ -264,6 +264,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.studyDeadline = rows[i].studyDeadline;
         s.materialDeadline = rows[i].materialDeadline;
         s.toolingDeadline = rows[i].toolingDeadline;
+        s.specialToolingNeeds = (rows[i].specialToolingNeeds || []).filter(v => v.trim());
+        s.rawMaterialNeeds = (rows[i].rawMaterialNeeds || []).filter(v => v.trim());
       }
       addStep(s);
     });
