@@ -1,21 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveryEntry } from '@/types/planning';
+import type { DeliveryEntry, DeliveredOrder } from '@/types/planning';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients } = usePlanning();
+  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry } = usePlanning();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
+
+  const [pending, setPending] = useState<{ entryId: string; date: string } | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   const accessors = {
     priority: (e: DeliveryEntry) => getOrder(e.orderId)?.priority || '',
@@ -47,6 +53,36 @@ const DeliveryPage: React.FC = () => {
     }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
   };
 
+  const handleDateChange = (entryId: string, date: string) => {
+    setDrafts(d => ({ ...d, [entryId]: date }));
+    if (date) setPending({ entryId, date });
+  };
+
+  const handleConfirmTransfer = () => {
+    if (!pending) return;
+    const entry = deliveryEntries.find(e => e.id === pending.entryId);
+    if (!entry) { setPending(null); return; }
+    const delivered: DeliveredOrder = {
+      id: crypto.randomUUID(),
+      orderId: entry.orderId,
+      deliveryDate: pending.date,
+      salePriceStatus: 'non-calcule',
+      observation: undefined,
+    };
+    addDeliveredOrder(delivered);
+    deleteDeliveryEntry(entry.id);
+    setDrafts(d => { const n = { ...d }; delete n[pending.entryId]; return n; });
+    setPending(null);
+    toast.success('Commande transférée vers les Commandes livrées');
+  };
+
+  const handleCancelTransfer = () => {
+    if (pending) {
+      setDrafts(d => { const n = { ...d }; delete n[pending.entryId]; return n; });
+    }
+    setPending(null);
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
@@ -70,6 +106,7 @@ const DeliveryPage: React.FC = () => {
               <TableHead><ColumnHeader label="Délais" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Date Contrôle" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Décision" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="text-xs font-semibold">Livraison</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,12 +130,20 @@ const DeliveryPage: React.FC = () => {
                       {entry.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation'}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      value={drafts[entry.id] || ''}
+                      onChange={(e) => handleDateChange(entry.id, e.target.value)}
+                      className="h-8 w-36 text-xs"
+                    />
+                  </TableCell>
                 </TableRow>
               );
             })}
             {deliveryEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
                 </TableCell>
               </TableRow>
@@ -106,6 +151,16 @@ const DeliveryPage: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      <ConfirmDialog
+        open={!!pending}
+        title="Confirmez-vous cette action ?"
+        description={pending ? `La commande sera transférée vers 'Commandes livrées' avec la date du ${formatDateFR(pending.date)}.` : ''}
+        onConfirm={handleConfirmTransfer}
+        onCancel={handleCancelTransfer}
+        confirmLabel="Oui, transférer"
+        cancelLabel="Non"
+      />
     </div>
   );
 };
