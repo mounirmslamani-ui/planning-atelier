@@ -286,21 +286,31 @@ const OrdersPage: React.FC = () => {
 
   // Auto-sort and apply when clicking "Trier auto"
   const handleAutoSort = useCallback(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId);
-    const sorted = autoSortOrders(real).map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const visible = orders.filter(o =>
+      o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id)
+    );
+    const outOfFlow = orders.filter(o =>
+      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+    ).map(o => ({ ...o, displayOrder: undefined }));
+    const sorted = autoSortOrders(visible).map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const absence = orders.find(o => o.id === absenceOrderId);
-    setOrders([...(absence ? [absence] : []), ...sorted]);
+    setOrders([...(absence ? [absence] : []), ...sorted, ...outOfFlow]);
     setOrderValidated(false);
-  }, [orders, absenceOrderId, autoSortOrders, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, autoSortOrders, setOrders]);
 
   // Validate: persist order to DB
   const handleValidateOrder = useCallback(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId);
+    const visible = orders
+      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id))
+      .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999))
+      .map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const outOfFlow = orders.filter(o =>
+      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+    ).map(o => ({ ...o, displayOrder: undefined }));
     const absence = orders.find(o => o.id === absenceOrderId);
-    const reindexed = real.sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999)).map((o, i) => ({ ...o, displayOrder: i + 1 }));
-    setOrders([...(absence ? [absence] : []), ...reindexed]);
+    setOrders([...(absence ? [absence] : []), ...visible, ...outOfFlow]);
     setOrderValidated(true);
-  }, [orders, absenceOrderId, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, setOrders]);
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
