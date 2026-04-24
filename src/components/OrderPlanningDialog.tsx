@@ -29,6 +29,8 @@ interface OperationRow {
   studyDeadline: string;
   materialDeadline: string;
   toolingDeadline: string;
+  specialToolingNeeds: string[];
+  rawMaterialNeeds: string[];
 }
 
 interface Props {
@@ -88,6 +90,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
+          specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
+          rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
         };
       }));
     } else {
@@ -124,6 +128,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       materialStatus: currentOrder.materialStatus ?? 'non-disponible' as ResourceStatus,
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible' as ResourceStatus,
       studyDeadline: '', materialDeadline: '', toolingDeadline: '',
+      specialToolingNeeds: [''],
+      rawMaterialNeeds: [''],
     }]);
   };
 
@@ -151,6 +157,31 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         updated.option1 = '';
       }
       return updated;
+    }));
+  };
+
+  const updateNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds', index: number, value: string) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = [...(r[field] || [''])];
+      arr[index] = value;
+      return { ...r, [field]: arr };
+    }));
+  };
+
+  const addNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds') => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = [...(r[field] || []), ''];
+      return { ...r, [field]: arr };
+    }));
+  };
+
+  const removeNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds', index: number) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = (r[field] || []).filter((_, i) => i !== index);
+      return { ...r, [field]: arr.length > 0 ? arr : [''] };
     }));
   };
 
@@ -233,6 +264,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.studyDeadline = rows[i].studyDeadline;
         s.materialDeadline = rows[i].materialDeadline;
         s.toolingDeadline = rows[i].toolingDeadline;
+        s.specialToolingNeeds = (rows[i].specialToolingNeeds || []).filter(v => v.trim());
+        s.rawMaterialNeeds = (rows[i].rawMaterialNeeds || []).filter(v => v.trim());
       }
       addStep(s);
     });
@@ -286,29 +319,30 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[96vw] max-w-[1500px] max-h-[88vh] overflow-y-auto">
+        <DialogContent className="w-[98vw] max-w-[1900px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">Définition des tâches et affectations</DialogTitle>
+            <DialogTitle className="font-heading">تحديد المراحل وتوزيعها</DialogTitle>
             <p className="text-sm text-muted-foreground">
               {clientName} - Commande N° {order.orderNumber} — {order.designation} — Qté : {order.quantity} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
             </p>
           </DialogHeader>
 
           <div className="bg-card rounded-lg border overflow-x-auto">
-            <Table className="min-w-[1360px] table-fixed">
+            <Table className="min-w-[1820px] table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead className="w-72">العملية</TableHead>
-                  <TableHead className="w-36">Type</TableHead>
-                  <TableHead className="w-28">المدة المخصصة</TableHead>
-                  <TableHead className="w-80">العامل</TableHead>
-                  <TableHead className="w-28">الحالة</TableHead>
-                  <TableHead className="w-24">المدة الفعلية</TableHead>
+                  <TableHead className="w-64">العملية</TableHead>
+                  <TableHead className="w-32">فئة</TableHead>
+                  <TableHead className="w-24">المدة المخصصة</TableHead>
+                  <TableHead className="w-72">العامل</TableHead>
+                  <TableHead className="w-56">احتياجات عدة خاصة</TableHead>
+                  <TableHead className="w-56">احتياجات المواد الأولية والمكونات</TableHead>
+                  <TableHead className="w-24">الحالة</TableHead>
+                  <TableHead className="w-20">المدة الفعلية</TableHead>
                   <TableHead className="w-12 text-center text-xs">دراسة</TableHead>
                   <TableHead className="w-12 text-center text-xs">مواد أولية</TableHead>
-                  <TableHead className="w-12 text-center text-xs">Out.</TableHead>
-                  
+                  <TableHead className="w-12 text-center text-xs">عدة</TableHead>
                   <TableHead className="w-12">الترتيب</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
@@ -371,6 +405,52 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       </div>
                     </TableCell>
                     <TableCell>{renderAssigneeSelect(row)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {(row.specialToolingNeeds && row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <Input
+                              className="h-8 text-xs"
+                              value={val}
+                              onChange={e => updateNeedField(row.id, 'specialToolingNeeds', idx, e.target.value)}
+                              placeholder="أداة خاصة..."
+                            />
+                            {idx === (row.specialToolingNeeds?.length ?? 1) - 1 ? (
+                              <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => addNeedField(row.id, 'specialToolingNeeds')}>
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            ) : (
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeNeedField(row.id, 'specialToolingNeeds', idx)}>
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {(row.rawMaterialNeeds && row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <Input
+                              className="h-8 text-xs"
+                              value={val}
+                              onChange={e => updateNeedField(row.id, 'rawMaterialNeeds', idx, e.target.value)}
+                              placeholder="مادة أولية..."
+                            />
+                            {idx === (row.rawMaterialNeeds?.length ?? 1) - 1 ? (
+                              <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => addNeedField(row.id, 'rawMaterialNeeds')}>
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            ) : (
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeNeedField(row.id, 'rawMaterialNeeds', idx)}>
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-xs font-medium">{getRowProgressStatus(row)}</TableCell>
                     <TableCell className="text-xs font-mono">{getRowActualDuration(row)}</TableCell>
                     <TableCell className="text-center">
@@ -416,7 +496,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 })()}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={14} className="text-center text-muted-foreground py-6">
                       Ajoutez des opérations pour cette commande.
                     </TableCell>
                   </TableRow>

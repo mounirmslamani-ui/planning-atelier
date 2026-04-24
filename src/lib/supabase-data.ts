@@ -178,6 +178,9 @@ export function mapOrderFromDB(row: any): Order {
     studyReady: statusToBool(studyStatus),
     materialReceivedDate: row.material_received_date || undefined,
     observation: row.observation || undefined,
+    clientRepresentative: row.client_representative || undefined,
+    instructions: row.instructions || undefined,
+    drawingModel: row.drawing_model || undefined,
   };
 }
 
@@ -207,6 +210,9 @@ export function mapOrderToDB(o: Order) {
     study_status,
     material_received_date: toISODateOrNull(o.materialReceivedDate),
     observation: o.observation || null,
+    client_representative: o.clientRepresentative || null,
+    instructions: o.instructions || null,
+    drawing_model: o.drawingModel || null,
   };
 }
 
@@ -246,6 +252,8 @@ export function mapStepFromDB(row: any): ProductionStep {
     subcontractingDone: row.subcontracting_done ?? false,
     subcontractingDeadline: row.subcontracting_deadline || undefined,
     subcontractingReceivedDate: row.subcontracting_received_date || undefined,
+    specialToolingNeeds: row.special_tooling_needs || [],
+    rawMaterialNeeds: row.raw_material_needs || [],
   };
 }
 
@@ -280,6 +288,8 @@ export function mapStepToDB(s: ProductionStep) {
     subcontracting_done: s.subcontractingDone ?? false,
     subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
     subcontracting_received_date: toISODateOrNull(s.subcontractingReceivedDate),
+    special_tooling_needs: s.specialToolingNeeds || [],
+    raw_material_needs: s.rawMaterialNeeds || [],
   };
 }
 

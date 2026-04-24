@@ -36,7 +36,7 @@ const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; de
 };
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
@@ -322,6 +322,9 @@ const OrdersPage: React.FC = () => {
       case 'priority': return o.priority || '';
       case 'globalStatus': return getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
+      case 'clientRepresentative': return o.clientRepresentative || '';
+      case 'instructions': return o.instructions || '';
+      case 'drawingModel': return o.drawingModel || '';
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
       case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
@@ -517,12 +520,15 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
-    { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
+    { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
+    { key: 'instructions', label: 'ملاحظات تعليمات', className: 'w-[180px]' },
+    { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
+    { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
     { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
     { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
-    { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
+    { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
     { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
   ];
 
@@ -532,18 +538,21 @@ const OrdersPage: React.FC = () => {
       const atelierMinutes = atelierTimeMap.get(o.id) || 0;
       return {
         'الترتيب': o.displayOrder ?? index + 1,
-        'Numéro de commande': o.orderNumber,
-        'Date de commande': formatDateFR(o.orderDate),
+        'رقم الطلبية': o.orderNumber,
+        'التاريخ': formatDateFR(o.orderDate),
         'الزبون': getClientName(o.clientId),
         'التعيين': o.designation,
         'الكمية': o.quantity,
         'الأولوية': o.priority || '',
-        'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
         'أجل التسليم': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
-        'Temps atelier': formatMinutesToHM(atelierMinutes),
+        'ممثل الزبون': o.clientRepresentative || '',
+        'ملاحظات تعليمات': o.instructions || '',
+        'مخطط/نموذج': o.drawingModel || '',
+        'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
+        'وقت في الورشة': formatMinutesToHM(atelierMinutes),
         'دراسة': status?.study || '',
         'مواد أولية': status?.material || '',
-        'أداة': status?.tooling || '',
+        'عدة': status?.tooling || '',
         'ملاحظات': o.observation || '',
       };
     });
@@ -552,7 +561,7 @@ const OrdersPage: React.FC = () => {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws['!cols'] = [
       { wch: 8 }, { wch: 20 }, { wch: 16 }, { wch: 24 }, { wch: 45 }, { wch: 10 }, { wch: 10 },
-      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 45 },
+      { wch: 14 }, { wch: 18 }, { wch: 28 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 45 },
     ];
     XLSX.utils.book_append_sheet(wb, ws, 'الطلبيات الجارية');
     XLSX.writeFile(wb, getExportFilename('الطلبيات الجارية'));
@@ -560,7 +569,7 @@ const OrdersPage: React.FC = () => {
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client'];
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client', 'clientRepresentative', 'instructions', 'drawingModel'];
     if (isEditing && editableFields.includes(col)) {
       if (col === 'client') {
         return (
@@ -624,6 +633,15 @@ const OrdersPage: React.FC = () => {
             onClick={e => e.stopPropagation()} />
         );
       }
+      if (col === 'clientRepresentative' || col === 'instructions' || col === 'drawingModel') {
+        const fieldKey = col as 'clientRepresentative' | 'instructions' | 'drawingModel';
+        return (
+          <Input className="h-7 text-xs"
+            value={(getInlineValue(o, fieldKey) as string) || ''}
+            onChange={e => setInlineValue(o.id, fieldKey, e.target.value)}
+            onClick={e => e.stopPropagation()} />
+        );
+      }
     }
 
     // Read-only display
@@ -653,6 +671,9 @@ const OrdersPage: React.FC = () => {
         return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
       case 'observation': return <span className="text-xs text-muted-foreground whitespace-normal break-words block">{o.observation || '—'}</span>;
+      case 'clientRepresentative': return <span className="text-xs whitespace-normal break-words block">{o.clientRepresentative || '—'}</span>;
+      case 'instructions': return <span className="text-xs whitespace-normal break-words block">{o.instructions || '—'}</span>;
+      case 'drawingModel': return <span className="text-xs whitespace-normal break-words block">{o.drawingModel || '—'}</span>;
       default: return null;
     }
   };
@@ -888,7 +909,7 @@ const OrdersPage: React.FC = () => {
               );
             })}
             {displayOrders.length === 0 && (
-              <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={20} className="text-center text-muted-foreground py-8">Aucune commande.</TableCell></TableRow>
             )}
           </TableBody>
         </table>
