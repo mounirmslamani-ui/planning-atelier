@@ -238,6 +238,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setProductionRecords(data.productionRecords);
         setQCEntries(data.qcEntries);
         setDeliveryEntries(data.deliveryEntries);
+        setDeliveredOrders(data.deliveredOrders);
 
         // Re-sync all data to DB to fix any previously failed inserts (date format issues)
         await syncAllDataToDB(data);
@@ -390,6 +391,17 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setDeliveryEntries(prev => prev.filter(e => e.id !== id)); dbDeleteDelivery(id);
   }, [pushUndo]);
 
+  // Delivered Orders (archive)
+  const addDeliveredOrder = useCallback((entry: DeliveredOrder) => {
+    pushUndo(); setDeliveredOrders(prev => [...prev, entry]); dbInsertDeliveredOrder(entry);
+  }, [pushUndo]);
+  const updateDeliveredOrder = useCallback((entry: DeliveredOrder) => {
+    pushUndo(); setDeliveredOrders(prev => prev.map(d => d.id === entry.id ? entry : d)); dbUpdateDeliveredOrder(entry);
+  }, [pushUndo]);
+  const deleteDeliveredOrder = useCallback((id: string) => {
+    pushUndo(); setDeliveredOrders(prev => prev.filter(d => d.id !== id)); dbDeleteDeliveredOrder(id);
+  }, [pushUndo]);
+
   return (
     <PlanningContext.Provider value={{
       loading,
@@ -405,6 +417,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       productionRecords, addProductionRecord, updateProductionRecord, deleteProductionRecord,
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
+      deliveredOrders, addDeliveredOrder, updateDeliveredOrder, deleteDeliveredOrder,
       equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
