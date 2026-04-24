@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type {
   Operator, Subcontractor, Operation, Client, Order, ProductionStep,
-  Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment,
+  Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment, DeliveredOrder,
 } from '@/types/planning';
 import {
   fetchAllData, syncAllDataToDB,
@@ -17,6 +17,7 @@ import {
   dbInsertRecord, dbUpdateRecord, dbDeleteRecord,
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
   dbInsertDelivery, dbDeleteDelivery,
+  dbInsertDeliveredOrder, dbUpdateDeliveredOrder, dbDeleteDeliveredOrder,
 } from '@/lib/supabase-data';
 
 interface PlanningContextType {
@@ -33,6 +34,7 @@ interface PlanningContextType {
   productionRecords: ProductionRecord[];
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
+  deliveredOrders: DeliveredOrder[];
   equipments: Equipment[];
   ganttView: GanttView;
   ganttZeroDate: Date;
@@ -74,6 +76,9 @@ interface PlanningContextType {
   deleteQCEntry: (id: string) => void;
   addDeliveryEntry: (entry: DeliveryEntry) => void;
   deleteDeliveryEntry: (id: string) => void;
+  addDeliveredOrder: (entry: DeliveredOrder) => void;
+  updateDeliveredOrder: (entry: DeliveredOrder) => void;
+  deleteDeliveredOrder: (id: string) => void;
   setEquipments: (eqs: Equipment[]) => void;
   addEquipment: (eq: Equipment) => void;
   updateEquipment: (eq: Equipment) => void;
@@ -99,6 +104,7 @@ interface Snapshot {
   productionRecords: ProductionRecord[];
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
+  deliveredOrders: DeliveredOrder[];
   equipments: Equipment[];
 }
 
