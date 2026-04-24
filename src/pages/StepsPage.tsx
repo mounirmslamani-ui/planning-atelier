@@ -106,7 +106,7 @@ const StepsPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <PageHeader title="Affectations" description="Assignation des opérateurs et durées estimatives" actions={
+      <PageHeader title="التعيينات" description="Assignation des opérateurs et durées estimatives" actions={
         <Button onClick={openNew} size="sm" disabled={realOrders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       <div className="bg-card rounded-lg border overflow-x-auto">
@@ -120,7 +120,7 @@ const StepsPage: React.FC = () => {
               <TableHead>Durée est.</TableHead>
               <TableHead>Début</TableHead>
               <TableHead>Fin</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -166,14 +166,14 @@ const StepsPage: React.FC = () => {
                   className={`px-3 py-1.5 text-xs rounded transition-colors ${assignType === 'operator' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
                   onClick={() => { setAssignType('operator'); updateForm('subcontractorId', undefined); updateForm('operatorId', operators[0]?.id || ''); }}
                 >
-                  Opérateur
+                  العامل
                 </button>
                 <button
                   type="button"
                   className={`px-3 py-1.5 text-xs rounded transition-colors ${assignType === 'subcontractor' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
                   onClick={() => { setAssignType('subcontractor'); updateForm('operatorId', ''); updateForm('subcontractorId', subcontractors[0]?.id || ''); }}
                 >
-                  Sous-traitant
+                  مناول
                 </button>
               </div>
               {assignType === 'operator' ? (
@@ -197,11 +197,11 @@ const StepsPage: React.FC = () => {
               <Input type="number" min={1} value={form.order} onChange={e => updateForm('order', parseInt(e.target.value) || 1)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Date début</label>
+              <label className="text-sm font-medium mb-1 block">تاريخ البداية</label>
               <Input type="date" value={form.startDate} onChange={e => updateForm('startDate', e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Heure début</label>
+              <label className="text-sm font-medium mb-1 block">ساعة البداية</label>
               <Input type="time" value={form.startTime} onChange={e => updateForm('startTime', e.target.value)} />
             </div>
             <div>

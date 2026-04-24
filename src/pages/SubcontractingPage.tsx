@@ -67,7 +67,7 @@ const SubcontractingPage: React.FC = () => {
       return { order, ...info };
     }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[]; subcontractorId: string | undefined }[];
 
-    // Sort by displayOrder (Cn) from "Commandes en cours"
+    // Sort by displayOrder (Cn) from "الطلبيات الجارية"
     rows.sort((a, b) => (a.order.displayOrder ?? 9999) - (b.order.displayOrder ?? 9999));
     return rows;
   }, [steps, orders, subcontractorOpIds, absenceOrderId]);
@@ -120,7 +120,7 @@ const SubcontractingPage: React.FC = () => {
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
   const handleExportExcel = () => {
-    exportTableToExcel('Sous-traitance', filteredRows.map(row => ({
+    exportTableToExcel('مناولة', filteredRows.map(row => ({
       Cn: row.order.displayOrder ?? '—',
       'N° Commande': row.order.orderNumber,
       Date: formatDateFR(row.order.orderDate) || '—',
@@ -128,9 +128,9 @@ const SubcontractingPage: React.FC = () => {
       Désignation: row.order.designation,
       'Qté.': row.order.quantity,
       Priorité: row.order.priority || '—',
-      'Sous-traitant': getSubcontractorName(row.subcontractorId),
+      'مناول': getSubcontractorName(row.subcontractorId),
       'Délai promis': formatDateFR(row.order.plannedDeadline) || '—',
-      'Délai sous-traitance': formatDateFR(row.deadline) || '—',
+      'أجل انتهاء المناولة': formatDateFR(row.deadline) || '—',
       Fait: row.done ? 'Oui' : 'Non',
     })), [8, 20, 14, 24, 45, 10, 12, 24, 16, 22, 10]);
   };
@@ -157,7 +157,7 @@ const SubcontractingPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Sous-traitance" description="Suivi des opérations sous-traitées planifiées" actions={
+        <PageHeader title="مناولة" description="Suivi des opérations sous-traitées planifiées" actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> Exporter Excel
           </Button>
@@ -169,15 +169,15 @@ const SubcontractingPage: React.FC = () => {
             <TableRow>
               <TableHead className="w-12 text-center">Cn</TableHead>
               <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Date" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Sous-traitant" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Délai promis" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Délai sous-traitance" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="text-center w-16">Fait</TableHead>
+              <TableHead><ColumnHeader label="أجل انتهاء المناولة" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

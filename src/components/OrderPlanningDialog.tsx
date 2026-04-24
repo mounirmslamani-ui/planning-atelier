@@ -302,14 +302,14 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                   <TableHead className="w-72">Opération</TableHead>
                   <TableHead className="w-36">Type</TableHead>
                   <TableHead className="w-28">Durée allouée</TableHead>
-                  <TableHead className="w-80">Opérateur</TableHead>
-                  <TableHead className="w-28">Statut</TableHead>
+                  <TableHead className="w-80">العامل</TableHead>
+                  <TableHead className="w-28">الحالة</TableHead>
                   <TableHead className="w-24">Durée effectuée</TableHead>
-                  <TableHead className="w-12 text-center text-xs">Étude</TableHead>
-                  <TableHead className="w-12 text-center text-xs">Mat.</TableHead>
+                  <TableHead className="w-12 text-center text-xs">دراسة</TableHead>
+                  <TableHead className="w-12 text-center text-xs">مواد أولية</TableHead>
                   <TableHead className="w-12 text-center text-xs">Out.</TableHead>
                   
-                  <TableHead className="w-12">Ordre</TableHead>
+                  <TableHead className="w-12">الترتيب</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -351,7 +351,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         value={row.assignType}
                         onChange={e => updateRow(row.id, 'assignType', e.target.value)}
                       >
-                        <option value="operator">Opérateur</option>
+                        <option value="operator">العامل</option>
                         <option value="subcontractor">Sous-trait.</option>
                       </select>
                     </TableCell>

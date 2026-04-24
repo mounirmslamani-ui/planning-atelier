@@ -72,7 +72,7 @@ const StudyPage: React.FC = () => {
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
   const handleExportExcel = () => {
-    exportTableToExcel('Études', filteredRows.map(r => ({
+    exportTableToExcel('دراسة', filteredRows.map(r => ({
       '#': r.order.displayOrder ?? '—',
       'N° Commande': r.order.orderNumber,
       Client: getClientName(r.order.clientId),
@@ -80,7 +80,7 @@ const StudyPage: React.FC = () => {
       'Qté.': r.order.quantity,
       Priorité: r.order.priority || '—',
       'Délai promis': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-      'Date prévue fin étude': formatDateFR(r.deadline) || '—',
+      'تاريخ نهاية الدراسة المبرمج': formatDateFR(r.deadline) || '—',
       Fait: 'Non',
     })), [8, 20, 24, 45, 10, 12, 16, 22, 10]);
   };
@@ -105,7 +105,7 @@ const StudyPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Études" description="Étapes dont l'étude n'est pas encore faite" actions={
+        <PageHeader title="دراسة" description="Étapes dont l'étude n'est pas encore faite" actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> Exporter Excel
           </Button>
@@ -117,13 +117,13 @@ const StudyPage: React.FC = () => {
             <TableRow>
               <TableHead className="w-12 text-center">#</TableHead>
               <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-                <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-                <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
+                <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
               <TableHead>Délai promis</TableHead>
-              <TableHead>Date prévue fin étude</TableHead>
-              <TableHead className="text-center w-16">Fait</TableHead>
+              <TableHead>تاريخ نهاية الدراسة المبرمج</TableHead>
+              <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -1082,8 +1082,8 @@ const PlanningTableauPage: React.FC = () => {
     exportSheetsToExcel('Planning', operatorTasks.map(group => ({
       name: group.operator.name,
       rows: group.tasks.map(({ step, order }): ExcelRow => ({
-        'Date début': formatDateFR(step.startDate),
-        'N° Cmd': order.orderNumber,
+        'تاريخ البداية': formatDateFR(step.startDate),
+        'رقم الطلبية': order.orderNumber,
         Client: getClientName(order.clientId),
         Désignation: order.designation,
         Qté: order.quantity,
@@ -1185,7 +1185,7 @@ const PlanningTableauPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-        title="Planning Tableau"
+        title="جدول البرمجة"
         actions={
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
@@ -1289,45 +1289,45 @@ const PlanningTableauPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10 px-1 text-center text-xs">Ordre</TableHead>
+                    <TableHead className="w-10 px-1 text-center text-xs">الترتيب</TableHead>
                     <TableHead className="w-[95px] text-xs">
-                      <ColumnHeader label="Date début" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} filterMode="date" />
+                      <ColumnHeader label="تاريخ البداية" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} filterMode="date" />
                     </TableHead>
                     <TableHead className="w-[95px] text-xs">
-                      <ColumnHeader label="Date fin" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} filterMode="date" />
+                      <ColumnHeader label="تاريخ النهاية" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} filterMode="date" />
                     </TableHead>
                     <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[80px] text-xs">
-                      <ColumnHeader label="N° Cmd" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} />
+                      <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} />
                     </TableHead>
                     <TableHead className="w-[90px] text-xs">
-                      <ColumnHeader label="Client" columnKey="client" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['client'] || ''} onFilter={handleColFilter} />
+                      <ColumnHeader label="الزبون" columnKey="client" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['client'] || ''} onFilter={handleColFilter} />
                     </TableHead>
                     <TableHead className="w-[180px] min-w-[180px] max-w-[180px] text-xs">
-                      <ColumnHeader label="Désignation" columnKey="designation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['designation'] || ''} onFilter={handleColFilter} />
+                      <ColumnHeader label="التعيين" columnKey="designation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['designation'] || ''} onFilter={handleColFilter} />
                     </TableHead>
                     <TableHead className="w-[55px] text-xs text-center">
-                      <ColumnHeader label="Qté" columnKey="quantity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['quantity'] || ''} onFilter={handleColFilter} />
+                      <ColumnHeader label="الكمية" columnKey="quantity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['quantity'] || ''} onFilter={handleColFilter} />
                     </TableHead>
                     <TableHead className="w-[70px] text-xs text-center">
-                      <ColumnHeader label="Priorité" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
+                      <ColumnHeader label="الأولوية" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
                     </TableHead>
                     <TableHead className="w-[105px] text-xs">
-                      <ColumnHeader label="Statut" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['En attente', 'En cours', 'Terminée']} />
+                      <ColumnHeader label="الحالة" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['En attente', 'En cours', 'Terminée']} />
                     </TableHead>
-                    <TableHead className="w-[80px] text-xs">Délai</TableHead>
+                    <TableHead className="w-[80px] text-xs">أجل التسليم</TableHead>
                     <TableHead className="w-[105px] text-xs">
-                      <ColumnHeader label="Statut" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['Non entamée', 'En cours', 'Terminée']} />
+                      <ColumnHeader label="الحالة" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['Non entamée', 'En cours', 'Terminée']} />
                     </TableHead>
                     <TableHead className="w-[120px] text-xs">
                       <ColumnHeader label="Opération" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={operationFilterOptions} />
                     </TableHead>
-                    <TableHead className="w-[200px] min-w-[200px] text-xs">Observation</TableHead>
-                    <TableHead className="w-[30px] text-xs text-center" title="Étude">Ét.</TableHead>
+                    <TableHead className="w-[200px] min-w-[200px] text-xs">ملاحظات</TableHead>
+                    <TableHead className="w-[30px] text-xs text-center" title="دراسة">Ét.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
-                    <TableHead className="w-[30px] text-xs text-center" title="Outillage">Ou.</TableHead>
+                    <TableHead className="w-[30px] text-xs text-center" title="أداة">Ou.</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="Phase amont">Ph.</TableHead>
-                    <TableHead className="w-[100px] text-xs px-1">Actions</TableHead>
+                    <TableHead className="w-[100px] text-xs px-1">عمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1515,7 +1515,7 @@ const PlanningTableauPage: React.FC = () => {
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'Libérer' : 'Verrouiller'}>
                               {step.frozen ? <YellowLockIcon className="h-5 w-5" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="Affectations">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="التعيينات">
                               <CalendarCheck className="w-3.5 h-3.5" />
                             </Button>
                             {isEditing ? (

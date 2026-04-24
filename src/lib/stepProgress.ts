@@ -6,7 +6,7 @@ export type OrderGlobalStatus = 'En attente' | 'En cours' | 'Terminée';
 export interface OrderStepStatusDetail {
   step: ProductionStep;
   lineNumber: number;
-  scopeLabel: 'Atelier' | 'Sous-traitance';
+  scopeLabel: 'Atelier' | 'مناولة';
   status: StepProgressStatus;
 }
 
@@ -61,7 +61,7 @@ export function getOrderStepStatusDetails(
   return getOrderProductionSteps(orderId, allSteps, absenceOperationId).map((step, index) => ({
     step,
     lineNumber: step.order || index + 1,
-    scopeLabel: step.subcontractorId ? 'Sous-traitance' : 'Atelier',
+    scopeLabel: step.subcontractorId ? 'مناولة' : 'Atelier',
     status: getStepProgressStatus(step, records),
   }));
 }
@@ -114,7 +114,7 @@ export function buildOrderQualityControlErrorMessage(
     return `validation incomplète (${check.completedSteps}/${check.totalSteps} étapes terminées).`;
   }
 
-  if (check.blocker.scopeLabel === 'Sous-traitance') {
+  if (check.blocker.scopeLabel === 'مناولة') {
     return `Ligne ${check.blocker.lineNumber} : Sous-traitance non terminée.`;
   }
 

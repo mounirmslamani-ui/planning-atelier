@@ -16,7 +16,7 @@ interface ExcelPasteDialogProps {
   existingOrderNumbers: string[];
 }
 
-const EXPECTED_COLUMNS = ['N° Commande', 'Date', 'Client', 'Désignation', 'Quantité', 'Priorité', 'Délai'];
+const EXPECTED_COLUMNS = ['N° Commande', 'التاريخ', 'الزبون', 'التعيين', 'الكمية', 'الأولوية', 'أجل التسليم'];
 
 const parsePriority = (val: string): OrderPriority | undefined => {
   const lower = val.toLowerCase().trim();

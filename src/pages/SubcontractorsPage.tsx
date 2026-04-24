@@ -70,10 +70,10 @@ const SubcontractorsPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
 
   const handleExportExcel = () => {
-    exportTableToExcel('Sous-traitants', processed.map(s => ({
-      'Raison sociale': s.companyName,
-      'Activité principale': s.mainActivity,
-      'Activités secondaires': s.secondaryActivities.join(', '),
+    exportTableToExcel('المناولون', processed.map(s => ({
+      'اسم المناول': s.companyName,
+      'المناولة الأساسية': s.mainActivity,
+      'مناولات أخرى': s.secondaryActivities.join(', '),
     })), [32, 28, 45]);
   };
 
@@ -81,7 +81,7 @@ const SubcontractorsPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="Sous-traitants"
+          title="المناولون"
           description={`${subcontractors.length} sous-traitant(s)`}
           actions={
             <>
@@ -100,10 +100,10 @@ const SubcontractorsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="Raison sociale" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Activité principale" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Activités secondaires" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead><ColumnHeader label="اسم المناول" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="المناولة الأساسية" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="مناولات أخرى" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -154,11 +154,11 @@ const SubcontractorsPage: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Raison sociale</label>
+              <label className="text-sm font-medium mb-1 block">اسم المناول</label>
               <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Nom de l'entreprise" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Activité principale</label>
+              <label className="text-sm font-medium mb-1 block">المناولة الأساسية</label>
               <select
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 value={mainActivity}
@@ -170,7 +170,7 @@ const SubcontractorsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Activités secondaires</label>
+              <label className="text-sm font-medium mb-1 block">مناولات أخرى</label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {secondaryActivities.map(act => (
                   <span key={act} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">

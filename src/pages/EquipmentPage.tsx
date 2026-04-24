@@ -74,7 +74,7 @@ const EquipmentPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="Équipements"
+          title="الآلات"
           description={`${equipments.length} équipement(s) enregistré(s)`}
           actions={
             <Button onClick={openNew} size="sm">
@@ -88,11 +88,11 @@ const EquipmentPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Désignation</TableHead>
+              <TableHead>التعيين</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Capacité</TableHead>
               <TableHead>État</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,7 +136,7 @@ const EquipmentPage: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Désignation</label>
+              <label className="text-sm font-medium mb-1 block">التعيين</label>
               <Input value={designation} onChange={e => setDesignation(e.target.value)} placeholder="Nom de l'équipement" />
             </div>
             <div>

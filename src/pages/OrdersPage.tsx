@@ -511,19 +511,19 @@ const OrdersPage: React.FC = () => {
   const hasFrozenOrders = orders.some(o => o.id !== absenceOrderId && o.frozenOrder);
 
   const columns: { key: ColumnKey; label: string; className?: string }[] = [
-    { key: 'orderNumber', label: 'N° Cmd', className: 'w-[90px]' },
-    { key: 'orderDate', label: 'Date', className: 'w-[80px]' },
-    { key: 'client', label: 'Client', className: 'w-[100px]' },
-    { key: 'designation', label: 'Désignation', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
-    { key: 'quantity', label: 'Qté', className: 'w-[50px]' },
-    { key: 'priority', label: 'Priorité', className: 'w-[70px]' },
-    { key: 'globalStatus', label: 'Statut', className: 'w-[105px] min-w-[105px]' },
-    { key: 'deliveryDeadline', label: 'Délai', className: 'w-[85px]' },
-    { key: 'atelierTime', label: 'T. Atelier', className: 'w-[70px]' },
+    { key: 'orderNumber', label: 'رقم الطلبية', className: 'w-[90px]' },
+    { key: 'orderDate', label: 'التاريخ', className: 'w-[80px]' },
+    { key: 'client', label: 'الزبون', className: 'w-[100px]' },
+    { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
+    { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
+    { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
+    { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
+    { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
+    { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
     { key: 'study', label: 'Ét.', className: 'w-[35px]' },
-    { key: 'material', label: 'Mat.', className: 'w-[35px]' },
+    { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
-    { key: 'observation', label: 'Observation', className: 'w-[340px]' },
+    { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
   ];
 
   const handleExportExcel = useCallback(() => {
@@ -531,20 +531,20 @@ const OrdersPage: React.FC = () => {
       const status = orderStatusMap.get(o.id);
       const atelierMinutes = atelierTimeMap.get(o.id) || 0;
       return {
-        'Ordre': o.displayOrder ?? index + 1,
+        'الترتيب': o.displayOrder ?? index + 1,
         'Numéro de commande': o.orderNumber,
         'Date de commande': formatDateFR(o.orderDate),
-        'Client': getClientName(o.clientId),
-        'Désignation': o.designation,
-        'Quantité': o.quantity,
-        'Priorité': o.priority || '',
-        'Statut': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
-        'Délai': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
+        'الزبون': getClientName(o.clientId),
+        'التعيين': o.designation,
+        'الكمية': o.quantity,
+        'الأولوية': o.priority || '',
+        'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
+        'أجل التسليم': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
         'Temps atelier': formatMinutesToHM(atelierMinutes),
-        'Étude': status?.study || '',
+        'دراسة': status?.study || '',
         'Matière': status?.material || '',
-        'Outillage': status?.tooling || '',
-        'Observation': o.observation || '',
+        'أداة': status?.tooling || '',
+        'ملاحظات': o.observation || '',
       };
     });
 
@@ -554,8 +554,8 @@ const OrdersPage: React.FC = () => {
       { wch: 8 }, { wch: 20 }, { wch: 16 }, { wch: 24 }, { wch: 45 }, { wch: 10 }, { wch: 10 },
       { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 45 },
     ];
-    XLSX.utils.book_append_sheet(wb, ws, 'Commandes en cours');
-    XLSX.writeFile(wb, getExportFilename('Commandes en cours'));
+    XLSX.utils.book_append_sheet(wb, ws, 'الطلبيات الجارية');
+    XLSX.writeFile(wb, getExportFilename('الطلبيات الجارية'));
   }, [displayOrders, orderStatusMap, atelierTimeMap, getClientName, steps, productionRecords, absenceOperationId]);
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
@@ -700,7 +700,7 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Commandes en cours" description={
+        <PageHeader title="الطلبيات الجارية" description={
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
@@ -781,13 +781,13 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-8 px-1">
                 <Checkbox checked={selectedIds.size === displayOrders.length && displayOrders.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
-              <TableHead className="w-14 text-center text-xs px-1">Ordre</TableHead>
+              <TableHead className="w-14 text-center text-xs px-1">الترتيب</TableHead>
               {columns.map(col => (
                 <TableHead key={col.key} className={col.className}>
                   <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['En attente', 'En cours', 'Terminée'] : []} />
                 </TableHead>
               ))}
-              <TableHead className="w-24 text-xs px-1">Actions</TableHead>
+              <TableHead className="w-24 text-xs px-1">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -844,7 +844,7 @@ const OrdersPage: React.FC = () => {
                               size="icon"
                               className="h-9 w-9 min-w-9"
                               onClick={() => setPlanningOrder(o)}
-                              title={hasSteps ? 'Affectations' : 'Aucune étape définie — cliquer pour définir'}
+                              title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
                             >
                               {hasSteps ? (
                                 <CalendarCheck className="w-3.5 h-3.5" />
@@ -913,7 +913,7 @@ const OrdersPage: React.FC = () => {
               <Input type="date" value={form.orderDate} onChange={e => updateForm('orderDate', e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Client</label>
+              <label className="text-sm font-medium mb-1 block">الزبون</label>
               <Select value={form.clientId} onValueChange={val => updateForm('clientId', val)}>
                 <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
                 <SelectContent>
@@ -922,7 +922,7 @@ const OrdersPage: React.FC = () => {
               </Select>
             </div>
             <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">Priorité</label>
+              <label className="text-sm font-medium mb-1 block">الأولوية</label>
               <Select value={form.priority || 'undetermined'} onValueChange={val => updateForm('priority', val)}>
                 <SelectTrigger className="w-full">
                   <SelectValue>
@@ -951,11 +951,11 @@ const OrdersPage: React.FC = () => {
               </Select>
             </div>
             <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">Désignation</label>
+              <label className="text-sm font-medium mb-1 block">التعيين</label>
               <Input value={form.designation} onChange={e => updateForm('designation', e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Quantité</label>
+              <label className="text-sm font-medium mb-1 block">الكمية</label>
               <Input type="number" min={1} value={form.quantity} onChange={e => updateForm('quantity', parseInt(e.target.value) || 1)} />
             </div>
             <div>
@@ -963,7 +963,7 @@ const OrdersPage: React.FC = () => {
               <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
             </div>
             <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">Observation</label>
+              <label className="text-sm font-medium mb-1 block">ملاحظات</label>
               <Input value={form.observation || ''} onChange={e => updateForm('observation', e.target.value)} placeholder="Note d'information..." />
             </div>
           </div>
