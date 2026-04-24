@@ -78,8 +78,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
     <aside className={`h-screen flex-shrink-0 overflow-hidden bg-sidebar transition-[width] duration-200 ease-out ${isOpen ? 'w-60 border-r border-sidebar-border' : 'w-0 border-r-0'}`}>
       <div className="flex h-full w-60 flex-col">
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
-        <Factory className="w-6 h-6 text-sidebar-primary" />
-        <h1 className="font-heading text-sm font-bold text-sidebar-foreground tracking-wider uppercase">
+        <Factory className="w-8 h-8 text-sidebar-primary" />
+        <h1 className="font-heading text-lg font-bold text-sidebar-foreground tracking-wider uppercase">
           برمجة الورشة
         </h1>
       </div>
@@ -87,7 +87,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
         {sidebarGroups.map((group, gi) => (
           <div key={group.title}>
             {gi > 0 && <div className="border-t border-sidebar-border my-2" />}
-            <div className="px-3 py-2 text-[10px] font-heading font-bold text-sidebar-primary tracking-widest uppercase">
+            <div className="px-3 py-2 text-sm font-heading font-bold text-sidebar-primary tracking-widest uppercase">
               {group.title}
             </div>
             <div className="space-y-0.5">
