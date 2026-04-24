@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      delivered_orders: {
+        Row: {
+          created_at: string
+          delivery_date: string
+          id: string
+          observation: string | null
+          order_id: string
+          sale_price_status: Database["public"]["Enums"]["sale_price_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string
+          id?: string
+          observation?: string | null
+          order_id: string
+          sale_price_status?: Database["public"]["Enums"]["sale_price_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string
+          id?: string
+          observation?: string | null
+          order_id?: string
+          sale_price_status?: Database["public"]["Enums"]["sale_price_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_entries: {
         Row: {
           control_date: string
@@ -564,6 +594,7 @@ export type Database = {
         | "non-disponible"
         | "partiel"
         | "non-applicable"
+      sale_price_status: "gratuit" | "non-calcule" | "non-valide" | "valide"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -730,6 +761,7 @@ export const Constants = {
         "partiel",
         "non-applicable",
       ],
+      sale_price_status: ["gratuit", "non-calcule", "non-valide", "valide"],
     },
   },
 } as const
