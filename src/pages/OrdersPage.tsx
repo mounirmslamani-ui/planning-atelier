@@ -36,7 +36,7 @@ const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; de
 };
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
@@ -322,6 +322,9 @@ const OrdersPage: React.FC = () => {
       case 'priority': return o.priority || '';
       case 'globalStatus': return getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
+      case 'clientRepresentative': return o.clientRepresentative || '';
+      case 'instructions': return o.instructions || '';
+      case 'drawingModel': return o.drawingModel || '';
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
       case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
@@ -517,12 +520,15 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
-    { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
+    { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
+    { key: 'instructions', label: 'ملاحظات تعليمات', className: 'w-[180px]' },
+    { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
+    { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
     { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
     { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
-    { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
+    { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
     { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
   ];
 
