@@ -230,8 +230,8 @@ const AbsencesPage: React.FC = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!absOperatorId || !absStartDate || !absEndDate}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!absOperatorId || !absStartDate || !absEndDate}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

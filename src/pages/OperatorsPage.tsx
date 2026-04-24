@@ -274,8 +274,8 @@ const OperatorsPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!name || !mainFunction}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!name || !mainFunction}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

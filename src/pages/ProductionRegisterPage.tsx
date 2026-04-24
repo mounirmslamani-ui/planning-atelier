@@ -253,7 +253,7 @@ const ProductionRegisterPage: React.FC = () => {
         <>
           <div className="flex-none flex justify-end pt-2 pb-3">
             <Button onClick={handleExportExcel} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> Exporter Excel
+              <Download className="w-4 h-4 mr-1" /> تصدير Excel
             </Button>
           </div>
 
@@ -361,7 +361,7 @@ const ProductionRegisterPage: React.FC = () => {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('operation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        Opération <SortIcon field="operation" />
+                        العملية <SortIcon field="operation" />
                       </button>
                       <FilterPopover
                         items={availableOperations.map(id => ({ value: id, label: getOperationName(id) }))}
@@ -450,8 +450,8 @@ const ProductionRegisterPage: React.FC = () => {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>Annuler</Button>
-            <Button size="sm" onClick={saveEdit}>Enregistrer</Button>
+            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>إلغاء</Button>
+            <Button size="sm" onClick={saveEdit}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

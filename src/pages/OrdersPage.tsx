@@ -520,7 +520,7 @@ const OrdersPage: React.FC = () => {
     { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
     { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
-    { key: 'study', label: 'Ét.', className: 'w-[35px]' },
+    { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'Out.', className: 'w-[35px]' },
     { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
@@ -542,7 +542,7 @@ const OrdersPage: React.FC = () => {
         'أجل التسليم': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
         'Temps atelier': formatMinutesToHM(atelierMinutes),
         'دراسة': status?.study || '',
-        'Matière': status?.material || '',
+        'مواد أولية': status?.material || '',
         'أداة': status?.tooling || '',
         'ملاحظات': o.observation || '',
       };
@@ -726,10 +726,10 @@ const OrdersPage: React.FC = () => {
         </div>
       } actions={
         <div className="flex gap-2 items-center">
-          <Button onClick={undo} variant="outline" size="icon" disabled={!canUndo} title="Annuler (Ctrl+Z)">
+          <Button onClick={undo} variant="outline" size="icon" disabled={!canUndo} title="تراجع (Ctrl+Z)">
             <Undo2 className="w-4 h-4" />
           </Button>
-          <Button onClick={redo} variant="outline" size="icon" disabled={!canRedo} title="Rétablir (Ctrl+Y)">
+          <Button onClick={redo} variant="outline" size="icon" disabled={!canRedo} title="إعادة (Ctrl+Y)">
             <Redo2 className="w-4 h-4" />
           </Button>
           <Button onClick={handleAutoSort} variant="outline" size="sm" title="Trier par priorité puis disponibilité">
@@ -752,7 +752,7 @@ const OrdersPage: React.FC = () => {
             <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
           </Button>
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
@@ -821,7 +821,7 @@ const OrdersPage: React.FC = () => {
                         {o.frozenOrder ? (
                           <Lock className="w-3 h-3 text-primary" />
                         ) : (
-                          <WarningTriangleIcon aria-label="Commande non ordonnée" />
+                          <WarningTriangleIcon aria-label="طلبية غير مرتبة" />
                         )}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
@@ -832,7 +832,7 @@ const OrdersPage: React.FC = () => {
                     <TableCell className="px-1">
                       <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                         {o.frozenOrder && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="Libérer">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
                             <Unlock className="w-3.5 h-3.5 text-primary" />
                           </Button>
                         )}
@@ -856,10 +856,10 @@ const OrdersPage: React.FC = () => {
                         })()}
                         {isRowEditing ? (
                           <>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="Enregistrer">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
                               <span className="text-normal text-sm font-bold">✓</span>
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="Annuler">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="إلغاء">
                               <span className="text-destructive text-sm font-bold">✕</span>
                             </Button>
                           </>
@@ -968,8 +968,8 @@ const OrdersPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!form.orderNumber || !form.designation}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!form.orderNumber || !form.designation}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -996,7 +996,7 @@ const OrdersPage: React.FC = () => {
 
       <ConfirmDialog
         open={materialConfirmOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => {
           setMaterialConfirmOpen(false);
           setMaterialDatePromptOpen(true);
@@ -1011,7 +1011,7 @@ const OrdersPage: React.FC = () => {
       {pendingMaterialStatus && materialDatePromptOpen && (
         <DatePromptDialog
           open={materialDatePromptOpen}
-          label="Date de réception de la matière"
+          label="تاريخ استلام المواد الأولية"
           defaultDate={orders.find(o => o.id === pendingMaterialStatus.orderId)?.materialReceivedDate || today}
           onConfirm={async (date) => {
             const saved = await applyStatusToOrderAndSteps(pendingMaterialStatus.orderId, 'material', pendingMaterialStatus.status, undefined, date);
@@ -1051,7 +1051,7 @@ const OrdersPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setMoveDialogOpen(false)}>إلغاء</Button>
             <Button onClick={applyMoveSelection} disabled={!moveTargetCn || parseInt(moveTargetCn, 10) < 1}>Déplacer</Button>
           </DialogFooter>
         </DialogContent>

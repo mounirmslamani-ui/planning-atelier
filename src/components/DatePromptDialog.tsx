@@ -26,7 +26,7 @@ const DatePromptDialog: React.FC<Props> = ({ open, label, onConfirm, onCancel, d
         </DialogHeader>
         <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>Annuler</Button>
+          <Button variant="outline" onClick={onCancel}>إلغاء</Button>
           <Button onClick={() => { if (date) onConfirm(date); }} disabled={!date}>Confirmer</Button>
         </DialogFooter>
       </DialogContent>

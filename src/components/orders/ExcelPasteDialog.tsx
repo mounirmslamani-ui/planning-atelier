@@ -187,7 +187,7 @@ const ExcelPasteDialog: React.FC<ExcelPasteDialogProps> = ({ open, onOpenChange,
           {step === 'preview' && (
             <Button variant="outline" onClick={() => setStep('paste')}>Retour</Button>
           )}
-          <Button variant="outline" onClick={handleClose}>Annuler</Button>
+          <Button variant="outline" onClick={handleClose}>إلغاء</Button>
           {step === 'paste' ? (
             <Button onClick={handleParse} disabled={!rawText.trim()}>Aperçu</Button>
           ) : (

@@ -86,7 +86,7 @@ const SubcontractorsPage: React.FC = () => {
           actions={
             <>
               <Button onClick={handleExportExcel} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-1" /> Exporter Excel
+                <Download className="w-4 h-4 mr-1" /> تصدير Excel
               </Button>
               <Button onClick={openNew} size="sm">
                 <Plus className="w-4 h-4 mr-1" /> Ajouter
@@ -197,8 +197,8 @@ const SubcontractorsPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!companyName || !mainActivity}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!companyName || !mainActivity}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

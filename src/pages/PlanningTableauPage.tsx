@@ -1189,10 +1189,10 @@ const PlanningTableauPage: React.FC = () => {
         actions={
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title="Annuler (Ctrl+Z)">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title="تراجع (Ctrl+Z)">
                 <Undo2 className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title="Rétablir (Ctrl+Y)">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title="إعادة (Ctrl+Y)">
                 <Redo2 className="w-4 h-4" />
               </Button>
             </div>
@@ -1228,7 +1228,7 @@ const PlanningTableauPage: React.FC = () => {
               </Button>
             )}
             <Button variant="outline" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-1" /> Exporter Excel
+              <Download className="w-4 h-4 mr-1" /> تصدير Excel
             </Button>
             <Button
               onClick={handleValidate}
@@ -1320,13 +1320,13 @@ const PlanningTableauPage: React.FC = () => {
                       <ColumnHeader label="الحالة" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={['Non entamée', 'En cours', 'Terminée']} />
                     </TableHead>
                     <TableHead className="w-[120px] text-xs">
-                      <ColumnHeader label="Opération" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={operationFilterOptions} />
+                      <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} filterMode="select" filterOptions={operationFilterOptions} />
                     </TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">ملاحظات</TableHead>
-                    <TableHead className="w-[30px] text-xs text-center" title="دراسة">Ét.</TableHead>
-                    <TableHead className="w-[30px] text-xs text-center" title="Matière">Ma.</TableHead>
-                    <TableHead className="w-[30px] text-xs text-center" title="أداة">Ou.</TableHead>
-                    <TableHead className="w-[30px] text-xs text-center" title="Phase amont">Ph.</TableHead>
+                    <TableHead className="w-[30px] text-xs text-center" title="دراسة">دراسة</TableHead>
+                    <TableHead className="w-[30px] text-xs text-center" title="مواد أولية">مواد</TableHead>
+                    <TableHead className="w-[30px] text-xs text-center" title="أداة">عدة</TableHead>
+                    <TableHead className="w-[30px] text-xs text-center" title="المرحلة السابقة">سابق</TableHead>
                     <TableHead className="w-[100px] text-xs px-1">عمليات</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1512,7 +1512,7 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'Libérer' : 'Verrouiller'}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'فتح' : 'قفل'}>
                               {step.frozen ? <YellowLockIcon className="h-5 w-5" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
                             </Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPlanningOrder(order)} title="التعيينات">
@@ -1520,15 +1520,15 @@ const PlanningTableauPage: React.FC = () => {
                             </Button>
                             {isEditing ? (
                               <>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => saveInlineEdits(step.id)} title="Enregistrer">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => saveInlineEdits(step.id)} title="حفظ">
                                   <span className="text-normal text-sm font-bold">✓</span>
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cancelInlineEdits(step.id)} title="Annuler">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cancelInlineEdits(step.id)} title="إلغاء">
                                   <span className="text-destructive text-sm font-bold">✕</span>
                                 </Button>
                               </>
                             ) : (
-                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRowId(step.id); setInlineEdits(prev => ({ ...prev, [step.id]: {} })); }} title="Éditer">
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRowId(step.id); setInlineEdits(prev => ({ ...prev, [step.id]: {} })); }} title="تعديل">
                                 <Pencil className="w-3.5 h-3.5" />
                               </Button>
                             )}
@@ -1552,7 +1552,7 @@ const PlanningTableauPage: React.FC = () => {
       {/* Chained prerequisite check dialogs */}
       <ConfirmDialog
         open={!!pendingDrop && pendingDrop.currentCheck < pendingDrop.checks.length}
-        title="Attention"
+        title="تنبيه"
         description={pendingDrop ? pendingDrop.checks[pendingDrop.currentCheck]?.message : ''}
         onConfirm={handlePendingConfirm}
         onCancel={handlePendingCancel}
@@ -1616,7 +1616,7 @@ const PlanningTableauPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setProdDialog(prev => ({ ...prev, open: false })); setProdDurationError(''); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setProdDialog(prev => ({ ...prev, open: false })); setProdDurationError(''); }}>إلغاء</Button>
             <Button onClick={handleProdDialogOk} disabled={parseDurationHHMM(prodDialog.durationToday) === null || !!prodDurationError}>OK</Button>
           </DialogFooter>
         </DialogContent>
@@ -1625,7 +1625,7 @@ const PlanningTableauPage: React.FC = () => {
       {/* Completion Dialog */}
       <ConfirmDialog
         open={!!completionDialog}
-        title="Phase terminée ?"
+        title="هل انتهت المرحلة؟"
         description="Cette phase est-elle complètement terminée ?"
         onConfirm={() => completionDialog && handleCompletionAnswer(true)}
         onCancel={() => completionDialog && handleCompletionAnswer(false)}
@@ -1656,7 +1656,7 @@ const PlanningTableauPage: React.FC = () => {
 
       <ConfirmDialog
         open={materialConfirmOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => {
           setMaterialConfirmOpen(false);
           setMaterialDatePromptOpen(true);
@@ -1671,7 +1671,7 @@ const PlanningTableauPage: React.FC = () => {
       {pendingMaterialStatus && materialDatePromptOpen && (
         <DatePromptDialog
           open={materialDatePromptOpen}
-          label="Date de réception de la matière"
+          label="تاريخ استلام المواد الأولية"
           defaultDate={orders.find(o => o.id === (draftSteps.find(s => s.id === pendingMaterialStatus.stepId) || steps.find(s => s.id === pendingMaterialStatus.stepId))?.orderId)?.materialReceivedDate || today}
           onConfirm={async (date) => {
             const saved = await applyStepStatus(pendingMaterialStatus.stepId, 'material', pendingMaterialStatus.nextStatus, undefined, date);

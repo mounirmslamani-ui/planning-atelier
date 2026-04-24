@@ -299,7 +299,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead className="w-72">Opération</TableHead>
+                  <TableHead className="w-72">العملية</TableHead>
                   <TableHead className="w-36">Type</TableHead>
                   <TableHead className="w-28">Durée allouée</TableHead>
                   <TableHead className="w-80">العامل</TableHead>
@@ -432,7 +432,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
             <Button onClick={handlePlanifier} disabled={rows.length === 0 || rows.every(r => !r.option1)}>
               <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'Replanifier' : 'Planifier'}
             </Button>

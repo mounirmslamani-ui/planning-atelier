@@ -118,8 +118,8 @@ const HolidaysPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!date || !name}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!date || !name}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

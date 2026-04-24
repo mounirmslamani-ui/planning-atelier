@@ -88,7 +88,7 @@ const DeliveryPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader title="طلبيات جاهزة للتسليم" description={`${deliveryEntries.length} commande(s) prête(s)`} actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
       </div>
@@ -154,7 +154,7 @@ const DeliveryPage: React.FC = () => {
 
       <ConfirmDialog
         open={!!pending}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         description={pending ? `La commande sera transférée vers 'طلبيات مسلمة' avec la date du ${formatDateFR(pending.date)}.` : ''}
         onConfirm={handleConfirmTransfer}
         onCancel={handleCancelTransfer}

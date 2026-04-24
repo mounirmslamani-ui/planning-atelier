@@ -116,7 +116,7 @@ const StepsPage: React.FC = () => {
               <TableHead>#</TableHead>
               <TableHead>Commande</TableHead>
               <TableHead>Assigné à</TableHead>
-              <TableHead>Opération</TableHead>
+              <TableHead>العملية</TableHead>
               <TableHead>Durée est.</TableHead>
               <TableHead>Début</TableHead>
               <TableHead>Fin</TableHead>
@@ -187,7 +187,7 @@ const StepsPage: React.FC = () => {
               )}
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Opération</label>
+              <label className="text-sm font-medium mb-1 block">العملية</label>
               <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operationId} onChange={e => updateForm('operationId', e.target.value)}>
                 {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
@@ -233,8 +233,8 @@ const StepsPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!form.orderId || (!form.operatorId && !form.subcontractorId)}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!form.orderId || (!form.operatorId && !form.subcontractorId)}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

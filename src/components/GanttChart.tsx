@@ -114,7 +114,7 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
 }) => {
   // Determine if step is missing prerequisites (step-level)
   const missingItems: string[] = [];
-  if (!(step.materialAvailable ?? true)) missingItems.push('Matière');
+  if (!(step.materialAvailable ?? true)) missingItems.push('مواد أولية');
   if (!(step.toolingAvailable ?? true)) missingItems.push('أداة');
   if (!(step.studyReady ?? true)) missingItems.push('دراسة');
   if (subcontractingPending) {
@@ -1227,7 +1227,7 @@ const GanttChart: React.FC = () => {
                 )}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Opération</label>
+                <label className="text-sm font-medium mb-1 block">العملية</label>
                 <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operationId} onChange={e => updateEditForm('operationId', e.target.value)}>
                   {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
@@ -1276,12 +1276,12 @@ const GanttChart: React.FC = () => {
                   setEditForm({ ...editForm, frozen: false });
                 }
               }}>
-                <Unlock className="w-4 h-4 mr-1" /> Libérer
+                <Unlock className="w-4 h-4 mr-1" /> فتح
               </Button>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
-              <Button onClick={handleEditSave}>Enregistrer</Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={handleEditSave}>حفظ</Button>
             </div>
           </DialogFooter>
         </DialogContent>
@@ -1394,8 +1394,8 @@ const GanttChart: React.FC = () => {
             );
           })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleValidateSave} disabled={parseDurationHHMM(validateActualDuration) === null || !!validateDurationError}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleValidateSave} disabled={parseDurationHHMM(validateActualDuration) === null || !!validateDurationError}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1448,7 +1448,7 @@ const GanttChart: React.FC = () => {
               <Button variant="destructive" onClick={handleLinkDelete} className="mr-auto">Supprimer le lien</Button>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
+              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>إلغاء</Button>
               <Button onClick={handleLinkSave}>{isEditingLink ? 'Modifier' : 'Lier'}</Button>
             </div>
           </DialogFooter>

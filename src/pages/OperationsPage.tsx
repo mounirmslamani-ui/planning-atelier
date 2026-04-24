@@ -109,8 +109,8 @@ const OperationsPage: React.FC = () => {
           </DialogHeader>
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom de l'opération" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!name}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!name}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

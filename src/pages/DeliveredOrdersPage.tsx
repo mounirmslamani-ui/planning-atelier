@@ -90,7 +90,7 @@ const DeliveredOrdersPage: React.FC = () => {
           description={`${deliveredOrders.length} commande(s) archivée(s)`}
           actions={
             <Button onClick={handleExportExcel} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> Exporter Excel
+              <Download className="w-4 h-4 mr-1" /> تصدير Excel
             </Button>
           }
         />
@@ -180,7 +180,7 @@ const DeliveredOrdersPage: React.FC = () => {
 
       <ConfirmDialog
         open={!!pendingPrice}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         description={pendingPrice ? `Le prix de vente sera défini sur « ${PRICE_META[pendingPrice.next].label} ».` : ''}
         onConfirm={confirmPriceChange}
         onCancel={() => setPendingPrice(null)}

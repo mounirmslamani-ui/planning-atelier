@@ -126,10 +126,10 @@ const SubcontractingPage: React.FC = () => {
       Date: formatDateFR(row.order.orderDate) || '—',
       Client: getClientName(row.order.clientId),
       Désignation: row.order.designation,
-      'Qté.': row.order.quantity,
+      'الكمية': row.order.quantity,
       Priorité: row.order.priority || '—',
       'مناول': getSubcontractorName(row.subcontractorId),
-      'Délai promis': formatDateFR(row.order.plannedDeadline) || '—',
+      'أجل التسليم الموعود': formatDateFR(row.order.plannedDeadline) || '—',
       'أجل انتهاء المناولة': formatDateFR(row.deadline) || '—',
       Fait: row.done ? 'Oui' : 'Non',
     })), [8, 20, 14, 24, 45, 10, 12, 24, 16, 22, 10]);
@@ -159,7 +159,7 @@ const SubcontractingPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader title="مناولة" description="Suivi des opérations sous-traitées planifiées" actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
       </div>
@@ -172,10 +172,10 @@ const SubcontractingPage: React.FC = () => {
               <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Délai promis" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="أجل انتهاء المناولة" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
@@ -218,7 +218,7 @@ const SubcontractingPage: React.FC = () => {
 
       <ConfirmDialog
         open={!!pendingDone && !datePromptOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => setDatePromptOpen(true)}
         onCancel={() => setPendingDone(null)}
       />
@@ -226,7 +226,7 @@ const SubcontractingPage: React.FC = () => {
       {pendingDone && datePromptOpen && (
         <DatePromptDialog
           open={datePromptOpen}
-          label="Date de réception de la sous-traitance"
+          label="تاريخ استلام المناولة"
           defaultDate={today}
           onConfirm={(date) => {
             applyDone(pendingDone.stepIds, true, date);

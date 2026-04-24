@@ -138,7 +138,7 @@ const QualityControlPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader title="مراقبة الجودة" description={`${qcEntries.length} commande(s) en contrôle`} actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
         {testDiagnostic && (
@@ -222,7 +222,7 @@ const QualityControlPage: React.FC = () => {
       <Dialog open={reworkDialogOpen} onOpenChange={setReworkDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-heading">Retouches nécessaires</DialogTitle>
+            <DialogTitle className="font-heading">تعديلات مطلوبة</DialogTitle>
             {reworkEntry && (() => {
               const order = getOrder(reworkEntry.orderId);
               return order ? (
@@ -242,15 +242,15 @@ const QualityControlPage: React.FC = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReworkDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleReworkSave}>Renvoyer en production</Button>
+            <Button variant="outline" onClick={() => setReworkDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleReworkSave}>إعادة إلى الإنتاج</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ConfirmDialog
         open={!!pendingDecision && !datePromptOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => setDatePromptOpen(true)}
         onCancel={() => setPendingDecision(null)}
       />
@@ -258,7 +258,7 @@ const QualityControlPage: React.FC = () => {
       {pendingDecision && datePromptOpen && (
         <DatePromptDialog
           open={datePromptOpen}
-          label="Date du contrôle qualité"
+          label="تاريخ مراقبة الجودة"
           defaultDate={pendingDecision.entry.controlDate || today}
           onConfirm={(date) => {
             applyDecisionChange(pendingDecision.entry, pendingDecision.decision, date);

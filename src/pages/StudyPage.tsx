@@ -77,9 +77,9 @@ const StudyPage: React.FC = () => {
       'N° Commande': r.order.orderNumber,
       Client: getClientName(r.order.clientId),
       Désignation: r.order.designation,
-      'Qté.': r.order.quantity,
+      'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
-      'Délai promis': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
+      'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
       'تاريخ نهاية الدراسة المبرمج': formatDateFR(r.deadline) || '—',
       Fait: 'Non',
     })), [8, 20, 24, 45, 10, 12, 16, 22, 10]);
@@ -107,7 +107,7 @@ const StudyPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader title="دراسة" description="Étapes dont l'étude n'est pas encore faite" actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
       </div>
@@ -119,9 +119,9 @@ const StudyPage: React.FC = () => {
               <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-                <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
-              <TableHead>Délai promis</TableHead>
+              <TableHead>أجل التسليم الموعود</TableHead>
               <TableHead>تاريخ نهاية الدراسة المبرمج</TableHead>
               <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
@@ -148,7 +148,7 @@ const StudyPage: React.FC = () => {
 
       <ConfirmDialog
         open={!!pendingStudy && !datePromptOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => setDatePromptOpen(true)}
         onCancel={() => {
           setDatePromptOpen(false);
@@ -159,7 +159,7 @@ const StudyPage: React.FC = () => {
       {pendingStudy && datePromptOpen && (
         <DatePromptDialog
           open={datePromptOpen}
-          label="Date de fin d'étude"
+          label="تاريخ نهاية الدراسة"
           defaultDate={today}
           onConfirm={async (date) => {
             const saved = await markDone(pendingStudy.orderId, pendingStudy.stepIds, date);
