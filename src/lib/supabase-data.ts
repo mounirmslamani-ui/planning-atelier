@@ -3,7 +3,7 @@ import type {
   Equipment, Operator, Subcontractor, Operation, Client, Order,
   ProductionStep, Holiday, ProductionRecord, QualityControlEntry, DeliveryEntry,
   EquipmentType, EquipmentState, OperationCategory, ClientClass, OrderPriority, QCDecision,
-  ResourceStatus,
+  ResourceStatus, DeliveredOrder, SalePriceStatus,
 } from '@/types/planning';
 import { statusToBool, boolToStatus } from '@/types/planning';
 
@@ -366,7 +366,27 @@ export function mapDeliveryToDB(e: DeliveryEntry) {
   };
 }
 
-// ───────────────────── Fetch All ─────────────────────
+// ───────────────────── DeliveredOrder ─────────────────────
+
+export function mapDeliveredOrderFromDB(row: any): DeliveredOrder {
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    deliveryDate: row.delivery_date || '',
+    salePriceStatus: (row.sale_price_status || 'non-calcule') as SalePriceStatus,
+    observation: row.observation || undefined,
+  };
+}
+
+export function mapDeliveredOrderToDB(d: DeliveredOrder) {
+  return {
+    id: d.id,
+    order_id: d.orderId,
+    delivery_date: toISODate(d.deliveryDate),
+    sale_price_status: d.salePriceStatus,
+    observation: d.observation || null,
+  };
+}
 
 export async function fetchAllData() {
   const [
@@ -381,6 +401,7 @@ export async function fetchAllData() {
     { data: records },
     { data: qcEntries },
     { data: deliveryEntries },
+    { data: deliveredOrders },
   ] = await Promise.all([
     supabase.from('equipments').select('*'),
     supabase.from('operators').select('*'),
@@ -393,6 +414,7 @@ export async function fetchAllData() {
     supabase.from('production_records').select('*'),
     supabase.from('quality_control_entries').select('*'),
     supabase.from('delivery_entries').select('*'),
+    (supabase.from as any)('delivered_orders').select('*'),
   ]);
 
   return {
@@ -407,6 +429,7 @@ export async function fetchAllData() {
     productionRecords: (records || []).map(mapRecordFromDB),
     qcEntries: (qcEntries || []).map(mapQCEntryFromDB),
     deliveryEntries: (deliveryEntries || []).map(mapDeliveryFromDB),
+    deliveredOrders: (deliveredOrders || []).map(mapDeliveredOrderFromDB),
   };
 }
 
@@ -585,6 +608,20 @@ export async function dbInsertDelivery(e: DeliveryEntry) {
 export async function dbDeleteDelivery(id: string) {
   const { error } = await supabase.from('delivery_entries').delete().eq('id', id);
   if (error) logError('delivery', 'delete', error);
+}
+
+// Delivered Orders (archive)
+export async function dbInsertDeliveredOrder(d: DeliveredOrder) {
+  const { error } = await (supabase.from as any)('delivered_orders').insert(mapDeliveredOrderToDB(d));
+  if (error) logError('delivered_order', 'insert', error);
+}
+export async function dbUpdateDeliveredOrder(d: DeliveredOrder) {
+  const { error } = await (supabase.from as any)('delivered_orders').update(mapDeliveredOrderToDB(d)).eq('id', d.id);
+  if (error) logError('delivered_order', 'update', error);
+}
+export async function dbDeleteDeliveredOrder(id: string) {
+  const { error } = await (supabase.from as any)('delivered_orders').delete().eq('id', id);
+  if (error) logError('delivered_order', 'delete', error);
 }
 
 // ───────────────────── Ensure Absence Entities ─────────────────────
