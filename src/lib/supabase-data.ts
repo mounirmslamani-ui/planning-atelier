@@ -161,7 +161,7 @@ export function mapOrderFromDB(row: any): Order {
     clientId: row.client_id || '',
     designation: row.designation,
     quantity: row.quantity ?? 1,
-    priority: (row.priority || undefined) as OrderPriority | undefined,
+    priority: (row.priority || 'undetermined') as OrderPriority,
     displayOrder: row.display_order ?? undefined,
     frozenOrder: row.frozen_order ?? false,
     manualSortOrder: row.manual_sort_order ?? undefined,

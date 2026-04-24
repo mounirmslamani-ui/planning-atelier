@@ -27,13 +27,14 @@ import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
 
-const priorityConfig: Record<OrderPriority, { label: string; description: string; color: string; border: string }> = {
+const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
   'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
   'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
   'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
+  'undetermined': { label: 'À déterminer plus tard', description: 'Priorité non définie, sera déterminée ultérieurement.', color: 'text-yellow-600', border: 'border-yellow-400/30' },
 };
-const priorityRank: Record<OrderPriority, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'deliveryDeadline' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
@@ -373,7 +374,7 @@ const OrdersPage: React.FC = () => {
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
-    designation: '', quantity: 1, priority: 'P3', plannedDeadline: '',
+    designation: '', quantity: 1, priority: 'undetermined', plannedDeadline: '',
     materialAvailable: false, toolingAvailable: false, studyReady: false,
     materialStatus: 'non-disponible', toolingStatus: 'non-disponible', studyStatus: 'non-disponible',
     displayOrder: baseSorted.length + 1,
@@ -888,11 +889,34 @@ const OrdersPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Priorité</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.priority} onChange={e => updateForm('priority', e.target.value)}>
-                {Object.entries(priorityConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
+              <Select value={form.priority || 'undetermined'} onValueChange={val => updateForm('priority', val)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {form.priority === 'undetermined' ? (
+                      <span className="flex items-center gap-2">
+                        <WarningTriangleIcon className="w-[30px] h-[30px]" />
+                        <span>À déterminer plus tard</span>
+                      </span>
+                    ) : form.priority ? (
+                      <span className={priorityConfig[form.priority]?.color}>{priorityConfig[form.priority]?.label}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Choisir une priorité</span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(priorityConfig).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>
+                      <div className="flex items-center gap-2">
+                        {k === 'undetermined' && <WarningTriangleIcon className="w-[30px] h-[30px]" />}
+                        <span className={v.color}>{v.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Désignation</label>
@@ -903,24 +927,8 @@ const OrdersPage: React.FC = () => {
               <Input type="number" min={1} value={form.quantity} onChange={e => updateForm('quantity', parseInt(e.target.value) || 1)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Délai planifié</label>
-              <Input type="date" value={form.plannedDeadline} onChange={e => updateForm('plannedDeadline', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Qté prototype</label>
-              <Input type="number" min={0} value={form.prototypeQuantity || ''} onChange={e => updateForm('prototypeQuantity', parseInt(e.target.value) || undefined)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Délai prototype</label>
-              <Input type="date" value={form.prototypeDeadline || ''} onChange={e => updateForm('prototypeDeadline', e.target.value)} />
-            </div>
-            <div>
               <label className="text-sm font-medium mb-1 block">Délai livraison souhaité</label>
               <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Qté complémentaire</label>
-              <Input type="number" min={0} value={form.complementaryQuantity || ''} onChange={e => updateForm('complementaryQuantity', parseInt(e.target.value) || undefined)} />
             </div>
             <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Observation</label>
