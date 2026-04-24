@@ -54,7 +54,7 @@ const HolidaysPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="Jours fériés"
+          title="العطل الرسمية"
           description="Les jours fériés sont écartés du planning"
           actions={
             <Button onClick={openNew} size="sm">
@@ -68,9 +68,9 @@ const HolidaysPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead>التاريخ</TableHead>
               <TableHead>Nom</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,7 +109,7 @@ const HolidaysPage: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Date</label>
+              <label className="text-sm font-medium mb-1 block">التاريخ</label>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </div>
             <div>
@@ -118,8 +118,8 @@ const HolidaysPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!date || !name}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!date || !name}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

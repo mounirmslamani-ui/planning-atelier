@@ -32,23 +32,23 @@ const DeliveryPage: React.FC = () => {
     quantity: (e: DeliveryEntry) => getOrder(e.orderId)?.quantity ?? 0,
     deadline: (e: DeliveryEntry) => getOrder(e.orderId)?.plannedDeadline || '',
     controlDate: (e: DeliveryEntry) => e.controlDate,
-    decision: (e: DeliveryEntry) => e.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation',
+    decision: (e: DeliveryEntry) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveryEntries, accessors);
 
   const handleExportExcel = () => {
-    exportTableToExcel('Commandes à livrer', processed.map(entry => {
+    exportTableToExcel('طلبيات جاهزة للتسليم', processed.map(entry => {
       const order = getOrder(entry.orderId);
       return {
         Priorité: order?.priority || '—',
-        'N° Cde': order?.orderNumber || '—',
+        'رقم الطلبية': order?.orderNumber || '—',
         Date: order ? formatDateFR(order.orderDate) : '—',
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
         Quantité: order?.quantity ?? '—',
         Délais: order ? formatDateFR(order.plannedDeadline) : '—',
-        'Date Contrôle': formatDateFR(entry.controlDate),
-        Décision: entry.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation',
+        'تاريخ مراقبة الجودة': formatDateFR(entry.controlDate),
+        Décision: entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
       };
     }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
   };
@@ -86,9 +86,9 @@ const DeliveryPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Commandes à livrer" description={`${deliveryEntries.length} commande(s) prête(s)`} actions={
+        <PageHeader title="طلبيات جاهزة للتسليم" description={`${deliveryEntries.length} commande(s) prête(s)`} actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
       </div>
@@ -97,16 +97,16 @@ const DeliveryPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="N° Cde" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Date" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Quantité" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Délais" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Date Contrôle" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Décision" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="text-xs font-semibold">Livraison</TableHead>
+              <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="text-xs font-semibold">التسليم</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -127,7 +127,7 @@ const DeliveryPage: React.FC = () => {
                   <TableCell className="text-sm">{formatDateFR(entry.controlDate)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="bg-normal/15 text-normal">
-                      {entry.decision === 'conforme' ? 'Conforme' : 'Conforme avec dérogation'}
+                      {entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -154,8 +154,8 @@ const DeliveryPage: React.FC = () => {
 
       <ConfirmDialog
         open={!!pending}
-        title="Confirmez-vous cette action ?"
-        description={pending ? `La commande sera transférée vers 'Commandes livrées' avec la date du ${formatDateFR(pending.date)}.` : ''}
+        title="هل تؤكد هذه العملية؟"
+        description={pending ? `La commande sera transférée vers 'طلبيات مسلمة' avec la date du ${formatDateFR(pending.date)}.` : ''}
         onConfirm={handleConfirmTransfer}
         onCancel={handleCancelTransfer}
         confirmLabel="Oui, transférer"

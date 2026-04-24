@@ -114,9 +114,9 @@ const GanttBlock: React.FC<GanttBlockProps & { pendingSubNames?: string[] }> = (
 }) => {
   // Determine if step is missing prerequisites (step-level)
   const missingItems: string[] = [];
-  if (!(step.materialAvailable ?? true)) missingItems.push('Matière');
-  if (!(step.toolingAvailable ?? true)) missingItems.push('Outillage');
-  if (!(step.studyReady ?? true)) missingItems.push('Étude');
+  if (!(step.materialAvailable ?? true)) missingItems.push('مواد أولية');
+  if (!(step.toolingAvailable ?? true)) missingItems.push('أداة');
+  if (!(step.studyReady ?? true)) missingItems.push('دراسة');
   if (subcontractingPending) {
     const subLabel = pendingSubNames && pendingSubNames.length > 0
       ? `Sous-traitance [${pendingSubNames.join('+')}] en cours`
@@ -1206,14 +1206,14 @@ const GanttChart: React.FC = () => {
                     className={`px-3 py-1.5 text-xs rounded transition-colors ${!editForm.subcontractorId ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
                     onClick={() => { updateEditForm('subcontractorId', undefined); updateEditForm('operatorId', operators[0]?.id || ''); }}
                   >
-                    Opérateur
+                    العامل
                   </button>
                   <button
                     type="button"
                     className={`px-3 py-1.5 text-xs rounded transition-colors ${editForm.subcontractorId ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
                     onClick={() => { updateEditForm('operatorId', ''); updateEditForm('subcontractorId', subcontractors[0]?.id || ''); }}
                   >
-                    Sous-traitant
+                    مناول
                   </button>
                 </div>
                 {!editForm.subcontractorId ? (
@@ -1227,7 +1227,7 @@ const GanttChart: React.FC = () => {
                 )}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Opération</label>
+                <label className="text-sm font-medium mb-1 block">العملية</label>
                 <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operationId} onChange={e => updateEditForm('operationId', e.target.value)}>
                   {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
@@ -1237,11 +1237,11 @@ const GanttChart: React.FC = () => {
                 <Input type="number" min={1} value={editForm.order} onChange={e => updateEditForm('order', parseInt(e.target.value) || 1)} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Date début</label>
+                <label className="text-sm font-medium mb-1 block">تاريخ البداية</label>
                 <Input type="date" value={editForm.startDate} onChange={e => updateEditForm('startDate', e.target.value)} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Heure début</label>
+                <label className="text-sm font-medium mb-1 block">ساعة البداية</label>
                 <Input type="time" value={editForm.startTime} onChange={e => updateEditForm('startTime', e.target.value)} />
               </div>
               <div>
@@ -1249,11 +1249,11 @@ const GanttChart: React.FC = () => {
                 <Input type="number" min={0} step={0.25} value={parseFloat((editForm.estimatedDuration / 60).toFixed(2))} onChange={e => updateEditForm('estimatedDuration', Math.round((parseFloat(e.target.value) || 0) * 60))} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Date fin</label>
+                <label className="text-sm font-medium mb-1 block">تاريخ النهاية</label>
                 <Input type="date" value={editForm.endDate} onChange={e => updateEditForm('endDate', e.target.value)} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Heure fin</label>
+                <label className="text-sm font-medium mb-1 block">ساعة النهاية</label>
                 <Input type="time" value={editForm.endTime} onChange={e => updateEditForm('endTime', e.target.value)} />
               </div>
               <div>
@@ -1276,12 +1276,12 @@ const GanttChart: React.FC = () => {
                   setEditForm({ ...editForm, frozen: false });
                 }
               }}>
-                <Unlock className="w-4 h-4 mr-1" /> Libérer
+                <Unlock className="w-4 h-4 mr-1" /> فتح
               </Button>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annuler</Button>
-              <Button onClick={handleEditSave}>Enregistrer</Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={handleEditSave}>حفظ</Button>
             </div>
           </DialogFooter>
         </DialogContent>
@@ -1394,8 +1394,8 @@ const GanttChart: React.FC = () => {
             );
           })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleValidateSave} disabled={parseDurationHHMM(validateActualDuration) === null || !!validateDurationError}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setValidateDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleValidateSave} disabled={parseDurationHHMM(validateActualDuration) === null || !!validateDurationError}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1448,7 +1448,7 @@ const GanttChart: React.FC = () => {
               <Button variant="destructive" onClick={handleLinkDelete} className="mr-auto">Supprimer le lien</Button>
             )}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
+              <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>إلغاء</Button>
               <Button onClick={handleLinkSave}>{isEditingLink ? 'Modifier' : 'Lier'}</Button>
             </div>
           </DialogFooter>

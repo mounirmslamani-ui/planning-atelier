@@ -126,7 +126,7 @@ const AbsencesPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="Absences"
+          title="الغيابات"
           description="Gestion des absences des opérateurs"
           actions={
             <Button onClick={openNew} size="sm">
@@ -140,13 +140,13 @@ const AbsencesPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Opérateur</TableHead>
-              <TableHead>Date début</TableHead>
-              <TableHead>Heure début</TableHead>
-              <TableHead>Date fin</TableHead>
-              <TableHead>Heure fin</TableHead>
+              <TableHead>العامل</TableHead>
+              <TableHead>تاريخ البداية</TableHead>
+              <TableHead>ساعة البداية</TableHead>
+              <TableHead>تاريخ النهاية</TableHead>
+              <TableHead>ساعة النهاية</TableHead>
               <TableHead>Durée (h)</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -192,7 +192,7 @@ const AbsencesPage: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Opérateur</label>
+              <label className="text-sm font-medium mb-1 block">العامل</label>
               <select
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={absOperatorId}
@@ -205,21 +205,21 @@ const AbsencesPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1 block">Date début</label>
+                <label className="text-sm font-medium mb-1 block">تاريخ البداية</label>
                 <Input type="date" value={absStartDate} onChange={e => setAbsStartDate(e.target.value)} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Heure début</label>
+                <label className="text-sm font-medium mb-1 block">ساعة البداية</label>
                 <Input type="time" value={absStartTime} onChange={e => setAbsStartTime(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1 block">Date fin</label>
+                <label className="text-sm font-medium mb-1 block">تاريخ النهاية</label>
                 <Input type="date" value={absEndDate} onChange={e => setAbsEndDate(e.target.value)} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Heure fin</label>
+                <label className="text-sm font-medium mb-1 block">ساعة النهاية</label>
                 <Input type="time" value={absEndTime} onChange={e => setAbsEndTime(e.target.value)} />
               </div>
             </div>
@@ -230,8 +230,8 @@ const AbsencesPage: React.FC = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!absOperatorId || !absStartDate || !absEndDate}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!absOperatorId || !absStartDate || !absEndDate}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

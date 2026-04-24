@@ -19,10 +19,10 @@ import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 
 const decisionLabels: Record<QCDecision, string> = {
-  'conforme': 'Conforme',
-  'reprise-retouche': 'Reprise/Retouche',
-  'conforme-derogation': 'Conforme avec dérogation',
-  'non-conforme': 'Non conforme',
+  'conforme': 'مطابق للمواصفات',
+  'reprise-retouche': 'إعادة/تعديل',
+  'conforme-derogation': 'مطابق للمواصفات بصفة استثنائية',
+  'non-conforme': 'غير مطابق للمواصفات',
 };
 
 const decisionColors: Record<QCDecision, string> = {
@@ -102,17 +102,17 @@ const QualityControlPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(qcEntries, accessors);
 
   const handleExportExcel = () => {
-    exportTableToExcel('Contrôle Qualité', processed.map(entry => {
+    exportTableToExcel('مراقبة الجودة', processed.map(entry => {
       const order = getOrder(entry.orderId);
       return {
         Priorité: order?.priority || '—',
-        'N° Cde': order?.orderNumber || '—',
+        'رقم الطلبية': order?.orderNumber || '—',
         Date: order ? formatDateFR(order.orderDate) : '—',
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
         Quantité: order?.quantity ?? '—',
         Délais: order ? formatDateFR(order.plannedDeadline) : '—',
-        'Date Contrôle': formatDateFR(entry.controlDate),
+        'تاريخ مراقبة الجودة': formatDateFR(entry.controlDate),
         Décision: entry.decision ? decisionLabels[entry.decision] : '—',
       };
     }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
@@ -136,9 +136,9 @@ const QualityControlPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Contrôle Qualité" description={`${qcEntries.length} commande(s) en contrôle`} actions={
+        <PageHeader title="مراقبة الجودة" description={`${qcEntries.length} commande(s) en contrôle`} actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
         {testDiagnostic && (
@@ -152,15 +152,15 @@ const QualityControlPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="N° Cde" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Date" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Quantité" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Délais" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Date Contrôle" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Décision" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -193,10 +193,10 @@ const QualityControlPage: React.FC = () => {
                       onChange={e => handleDecisionChange(entry, e.target.value as QCDecision)}
                     >
                       <option value="">— Choisir —</option>
-                      <option value="conforme">Conforme</option>
-                      <option value="reprise-retouche">Reprise/Retouche</option>
-                      <option value="conforme-derogation">Conforme avec dérogation</option>
-                      <option value="non-conforme">Non conforme</option>
+                      <option value="conforme">مطابق للمواصفات</option>
+                      <option value="reprise-retouche">إعادة/تعديل</option>
+                      <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
+                      <option value="non-conforme">غير مطابق للمواصفات</option>
                     </select>
                     {entry.decision && (
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-medium ${decisionColors[entry.decision]}`}>
@@ -222,7 +222,7 @@ const QualityControlPage: React.FC = () => {
       <Dialog open={reworkDialogOpen} onOpenChange={setReworkDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-heading">Retouches nécessaires</DialogTitle>
+            <DialogTitle className="font-heading">تعديلات مطلوبة</DialogTitle>
             {reworkEntry && (() => {
               const order = getOrder(reworkEntry.orderId);
               return order ? (
@@ -242,15 +242,15 @@ const QualityControlPage: React.FC = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReworkDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleReworkSave}>Renvoyer en production</Button>
+            <Button variant="outline" onClick={() => setReworkDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleReworkSave}>إعادة إلى الإنتاج</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ConfirmDialog
         open={!!pendingDecision && !datePromptOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => setDatePromptOpen(true)}
         onCancel={() => setPendingDecision(null)}
       />
@@ -258,7 +258,7 @@ const QualityControlPage: React.FC = () => {
       {pendingDecision && datePromptOpen && (
         <DatePromptDialog
           open={datePromptOpen}
-          label="Date du contrôle qualité"
+          label="تاريخ مراقبة الجودة"
           defaultDate={pendingDecision.entry.controlDate || today}
           onConfirm={(date) => {
             applyDecisionChange(pendingDecision.entry, pendingDecision.decision, date);

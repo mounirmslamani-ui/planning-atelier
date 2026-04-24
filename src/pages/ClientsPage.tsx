@@ -57,7 +57,7 @@ const ClientsPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
 
   const handleExportExcel = () => {
-    exportTableToExcel('Clients', processed.map(c => {
+    exportTableToExcel('الزبائن', processed.map(c => {
       const classInfo = getClassInfo(c.clientClass);
       return {
         Nom: c.name,
@@ -69,9 +69,9 @@ const ClientsPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Clients" description="Liste des clients" actions={
+        <PageHeader title="الزبائن" description="قائمة الزبائن" actions={
           <>
-            <Button onClick={handleExportExcel} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> Exporter Excel</Button>
+            <Button onClick={handleExportExcel} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> تصدير Excel</Button>
             <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
           </>
         } />
@@ -82,7 +82,7 @@ const ClientsPage: React.FC = () => {
             <TableRow>
               <TableHead><ColumnHeader label="Nom" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Classification" columnKey="clientClass" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientClass || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="w-32">Actions</TableHead>
+              <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,8 +126,8 @@ const ClientsPage: React.FC = () => {
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un client</DialogTitle></DialogHeader>
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!name}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!name}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -152,8 +152,8 @@ const ClientsPage: React.FC = () => {
             ))}
           </RadioGroup>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setScoreDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleScoreSave} disabled={!selectedClass}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setScoreDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleScoreSave} disabled={!selectedClass}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

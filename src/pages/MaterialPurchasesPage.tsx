@@ -69,14 +69,14 @@ const MaterialPurchasesPage: React.FC = () => {
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
   const handleExportExcel = () => {
-    exportTableToExcel('Achats Matière', filteredRows.map((r: any) => ({
+    exportTableToExcel('مشتريات المواد الأولية', filteredRows.map((r: any) => ({
       '#': r.order.displayOrder ?? '—',
       'N° Commande': r.order.orderNumber,
       Client: getClientName(r.order.clientId),
       Désignation: r.order.designation,
-      'Qté.': r.order.quantity,
+      'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
-      'Délai promis': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
+      'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
       'Date prévue achat matière': formatDateFR(r.deadline) || '—',
       Fait: 'Non',
     })), [8, 20, 24, 45, 10, 12, 16, 26, 10]);
@@ -109,9 +109,9 @@ const MaterialPurchasesPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Achats Matière" description="Étapes dont la matière n'est pas encore disponible" actions={
+        <PageHeader title="مشتريات المواد الأولية" description="Étapes dont la matière n'est pas encore disponible" actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> Exporter Excel
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
       </div>
@@ -121,13 +121,13 @@ const MaterialPurchasesPage: React.FC = () => {
             <TableRow>
               <TableHead className="w-12 text-center">#</TableHead>
               <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Client" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-                <TableHead><ColumnHeader label="Désignation" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-                <TableHead className="text-center"><ColumnHeader label="Qté." columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-                <TableHead><ColumnHeader label="Priorité" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
-              <TableHead>Délai promis</TableHead>
+              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+                <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
+              <TableHead>أجل التسليم الموعود</TableHead>
               <TableHead>Date prévue achat matière</TableHead>
-              <TableHead className="text-center w-16">Fait</TableHead>
+              <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -152,7 +152,7 @@ const MaterialPurchasesPage: React.FC = () => {
 
       <ConfirmDialog
         open={!!pendingReceipt && !datePromptOpen}
-        title="Confirmez-vous cette action ?"
+        title="هل تؤكد هذه العملية؟"
         onConfirm={() => setDatePromptOpen(true)}
         onCancel={() => {
           setDatePromptOpen(false);
@@ -163,7 +163,7 @@ const MaterialPurchasesPage: React.FC = () => {
       {pendingReceipt && datePromptOpen && (
         <DatePromptDialog
           open={datePromptOpen}
-          label="Date de réception de la matière"
+          label="تاريخ استلام المواد الأولية"
           defaultDate={orders.find(o => o.id === pendingReceipt.orderId)?.materialReceivedDate || today}
           onConfirm={async (date) => {
             const saved = await markDone(pendingReceipt.orderId, pendingReceipt.stepIds, date);

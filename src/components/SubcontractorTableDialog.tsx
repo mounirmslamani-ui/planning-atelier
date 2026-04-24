@@ -91,16 +91,16 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
 
   const cols = [
     { key: 'orderNumber', label: '#' },
-    { key: 'orderDate', label: 'Date' },
-    { key: 'client', label: 'Client' },
-    { key: 'designation', label: 'Désignation' },
-    { key: 'quantity', label: 'Qté.' },
-    { key: 'priority', label: 'Priorité' },
-    { key: 'plannedDeadline', label: 'Délai promis' },
-    { key: 'operation', label: 'Opération' },
-    { key: 'subcontractor', label: 'Sous-traitant' },
-    { key: 'startDate', label: 'Date début' },
-    { key: 'endDate', label: 'Date fin' },
+    { key: 'orderDate', label: 'التاريخ' },
+    { key: 'client', label: 'الزبون' },
+    { key: 'designation', label: 'التعيين' },
+    { key: 'quantity', label: 'الكمية' },
+    { key: 'priority', label: 'الأولوية' },
+    { key: 'plannedDeadline', label: 'أجل التسليم الموعود' },
+    { key: 'operation', label: 'العملية' },
+    { key: 'subcontractor', label: 'مناول' },
+    { key: 'startDate', label: 'تاريخ البداية' },
+    { key: 'endDate', label: 'تاريخ النهاية' },
   ];
 
   return (

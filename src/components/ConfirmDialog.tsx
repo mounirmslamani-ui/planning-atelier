@@ -12,7 +12,7 @@ interface Props {
   variant?: 'destructive' | 'default';
 }
 
-const ConfirmDialog: React.FC<Props> = ({ open, title, description, onConfirm, onCancel, confirmLabel = 'Confirmer', cancelLabel = 'Annuler', variant = 'default' }) => {
+const ConfirmDialog: React.FC<Props> = ({ open, title, description, onConfirm, onCancel, confirmLabel = 'Confirmer', cancelLabel = 'إلغاء', variant = 'default' }) => {
   const handledRef = useRef(false);
 
   return (

@@ -57,7 +57,7 @@ const OperationsPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,7 +92,7 @@ const OperationsPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Opérations" description="Définir les opérations pour les opérateurs et les sous-traitants" />
+        <PageHeader title="العمليات" description="Définir les opérations pour les opérateurs et les sous-traitants" />
       </div>
 
       <div className="min-h-0 flex-1 space-y-8 overflow-auto">
@@ -109,8 +109,8 @@ const OperationsPage: React.FC = () => {
           </DialogHeader>
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom de l'opération" />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!name}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!name}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -204,7 +204,7 @@ const ProductionRegisterPage: React.FC = () => {
   }, [orders, clients, operations]);
 
   const handleExportExcel = () => {
-    exportSheetsToExcel('Registre des travaux effectués', operatorsWithRecords.map(op => ({
+    exportSheetsToExcel('دفتر الأعمال المنجزة', operatorsWithRecords.map(op => ({
       name: op.name,
       rows: buildExportRows(
         productionRecords
@@ -242,7 +242,7 @@ const ProductionRegisterPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="Registre des travaux effectués" description="Travaux effectués classés par opérateur" />
+        <PageHeader title="دفتر الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
       </div>
 
       {operatorsWithRecords.length === 0 ? (
@@ -253,7 +253,7 @@ const ProductionRegisterPage: React.FC = () => {
         <>
           <div className="flex-none flex justify-end pt-2 pb-3">
             <Button onClick={handleExportExcel} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> Exporter Excel
+              <Download className="w-4 h-4 mr-1" /> تصدير Excel
             </Button>
           </div>
 
@@ -309,7 +309,7 @@ const ProductionRegisterPage: React.FC = () => {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        Date <SortIcon field="date" />
+                        التاريخ <SortIcon field="date" />
                       </button>
                       <FilterPopover
                         items={availableMonths.map(k => ({ value: k, label: formatMonthLabel(k) }))}
@@ -338,7 +338,7 @@ const ProductionRegisterPage: React.FC = () => {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('client')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        Client <SortIcon field="client" />
+                        الزبون <SortIcon field="client" />
                       </button>
                       <FilterPopover
                         items={availableClients.map(id => ({ value: id, label: getClientName(id) }))}
@@ -350,18 +350,18 @@ const ProductionRegisterPage: React.FC = () => {
                   </TableHead>
                   <TableHead>
                     <button onClick={() => toggleSort('designation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                      Désignation <SortIcon field="designation" />
+                      التعيين <SortIcon field="designation" />
                     </button>
                   </TableHead>
                   <TableHead>
                     <button onClick={() => toggleSort('quantity')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                      Quantité <SortIcon field="quantity" />
+                      الكمية <SortIcon field="quantity" />
                     </button>
                   </TableHead>
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('operation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        Opération <SortIcon field="operation" />
+                        العملية <SortIcon field="operation" />
                       </button>
                       <FilterPopover
                         items={availableOperations.map(id => ({ value: id, label: getOperationName(id) }))}
@@ -376,7 +376,7 @@ const ProductionRegisterPage: React.FC = () => {
                       Durée (h) <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-20 text-center">Actions</TableHead>
+                  <TableHead className="w-20 text-center">عمليات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -430,7 +430,7 @@ const ProductionRegisterPage: React.FC = () => {
           {editRecord && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Date</label>
+                <label className="text-xs font-medium text-muted-foreground">التاريخ</label>
                 <Input
                   type="date"
                   value={editRecord.validatedAt}
@@ -450,8 +450,8 @@ const ProductionRegisterPage: React.FC = () => {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>Annuler</Button>
-            <Button size="sm" onClick={saveEdit}>Enregistrer</Button>
+            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>إلغاء</Button>
+            <Button size="sm" onClick={saveEdit}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

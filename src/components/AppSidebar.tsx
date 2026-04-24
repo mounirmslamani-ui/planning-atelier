@@ -11,36 +11,36 @@ type DropTargetType = false | 'prod' | 'qc';
 
 const sidebarGroups = [
   {
-    title: 'PILOTAGE & SAISIE',
+    title: 'القيادة والإدخال',
     items: [
-      { to: '/orders', label: 'Commandes en cours', icon: ShoppingCart, dropTarget: false as DropTargetType },
-      { to: '/absences', label: 'Absences', icon: UserX, dropTarget: false as DropTargetType },
-      { to: '/production-register', label: 'Registre des travaux effectués', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
+      { to: '/orders', label: 'الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
+      { to: '/absences', label: 'الغيابات', icon: UserX, dropTarget: false as DropTargetType },
+      { to: '/production-register', label: 'دفتر الأعمال المنجزة', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
     ],
   },
   {
-    title: 'PLANNING & SUIVI',
+    title: 'البرمجة والمتابعة',
     items: [
-      { to: '/planning-tableau', label: 'Planning Tableau', icon: TableProperties, dropTarget: false as DropTargetType },
-      { to: '/planning-gantt', label: 'Planning (Gantt)', icon: LayoutDashboard, dropTarget: false as DropTargetType },
-      { to: '/study', label: 'Étude', icon: FileSearch, dropTarget: false as DropTargetType },
-      { to: '/material-purchases', label: 'Achats matière', icon: PackagePlus, dropTarget: false as DropTargetType },
-      { to: '/tooling-purchases', label: 'Achats outillage', icon: Hammer, dropTarget: false as DropTargetType },
-      { to: '/subcontracting', label: 'Sous-traitance', icon: Factory, dropTarget: false as DropTargetType },
-      { to: '/quality-control', label: 'Contrôle Qualité', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
-      { to: '/delivery', label: 'Commandes à livrer', icon: PackageCheck, dropTarget: false as DropTargetType },
-      { to: '/delivered-orders', label: 'Commandes livrées', icon: Archive, dropTarget: false as DropTargetType },
+      { to: '/planning-tableau', label: 'جدول البرمجة', icon: TableProperties, dropTarget: false as DropTargetType },
+      { to: '/planning-gantt', label: 'برنامج غانت', icon: LayoutDashboard, dropTarget: false as DropTargetType },
+      { to: '/study', label: 'دراسة', icon: FileSearch, dropTarget: false as DropTargetType },
+      { to: '/material-purchases', label: 'مشتريات المواد الأولية', icon: PackagePlus, dropTarget: false as DropTargetType },
+      { to: '/tooling-purchases', label: 'مشتريات العدة', icon: Hammer, dropTarget: false as DropTargetType },
+      { to: '/subcontracting', label: 'مناولة', icon: Factory, dropTarget: false as DropTargetType },
+      { to: '/quality-control', label: 'مراقبة الجودة', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
+      { to: '/delivery', label: 'طلبيات جاهزة للتسليم', icon: PackageCheck, dropTarget: false as DropTargetType },
+      { to: '/delivered-orders', label: 'طلبيات مسلمة', icon: Archive, dropTarget: false as DropTargetType },
     ],
   },
   {
-    title: 'CONFIGURATION ATELIER',
+    title: 'إعدادات',
     items: [
-      { to: '/clients', label: 'Clients', icon: Building2, dropTarget: false as DropTargetType },
-      { to: '/operators', label: 'Opérateurs', icon: Users, dropTarget: false as DropTargetType },
-      { to: '/equipment', label: 'Équipements', icon: Cog, dropTarget: false as DropTargetType },
-      { to: '/operations', label: 'Opérations', icon: Drill, dropTarget: false as DropTargetType },
-      { to: '/subcontractors', label: 'Sous-traitants', icon: Handshake, dropTarget: false as DropTargetType },
-      { to: '/holidays', label: 'Jours fériés', icon: CalendarDays, dropTarget: false as DropTargetType },
+      { to: '/clients', label: 'الزبائن', icon: Building2, dropTarget: false as DropTargetType },
+      { to: '/operators', label: 'العمال', icon: Users, dropTarget: false as DropTargetType },
+      { to: '/equipment', label: 'الآلات', icon: Cog, dropTarget: false as DropTargetType },
+      { to: '/operations', label: 'العمليات', icon: Drill, dropTarget: false as DropTargetType },
+      { to: '/subcontractors', label: 'المناولون', icon: Handshake, dropTarget: false as DropTargetType },
+      { to: '/holidays', label: 'العطل الرسمية', icon: CalendarDays, dropTarget: false as DropTargetType },
     ],
   },
 ];
@@ -80,7 +80,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-6 h-6 text-sidebar-primary" />
         <h1 className="font-heading text-sm font-bold text-sidebar-foreground tracking-wider uppercase">
-          Planning Atelier
+          برمجة الورشة
         </h1>
       </div>
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
@@ -120,7 +120,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
         ))}
       </nav>
       <div className="p-4 border-t border-sidebar-border">
-        <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — Atelier</p>
+        <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — الورشة</p>
       </div>
       </div>
     </aside>

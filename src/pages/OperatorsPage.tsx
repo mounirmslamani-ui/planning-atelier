@@ -98,7 +98,7 @@ const OperatorsPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="Opérateurs"
+          title="العمال"
           description={`${operators.length} opérateur(s) enregistré(s) — max 25`}
           actions={
             <Button onClick={openNew} disabled={operators.length >= 25} size="sm">
@@ -112,12 +112,12 @@ const OperatorsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="Prénom" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Compétence principale" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Compétences secondaires" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الاسم" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="اختصاص" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="مهارات أخرى" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Équipement principal" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="Équipements secondaires" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -190,11 +190,11 @@ const OperatorsPage: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Prénom</label>
+              <label className="text-sm font-medium mb-1 block">الاسم</label>
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Prénom de l'opérateur" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Compétence principale</label>
+              <label className="text-sm font-medium mb-1 block">اختصاص</label>
               <select 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 value={mainFunction} 
@@ -206,7 +206,7 @@ const OperatorsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Compétences secondaires</label>
+              <label className="text-sm font-medium mb-1 block">مهارات أخرى</label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {secondaryFunctions.map(fn => (
                   <span key={fn} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
@@ -274,8 +274,8 @@ const OperatorsPage: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={!name || !mainFunction}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={handleSave} disabled={!name || !mainFunction}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
