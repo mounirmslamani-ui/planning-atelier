@@ -222,13 +222,16 @@ export type Database = {
       orders: {
         Row: {
           client_id: string | null
+          client_representative: string | null
           complementary_quantity: number | null
           created_at: string
           delivery_deadline: string | null
           designation: string
           display_order: number | null
+          drawing_model: string | null
           frozen_order: boolean
           id: string
+          instructions: string | null
           manual_sort_order: number | null
           material_received_date: string | null
           material_status: Database["public"]["Enums"]["resource_status"]
@@ -246,13 +249,16 @@ export type Database = {
         }
         Insert: {
           client_id?: string | null
+          client_representative?: string | null
           complementary_quantity?: number | null
           created_at?: string
           delivery_deadline?: string | null
           designation: string
           display_order?: number | null
+          drawing_model?: string | null
           frozen_order?: boolean
           id?: string
+          instructions?: string | null
           manual_sort_order?: number | null
           material_received_date?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
@@ -270,13 +276,16 @@ export type Database = {
         }
         Update: {
           client_id?: string | null
+          client_representative?: string | null
           complementary_quantity?: number | null
           created_at?: string
           delivery_deadline?: string | null
           designation?: string
           display_order?: number | null
+          drawing_model?: string | null
           frozen_order?: boolean
           id?: string
+          instructions?: string | null
           manual_sort_order?: number | null
           material_received_date?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
@@ -376,6 +385,8 @@ export type Database = {
           operation_id: string
           operator_id: string | null
           order_id: string
+          raw_material_needs: string[]
+          special_tooling_needs: string[]
           start_date: string | null
           start_time: string | null
           step_order: number
@@ -406,6 +417,8 @@ export type Database = {
           operation_id: string
           operator_id?: string | null
           order_id: string
+          raw_material_needs?: string[]
+          special_tooling_needs?: string[]
           start_date?: string | null
           start_time?: string | null
           step_order?: number
@@ -436,6 +449,8 @@ export type Database = {
           operation_id?: string
           operator_id?: string | null
           order_id?: string
+          raw_material_needs?: string[]
+          special_tooling_needs?: string[]
           start_date?: string | null
           start_time?: string | null
           step_order?: number
