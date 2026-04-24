@@ -250,17 +250,39 @@ const OrdersPage: React.FC = () => {
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
 
-  // On first load, reindex if needed
+  // ──────────────── Sanitization & Auto-reindex ────────────────
+  // Keeps displayOrder strictly continuous (1..N) over the VISIBLE active list
+  // (excludes absence, delivered, and QC orders). Re-runs whenever an order
+  // leaves the flow (delivered / QC / deleted) so gaps cannot reappear.
+  // Locked orders (frozenOrder) keep their relative position but slide up to
+  // close gaps — the lock pins the slot, not the absolute number.
   useEffect(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId);
-    if (real.length === 0) return;
-    const sorted = [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-    const needsReindex = sorted.some((o, i) => o.displayOrder !== i + 1);
-    if (needsReindex) {
-      const absence = orders.find(o => o.id === absenceOrderId);
-      setOrders([...(absence ? [absence] : []), ...sorted.map((o, i) => ({ ...o, displayOrder: i + 1 }))]);
-    }
-  }, []);
+    const visible = orders
+      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id))
+      .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+    if (visible.length === 0) return;
+
+    // Out-of-flow orders (QC / delivered) keep ids but get displayOrder = null
+    // so they no longer occupy a slot in the active sequence.
+    const outOfFlow = orders.filter(o =>
+      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+    );
+
+    const needsReindex =
+      visible.some((o, i) => o.displayOrder !== i + 1) ||
+      outOfFlow.some(o => o.displayOrder != null);
+
+    if (!needsReindex) return;
+
+    const absence = orders.find(o => o.id === absenceOrderId);
+    const reindexedVisible = visible.map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const clearedOutOfFlow = outOfFlow.map(o => ({ ...o, displayOrder: undefined }));
+    setOrders([
+      ...(absence ? [absence] : []),
+      ...reindexedVisible,
+      ...clearedOutOfFlow,
+    ]);
+  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, setOrders]);
 
   // Auto-sort and apply when clicking "Trier auto"
   const handleAutoSort = useCallback(() => {
