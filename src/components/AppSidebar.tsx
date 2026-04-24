@@ -80,7 +80,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-6 h-6 text-sidebar-primary" />
         <h1 className="font-heading text-sm font-bold text-sidebar-foreground tracking-wider uppercase">
-          Planning Atelier
+          برمجة الورشة
         </h1>
       </div>
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
