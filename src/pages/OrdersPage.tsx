@@ -927,8 +927,8 @@ const OrdersPage: React.FC = () => {
               <Input type="number" min={1} value={form.quantity} onChange={e => updateForm('quantity', parseInt(e.target.value) || 1)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Délai planifié</label>
-              <Input type="date" value={form.plannedDeadline} onChange={e => updateForm('plannedDeadline', e.target.value)} />
+              <label className="text-sm font-medium mb-1 block">Délai livraison souhaité</label>
+              <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Qté prototype</label>
