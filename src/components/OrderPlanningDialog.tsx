@@ -319,29 +319,30 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[96vw] max-w-[1500px] max-h-[88vh] overflow-y-auto">
+        <DialogContent className="w-[98vw] max-w-[1900px] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">Définition des tâches et affectations</DialogTitle>
+            <DialogTitle className="font-heading">تحديد المراحل وتوزيعها</DialogTitle>
             <p className="text-sm text-muted-foreground">
               {clientName} - Commande N° {order.orderNumber} — {order.designation} — Qté : {order.quantity} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
             </p>
           </DialogHeader>
 
           <div className="bg-card rounded-lg border overflow-x-auto">
-            <Table className="min-w-[1360px] table-fixed">
+            <Table className="min-w-[1820px] table-fixed">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead className="w-72">العملية</TableHead>
-                  <TableHead className="w-36">Type</TableHead>
-                  <TableHead className="w-28">المدة المخصصة</TableHead>
-                  <TableHead className="w-80">العامل</TableHead>
-                  <TableHead className="w-28">الحالة</TableHead>
-                  <TableHead className="w-24">المدة الفعلية</TableHead>
+                  <TableHead className="w-64">العملية</TableHead>
+                  <TableHead className="w-32">فئة</TableHead>
+                  <TableHead className="w-24">المدة المخصصة</TableHead>
+                  <TableHead className="w-72">العامل</TableHead>
+                  <TableHead className="w-56">احتياجات عدة خاصة</TableHead>
+                  <TableHead className="w-56">احتياجات المواد الأولية والمكونات</TableHead>
+                  <TableHead className="w-24">الحالة</TableHead>
+                  <TableHead className="w-20">المدة الفعلية</TableHead>
                   <TableHead className="w-12 text-center text-xs">دراسة</TableHead>
                   <TableHead className="w-12 text-center text-xs">مواد أولية</TableHead>
-                  <TableHead className="w-12 text-center text-xs">Out.</TableHead>
-                  
+                  <TableHead className="w-12 text-center text-xs">عدة</TableHead>
                   <TableHead className="w-12">الترتيب</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
