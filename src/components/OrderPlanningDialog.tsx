@@ -29,6 +29,8 @@ interface OperationRow {
   studyDeadline: string;
   materialDeadline: string;
   toolingDeadline: string;
+  specialToolingNeeds: string[];
+  rawMaterialNeeds: string[];
 }
 
 interface Props {
@@ -88,6 +90,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
+          specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
+          rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
         };
       }));
     } else {
@@ -124,6 +128,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       materialStatus: currentOrder.materialStatus ?? 'non-disponible' as ResourceStatus,
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible' as ResourceStatus,
       studyDeadline: '', materialDeadline: '', toolingDeadline: '',
+      specialToolingNeeds: [''],
+      rawMaterialNeeds: [''],
     }]);
   };
 
