@@ -49,7 +49,7 @@ export interface Client {
   clientClass?: ClientClass;
 }
 
-export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4';
+export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'undetermined';
 
 export type ResourceStatus = 'disponible' | 'non-disponible' | 'partiel' | 'non-applicable';
 
