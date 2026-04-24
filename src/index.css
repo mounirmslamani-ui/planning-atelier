@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -64,8 +62,8 @@
     --sidebar-border: 215 20% 22%;
     --sidebar-ring: 35 90% 52%;
 
-    --font-heading: 'JetBrains Mono', monospace;
-    --font-body: 'Inter', sans-serif;
+    --font-heading: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif;
+    --font-body: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .dark {
