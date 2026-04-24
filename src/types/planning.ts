@@ -82,6 +82,9 @@ export interface Order {
   studyStatus: ResourceStatus;
   materialReceivedDate?: string;
   observation?: string;
+  clientRepresentative?: string;
+  instructions?: string;
+  drawingModel?: string;
 }
 
 export interface ProductionStep {
@@ -116,6 +119,8 @@ export interface ProductionStep {
   subcontractingDone?: boolean;
   subcontractingDeadline?: string;
   subcontractingReceivedDate?: string;
+  specialToolingNeeds?: string[];
+  rawMaterialNeeds?: string[];
 }
 
 export interface Holiday {
