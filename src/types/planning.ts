@@ -155,3 +155,13 @@ export interface DeliveryEntry {
   decision: 'conforme' | 'conforme-derogation';
   movedAt: string;
 }
+
+export type SalePriceStatus = 'gratuit' | 'non-calcule' | 'non-valide' | 'valide';
+
+export interface DeliveredOrder {
+  id: string;
+  orderId: string;
+  deliveryDate: string;
+  salePriceStatus: SalePriceStatus;
+  observation?: string;
+}
