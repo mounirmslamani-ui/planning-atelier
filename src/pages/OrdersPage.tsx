@@ -538,18 +538,21 @@ const OrdersPage: React.FC = () => {
       const atelierMinutes = atelierTimeMap.get(o.id) || 0;
       return {
         'الترتيب': o.displayOrder ?? index + 1,
-        'Numéro de commande': o.orderNumber,
-        'Date de commande': formatDateFR(o.orderDate),
+        'رقم الطلبية': o.orderNumber,
+        'التاريخ': formatDateFR(o.orderDate),
         'الزبون': getClientName(o.clientId),
         'التعيين': o.designation,
         'الكمية': o.quantity,
         'الأولوية': o.priority || '',
-        'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
         'أجل التسليم': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
-        'Temps atelier': formatMinutesToHM(atelierMinutes),
+        'ممثل الزبون': o.clientRepresentative || '',
+        'ملاحظات تعليمات': o.instructions || '',
+        'مخطط/نموذج': o.drawingModel || '',
+        'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
+        'وقت في الورشة': formatMinutesToHM(atelierMinutes),
         'دراسة': status?.study || '',
         'مواد أولية': status?.material || '',
-        'أداة': status?.tooling || '',
+        'عدة': status?.tooling || '',
         'ملاحظات': o.observation || '',
       };
     });
@@ -558,7 +561,7 @@ const OrdersPage: React.FC = () => {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws['!cols'] = [
       { wch: 8 }, { wch: 20 }, { wch: 16 }, { wch: 24 }, { wch: 45 }, { wch: 10 }, { wch: 10 },
-      { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 45 },
+      { wch: 14 }, { wch: 18 }, { wch: 28 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 45 },
     ];
     XLSX.utils.book_append_sheet(wb, ws, 'الطلبيات الجارية');
     XLSX.writeFile(wb, getExportFilename('الطلبيات الجارية'));
@@ -566,7 +569,7 @@ const OrdersPage: React.FC = () => {
 
   const renderCell = (o: Order, col: ColumnKey, index: number) => {
     const isEditing = editingRowId === o.id;
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client'];
+    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client', 'clientRepresentative', 'instructions', 'drawingModel'];
     if (isEditing && editableFields.includes(col)) {
       if (col === 'client') {
         return (
