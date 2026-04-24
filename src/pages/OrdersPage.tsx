@@ -930,22 +930,6 @@ const OrdersPage: React.FC = () => {
               <label className="text-sm font-medium mb-1 block">Délai livraison souhaité</label>
               <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Qté prototype</label>
-              <Input type="number" min={0} value={form.prototypeQuantity || ''} onChange={e => updateForm('prototypeQuantity', parseInt(e.target.value) || undefined)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Délai prototype</label>
-              <Input type="date" value={form.prototypeDeadline || ''} onChange={e => updateForm('prototypeDeadline', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Délai livraison souhaité</label>
-              <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Qté complémentaire</label>
-              <Input type="number" min={0} value={form.complementaryQuantity || ''} onChange={e => updateForm('complementaryQuantity', parseInt(e.target.value) || undefined)} />
-            </div>
             <div className="col-span-2">
               <label className="text-sm font-medium mb-1 block">Observation</label>
               <Input value={form.observation || ''} onChange={e => updateForm('observation', e.target.value)} placeholder="Note d'information..." />
