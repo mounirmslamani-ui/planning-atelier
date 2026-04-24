@@ -301,10 +301,10 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                   <TableHead className="w-12">#</TableHead>
                   <TableHead className="w-72">العملية</TableHead>
                   <TableHead className="w-36">Type</TableHead>
-                  <TableHead className="w-28">Durée allouée</TableHead>
+                  <TableHead className="w-28">المدة المخصصة</TableHead>
                   <TableHead className="w-80">العامل</TableHead>
                   <TableHead className="w-28">الحالة</TableHead>
-                  <TableHead className="w-24">Durée effectuée</TableHead>
+                  <TableHead className="w-24">المدة الفعلية</TableHead>
                   <TableHead className="w-12 text-center text-xs">دراسة</TableHead>
                   <TableHead className="w-12 text-center text-xs">مواد أولية</TableHead>
                   <TableHead className="w-12 text-center text-xs">Out.</TableHead>

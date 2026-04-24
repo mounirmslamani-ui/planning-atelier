@@ -71,7 +71,7 @@ const MaterialPurchasesPage: React.FC = () => {
   const handleExportExcel = () => {
     exportTableToExcel('مشتريات المواد الأولية', filteredRows.map((r: any) => ({
       '#': r.order.displayOrder ?? '—',
-      'N° Commande': r.order.orderNumber,
+      'رقم الطلبية': r.order.orderNumber,
       Client: getClientName(r.order.clientId),
       Désignation: r.order.designation,
       'الكمية': r.order.quantity,
@@ -120,7 +120,7 @@ const MaterialPurchasesPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-12 text-center">#</TableHead>
-              <TableHead><ColumnHeader label="N° Commande" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>

@@ -900,7 +900,7 @@ const OrdersPage: React.FC = () => {
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} une commande</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">N° Commande</label>
+              <label className="text-sm font-medium mb-1 block">رقم الطلبية</label>
               <Input value={form.orderNumber} onChange={e => { setOrderNumberError(''); updateForm('orderNumber', e.target.value); }} />
             </div>
             {orderNumberError && (
