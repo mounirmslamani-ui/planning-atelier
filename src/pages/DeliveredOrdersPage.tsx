@@ -56,7 +56,7 @@ const DeliveredOrdersPage: React.FC = () => {
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
         Quantité: order?.quantity ?? '—',
-        'Date de livraison': formatDateFR(entry.deliveryDate),
+        'تاريخ التسليم': formatDateFR(entry.deliveryDate),
         'ثمن البيع': PRICE_META[entry.salePriceStatus].label,
         Observation: entry.observation || '',
       };
@@ -106,7 +106,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Date de livraison" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
             </TableRow>

@@ -1602,7 +1602,7 @@ const PlanningTableauPage: React.FC = () => {
               {prodDurationError && <p className="mt-1 text-xs text-destructive">{prodDurationError}</p>}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2">
-              <span className="text-muted-foreground">Durée effectuée totale :</span>
+              <span className="text-muted-foreground">المدة الفعلية totale :</span>
               <span className="font-medium">{(() => {
                 const todayMin = parseDurationHHMM(prodDialog.durationToday) ?? 0;
                 return formatMinutesToHM(prodDialog.totalDoneAlready + todayMin);

@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['JetBrains Mono', 'monospace'],
-        body: ['Inter', 'sans-serif'],
+        heading: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+        body: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
