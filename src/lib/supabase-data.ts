@@ -401,6 +401,7 @@ export async function fetchAllData() {
     { data: records },
     { data: qcEntries },
     { data: deliveryEntries },
+    { data: deliveredOrders },
   ] = await Promise.all([
     supabase.from('equipments').select('*'),
     supabase.from('operators').select('*'),
@@ -413,6 +414,7 @@ export async function fetchAllData() {
     supabase.from('production_records').select('*'),
     supabase.from('quality_control_entries').select('*'),
     supabase.from('delivery_entries').select('*'),
+    (supabase.from as any)('delivered_orders').select('*'),
   ]);
 
   return {
@@ -427,6 +429,7 @@ export async function fetchAllData() {
     productionRecords: (records || []).map(mapRecordFromDB),
     qcEntries: (qcEntries || []).map(mapQCEntryFromDB),
     deliveryEntries: (deliveryEntries || []).map(mapDeliveryFromDB),
+    deliveredOrders: (deliveredOrders || []).map(mapDeliveredOrderFromDB),
   };
 }
 
