@@ -374,7 +374,7 @@ const OrdersPage: React.FC = () => {
 
   const emptyOrder = (): Omit<Order, 'id'> => ({
     orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
-    designation: '', quantity: 1, priority: 'P3', plannedDeadline: '',
+    designation: '', quantity: 1, priority: 'undetermined', plannedDeadline: '',
     materialAvailable: false, toolingAvailable: false, studyReady: false,
     materialStatus: 'non-disponible', toolingStatus: 'non-disponible', studyStatus: 'non-disponible',
     displayOrder: baseSorted.length + 1,
