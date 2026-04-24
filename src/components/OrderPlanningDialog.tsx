@@ -405,6 +405,52 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       </div>
                     </TableCell>
                     <TableCell>{renderAssigneeSelect(row)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {(row.specialToolingNeeds && row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <Input
+                              className="h-8 text-xs"
+                              value={val}
+                              onChange={e => updateNeedField(row.id, 'specialToolingNeeds', idx, e.target.value)}
+                              placeholder="أداة خاصة..."
+                            />
+                            {idx === (row.specialToolingNeeds?.length ?? 1) - 1 ? (
+                              <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => addNeedField(row.id, 'specialToolingNeeds')}>
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            ) : (
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeNeedField(row.id, 'specialToolingNeeds', idx)}>
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {(row.rawMaterialNeeds && row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            <Input
+                              className="h-8 text-xs"
+                              value={val}
+                              onChange={e => updateNeedField(row.id, 'rawMaterialNeeds', idx, e.target.value)}
+                              placeholder="مادة أولية..."
+                            />
+                            {idx === (row.rawMaterialNeeds?.length ?? 1) - 1 ? (
+                              <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => addNeedField(row.id, 'rawMaterialNeeds')}>
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            ) : (
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeNeedField(row.id, 'rawMaterialNeeds', idx)}>
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-xs font-medium">{getRowProgressStatus(row)}</TableCell>
                     <TableCell className="text-xs font-mono">{getRowActualDuration(row)}</TableCell>
                     <TableCell className="text-center">
@@ -450,7 +496,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                 })()}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
+                    <TableCell colSpan={14} className="text-center text-muted-foreground py-6">
                       Ajoutez des opérations pour cette commande.
                     </TableCell>
                   </TableRow>
