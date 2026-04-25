@@ -242,7 +242,7 @@ const ProductionRegisterPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="دفتر الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
+        <PageHeader title="سجل الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
       </div>
 
       {operatorsWithRecords.length === 0 ? (
