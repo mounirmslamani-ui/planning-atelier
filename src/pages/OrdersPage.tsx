@@ -1011,6 +1011,17 @@ const OrdersPage: React.FC = () => {
       {/* Excel Paste Dialog */}
       <ExcelPasteDialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen} onImport={handleExcelImport} clients={clients} nextDisplayOrder={baseSorted.length + 1} existingOrderNumbers={orders.filter(o => o.id !== absenceOrderId).map(o => o.orderNumber)} />
 
+      {/* Print tracking sheet */}
+      <PrintTrackingSheetDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        orders={displayOrders}
+        getClientName={getClientName}
+        onConfirm={(o) => setPrintingOrder(o)}
+      />
+      {printingOrder && (
+        <OrderTrackingSheet order={printingOrder} onClose={() => setPrintingOrder(null)} />
+      )}
       {planningOrder && (
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
