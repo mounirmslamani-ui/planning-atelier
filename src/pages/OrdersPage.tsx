@@ -785,6 +785,9 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
+          <Button onClick={() => setPrintDialogOpen(true)} variant="outline" size="sm" title="طباعة بطاقة متابعة انجاز طلبية">
+            <Printer className="w-4 h-4 mr-1" /> طباعة بطاقة متابعة انجاز طلبية
+          </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
         } />
