@@ -44,8 +44,14 @@ const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'Terminée': 'border-primary/30 bg-primary/10 text-primary',
 };
 
+const globalStatusLabel: Record<OrderGlobalStatus, string> = {
+  'En attente': 'قيد الانتظار',
+  'En cours': 'قيد الإنجاز',
+  'Terminée': 'جاهزة',
+};
+
 function GlobalStatusBadge({ status }: { status: OrderGlobalStatus }) {
-  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{status}</span>;
+  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{globalStatusLabel[status]}</span>;
 }
 
 function computeAtelierTime(
