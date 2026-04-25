@@ -140,7 +140,7 @@ const EquipmentPage: React.FC = () => {
               <Input value={designation} onChange={e => setDesignation(e.target.value)} placeholder="Nom de l'équipement" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Type</label>
+              <label className="text-sm font-medium mb-1 block">فئة</label>
               <select
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 value={type}
