@@ -7,7 +7,7 @@ interface PageHeaderProps {
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({ title, description, actions }) => (
-  <div className="flex items-center justify-between mb-6">
+  <div className="flex items-center justify-between mb-6 pl-14">
     <div>
       <h1 className="text-2xl font-heading font-bold text-foreground tracking-tight">{title}</h1>
       {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
