@@ -91,15 +91,6 @@ const ClientsPage: React.FC = () => {
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>
-                    {classInfo ? (
-                      <Badge variant="outline" className={classInfo.color}>
-                        {classInfo.value} - {classInfo.label.split(' - ')[1]}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm italic">Non classé</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openScore(c)} title="Classifier">
                         <Star className="w-3.5 h-3.5 text-amber-500" />
