@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
+import logoUrl from '@/assets/slamani-tasnie-logo.png';
 import type { Order } from '@/types/planning';
 
 interface Props {
@@ -8,26 +9,24 @@ interface Props {
   onClose: () => void;
 }
 
-const RESOURCE_LABEL: Record<string, string> = {
-  'disponible': 'متوفرة',
-  'non-disponible': 'غير متوفرة',
-  'partiel': 'جزئية',
-  'non-applicable': 'لا ينطبق',
+const PRIORITY_LABEL: Record<string, string> = {
+  P1: 'P1',
+  P2: 'P2',
+  P3: 'P3',
+  P4: 'P4',
+  undetermined: '—',
 };
 
-const PRIORITY_LABEL: Record<string, string> = {
-  P1: 'P1 - مستعجل',
-  P2: 'P2 - مستعجل نسبيا',
-  P3: 'P3 - غير مستعجل',
-  P4: 'P4 - قيد التعليق',
-  undetermined: 'غير محددة',
-};
+// Number of empty rows in the steps table (per the paper template)
+const EMPTY_TABLE_ROWS = 12;
+// Number of dotted lines for materials / tooling needs lists
+const NEEDS_LINES = 6;
 
 const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
   const { clients, steps, operators, subcontractors, operations, absenceOperationId } = usePlanning();
 
   const clientName = useMemo(
-    () => clients.find(c => c.id === order.clientId)?.name || '—',
+    () => clients.find(c => c.id === order.clientId)?.name || '',
     [clients, order.clientId],
   );
 
@@ -38,24 +37,41 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
     [steps, order.id, absenceOperationId],
   );
 
-  const rows = useMemo(() => orderSteps.map(s => {
+  // Aggregate raw-material and tooling needs from all production steps
+  const materialNeeds = useMemo(() => {
+    const set = new Set<string>();
+    orderSteps.forEach(s => (s.rawMaterialNeeds || []).forEach(v => {
+      const t = (v || '').trim();
+      if (t) set.add(t);
+    }));
+    return Array.from(set);
+  }, [orderSteps]);
+
+  const toolingNeeds = useMemo(() => {
+    const set = new Set<string>();
+    orderSteps.forEach(s => (s.specialToolingNeeds || []).forEach(v => {
+      const t = (v || '').trim();
+      if (t) set.add(t);
+    }));
+    return Array.from(set);
+  }, [orderSteps]);
+
+  const stepRows = useMemo(() => orderSteps.map(s => {
     const op = operations.find(o => o.id === s.operationId);
     const isSub = !!s.subcontractorId;
     const worker = isSub
-      ? (subcontractors.find(sc => sc.id === s.subcontractorId)?.companyName || '—')
-      : (operators.find(o => o.id === s.operatorId)?.name || '—');
+      ? (subcontractors.find(sc => sc.id === s.subcontractorId)?.companyName || '')
+      : (operators.find(o => o.id === s.operatorId)?.name || '');
     return {
       id: s.id,
-      worker: isSub ? `${worker} (مناولة)` : worker,
-      operation: op?.name || '—',
+      worker,
+      operation: op?.name || '',
     };
   }), [orderSteps, operators, subcontractors, operations]);
 
-  // Auto-trigger print dialog once mounted, then close after print.
+  // Auto-trigger print dialog once mounted
   useEffect(() => {
-    const t = setTimeout(() => {
-      window.print();
-    }, 300);
+    const t = setTimeout(() => window.print(), 300);
     const after = () => onClose();
     window.addEventListener('afterprint', after);
     return () => {
@@ -66,9 +82,26 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
   const editionDate = formatDateFR(new Date().toISOString().split('T')[0]);
 
+  // Helper to render a list of values as dotted lines (red text on dotted line)
+  const renderNeedsList = (items: string[]) => {
+    const lines: (string | null)[] = [];
+    for (let i = 0; i < NEEDS_LINES; i++) {
+      lines.push(items[i] ?? null);
+    }
+    return (
+      <div className="ts-needs-list">
+        {lines.map((val, i) => (
+          <div key={i} className="ts-needs-line">
+            {val ? <span className="ts-needs-value">{val}</span> : <span className="ts-needs-dots">............................................</span>}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="tracking-sheet-overlay">
-      <div className="tracking-sheet-controls no-print">
+    <div className="tracking-sheet-overlay" dir="rtl">
+      <div className="tracking-sheet-controls no-print" dir="ltr">
         <button onClick={() => window.print()} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium">
           طباعة
         </button>
@@ -78,112 +111,108 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page">
-        {/* Header */}
+        {/* HEADER : date à gauche, titre au centre, logo à droite */}
         <div className="ts-header">
-          <div className="ts-brand">
-            <div className="ts-logo">ST</div>
-            <div className="ts-brand-text">
-              <div className="ts-brand-name">Slamani Tasnie</div>
-              <div className="ts-brand-sub">Atelier de fabrication mécanique</div>
-            </div>
+          <div className="ts-header-date">
+            <span className="ts-label-ar">التاريخ:</span>
+            <span className="ts-date-value">{editionDate}</span>
           </div>
-          <div className="ts-title">بطاقة متابعة انجاز طلبية</div>
-          <div className="ts-edition">
-            <div>تاريخ الإصدار</div>
-            <div className="ts-edition-date">{editionDate}</div>
+          <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
+          <div className="ts-header-logo">
+            <img src={logoUrl} alt="Slamani Tasnie" />
           </div>
         </div>
 
-        {/* Order info grid */}
-        <table className="ts-info">
-          <tbody>
-            <tr>
-              <th>رقم الطلبية</th>
-              <td>{order.orderNumber}</td>
-              <th>التاريخ</th>
-              <td>{formatDateFR(order.orderDate)}</td>
-            </tr>
-            <tr>
-              <th>الزبون</th>
-              <td colSpan={3}>{clientName}</td>
-            </tr>
-            <tr>
-              <th>التعيين</th>
-              <td colSpan={3}>{order.designation}</td>
-            </tr>
-            <tr>
-              <th>الكمية</th>
-              <td>{order.quantity}</td>
-              <th>الأولوية</th>
-              <td>{PRIORITY_LABEL[order.priority || 'undetermined']}</td>
-            </tr>
-            <tr>
-              <th>ممثل الزبون</th>
-              <td>{order.clientRepresentative || '—'}</td>
-              <th>مخطط/نموذج</th>
-              <td>{order.drawingModel || '—'}</td>
-            </tr>
-            <tr>
-              <th>المواد الأولية</th>
-              <td>{RESOURCE_LABEL[order.materialStatus] || '—'}</td>
-              <th>العدة</th>
-              <td>{RESOURCE_LABEL[order.toolingStatus] || '—'}</td>
-            </tr>
-            <tr>
-              <th>ملاحظات / تعليمات</th>
-              <td colSpan={3}>{order.instructions || order.observation || '—'}</td>
-            </tr>
-          </tbody>
-        </table>
+        {/* N° طلبية رقم */}
+        <div className="ts-order-number">
+          <span className="ts-label-ar">طلبية رقم:</span>
+          <span className="ts-order-number-value">{order.orderNumber}</span>
+        </div>
 
-        {/* Steps table */}
+        {/* BLOC 1 : infos commande */}
+        <div className="ts-box ts-box-info">
+          <div className="ts-info-grid">
+            {/* Colonne droite (RTL : première visuellement) */}
+            <div className="ts-info-col">
+              <div className="ts-info-row">
+                <span className="ts-label-ar">اسم الزبون:</span>
+                <span className="ts-value-red">{clientName}</span>
+              </div>
+              <div className="ts-info-row">
+                <span className="ts-label-ar">تعيين الطلبية:</span>
+                <span className="ts-value-red">{order.designation}</span>
+              </div>
+              <div className="ts-info-row">
+                <span className="ts-label-ar">الكمية:</span>
+                <span className="ts-value-red">{order.quantity}</span>
+              </div>
+              <div className="ts-info-row">
+                <span className="ts-label-ar">مخطط/نموذج:</span>
+                <span className="ts-value-red">{order.drawingModel || ''}</span>
+              </div>
+              <div className="ts-info-row ts-info-row-block">
+                <span className="ts-label-ar">ملاحظات/تعليمات:</span>
+                <span className="ts-value-red">{order.instructions || order.observation || ''}</span>
+              </div>
+            </div>
+
+            {/* Colonne gauche */}
+            <div className="ts-info-col">
+              <div className="ts-info-row">
+                <span className="ts-label-ar">ممثل الزبون:</span>
+                <span className="ts-value-red">{order.clientRepresentative || ''}</span>
+              </div>
+              <div className="ts-info-row">
+                <span className="ts-label-ar">درجة الاستعجال:</span>
+                <span className="ts-value-red">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BLOC 2 : besoins en matières premières / outillage spécial */}
+        <div className="ts-box ts-box-needs">
+          <div className="ts-needs-section">
+            <div className="ts-needs-title">المواد الأولية/مكونات الطلبية:</div>
+            {renderNeedsList(materialNeeds)}
+          </div>
+          <div className="ts-needs-section">
+            <div className="ts-needs-title">أداة خاصة:</div>
+            {renderNeedsList(toolingNeeds)}
+          </div>
+        </div>
+
+        {/* Titre tableau */}
+        <div className="ts-table-title">وقت الإنجاز:</div>
+
+        {/* TABLE des étapes */}
         <table className="ts-steps">
           <thead>
             <tr>
-              <th style={{ width: '5%' }}>#</th>
-              <th style={{ width: '22%' }}>العامل / المناول</th>
-              <th style={{ width: '23%' }}>العملية</th>
-              <th style={{ width: '15%' }}>الوقت الفعلي</th>
-              <th style={{ width: '15%' }}>التاريخ</th>
               <th style={{ width: '20%' }}>ملاحظات</th>
+              <th style={{ width: '12%' }}>التاريخ</th>
+              <th style={{ width: '12%' }}>الوقت<br/>المحتسب</th>
+              <th style={{ width: '12%' }}>الوقت<br/>الفعلي</th>
+              <th style={{ width: '22%' }}>العملية</th>
+              <th style={{ width: '22%' }}>اسم<br/>العامل/المناول</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.id}>
-                <td className="ts-center">{i + 1}</td>
-                <td>{r.worker}</td>
-                <td>{r.operation}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-            ))}
-            {/* Add a few empty rows for hand-written extra entries */}
-            {Array.from({ length: Math.max(0, 4 - rows.length) }).map((_, i) => (
-              <tr key={`empty-${i}`}>
-                <td className="ts-center">{rows.length + i + 1}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-              </tr>
-            ))}
+            {Array.from({ length: Math.max(EMPTY_TABLE_ROWS, stepRows.length) }).map((_, i) => {
+              const r = stepRows[i];
+              return (
+                <tr key={i}>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td className="ts-cell-red">{r ? r.operation : ''}</td>
+                  <td className="ts-cell-red">{r ? r.worker : ''}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-
-        {/* Signature block */}
-        <div className="ts-signatures">
-          <div className="ts-sig">
-            <div className="ts-sig-label">توقيع المسؤول</div>
-            <div className="ts-sig-line" />
-          </div>
-          <div className="ts-sig">
-            <div className="ts-sig-label">توقيع مراقبة الجودة</div>
-            <div className="ts-sig-line" />
-          </div>
-        </div>
       </div>
 
       <style>{`
@@ -211,95 +240,169 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           min-height: 297mm;
           background: white;
           color: #111;
-          padding: 14mm 12mm;
+          padding: 12mm 12mm;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          font-size: 12pt;
+          font-size: 11pt;
+          direction: rtl;
         }
 
+        /* ---------- HEADER ---------- */
         .ts-header {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
+          grid-template-columns: 1fr 2fr 1fr;
           align-items: center;
-          border-bottom: 2px solid #111;
-          padding-bottom: 8px;
-          margin-bottom: 10px;
+          margin-bottom: 6mm;
         }
-        .ts-brand { display: flex; align-items: center; gap: 10px; }
-        .ts-logo {
-          width: 50px; height: 50px;
-          border-radius: 8px;
-          background: #1a365d;
-          color: white;
-          display: flex; align-items: center; justify-content: center;
-          font-weight: 800; font-size: 18pt;
-          letter-spacing: 1px;
-        }
-        .ts-brand-name { font-weight: 800; font-size: 14pt; }
-        .ts-brand-sub  { font-size: 9pt; color: #555; }
-        .ts-title {
-          text-align: center;
-          font-size: 18pt;
-          font-weight: 800;
-          color: #1a365d;
-        }
-        .ts-edition {
+        .ts-header-date {
+          direction: rtl;
           text-align: right;
-          font-size: 9pt;
-          color: #333;
-        }
-        .ts-edition-date { font-weight: 700; font-size: 11pt; color: #111; }
-
-        .ts-info {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 12px;
-        }
-        .ts-info th, .ts-info td {
-          border: 1px solid #555;
-          padding: 6px 8px;
           font-size: 11pt;
-          text-align: right;
-          vertical-align: middle;
+          display: flex;
+          gap: 8px;
+          align-items: baseline;
         }
-        .ts-info th {
-          background: #f1f5f9;
+        .ts-date-value {
+          border-bottom: 1px dotted #333;
+          min-width: 80px;
+          display: inline-block;
+          color: #c00;
+          font-weight: 600;
+        }
+        .ts-header-title {
+          text-align: center;
+          font-size: 16pt;
           font-weight: 700;
-          width: 18%;
+          color: #111;
+        }
+        .ts-header-logo {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+        }
+        .ts-header-logo img {
+          height: 18mm;
+          object-fit: contain;
+        }
+
+        .ts-order-number {
+          text-align: center;
+          margin-bottom: 3mm;
+          font-size: 11pt;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          align-items: baseline;
+        }
+        .ts-order-number-value {
+          color: #c00;
+          font-weight: 700;
+          border-bottom: 1px dotted #333;
+          min-width: 60px;
+          display: inline-block;
+          text-align: center;
+        }
+
+        /* ---------- BOXES ---------- */
+        .ts-box {
+          border: 1px solid #111;
+          padding: 4mm 5mm;
+          margin-bottom: 4mm;
+        }
+
+        .ts-info-grid {
+          display: grid;
+          grid-template-columns: 1.4fr 1fr;
+          gap: 8mm;
+        }
+        .ts-info-col { display: flex; flex-direction: column; gap: 3mm; }
+        .ts-info-row {
+          display: flex;
+          gap: 6px;
+          align-items: baseline;
+        }
+        .ts-info-row-block { align-items: flex-start; }
+        .ts-label-ar {
+          color: #111;
+          font-weight: 600;
           white-space: nowrap;
         }
+        .ts-value-red {
+          color: #c00;
+          font-weight: 600;
+          flex: 1;
+          border-bottom: 1px dotted #999;
+          min-height: 1.2em;
+          padding-bottom: 1px;
+        }
 
+        /* ---------- NEEDS BOX ---------- */
+        .ts-box-needs {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6mm;
+        }
+        .ts-needs-section { display: flex; flex-direction: column; gap: 2mm; }
+        .ts-needs-title {
+          text-align: left;
+          font-weight: 700;
+          text-decoration: underline;
+          color: #111;
+        }
+        .ts-needs-list { display: flex; flex-direction: column; gap: 1mm; }
+        .ts-needs-line {
+          min-height: 5mm;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+        }
+        .ts-needs-value {
+          color: #c00;
+          font-weight: 600;
+          border-bottom: 1px dotted #999;
+          width: 100%;
+          text-align: right;
+          padding-bottom: 1px;
+        }
+        .ts-needs-dots {
+          color: #888;
+          letter-spacing: 1px;
+          width: 100%;
+          text-align: right;
+        }
+
+        /* ---------- TABLE ---------- */
+        .ts-table-title {
+          text-align: left;
+          font-weight: 700;
+          margin-bottom: 2mm;
+        }
         .ts-steps {
           width: 100%;
           border-collapse: collapse;
-          margin-top: 6px;
         }
         .ts-steps th, .ts-steps td {
-          border: 1px solid #333;
-          padding: 8px 6px;
-          font-size: 11pt;
-          text-align: right;
-          height: 30px;
+          border: 1px solid #111;
+          padding: 2mm 2mm;
+          font-size: 10.5pt;
+          text-align: center;
+          vertical-align: middle;
+          height: 9mm;
         }
         .ts-steps th {
-          background: #1a365d;
-          color: white;
+          background: #fff;
+          color: #111;
           font-weight: 700;
-          text-align: center;
         }
-        .ts-center { text-align: center; }
-
-        .ts-signatures {
-          margin-top: 24px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 30px;
+        .ts-cell-red {
+          color: #c00;
+          font-weight: 600;
+          text-align: right;
         }
-        .ts-sig-label { font-size: 10pt; font-weight: 600; margin-bottom: 28px; }
-        .ts-sig-line { border-bottom: 1px solid #333; height: 0; }
 
+        /* ---------- PRINT ---------- */
         @media print {
-          @page { size: A4 portrait; margin: 10mm; }
+          @page { size: A4 portrait; margin: 8mm; }
           html, body { background: white !important; }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
