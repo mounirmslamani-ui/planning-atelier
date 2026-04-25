@@ -89,9 +89,9 @@ const EquipmentPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>التعيين</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Capacité</TableHead>
-              <TableHead>État</TableHead>
+              <TableHead>فئة</TableHead>
+              <TableHead>سعة</TableHead>
+              <TableHead>الحالة</TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
