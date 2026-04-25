@@ -247,7 +247,7 @@ const OperatorsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Équipements secondaires</label>
+              <label className="text-sm font-medium mb-1 block">آلات أخرى</label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {secondaryEquipments.map(eqId => (
                   <span key={eqId} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
