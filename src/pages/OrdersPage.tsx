@@ -10,12 +10,14 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
+import PrintTrackingSheetDialog from '@/components/PrintTrackingSheetDialog';
+import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
@@ -78,6 +80,8 @@ const OrdersPage: React.FC = () => {
   const [editing, setEditing] = useState<Order | null>(null);
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
@@ -781,6 +785,9 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
+          <Button onClick={() => setPrintDialogOpen(true)} variant="outline" size="sm" title="طباعة بطاقة متابعة انجاز طلبية">
+            <Printer className="w-4 h-4 mr-1" /> طباعة بطاقة متابعة انجاز طلبية
+          </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
         } />
@@ -1004,6 +1011,17 @@ const OrdersPage: React.FC = () => {
       {/* Excel Paste Dialog */}
       <ExcelPasteDialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen} onImport={handleExcelImport} clients={clients} nextDisplayOrder={baseSorted.length + 1} existingOrderNumbers={orders.filter(o => o.id !== absenceOrderId).map(o => o.orderNumber)} />
 
+      {/* Print tracking sheet */}
+      <PrintTrackingSheetDialog
+        open={printDialogOpen}
+        onOpenChange={setPrintDialogOpen}
+        orders={displayOrders}
+        getClientName={getClientName}
+        onConfirm={(o) => setPrintingOrder(o)}
+      />
+      {printingOrder && (
+        <OrderTrackingSheet order={printingOrder} onClose={() => setPrintingOrder(null)} />
+      )}
       {planningOrder && (
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
