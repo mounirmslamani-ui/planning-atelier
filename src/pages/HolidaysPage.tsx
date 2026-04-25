@@ -113,7 +113,7 @@ const HolidaysPage: React.FC = () => {
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Nom</label>
+              <label className="text-sm font-medium mb-1 block">العطلة</label>
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du jour férié" />
             </div>
           </div>
