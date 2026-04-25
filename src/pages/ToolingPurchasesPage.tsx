@@ -77,7 +77,7 @@ const ToolingPurchasesPage: React.FC = () => {
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-      'Date prévue achat outillage': formatDateFR(r.deadline) || '—',
+      'التاريخ المبرمج لشراء العدة': formatDateFR(r.deadline) || '—',
       Fait: 'Non',
     })), [8, 20, 24, 45, 10, 12, 16, 28, 10]);
   };
