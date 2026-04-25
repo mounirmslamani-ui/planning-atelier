@@ -193,12 +193,12 @@ const ProductionRegisterPage: React.FC = () => {
       return {
         Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         Heure: new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        Commande: order?.orderNumber || '—',
+        'رقم الطلبية': order?.orderNumber || '—',
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
         Quantité: order?.quantity ?? '—',
         Opération: getOperationName(rec.operationId),
-        'Durée (h)': Number((rec.actualDuration / 60).toFixed(2)),
+        'المدة (سا)': Number((rec.actualDuration / 60).toFixed(2)),
       };
     });
   }, [orders, clients, operations]);
