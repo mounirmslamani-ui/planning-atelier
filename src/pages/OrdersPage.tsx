@@ -80,6 +80,8 @@ const OrdersPage: React.FC = () => {
   const [editing, setEditing] = useState<Order | null>(null);
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
