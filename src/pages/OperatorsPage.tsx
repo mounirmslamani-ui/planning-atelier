@@ -115,8 +115,8 @@ const OperatorsPage: React.FC = () => {
               <TableHead><ColumnHeader label="الاسم" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="اختصاص" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="مهارات أخرى" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Équipement principal" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Équipements secondaires" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الآلة الرئيسية" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="آلات أخرى" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
