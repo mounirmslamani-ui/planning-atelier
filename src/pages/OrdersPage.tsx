@@ -326,7 +326,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
-      case 'globalStatus': return getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+      case 'globalStatus': return globalStatusLabel[getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)];
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'clientRepresentative': return o.clientRepresentative || '';
       case 'instructions': return o.instructions || '';
