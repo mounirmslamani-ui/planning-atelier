@@ -121,7 +121,7 @@ const SubcontractingPage: React.FC = () => {
 
   const handleExportExcel = () => {
     exportTableToExcel('مناولة', filteredRows.map(row => ({
-      Cn: row.order.displayOrder ?? '—',
+      الترتيب: row.order.displayOrder ?? '—',
       'رقم الطلبية': row.order.orderNumber,
       Date: formatDateFR(row.order.orderDate) || '—',
       Client: getClientName(row.order.clientId),
@@ -167,7 +167,7 @@ const SubcontractingPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12 text-center">Cn</TableHead>
+              <TableHead className="w-12 text-center">الترتيب</TableHead>
               <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>

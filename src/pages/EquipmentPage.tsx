@@ -74,7 +74,7 @@ const EquipmentPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="الآلات"
+          title="المعدات"
           description={`${equipments.length} équipement(s) enregistré(s)`}
           actions={
             <Button onClick={openNew} size="sm">
@@ -89,9 +89,9 @@ const EquipmentPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>التعيين</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Capacité</TableHead>
-              <TableHead>État</TableHead>
+              <TableHead>فئة</TableHead>
+              <TableHead>سعة</TableHead>
+              <TableHead>الحالة</TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
@@ -132,7 +132,7 @@ const EquipmentPage: React.FC = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un équipement</DialogTitle>
+            <DialogTitle className="font-heading">{editing ? 'تعديل الآلة' : 'Ajouter un équipement'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -140,7 +140,7 @@ const EquipmentPage: React.FC = () => {
               <Input value={designation} onChange={e => setDesignation(e.target.value)} placeholder="Nom de l'équipement" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Type</label>
+              <label className="text-sm font-medium mb-1 block">فئة</label>
               <select
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 value={type}
@@ -152,11 +152,11 @@ const EquipmentPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Capacité</label>
+              <label className="text-sm font-medium mb-1 block">سعة</label>
               <Input value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="Capacité de l'équipement" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">État</label>
+              <label className="text-sm font-medium mb-1 block">الحالة</label>
               <select
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 value={state}

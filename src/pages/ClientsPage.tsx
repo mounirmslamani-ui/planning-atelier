@@ -57,13 +57,9 @@ const ClientsPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
 
   const handleExportExcel = () => {
-    exportTableToExcel('الزبائن', processed.map(c => {
-      const classInfo = getClassInfo(c.clientClass);
-      return {
-        Nom: c.name,
-        Classification: classInfo ? `${classInfo.value} - ${classInfo.label.split(' - ')[1]}` : 'Non classé',
-      };
-    }), [32, 36]);
+    exportTableToExcel('الزبائن', processed.map(c => ({
+      'اسم الزبون': c.name,
+    })), [32]);
   };
 
   return (
@@ -80,26 +76,15 @@ const ClientsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="Nom" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Classification" columnKey="clientClass" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientClass || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="اسم الزبون" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {processed.map(c => {
-              const classInfo = getClassInfo(c.clientClass);
               return (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell>
-                    {classInfo ? (
-                      <Badge variant="outline" className={classInfo.color}>
-                        {classInfo.value} - {classInfo.label.split(' - ')[1]}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm italic">Non classé</span>
-                    )}
-                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openScore(c)} title="Classifier">

@@ -193,18 +193,18 @@ const ProductionRegisterPage: React.FC = () => {
       return {
         Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         Heure: new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        Commande: order?.orderNumber || '—',
+        'رقم الطلبية': order?.orderNumber || '—',
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
         Quantité: order?.quantity ?? '—',
         Opération: getOperationName(rec.operationId),
-        'Durée (h)': Number((rec.actualDuration / 60).toFixed(2)),
+        'المدة (سا)': Number((rec.actualDuration / 60).toFixed(2)),
       };
     });
   }, [orders, clients, operations]);
 
   const handleExportExcel = () => {
-    exportSheetsToExcel('دفتر الأعمال المنجزة', operatorsWithRecords.map(op => ({
+    exportSheetsToExcel('سجل الأعمال المنجزة', operatorsWithRecords.map(op => ({
       name: op.name,
       rows: buildExportRows(
         productionRecords
@@ -242,7 +242,7 @@ const ProductionRegisterPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="دفتر الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
+        <PageHeader title="سجل الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
       </div>
 
       {operatorsWithRecords.length === 0 ? (
@@ -322,7 +322,7 @@ const ProductionRegisterPage: React.FC = () => {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('orderNumber')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        Commande <SortIcon field="orderNumber" />
+                        رقم الطلبية <SortIcon field="orderNumber" />
                       </button>
                       <FilterPopover
                         items={availableOrders.map(id => {
@@ -373,7 +373,7 @@ const ProductionRegisterPage: React.FC = () => {
                   </TableHead>
                   <TableHead className="text-right">
                     <button onClick={() => toggleSort('duration')} className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors">
-                      Durée (h) <SortIcon field="duration" />
+                      المدة (سا) <SortIcon field="duration" />
                     </button>
                   </TableHead>
                   <TableHead className="w-20 text-center">عمليات</TableHead>

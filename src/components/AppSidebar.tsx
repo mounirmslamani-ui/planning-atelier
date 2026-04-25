@@ -15,7 +15,7 @@ const sidebarGroups = [
     items: [
       { to: '/orders', label: 'الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
       { to: '/absences', label: 'الغيابات', icon: UserX, dropTarget: false as DropTargetType },
-      { to: '/production-register', label: 'دفتر الأعمال المنجزة', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
+      { to: '/production-register', label: 'سجل الأعمال المنجزة', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
     ],
   },
   {
@@ -37,7 +37,7 @@ const sidebarGroups = [
     items: [
       { to: '/clients', label: 'الزبائن', icon: Building2, dropTarget: false as DropTargetType },
       { to: '/operators', label: 'العمال', icon: Users, dropTarget: false as DropTargetType },
-      { to: '/equipment', label: 'الآلات', icon: Cog, dropTarget: false as DropTargetType },
+      { to: '/equipment', label: 'المعدات', icon: Cog, dropTarget: false as DropTargetType },
       { to: '/operations', label: 'العمليات', icon: Drill, dropTarget: false as DropTargetType },
       { to: '/subcontractors', label: 'المناولون', icon: Handshake, dropTarget: false as DropTargetType },
       { to: '/holidays', label: 'العطل الرسمية', icon: CalendarDays, dropTarget: false as DropTargetType },

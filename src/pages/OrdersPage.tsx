@@ -44,8 +44,14 @@ const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'Terminée': 'border-primary/30 bg-primary/10 text-primary',
 };
 
+const globalStatusLabel: Record<OrderGlobalStatus, string> = {
+  'En attente': 'قيد الانتظار',
+  'En cours': 'قيد الإنجاز',
+  'Terminée': 'جاهزة',
+};
+
 function GlobalStatusBadge({ status }: { status: OrderGlobalStatus }) {
-  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{status}</span>;
+  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{globalStatusLabel[status]}</span>;
 }
 
 function computeAtelierTime(
@@ -320,7 +326,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
-      case 'globalStatus': return getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+      case 'globalStatus': return globalStatusLabel[getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)];
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'clientRepresentative': return o.clientRepresentative || '';
       case 'instructions': return o.instructions || '';
@@ -721,7 +727,7 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="الطلبيات الجارية" description={
+        <PageHeader title="الطلبيات الحالية" description={
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
@@ -805,7 +811,7 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-14 text-center text-xs px-1">الترتيب</TableHead>
               {columns.map(col => (
                 <TableHead key={col.key} className={col.className}>
-                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['En attente', 'En cours', 'Terminée'] : []} />
+                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []} />
                 </TableHead>
               ))}
               <TableHead className="w-24 text-xs px-1">عمليات</TableHead>

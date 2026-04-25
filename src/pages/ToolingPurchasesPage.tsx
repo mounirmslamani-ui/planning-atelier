@@ -77,7 +77,7 @@ const ToolingPurchasesPage: React.FC = () => {
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-      'Date prévue achat outillage': formatDateFR(r.deadline) || '—',
+      'التاريخ المبرمج لشراء العدة': formatDateFR(r.deadline) || '—',
       Fait: 'Non',
     })), [8, 20, 24, 45, 10, 12, 16, 28, 10]);
   };
@@ -119,7 +119,7 @@ const ToolingPurchasesPage: React.FC = () => {
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} /></TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
-              <TableHead>Date prévue achat outillage</TableHead>
+              <TableHead>التاريخ المبرمج لشراء العدة</TableHead>
               <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>

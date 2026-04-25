@@ -115,8 +115,8 @@ const OperatorsPage: React.FC = () => {
               <TableHead><ColumnHeader label="الاسم" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="اختصاص" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="مهارات أخرى" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Équipement principal" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Équipements secondaires" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الآلة الرئيسية" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="آلات أخرى" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
@@ -186,7 +186,7 @@ const OperatorsPage: React.FC = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un opérateur</DialogTitle>
+            <DialogTitle className="font-heading">{editing ? 'تعديل عامل' : 'Ajouter un opérateur'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -234,7 +234,7 @@ const OperatorsPage: React.FC = () => {
 
             {/* Equipment sections */}
             <div>
-              <label className="text-sm font-medium mb-1 block">Équipement principal</label>
+              <label className="text-sm font-medium mb-1 block">الآلة الرئيسية</label>
               <select 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 value={mainEquipment} 
@@ -247,7 +247,7 @@ const OperatorsPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Équipements secondaires</label>
+              <label className="text-sm font-medium mb-1 block">آلات أخرى</label>
               <div className="flex flex-wrap gap-1 mb-2">
                 {secondaryEquipments.map(eqId => (
                   <span key={eqId} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
