@@ -57,13 +57,9 @@ const ClientsPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
 
   const handleExportExcel = () => {
-    exportTableToExcel('الزبائن', processed.map(c => {
-      const classInfo = getClassInfo(c.clientClass);
-      return {
-        Nom: c.name,
-        Classification: classInfo ? `${classInfo.value} - ${classInfo.label.split(' - ')[1]}` : 'Non classé',
-      };
-    }), [32, 36]);
+    exportTableToExcel('الزبائن', processed.map(c => ({
+      'اسم الزبون': c.name,
+    })), [32]);
   };
 
   return (
