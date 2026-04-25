@@ -121,7 +121,7 @@ const SubcontractingPage: React.FC = () => {
 
   const handleExportExcel = () => {
     exportTableToExcel('مناولة', filteredRows.map(row => ({
-      Cn: row.order.displayOrder ?? '—',
+      الترتيب: row.order.displayOrder ?? '—',
       'رقم الطلبية': row.order.orderNumber,
       Date: formatDateFR(row.order.orderDate) || '—',
       Client: getClientName(row.order.clientId),
