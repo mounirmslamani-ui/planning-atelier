@@ -727,7 +727,7 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="الطلبيات الجارية" description={
+        <PageHeader title="الطلبيات الحالية" description={
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
