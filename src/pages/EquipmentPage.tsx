@@ -152,7 +152,7 @@ const EquipmentPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Capacité</label>
+              <label className="text-sm font-medium mb-1 block">سعة</label>
               <Input value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="Capacité de l'équipement" />
             </div>
             <div>
