@@ -204,7 +204,7 @@ const ProductionRegisterPage: React.FC = () => {
   }, [orders, clients, operations]);
 
   const handleExportExcel = () => {
-    exportSheetsToExcel('دفتر الأعمال المنجزة', operatorsWithRecords.map(op => ({
+    exportSheetsToExcel('سجل الأعمال المنجزة', operatorsWithRecords.map(op => ({
       name: op.name,
       rows: buildExportRows(
         productionRecords
