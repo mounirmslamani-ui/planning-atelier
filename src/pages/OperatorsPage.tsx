@@ -234,7 +234,7 @@ const OperatorsPage: React.FC = () => {
 
             {/* Equipment sections */}
             <div>
-              <label className="text-sm font-medium mb-1 block">Équipement principal</label>
+              <label className="text-sm font-medium mb-1 block">الآلة الرئيسية</label>
               <select 
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 value={mainEquipment} 
