@@ -811,7 +811,7 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-14 text-center text-xs px-1">الترتيب</TableHead>
               {columns.map(col => (
                 <TableHead key={col.key} className={col.className}>
-                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['En attente', 'En cours', 'Terminée'] : []} />
+                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []} />
                 </TableHead>
               ))}
               <TableHead className="w-24 text-xs px-1">عمليات</TableHead>
