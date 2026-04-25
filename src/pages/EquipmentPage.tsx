@@ -132,7 +132,7 @@ const EquipmentPage: React.FC = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un équipement</DialogTitle>
+            <DialogTitle className="font-heading">{editing ? 'تعديل الآلة' : 'Ajouter un équipement'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
