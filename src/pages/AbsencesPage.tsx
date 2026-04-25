@@ -145,7 +145,7 @@ const AbsencesPage: React.FC = () => {
               <TableHead>ساعة البداية</TableHead>
               <TableHead>تاريخ النهاية</TableHead>
               <TableHead>ساعة النهاية</TableHead>
-              <TableHead>Durée (h)</TableHead>
+              <TableHead>مدة الغياب (سا)</TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
