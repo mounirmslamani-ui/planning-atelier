@@ -322,7 +322,7 @@ const ProductionRegisterPage: React.FC = () => {
                   <TableHead>
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('orderNumber')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        Commande <SortIcon field="orderNumber" />
+                        رقم الطلبية <SortIcon field="orderNumber" />
                       </button>
                       <FilterPopover
                         items={availableOrders.map(id => {
