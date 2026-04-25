@@ -86,7 +86,6 @@ const ClientsPage: React.FC = () => {
           </TableHeader>
           <TableBody>
             {processed.map(c => {
-              const classInfo = getClassInfo(c.clientClass);
               return (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
