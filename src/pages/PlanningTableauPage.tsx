@@ -1275,7 +1275,7 @@ const PlanningTableauPage: React.FC = () => {
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
-              <h3 className="text-base font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
+              <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleAutoSort(group.operator.id)}>
                   <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Trier auto
