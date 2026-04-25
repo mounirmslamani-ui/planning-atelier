@@ -80,8 +80,7 @@ const ClientsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="Nom" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="Classification" columnKey="clientClass" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientClass || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="اسم الزبون" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
