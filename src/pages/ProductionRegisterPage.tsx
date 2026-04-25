@@ -373,7 +373,7 @@ const ProductionRegisterPage: React.FC = () => {
                   </TableHead>
                   <TableHead className="text-right">
                     <button onClick={() => toggleSort('duration')} className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors">
-                      Durée (h) <SortIcon field="duration" />
+                      المدة (سا) <SortIcon field="duration" />
                     </button>
                   </TableHead>
                   <TableHead className="w-20 text-center">عمليات</TableHead>
