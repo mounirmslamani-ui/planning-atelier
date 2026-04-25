@@ -69,7 +69,7 @@ const HolidaysPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>التاريخ</TableHead>
-              <TableHead>Nom</TableHead>
+              <TableHead>العطلة</TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
