@@ -186,7 +186,7 @@ const OperatorsPage: React.FC = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un opérateur</DialogTitle>
+            <DialogTitle className="font-heading">{editing ? 'تعديل عامل' : 'Ajouter un opérateur'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
