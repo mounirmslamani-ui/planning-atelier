@@ -397,7 +397,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             box-shadow: none !important;
             width: 210mm !important;
             min-height: 297mm !important;
-            padding: 15mm 15mm !important;
+            padding: 5mm 10mm 12mm 10mm !important;
             margin: 0 !important;
           }
         }
