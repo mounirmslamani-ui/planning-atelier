@@ -218,21 +218,27 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           background: white;
           color: #000;
           position: relative;
-          padding: 10mm 10mm 12mm 10mm;
+          padding: 0mm 15mm;
+          margin-top: 0 !important;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           font-size: 11pt;
           direction: rtl;
+          overflow: visible !important;
         }
 
         /* ---------- HEADER ---------- */
+        .ts-header-logo-wrap {
+          position: relative;
+          height: 30mm;
+          overflow: visible !important;
+        }
         .ts-header-logo-img {
           position: absolute;
-          top: 5mm;
+          top: 2mm;
           right: 10mm;
           height: 16.875mm; /* 22.5mm * 0.75 */
-          max-height: 21mm;
           object-fit: contain;
           display: block;
         }
@@ -242,16 +248,20 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           font-weight: 700;
           color: #000;
           line-height: 1.2;
-          margin: 0 0 1.5mm 0;
+          margin-top: 5mm;
+          margin-bottom: 0;
         }
         .ts-header-date-row {
-          direction: rtl;
+          direction: ltr;
           font-size: 11pt;
           display: flex;
           gap: 8px;
           align-items: baseline;
-          justify-content: flex-end; /* RTL : flex-end = visuellement à gauche */
-          margin: 18mm 0 3mm 0; /* descend sous le logo absolu */
+          justify-content: flex-start;
+          text-align: left;
+          position: relative;
+          top: 0;
+          margin: 0;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -263,7 +273,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         .ts-order-number {
           text-align: center;
-          margin: 0 0 1.5mm 0;
+          margin-top: -2mm;
+          margin-bottom: 2mm;
           font-size: 11pt;
           display: flex;
           justify-content: center;
