@@ -380,8 +380,13 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         /* ---------- PRINT ---------- */
         @media print {
-          @page { margin: 0; size: A4; }
-          html, body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+          @page { margin: 0 !important; size: A4; }
+          html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
@@ -399,25 +404,19 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             width: auto !important;
             min-height: auto !important;
             position: relative !important;
-            padding: 0mm 15mm !important;
-            margin-top: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            margin-bottom: 0 !important;
-            overflow: visible !important;
-          }
-          .ts-header-logo-wrap {
-            height: 30mm !important;
-            position: relative !important;
+            padding: 5mm 15mm 10mm 15mm !important;
+            margin: 0 !important;
             overflow: visible !important;
           }
           .ts-header-logo-img {
             position: absolute !important;
-            top: 2mm !important;
+            top: 5mm !important;
             right: 10mm !important;
             height: 16.875mm !important;
             margin: 0 !important;
+            z-index: 5 !important;
           }
+          .ts-header-date-row { margin-top: 25mm !important; }
         }
       `}</style>
     </div>
