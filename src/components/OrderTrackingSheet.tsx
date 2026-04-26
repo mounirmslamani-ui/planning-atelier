@@ -218,7 +218,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           background: white;
           color: #000;
           position: relative;
-          padding: 0 15mm 10mm 15mm;
+          padding: 15mm 15mm 10mm 15mm;
           margin-top: 0 !important;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
@@ -427,7 +427,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             width: 210mm !important;
             min-height: 297mm !important;
             position: relative !important;
-            padding: 0 15mm 10mm 15mm !important;
+            padding: 15mm 15mm 10mm 15mm !important;
             margin: 0 !important;
             overflow: visible !important;
             page-break-after: avoid !important;
