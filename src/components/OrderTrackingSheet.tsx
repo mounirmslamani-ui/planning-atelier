@@ -89,21 +89,18 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page">
-        {/* HEADER : 3 colonnes — date à gauche | titre centré | logo à droite */}
-        <div className="ts-header-row" dir="ltr">
-          <div className="ts-header-date" dir="rtl">
-            <span className="ts-label-ar">التاريخ:</span>
-            <span className="ts-date-value">{editionDate}</span>
-          </div>
-          <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
-          <div className="ts-header-logo">
-            <img src={logoUrl} alt="Slamani Tasnie" />
-          </div>
+        {/* HEADER : ligne par ligne — Logo (droite) / Titre / N° / Date (gauche) */}
+        <div className="ts-header-logo-row">
+          <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
         </div>
-
+        <div className="ts-header-title-row">بطاقة متابعة انجاز طلبية</div>
         <div className="ts-order-number">
           <span className="ts-label-ar">طلبية رقم:</span>
           <span className="ts-order-number-value">{order.orderNumber}</span>
+        </div>
+        <div className="ts-header-date-row" dir="rtl">
+          <span className="ts-label-ar">التاريخ:</span>
+          <span className="ts-date-value">{editionDate}</span>
         </div>
 
         {/* BLOC 1 : infos commande */}
@@ -228,47 +225,35 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           direction: rtl;
         }
 
-        /* ---------- HEADER ---------- */
-        .ts-header-row {
+        /* ---------- HEADER (ligne par ligne) ---------- */
+        .ts-header-logo-row {
           display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: flex-end;
-          gap: 6mm;
-          margin: 0 0 8mm 0;
+          justify-content: flex-end;
+          align-items: center;
+          margin: 0 0 2mm 0;
         }
-        .ts-header-date {
-          direction: rtl;
-          font-size: 11pt;
-          display: flex;
-          gap: 8px;
-          align-items: baseline;
-          flex: 0 0 auto;
-          order: 1;
-          text-align: left;
+        .ts-header-logo-img {
+          height: 22.5mm; /* 18mm * 1.25 */
+          max-height: 28mm;
+          object-fit: contain;
+          display: block;
         }
-        .ts-header-title {
-          flex: 1 1 auto;
+        .ts-header-title-row {
           text-align: center;
           font-size: 16pt;
           font-weight: 700;
           color: #000;
           line-height: 1.2;
-          margin: 0;
-          order: 2;
+          margin: 0 0 1.5mm 0;
         }
-        .ts-header-logo {
-          flex: 0 0 auto;
-          order: 3;
-          max-height: 22mm;
-          overflow: hidden;
-        }
-        .ts-header-logo img {
-          height: 18mm;
-          max-height: 22mm;
-          object-fit: contain;
-          display: block;
-          margin: 0;
+        .ts-header-date-row {
+          direction: rtl;
+          font-size: 11pt;
+          display: flex;
+          gap: 8px;
+          align-items: baseline;
+          justify-content: flex-end; /* RTL : flex-end = visuellement à gauche */
+          margin: 0 0 3mm 0;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -280,7 +265,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         .ts-order-number {
           text-align: center;
-          margin: 0 0 3mm 0;
+          margin: 0 0 1.5mm 0;
           font-size: 11pt;
           display: flex;
           justify-content: center;
@@ -393,8 +378,9 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         /* ---------- PRINT ---------- */
         @media print {
-          @page { size: A4 portrait; margin: 10mm; }
+          @page { margin: 0; size: auto; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          body { padding: 10mm 15mm !important; }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
@@ -409,7 +395,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             box-shadow: none !important;
             width: auto !important;
             min-height: auto !important;
-            padding: 15mm 5mm 5mm 5mm !important;
+            padding: 0 !important;
             margin: 0 !important;
           }
         }
