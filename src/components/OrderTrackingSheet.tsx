@@ -235,9 +235,10 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           justify-content: space-between;
           align-items: flex-start;
           margin: 0 0 2mm 0;
+          margin-top: -25mm;
         }
         .ts-header-logo img {
-          height: 20.7mm;
+          height: 15.5mm;
           object-fit: contain;
           display: block;
           margin: 0;
@@ -248,7 +249,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           display: flex;
           gap: 8px;
           align-items: baseline;
-          margin-top: 2mm;
+          margin-top: -15mm;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -264,6 +265,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           color: #000;
           margin: 0;
           line-height: 1.2;
+          margin-top: -25mm;
         }
 
         .ts-order-number {
