@@ -225,47 +225,35 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           direction: rtl;
         }
 
-        /* ---------- HEADER ---------- */
-        .ts-header-row {
+        /* ---------- HEADER (ligne par ligne) ---------- */
+        .ts-header-logo-row {
           display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: flex-end;
-          gap: 6mm;
-          margin: 0 0 8mm 0;
+          justify-content: flex-end;
+          align-items: center;
+          margin: 0 0 2mm 0;
         }
-        .ts-header-date {
-          direction: rtl;
-          font-size: 11pt;
-          display: flex;
-          gap: 8px;
-          align-items: baseline;
-          flex: 0 0 auto;
-          order: 1;
-          text-align: left;
+        .ts-header-logo-img {
+          height: 22.5mm; /* 18mm * 1.25 */
+          max-height: 28mm;
+          object-fit: contain;
+          display: block;
         }
-        .ts-header-title {
-          flex: 1 1 auto;
+        .ts-header-title-row {
           text-align: center;
           font-size: 16pt;
           font-weight: 700;
           color: #000;
           line-height: 1.2;
-          margin: 0;
-          order: 2;
+          margin: 0 0 1.5mm 0;
         }
-        .ts-header-logo {
-          flex: 0 0 auto;
-          order: 3;
-          max-height: 22mm;
-          overflow: hidden;
-        }
-        .ts-header-logo img {
-          height: 18mm;
-          max-height: 22mm;
-          object-fit: contain;
-          display: block;
-          margin: 0;
+        .ts-header-date-row {
+          direction: rtl;
+          font-size: 11pt;
+          display: flex;
+          gap: 8px;
+          align-items: baseline;
+          justify-content: flex-end; /* RTL : flex-end = visuellement à gauche */
+          margin: 0 0 3mm 0;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -277,7 +265,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         .ts-order-number {
           text-align: center;
-          margin: 0 0 3mm 0;
+          margin: 0 0 1.5mm 0;
           font-size: 11pt;
           display: flex;
           justify-content: center;
