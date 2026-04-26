@@ -380,7 +380,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         @media print {
           @page { margin: 0; size: auto; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          body { padding: 10mm 15mm !important; }
+          body { padding-top: 5mm !important; padding-left: 15mm !important; padding-right: 15mm !important; padding-bottom: 5mm !important; }
+          .ts-header-logo-img { margin-top: -40mm !important; }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
