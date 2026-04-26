@@ -89,19 +89,18 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page">
-        {/* HEADER : logo collé en haut à droite, date collée à l'extrême gauche en dessous */}
-        <div className="ts-header-row">
-          <div className="ts-header-logo">
-            <img src={logoUrl} alt="Slamani Tasnie" />
-          </div>
+        {/* HEADER : 3 colonnes — date à gauche | titre centré | logo à droite */}
+        <div className="ts-header-row" dir="ltr">
           <div className="ts-header-date" dir="rtl">
             <span className="ts-label-ar">التاريخ:</span>
             <span className="ts-date-value">{editionDate}</span>
           </div>
+          <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
+          <div className="ts-header-logo">
+            <img src={logoUrl} alt="Slamani Tasnie" />
+          </div>
         </div>
 
-        {/* Titre principal centré, collé au numéro de commande */}
-        <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
         <div className="ts-order-number">
           <span className="ts-label-ar">طلبية رقم:</span>
           <span className="ts-order-number-value">{order.orderNumber}</span>
