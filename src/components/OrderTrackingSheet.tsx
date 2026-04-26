@@ -17,10 +17,7 @@ const PRIORITY_LABEL: Record<string, string> = {
   undetermined: '—',
 };
 
-// Number of empty rows in the steps table (per the paper template)
 const EMPTY_TABLE_ROWS = 12;
-// Number of dotted lines for materials / tooling needs lists
-const NEEDS_LINES = 6;
 
 const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
   const { clients, steps, operators, subcontractors, operations, absenceOperationId } = usePlanning();
@@ -37,7 +34,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
     [steps, order.id, absenceOperationId],
   );
 
-  // Aggregate raw-material and tooling needs from all production steps
   const materialNeeds = useMemo(() => {
     const set = new Set<string>();
     orderSteps.forEach(s => (s.rawMaterialNeeds || []).forEach(v => {
@@ -69,7 +65,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
     };
   }), [orderSteps, operators, subcontractors, operations]);
 
-  // Auto-trigger print dialog once mounted
   useEffect(() => {
     const t = setTimeout(() => window.print(), 300);
     const after = () => onClose();
@@ -81,23 +76,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
   }, [onClose]);
 
   const editionDate = formatDateFR(new Date().toISOString().split('T')[0]);
-
-  // Helper to render a list of values as dotted lines (red text on dotted line)
-  const renderNeedsList = (items: string[]) => {
-    const lines: (string | null)[] = [];
-    for (let i = 0; i < NEEDS_LINES; i++) {
-      lines.push(items[i] ?? null);
-    }
-    return (
-      <div className="ts-needs-list">
-        {lines.map((val, i) => (
-          <div key={i} className="ts-needs-line">
-            {val ? <span className="ts-needs-value">{val}</span> : <span className="ts-needs-dots">............................................</span>}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div className="tracking-sheet-overlay" dir="rtl">
@@ -131,42 +109,31 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         {/* BLOC 1 : infos commande */}
         <div className="ts-box ts-box-info">
-          <div className="ts-info-grid">
-            {/* Colonne droite (RTL : première visuellement) */}
-            <div className="ts-info-col">
-              <div className="ts-info-row">
-                <span className="ts-label-ar">اسم الزبون:</span>
-                <span className="ts-value-red">{clientName}</span>
-              </div>
-              <div className="ts-info-row">
-                <span className="ts-label-ar">تعيين الطلبية:</span>
-                <span className="ts-value-red">{order.designation}</span>
-              </div>
-              <div className="ts-info-row">
-                <span className="ts-label-ar">الكمية:</span>
-                <span className="ts-value-red">{order.quantity}</span>
-              </div>
-              <div className="ts-info-row">
-                <span className="ts-label-ar">مخطط/نموذج:</span>
-                <span className="ts-value-red">{order.drawingModel || ''}</span>
-              </div>
-              <div className="ts-info-row ts-info-row-block">
-                <span className="ts-label-ar">ملاحظات/تعليمات:</span>
-                <span className="ts-value-red">{order.instructions || order.observation || ''}</span>
-              </div>
+          <div className="ts-info-row">
+            <span className="ts-label-ar">اسم الزبون:</span>
+            <span className="ts-value-black">{clientName}</span>
+          </div>
+          <div className="ts-info-row ts-info-row-double">
+            <div className="ts-info-row ts-info-half">
+              <span className="ts-label-ar">تعيين الطلبية:</span>
+              <span className="ts-value-black">{order.designation}</span>
             </div>
-
-            {/* Colonne gauche */}
-            <div className="ts-info-col">
-              <div className="ts-info-row">
-                <span className="ts-label-ar">ممثل الزبون:</span>
-                <span className="ts-value-red">{order.clientRepresentative || ''}</span>
-              </div>
-              <div className="ts-info-row">
-                <span className="ts-label-ar">درجة الاستعجال:</span>
-                <span className="ts-value-red">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
-              </div>
+            <div className="ts-info-row ts-info-half-small">
+              <span className="ts-label-ar">الكمية:</span>
+              <span className="ts-value-black">{order.quantity}</span>
             </div>
+          </div>
+          <div className="ts-info-row">
+            <span className="ts-label-ar">درجة الاستعجال:</span>
+            <span className="ts-value-black">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
+          </div>
+          <div className="ts-info-row">
+            <span className="ts-label-ar">مخطط/نموذج:</span>
+            <span className="ts-value-black">{order.drawingModel || ''}</span>
+          </div>
+          <div className="ts-info-row ts-info-row-block">
+            <span className="ts-label-ar">ملاحظات/تعليمات:</span>
+            <span className="ts-value-black">{order.instructions || order.observation || ''}</span>
           </div>
         </div>
 
@@ -174,27 +141,39 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         <div className="ts-box ts-box-needs">
           <div className="ts-needs-section">
             <div className="ts-needs-title">المواد الأولية/مكونات الطلبية:</div>
-            {renderNeedsList(materialNeeds)}
+            {materialNeeds.length > 0 && (
+              <div className="ts-needs-list">
+                {materialNeeds.map((v, i) => (
+                  <div key={i} className="ts-needs-value">{v}</div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="ts-needs-section">
             <div className="ts-needs-title">أداة خاصة:</div>
-            {renderNeedsList(toolingNeeds)}
+            {toolingNeeds.length > 0 && (
+              <div className="ts-needs-list">
+                {toolingNeeds.map((v, i) => (
+                  <div key={i} className="ts-needs-value">{v}</div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Titre tableau */}
+        {/* Titre tableau aligné à droite */}
         <div className="ts-table-title">وقت الإنجاز:</div>
 
-        {/* TABLE des étapes */}
-        <table className="ts-steps">
+        {/* TABLE des étapes — ordre RTL : عامل | عملية | فعلي | محتسب | تاريخ | ملاحظات */}
+        <table className="ts-steps" dir="rtl">
           <thead>
             <tr>
-              <th style={{ width: '20%' }}>ملاحظات</th>
-              <th style={{ width: '12%' }}>التاريخ</th>
-              <th style={{ width: '12%' }}>الوقت<br/>المحتسب</th>
-              <th style={{ width: '12%' }}>الوقت<br/>الفعلي</th>
+              <th style={{ width: '22%' }}>اسم العامل/<br/>المناول</th>
               <th style={{ width: '22%' }}>العملية</th>
-              <th style={{ width: '22%' }}>اسم<br/>العامل/المناول</th>
+              <th style={{ width: '12%' }}>الوقت<br/>الفعلي</th>
+              <th style={{ width: '12%' }}>الوقت<br/>المحتسب</th>
+              <th style={{ width: '12%' }}>التاريخ</th>
+              <th style={{ width: '20%' }}>ملاحظات</th>
             </tr>
           </thead>
           <tbody>
@@ -202,12 +181,12 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
               const r = stepRows[i];
               return (
                 <tr key={i}>
+                  <td className="ts-cell-data">{r ? r.worker : ''}</td>
+                  <td className="ts-cell-data">{r ? r.operation : ''}</td>
                   <td></td>
                   <td></td>
                   <td></td>
                   <td></td>
-                  <td className="ts-cell-red">{r ? r.operation : ''}</td>
-                  <td className="ts-cell-red">{r ? r.worker : ''}</td>
                 </tr>
               );
             })}
@@ -239,8 +218,9 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           width: 210mm;
           min-height: 297mm;
           background: white;
-          color: #111;
-          padding: 12mm 12mm;
+          color: #000;
+          padding: 15mm 15mm;
+          box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           font-size: 11pt;
@@ -266,14 +246,14 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           border-bottom: 1px dotted #333;
           min-width: 80px;
           display: inline-block;
-          color: #c00;
+          color: #000;
           font-weight: 600;
         }
         .ts-header-title {
           text-align: center;
           font-size: 16pt;
           font-weight: 700;
-          color: #111;
+          color: #000;
         }
         .ts-header-logo {
           display: flex;
@@ -295,7 +275,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
         }
         .ts-order-number-value {
-          color: #c00;
+          color: #000;
           font-weight: 700;
           border-bottom: 1px dotted #333;
           min-width: 60px;
@@ -305,30 +285,35 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         /* ---------- BOXES ---------- */
         .ts-box {
-          border: 1px solid #111;
+          border: 1px solid #000;
           padding: 4mm 5mm;
           margin-bottom: 4mm;
         }
-
-        .ts-info-grid {
-          display: grid;
-          grid-template-columns: 1.4fr 1fr;
-          gap: 8mm;
+        .ts-box-info {
+          display: flex;
+          flex-direction: column;
+          gap: 3mm;
         }
-        .ts-info-col { display: flex; flex-direction: column; gap: 3mm; }
         .ts-info-row {
           display: flex;
           gap: 6px;
           align-items: baseline;
         }
         .ts-info-row-block { align-items: flex-start; }
+        .ts-info-row-double {
+          display: flex;
+          gap: 8mm;
+          align-items: baseline;
+        }
+        .ts-info-half { flex: 1; }
+        .ts-info-half-small { flex: 0 0 25%; }
         .ts-label-ar {
-          color: #111;
+          color: #000;
           font-weight: 600;
           white-space: nowrap;
         }
-        .ts-value-red {
-          color: #c00;
+        .ts-value-black {
+          color: #000;
           font-weight: 600;
           flex: 1;
           border-bottom: 1px dotted #999;
@@ -344,36 +329,22 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
         .ts-needs-section { display: flex; flex-direction: column; gap: 2mm; }
         .ts-needs-title {
-          text-align: left;
+          text-align: right;
           font-weight: 700;
           text-decoration: underline;
-          color: #111;
+          color: #000;
         }
         .ts-needs-list { display: flex; flex-direction: column; gap: 1mm; }
-        .ts-needs-line {
-          min-height: 5mm;
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-        }
         .ts-needs-value {
-          color: #c00;
+          color: #000;
           font-weight: 600;
-          border-bottom: 1px dotted #999;
-          width: 100%;
           text-align: right;
-          padding-bottom: 1px;
-        }
-        .ts-needs-dots {
-          color: #888;
-          letter-spacing: 1px;
-          width: 100%;
-          text-align: right;
+          padding: 1px 0;
         }
 
         /* ---------- TABLE ---------- */
         .ts-table-title {
-          text-align: left;
+          text-align: right;
           font-weight: 700;
           margin-bottom: 2mm;
         }
@@ -382,28 +353,28 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           border-collapse: collapse;
         }
         .ts-steps th, .ts-steps td {
-          border: 1px solid #111;
+          border: 1px solid #000;
           padding: 2mm 2mm;
           font-size: 10.5pt;
           text-align: center;
           vertical-align: middle;
           height: 9mm;
+          color: #000;
         }
         .ts-steps th {
           background: #fff;
-          color: #111;
+          color: #000;
           font-weight: 700;
         }
-        .ts-cell-red {
-          color: #c00;
+        .ts-cell-data {
+          color: #000;
           font-weight: 600;
-          text-align: right;
         }
 
         /* ---------- PRINT ---------- */
         @media print {
-          @page { size: A4 portrait; margin: 8mm; }
-          html, body { background: white !important; }
+          @page { size: A4 portrait; margin: 0; }
+          html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
@@ -411,13 +382,14 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             position: static !important;
             padding: 0 !important;
             background: white !important;
+            display: block !important;
           }
           .no-print { display: none !important; }
           .tracking-sheet-page {
             box-shadow: none !important;
-            width: auto !important;
-            min-height: 0 !important;
-            padding: 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            padding: 15mm 15mm !important;
             margin: 0 !important;
           }
         }
