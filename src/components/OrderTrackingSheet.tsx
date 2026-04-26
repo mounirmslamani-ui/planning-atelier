@@ -89,18 +89,18 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page">
-        {/* HEADER : ligne par ligne — Logo (droite) / Titre / N° / Date (gauche) */}
+        {/* HEADER : ordre strict — Logo / Date / Titre / N° */}
         <div className="ts-header-logo-row">
           <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
+        </div>
+        <div className="ts-header-date-row" dir="rtl">
+          <span className="ts-label-ar">التاريخ:</span>
+          <span className="ts-date-value">{editionDate}</span>
         </div>
         <div className="ts-header-title-row">بطاقة متابعة انجاز طلبية</div>
         <div className="ts-order-number">
           <span className="ts-label-ar">طلبية رقم:</span>
           <span className="ts-order-number-value">{order.orderNumber}</span>
-        </div>
-        <div className="ts-header-date-row" dir="rtl">
-          <span className="ts-label-ar">التاريخ:</span>
-          <span className="ts-date-value">{editionDate}</span>
         </div>
 
         {/* BLOC 1 : infos commande */}
@@ -233,8 +233,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           margin: 0 0 2mm 0;
         }
         .ts-header-logo-img {
-          height: 22.5mm; /* 18mm * 1.25 */
-          max-height: 28mm;
+          height: 16.875mm; /* 22.5mm * 0.75 */
+          max-height: 21mm;
           object-fit: contain;
           display: block;
         }
@@ -380,7 +380,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         @media print {
           @page { margin: 0; size: auto; }
           html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          body { padding: 10mm 15mm !important; }
+          body { padding-top: 5mm !important; padding-left: 15mm !important; padding-right: 15mm !important; padding-bottom: 5mm !important; }
+          .ts-header-logo-img { margin-top: -40mm !important; }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
