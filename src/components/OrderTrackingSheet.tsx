@@ -88,7 +88,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         </button>
       </div>
 
-      <div className="tracking-sheet-page">
+      <div className="tracking-sheet-page print-container">
         {/* HEADER : réserve d'espace + logo absolu, puis Date / Titre / N° */}
         <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
         <div className="ts-header-date-row" dir="rtl">
@@ -216,7 +216,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           background: white;
           color: #000;
           position: relative;
-          padding: 5mm 15mm 10mm 15mm;
+          padding: 0 15mm 10mm 15mm;
           margin-top: 0 !important;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
@@ -229,8 +229,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         /* ---------- HEADER ---------- */
         .ts-header-logo-img {
           position: absolute;
-          top: 5mm;
-          right: 10mm;
+          top: 20mm;
+          right: 15mm;
           height: 16.875mm; /* 22.5mm * 0.75 */
           object-fit: contain;
           display: block;
@@ -244,7 +244,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
           justify-content: flex-start;
           text-align: left;
-          margin-top: 25mm;
+          margin-top: 40mm;
           margin-bottom: 1mm;
         }
         .ts-date-value {
