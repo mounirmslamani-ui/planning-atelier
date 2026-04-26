@@ -89,19 +89,21 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page">
-        {/* HEADER : date à gauche, titre au centre, logo à droite */}
-        <div className="ts-header">
-          <div className="ts-header-date">
-            <span className="ts-label-ar">التاريخ:</span>
-            <span className="ts-date-value">{editionDate}</span>
-          </div>
-          <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
+        {/* HEADER : logo en haut à droite (plus grand), date en dessous à gauche */}
+        <div className="ts-header-top" dir="ltr">
           <div className="ts-header-logo">
             <img src={logoUrl} alt="Slamani Tasnie" />
           </div>
         </div>
+        <div className="ts-header-date-row" dir="rtl">
+          <div className="ts-header-date">
+            <span className="ts-label-ar">التاريخ:</span>
+            <span className="ts-date-value">{editionDate}</span>
+          </div>
+        </div>
 
-        {/* N° طلبية رقم */}
+        {/* Titre principal centré, collé au numéro de commande */}
+        <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
         <div className="ts-order-number">
           <span className="ts-label-ar">طلبية رقم:</span>
           <span className="ts-order-number-value">{order.orderNumber}</span>
@@ -109,9 +111,15 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         {/* BLOC 1 : infos commande */}
         <div className="ts-box ts-box-info">
-          <div className="ts-info-row">
-            <span className="ts-label-ar">اسم الزبون:</span>
-            <span className="ts-value-black">{clientName}</span>
+          <div className="ts-info-row ts-info-row-split">
+            <div className="ts-info-row ts-info-client">
+              <span className="ts-label-ar">اسم الزبون:</span>
+              <span className="ts-value-black">{clientName}</span>
+            </div>
+            <div className="ts-info-row ts-info-priority">
+              <span className="ts-label-ar">درجة الاستعجال:</span>
+              <span className="ts-value-black">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
+            </div>
           </div>
           <div className="ts-info-row ts-info-row-double">
             <div className="ts-info-row ts-info-half">
@@ -122,10 +130,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
               <span className="ts-label-ar">الكمية:</span>
               <span className="ts-value-black">{order.quantity}</span>
             </div>
-          </div>
-          <div className="ts-info-row">
-            <span className="ts-label-ar">درجة الاستعجال:</span>
-            <span className="ts-value-black">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
           </div>
           <div className="ts-info-row">
             <span className="ts-label-ar">مخطط/نموذج:</span>
@@ -228,15 +232,30 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
 
         /* ---------- HEADER ---------- */
-        .ts-header {
-          display: grid;
-          grid-template-columns: 1fr 2fr 1fr;
-          align-items: center;
-          margin-bottom: 6mm;
+        .ts-header-top {
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-start;
+          margin: 0;
+        }
+        .ts-header-logo {
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-start;
+        }
+        .ts-header-logo img {
+          height: 20.7mm;
+          object-fit: contain;
+          display: block;
+        }
+        .ts-header-date-row {
+          display: flex;
+          justify-content: flex-start;
+          margin-top: 1mm;
+          margin-bottom: 2mm;
         }
         .ts-header-date {
           direction: rtl;
-          text-align: right;
           font-size: 11pt;
           display: flex;
           gap: 8px;
@@ -254,20 +273,13 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           font-size: 16pt;
           font-weight: 700;
           color: #000;
-        }
-        .ts-header-logo {
-          display: flex;
-          justify-content: flex-start;
-          align-items: center;
-        }
-        .ts-header-logo img {
-          height: 18mm;
-          object-fit: contain;
+          margin: 0;
+          line-height: 1.2;
         }
 
         .ts-order-number {
           text-align: center;
-          margin-bottom: 3mm;
+          margin: 0 0 3mm 0;
           font-size: 11pt;
           display: flex;
           justify-content: center;
@@ -300,6 +312,13 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
         }
         .ts-info-row-block { align-items: flex-start; }
+        .ts-info-row-split {
+          display: flex;
+          gap: 8mm;
+          align-items: baseline;
+        }
+        .ts-info-client { flex: 1; }
+        .ts-info-priority { flex: 0 0 38%; }
         .ts-info-row-double {
           display: flex;
           gap: 8mm;
