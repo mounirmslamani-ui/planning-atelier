@@ -381,7 +381,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         /* ---------- PRINT ---------- */
         @media print {
           @page { margin: 0 !important; size: A4; }
-          html, body, #root, main, section, div {
+          html, body, #root {
             background: white !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -391,7 +391,10 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
           .tracking-sheet-overlay {
-            position: static !important;
+            position: fixed !important;
+            inset: 0 auto auto 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
             padding: 0 !important;
             margin: 0 !important;
             background: white !important;
