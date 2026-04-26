@@ -90,9 +90,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
       <div className="tracking-sheet-page">
         {/* HEADER : réserve d'espace + logo absolu, puis Date / Titre / N° */}
-        <div className="ts-header-logo-wrap">
-          <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
-        </div>
+        <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
         <div className="ts-header-date-row" dir="rtl">
           <span className="ts-label-ar">التاريخ:</span>
           <span className="ts-date-value">{editionDate}</span>
@@ -218,7 +216,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           background: white;
           color: #000;
           position: relative;
-          padding: 0mm 15mm;
+          padding: 5mm 15mm 10mm 15mm;
           margin-top: 0 !important;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
@@ -229,27 +227,14 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
 
         /* ---------- HEADER ---------- */
-        .ts-header-logo-wrap {
-          position: relative;
-          height: 30mm;
-          overflow: visible !important;
-        }
         .ts-header-logo-img {
           position: absolute;
-          top: 2mm;
+          top: 5mm;
           right: 10mm;
           height: 16.875mm; /* 22.5mm * 0.75 */
           object-fit: contain;
           display: block;
-        }
-        .ts-header-title-row {
-          text-align: center;
-          font-size: 16pt;
-          font-weight: 700;
-          color: #000;
-          line-height: 1.2;
-          margin-top: 5mm;
-          margin-bottom: 0;
+          z-index: 5;
         }
         .ts-header-date-row {
           direction: ltr;
@@ -259,9 +244,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
           justify-content: flex-start;
           text-align: left;
-          position: relative;
-          top: 0;
-          margin: 0;
+          margin-top: 25mm;
+          margin-bottom: 1mm;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -270,10 +254,19 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           color: #000;
           font-weight: 600;
         }
+        .ts-header-title-row {
+          text-align: center;
+          font-size: 16pt;
+          font-weight: 700;
+          color: #000;
+          line-height: 1.2;
+          margin-top: 1mm;
+          margin-bottom: 0;
+        }
 
         .ts-order-number {
           text-align: center;
-          margin-top: -2mm;
+          margin-top: 0;
           margin-bottom: 2mm;
           font-size: 11pt;
           display: flex;
@@ -387,8 +380,13 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         /* ---------- PRINT ---------- */
         @media print {
-          @page { margin: 0; size: A4; }
-          html, body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+          @page { margin: 0 !important; size: A4; }
+          html, body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
@@ -406,25 +404,19 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             width: auto !important;
             min-height: auto !important;
             position: relative !important;
-            padding: 0mm 15mm !important;
-            margin-top: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            margin-bottom: 0 !important;
-            overflow: visible !important;
-          }
-          .ts-header-logo-wrap {
-            height: 30mm !important;
-            position: relative !important;
+            padding: 5mm 15mm 10mm 15mm !important;
+            margin: 0 !important;
             overflow: visible !important;
           }
           .ts-header-logo-img {
             position: absolute !important;
-            top: 2mm !important;
+            top: 5mm !important;
             right: 10mm !important;
             height: 16.875mm !important;
             margin: 0 !important;
+            z-index: 5 !important;
           }
+          .ts-header-date-row { margin-top: 25mm !important; }
         }
       `}</style>
     </div>
