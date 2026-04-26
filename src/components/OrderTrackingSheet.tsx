@@ -242,6 +242,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           object-fit: contain;
           display: block;
           margin: 0;
+          margin-top: -40mm;
         }
         .ts-header-date {
           direction: rtl;
