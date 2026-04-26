@@ -89,19 +89,21 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page">
-        {/* HEADER : date à gauche, titre au centre, logo à droite */}
-        <div className="ts-header">
-          <div className="ts-header-date">
-            <span className="ts-label-ar">التاريخ:</span>
-            <span className="ts-date-value">{editionDate}</span>
-          </div>
-          <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
+        {/* HEADER : logo en haut à droite (plus grand), date en dessous à gauche */}
+        <div className="ts-header-top" dir="ltr">
           <div className="ts-header-logo">
             <img src={logoUrl} alt="Slamani Tasnie" />
           </div>
         </div>
+        <div className="ts-header-date-row" dir="rtl">
+          <div className="ts-header-date">
+            <span className="ts-label-ar">التاريخ:</span>
+            <span className="ts-date-value">{editionDate}</span>
+          </div>
+        </div>
 
-        {/* N° طلبية رقم */}
+        {/* Titre principal centré, collé au numéro de commande */}
+        <div className="ts-header-title">بطاقة متابعة انجاز طلبية</div>
         <div className="ts-order-number">
           <span className="ts-label-ar">طلبية رقم:</span>
           <span className="ts-order-number-value">{order.orderNumber}</span>
@@ -109,9 +111,15 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         {/* BLOC 1 : infos commande */}
         <div className="ts-box ts-box-info">
-          <div className="ts-info-row">
-            <span className="ts-label-ar">اسم الزبون:</span>
-            <span className="ts-value-black">{clientName}</span>
+          <div className="ts-info-row ts-info-row-split">
+            <div className="ts-info-row ts-info-client">
+              <span className="ts-label-ar">اسم الزبون:</span>
+              <span className="ts-value-black">{clientName}</span>
+            </div>
+            <div className="ts-info-row ts-info-priority">
+              <span className="ts-label-ar">درجة الاستعجال:</span>
+              <span className="ts-value-black">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
+            </div>
           </div>
           <div className="ts-info-row ts-info-row-double">
             <div className="ts-info-row ts-info-half">
@@ -122,10 +130,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
               <span className="ts-label-ar">الكمية:</span>
               <span className="ts-value-black">{order.quantity}</span>
             </div>
-          </div>
-          <div className="ts-info-row">
-            <span className="ts-label-ar">درجة الاستعجال:</span>
-            <span className="ts-value-black">{PRIORITY_LABEL[order.priority || 'undetermined']}</span>
           </div>
           <div className="ts-info-row">
             <span className="ts-label-ar">مخطط/نموذج:</span>
