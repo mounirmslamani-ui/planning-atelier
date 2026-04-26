@@ -221,7 +221,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           min-height: 297mm;
           background: white;
           color: #000;
-          padding: 15mm 15mm;
+          padding: 5mm 10mm 12mm 10mm;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -230,27 +230,17 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
 
         /* ---------- HEADER ---------- */
-        .ts-header-top {
+        .ts-header-row {
           display: flex;
-          justify-content: flex-end;
+          justify-content: space-between;
           align-items: flex-start;
-          margin: 0;
-        }
-        .ts-header-logo {
-          display: flex;
-          justify-content: flex-end;
-          align-items: flex-start;
+          margin: 0 0 2mm 0;
         }
         .ts-header-logo img {
           height: 20.7mm;
           object-fit: contain;
           display: block;
-        }
-        .ts-header-date-row {
-          display: flex;
-          justify-content: flex-start;
-          margin-top: 1mm;
-          margin-bottom: 2mm;
+          margin: 0;
         }
         .ts-header-date {
           direction: rtl;
@@ -258,6 +248,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           display: flex;
           gap: 8px;
           align-items: baseline;
+          margin-top: 2mm;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
