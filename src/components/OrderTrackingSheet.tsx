@@ -312,6 +312,13 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
         }
         .ts-info-row-block { align-items: flex-start; }
+        .ts-info-row-split {
+          display: flex;
+          gap: 8mm;
+          align-items: baseline;
+        }
+        .ts-info-client { flex: 1; }
+        .ts-info-priority { flex: 0 0 38%; }
         .ts-info-row-double {
           display: flex;
           gap: 8mm;
