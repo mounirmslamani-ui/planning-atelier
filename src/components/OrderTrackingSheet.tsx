@@ -432,15 +432,43 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             overflow: visible !important;
             page-break-after: avoid !important;
           }
+          .ts-header-block {
+            height: 48mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
           .ts-header-logo-img {
             position: absolute !important;
-            top: 8mm !important;
-            right: 15mm !important;
+            top: 0 !important;
+            right: 0 !important;
             height: 16.875mm !important;
+            width: auto !important;
             margin: 0 !important;
             z-index: 5 !important;
           }
-          .ts-header-date-row { margin-top: 30mm !important; }
+          .ts-header-date-row {
+            position: absolute !important;
+            top: 21mm !important;
+            left: 0 !important;
+            width: 62mm !important;
+            margin: 0 !important;
+            direction: rtl !important;
+          }
+          .ts-header-title-row {
+            position: absolute !important;
+            top: 32mm !important;
+            left: 0 !important;
+            right: 0 !important;
+            margin: 0 !important;
+          }
+          .ts-order-number {
+            position: absolute !important;
+            top: 43mm !important;
+            left: 0 !important;
+            right: 0 !important;
+            margin: 0 !important;
+          }
         }
       `}</style>
     </div>
