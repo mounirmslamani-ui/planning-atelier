@@ -89,16 +89,18 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
       </div>
 
       <div className="tracking-sheet-page print-container">
-        {/* HEADER : réserve d'espace + logo absolu, puis Date / Titre / N° */}
-        <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
-        <div className="ts-header-date-row" dir="rtl">
-          <span className="ts-label-ar">التاريخ:</span>
-          <span className="ts-date-value">{editionDate}</span>
-        </div>
-        <div className="ts-header-title-row">بطاقة متابعة انجاز طلبية</div>
-        <div className="ts-order-number">
-          <span className="ts-label-ar">طلبية رقم:</span>
-          <span className="ts-order-number-value">{order.orderNumber}</span>
+        {/* HEADER : positionnement absolu strict comme la référence imprimée */}
+        <div className="ts-header-block">
+          <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
+          <div className="ts-header-date-row" dir="rtl">
+            <span className="ts-label-ar">التاريخ:</span>
+            <span className="ts-date-value">{editionDate}</span>
+          </div>
+          <div className="ts-header-title-row">بطاقة متابعة انجاز طلبية</div>
+          <div className="ts-order-number">
+            <span className="ts-label-ar">طلبية رقم:</span>
+            <span className="ts-order-number-value">{order.orderNumber}</span>
+          </div>
         </div>
 
         {/* BLOC 1 : infos commande */}
@@ -227,25 +229,36 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
 
         /* ---------- HEADER ---------- */
+        .ts-header-block {
+          position: relative;
+          height: 48mm;
+          margin: 0;
+          padding: 0;
+          overflow: visible !important;
+        }
         .ts-header-logo-img {
           position: absolute;
-          top: 8mm;
-          right: 15mm;
+          top: 0;
+          right: 0;
           height: 16.875mm; /* 22.5mm * 0.75 */
+          width: auto;
           object-fit: contain;
           display: block;
           z-index: 5;
         }
         .ts-header-date-row {
-          direction: ltr;
+          position: absolute;
+          top: 21mm;
+          left: 0;
+          direction: rtl;
           font-size: 11pt;
           display: flex;
           gap: 8px;
           align-items: baseline;
           justify-content: flex-start;
           text-align: left;
-          margin-top: 30mm;
-          margin-bottom: 1mm;
+          margin: 0;
+          width: 62mm;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -255,19 +268,26 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           font-weight: 600;
         }
         .ts-header-title-row {
+          position: absolute;
+          top: 32mm;
+          left: 0;
+          right: 0;
           text-align: center;
           font-size: 16pt;
           font-weight: 700;
           color: #000;
           line-height: 1.2;
-          margin-top: 1mm;
-          margin-bottom: 0;
+          margin: 0;
+          text-decoration: underline;
         }
 
         .ts-order-number {
+          position: absolute;
+          top: 43mm;
+          left: 0;
+          right: 0;
           text-align: center;
-          margin-top: 0;
-          margin-bottom: 2mm;
+          margin: 0;
           font-size: 11pt;
           display: flex;
           justify-content: center;
@@ -412,15 +432,43 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             overflow: visible !important;
             page-break-after: avoid !important;
           }
+          .ts-header-block {
+            height: 48mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
           .ts-header-logo-img {
             position: absolute !important;
-            top: 8mm !important;
-            right: 15mm !important;
+            top: 0 !important;
+            right: 0 !important;
             height: 16.875mm !important;
+            width: auto !important;
             margin: 0 !important;
             z-index: 5 !important;
           }
-          .ts-header-date-row { margin-top: 30mm !important; }
+          .ts-header-date-row {
+            position: absolute !important;
+            top: 21mm !important;
+            left: 0 !important;
+            width: 62mm !important;
+            margin: 0 !important;
+            direction: rtl !important;
+          }
+          .ts-header-title-row {
+            position: absolute !important;
+            top: 32mm !important;
+            left: 0 !important;
+            right: 0 !important;
+            margin: 0 !important;
+          }
+          .ts-order-number {
+            position: absolute !important;
+            top: 43mm !important;
+            left: 0 !important;
+            right: 0 !important;
+            margin: 0 !important;
+          }
         }
       `}</style>
     </div>
