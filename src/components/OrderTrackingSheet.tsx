@@ -216,7 +216,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           background: white;
           color: #000;
           position: relative;
-          padding: 0mm 15mm;
+          padding: 5mm 15mm 10mm 15mm;
           margin-top: 0 !important;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
@@ -227,27 +227,14 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
 
         /* ---------- HEADER ---------- */
-        .ts-header-logo-wrap {
-          position: relative;
-          height: 30mm;
-          overflow: visible !important;
-        }
         .ts-header-logo-img {
           position: absolute;
-          top: 2mm;
+          top: 5mm;
           right: 10mm;
           height: 16.875mm; /* 22.5mm * 0.75 */
           object-fit: contain;
           display: block;
-        }
-        .ts-header-title-row {
-          text-align: center;
-          font-size: 16pt;
-          font-weight: 700;
-          color: #000;
-          line-height: 1.2;
-          margin-top: 5mm;
-          margin-bottom: 0;
+          z-index: 5;
         }
         .ts-header-date-row {
           direction: ltr;
@@ -257,9 +244,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
           justify-content: flex-start;
           text-align: left;
-          position: relative;
-          top: 0;
-          margin: 0;
+          margin-top: 25mm;
+          margin-bottom: 1mm;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -268,10 +254,19 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           color: #000;
           font-weight: 600;
         }
+        .ts-header-title-row {
+          text-align: center;
+          font-size: 16pt;
+          font-weight: 700;
+          color: #000;
+          line-height: 1.2;
+          margin-top: 1mm;
+          margin-bottom: 0;
+        }
 
         .ts-order-number {
           text-align: center;
-          margin-top: -2mm;
+          margin-top: 0;
           margin-bottom: 2mm;
           font-size: 11pt;
           display: flex;
