@@ -235,7 +235,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           justify-content: space-between;
           align-items: flex-start;
           margin: 0 0 2mm 0;
-          margin-top: -5mm;
+          margin-top: 15mm;
         }
         .ts-header-logo img {
           height: 15.5mm;
