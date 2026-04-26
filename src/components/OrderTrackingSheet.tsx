@@ -387,16 +387,18 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
         /* ---------- PRINT ---------- */
         @media print {
-          @page { margin: 0; size: auto; }
-          html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          @page { margin: 0; size: A4; }
+          html, body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
           body * { visibility: hidden !important; }
           .tracking-sheet-overlay,
           .tracking-sheet-overlay * { visibility: visible !important; }
           .tracking-sheet-overlay {
             position: static !important;
             padding: 0 !important;
+            margin: 0 !important;
             background: white !important;
             display: block !important;
+            overflow: visible !important;
           }
           .no-print { display: none !important; }
           .tracking-sheet-page {
@@ -404,13 +406,23 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
             width: auto !important;
             min-height: auto !important;
             position: relative !important;
-            padding: 10mm 10mm 10mm 10mm !important;
-            margin: 0 !important;
+            padding: 0mm 15mm !important;
+            margin-top: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            margin-bottom: 0 !important;
+            overflow: visible !important;
+          }
+          .ts-header-logo-wrap {
+            height: 30mm !important;
+            position: relative !important;
+            overflow: visible !important;
           }
           .ts-header-logo-img {
             position: absolute !important;
-            top: 5mm !important;
+            top: 2mm !important;
             right: 10mm !important;
+            height: 16.875mm !important;
             margin: 0 !important;
           }
         }
