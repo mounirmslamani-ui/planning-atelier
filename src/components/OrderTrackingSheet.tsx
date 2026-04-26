@@ -251,9 +251,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           align-items: baseline;
           margin-top: -15mm;
         }
-        .ts-header-title {
-          margin-top: -25mm;
-        }
         .ts-date-value {
           border-bottom: 1px dotted #333;
           min-width: 80px;
@@ -268,6 +265,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           color: #000;
           margin: 0;
           line-height: 1.2;
+          margin-top: -25mm;
         }
 
         .ts-order-number {
