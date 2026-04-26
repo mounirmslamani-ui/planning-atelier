@@ -233,8 +233,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           margin: 0 0 2mm 0;
         }
         .ts-header-logo-img {
-          height: 22.5mm; /* 18mm * 1.25 */
-          max-height: 28mm;
+          height: 16.875mm; /* 22.5mm * 0.75 */
+          max-height: 21mm;
           object-fit: contain;
           display: block;
         }
