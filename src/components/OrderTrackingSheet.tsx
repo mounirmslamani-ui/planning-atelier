@@ -232,15 +232,30 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         }
 
         /* ---------- HEADER ---------- */
-        .ts-header {
-          display: grid;
-          grid-template-columns: 1fr 2fr 1fr;
-          align-items: center;
-          margin-bottom: 6mm;
+        .ts-header-top {
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-start;
+          margin: 0;
+        }
+        .ts-header-logo {
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-start;
+        }
+        .ts-header-logo img {
+          height: 20.7mm;
+          object-fit: contain;
+          display: block;
+        }
+        .ts-header-date-row {
+          display: flex;
+          justify-content: flex-start;
+          margin-top: 1mm;
+          margin-bottom: 2mm;
         }
         .ts-header-date {
           direction: rtl;
-          text-align: right;
           font-size: 11pt;
           display: flex;
           gap: 8px;
@@ -258,20 +273,13 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           font-size: 16pt;
           font-weight: 700;
           color: #000;
-        }
-        .ts-header-logo {
-          display: flex;
-          justify-content: flex-start;
-          align-items: center;
-        }
-        .ts-header-logo img {
-          height: 18mm;
-          object-fit: contain;
+          margin: 0;
+          line-height: 1.2;
         }
 
         .ts-order-number {
           text-align: center;
-          margin-bottom: 3mm;
+          margin: 0 0 3mm 0;
           font-size: 11pt;
           display: flex;
           justify-content: center;
