@@ -220,7 +220,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           min-height: 297mm;
           background: white;
           color: #000;
-          padding: 5mm 10mm 12mm 10mm;
+          padding: 12mm 10mm 12mm 10mm;
           box-sizing: border-box;
           box-shadow: 0 4px 24px rgba(0,0,0,0.15);
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -231,17 +231,11 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         /* ---------- HEADER ---------- */
         .ts-header-row {
           display: flex;
+          flex-direction: row;
           justify-content: space-between;
-          align-items: flex-start;
-          margin: 0 0 2mm 0;
-          margin-top: 15mm;
-        }
-        .ts-header-logo img {
-          height: 15.5mm;
-          object-fit: contain;
-          display: block;
-          margin: 0;
-          margin-top: -40mm;
+          align-items: flex-end;
+          gap: 6mm;
+          margin: 0 0 8mm 0;
         }
         .ts-header-date {
           direction: rtl;
@@ -249,7 +243,32 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           display: flex;
           gap: 8px;
           align-items: baseline;
-          margin-top: -15mm;
+          flex: 0 0 auto;
+          order: 1;
+          text-align: left;
+        }
+        .ts-header-title {
+          flex: 1 1 auto;
+          text-align: center;
+          font-size: 16pt;
+          font-weight: 700;
+          color: #000;
+          line-height: 1.2;
+          margin: 0;
+          order: 2;
+        }
+        .ts-header-logo {
+          flex: 0 0 auto;
+          order: 3;
+          max-height: 22mm;
+          overflow: hidden;
+        }
+        .ts-header-logo img {
+          height: 18mm;
+          max-height: 22mm;
+          object-fit: contain;
+          display: block;
+          margin: 0;
         }
         .ts-date-value {
           border-bottom: 1px dotted #333;
@@ -257,15 +276,6 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           display: inline-block;
           color: #000;
           font-weight: 600;
-        }
-        .ts-header-title {
-          text-align: center;
-          font-size: 16pt;
-          font-weight: 700;
-          color: #000;
-          margin: 0;
-          line-height: 1.2;
-          margin-top: -25mm;
         }
 
         .ts-order-number {
