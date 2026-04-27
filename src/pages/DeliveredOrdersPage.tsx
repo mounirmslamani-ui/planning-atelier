@@ -160,6 +160,15 @@ const DeliveredOrdersPage: React.FC = () => {
                     </DropdownMenu>
                   </TableCell>
                   <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => setInvoiceDialog({ entry, value: entry.invoiceNumber || '' })}
+                      className={`text-xs px-2 py-1 rounded border hover:bg-accent transition-colors ${entry.invoiceNumber ? 'bg-primary/10 border-primary/30 text-primary font-medium' : 'bg-muted border-muted-foreground/20 text-muted-foreground italic'}`}
+                    >
+                      {entry.invoiceNumber || 'في الانتظار'}
+                    </button>
+                  </TableCell>
+                  <TableCell>
                     <Input
                       value={obsValue}
                       onChange={(e) => setObservationDrafts(o => ({ ...o, [entry.id]: e.target.value }))}
