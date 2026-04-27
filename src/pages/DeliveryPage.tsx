@@ -178,6 +178,16 @@ const DeliveryPage: React.FC = () => {
         confirmLabel="Oui, transférer"
         cancelLabel="Non"
       />
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+        confirmLabel="Supprimer"
+      />
     </div>
   );
 };
