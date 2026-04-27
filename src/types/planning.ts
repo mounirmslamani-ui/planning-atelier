@@ -85,6 +85,7 @@ export interface Order {
   clientRepresentative?: string;
   instructions?: string;
   drawingModel?: string;
+  notesUpdatedAt?: string; // ISO timestamp of last observation change
 }
 
 export interface ProductionStep {

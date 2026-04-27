@@ -181,6 +181,7 @@ export function mapOrderFromDB(row: any): Order {
     clientRepresentative: row.client_representative || undefined,
     instructions: row.instructions || undefined,
     drawingModel: row.drawing_model || undefined,
+    notesUpdatedAt: row.notes_updated_at || undefined,
   };
 }
 
@@ -213,6 +214,7 @@ export function mapOrderToDB(o: Order) {
     client_representative: o.clientRepresentative || null,
     instructions: o.instructions || null,
     drawing_model: o.drawingModel || null,
+    notes_updated_at: o.notesUpdatedAt || null,
   };
 }
 
