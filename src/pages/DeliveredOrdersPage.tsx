@@ -112,6 +112,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
+              <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
             </TableRow>
           </TableHeader>
