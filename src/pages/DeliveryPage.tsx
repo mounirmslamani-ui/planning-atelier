@@ -11,8 +11,9 @@ import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveryEntry, DeliveredOrder } from '@/types/planning';
-import { Download } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
