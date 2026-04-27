@@ -12,6 +12,7 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveredOrder, SalePriceStatus } from '@/types/planning';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -32,6 +33,7 @@ const DeliveredOrdersPage: React.FC = () => {
 
   const [pendingPrice, setPendingPrice] = useState<{ entry: DeliveredOrder; next: SalePriceStatus } | null>(null);
   const [observationDrafts, setObservationDrafts] = useState<Record<string, string>>({});
+  const [invoiceDialog, setInvoiceDialog] = useState<{ entry: DeliveredOrder; value: string } | null>(null);
 
   const accessors = {
     priority: (d: DeliveredOrder) => getOrder(d.orderId)?.priority || '',
@@ -42,6 +44,7 @@ const DeliveredOrdersPage: React.FC = () => {
     quantity: (d: DeliveredOrder) => getOrder(d.orderId)?.quantity ?? 0,
     deliveryDate: (d: DeliveredOrder) => d.deliveryDate,
     salePriceStatus: (d: DeliveredOrder) => PRICE_META[d.salePriceStatus].label,
+    invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
     observation: (d: DeliveredOrder) => d.observation || '',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveredOrders, accessors);
@@ -58,9 +61,10 @@ const DeliveredOrdersPage: React.FC = () => {
         Quantité: order?.quantity ?? '—',
         'تاريخ التسليم': formatDateFR(entry.deliveryDate),
         'ثمن البيع': PRICE_META[entry.salePriceStatus].label,
+        'رقم الفاتورة': entry.invoiceNumber || 'في الانتظار',
         Observation: entry.observation || '',
       };
-    }), [12, 20, 14, 24, 45, 10, 18, 22, 40]);
+    }), [12, 20, 14, 24, 45, 10, 18, 22, 20, 40]);
   };
 
   const requestPriceChange = (entry: DeliveredOrder, next: SalePriceStatus) => {
@@ -108,6 +112,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
+              <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
             </TableRow>
           </TableHeader>
@@ -155,6 +160,15 @@ const DeliveredOrdersPage: React.FC = () => {
                     </DropdownMenu>
                   </TableCell>
                   <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => setInvoiceDialog({ entry, value: entry.invoiceNumber || '' })}
+                      className={`text-xs px-2 py-1 rounded border hover:bg-accent transition-colors ${entry.invoiceNumber ? 'bg-primary/10 border-primary/30 text-primary font-medium' : 'bg-muted border-muted-foreground/20 text-muted-foreground italic'}`}
+                    >
+                      {entry.invoiceNumber || 'في الانتظار'}
+                    </button>
+                  </TableCell>
+                  <TableCell>
                     <Input
                       value={obsValue}
                       onChange={(e) => setObservationDrafts(o => ({ ...o, [entry.id]: e.target.value }))}
@@ -169,7 +183,7 @@ const DeliveredOrdersPage: React.FC = () => {
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
@@ -187,6 +201,47 @@ const DeliveredOrdersPage: React.FC = () => {
         confirmLabel="Oui"
         cancelLabel="Non"
       />
+
+      <Dialog open={!!invoiceDialog} onOpenChange={(open) => { if (!open) setInvoiceDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-right">رقم الفاتورة</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={invoiceDialog?.value || ''}
+              onChange={(e) => setInvoiceDialog(d => d ? { ...d, value: e.target.value } : d)}
+              placeholder="أدخل رقم الفاتورة..."
+              className="text-right"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && invoiceDialog) {
+                  updateDeliveredOrder({ ...invoiceDialog.entry, invoiceNumber: invoiceDialog.value.trim() || undefined });
+                  setInvoiceDialog(null);
+                  toast.success('Numéro de facture enregistré');
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInvoiceDialog(null)}>Annuler</Button>
+            {invoiceDialog?.entry.invoiceNumber && (
+              <Button variant="ghost" onClick={() => {
+                if (!invoiceDialog) return;
+                updateDeliveredOrder({ ...invoiceDialog.entry, invoiceNumber: undefined });
+                setInvoiceDialog(null);
+                toast.success('Numéro de facture effacé');
+              }}>Effacer</Button>
+            )}
+            <Button onClick={() => {
+              if (!invoiceDialog) return;
+              updateDeliveredOrder({ ...invoiceDialog.entry, invoiceNumber: invoiceDialog.value.trim() || undefined });
+              setInvoiceDialog(null);
+              toast.success('Numéro de facture enregistré');
+            }}>Valider</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

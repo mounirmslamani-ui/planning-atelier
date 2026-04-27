@@ -4,7 +4,7 @@ import {
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
-  PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive
+  PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt
 } from 'lucide-react';
 
 type DropTargetType = false | 'prod' | 'qc';
@@ -30,6 +30,7 @@ const sidebarGroups = [
       { to: '/quality-control', label: 'مراقبة الجودة', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
       { to: '/delivery', label: 'طلبيات جاهزة للتسليم', icon: PackageCheck, dropTarget: false as DropTargetType },
       { to: '/delivered-orders', label: 'طلبيات مسلمة', icon: Archive, dropTarget: false as DropTargetType },
+      { to: '/pending-invoicing', label: 'طلبيات في انتظار الفوترة', icon: Receipt, dropTarget: false as DropTargetType },
     ],
   },
   {

@@ -169,4 +169,5 @@ export interface DeliveredOrder {
   deliveryDate: string;
   salePriceStatus: SalePriceStatus;
   observation?: string;
+  invoiceNumber?: string;
 }
