@@ -214,8 +214,12 @@ const QualityControlPage: React.FC = () => {
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => confirm(
-                        'Êtes-vous sûr de vouloir retirer cette commande du contrôle qualité ?',
-                        () => { deleteQCEntry(entry.id); toast.success('Commande retirée du contrôle qualité'); },
+                        'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
+                        () => {
+                          deleteQCEntry(entry.id);
+                          deleteOrder(entry.orderId);
+                          toast.success('Commande supprimée définitivement');
+                        },
                         { variant: 'destructive' }
                       )}
                     >
