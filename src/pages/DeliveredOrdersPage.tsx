@@ -187,8 +187,12 @@ const DeliveredOrdersPage: React.FC = () => {
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => confirm(
-                        'Êtes-vous sûr de vouloir retirer cette commande des livrées ?',
-                        () => { deleteDeliveredOrder(entry.id); toast.success('Commande retirée des livrées'); },
+                        'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
+                        () => {
+                          deleteDeliveredOrder(entry.id);
+                          deleteOrder(entry.orderId);
+                          toast.success('Commande supprimée définitivement');
+                        },
                         { variant: 'destructive' }
                       )}
                     >
