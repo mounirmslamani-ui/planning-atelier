@@ -43,6 +43,7 @@ export type Database = {
           created_at: string
           delivery_date: string
           id: string
+          invoice_number: string | null
           observation: string | null
           order_id: string
           sale_price_status: Database["public"]["Enums"]["sale_price_status"]
@@ -52,6 +53,7 @@ export type Database = {
           created_at?: string
           delivery_date?: string
           id?: string
+          invoice_number?: string | null
           observation?: string | null
           order_id: string
           sale_price_status?: Database["public"]["Enums"]["sale_price_status"]
@@ -61,6 +63,7 @@ export type Database = {
           created_at?: string
           delivery_date?: string
           id?: string
+          invoice_number?: string | null
           observation?: string | null
           order_id?: string
           sale_price_status?: Database["public"]["Enums"]["sale_price_status"]

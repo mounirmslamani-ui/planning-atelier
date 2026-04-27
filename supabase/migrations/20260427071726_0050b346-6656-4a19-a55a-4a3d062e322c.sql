@@ -1,0 +1,1 @@
+ALTER TABLE public.delivered_orders ADD COLUMN IF NOT EXISTS invoice_number text;
