@@ -33,6 +33,7 @@ const DeliveredOrdersPage: React.FC = () => {
 
   const [pendingPrice, setPendingPrice] = useState<{ entry: DeliveredOrder; next: SalePriceStatus } | null>(null);
   const [observationDrafts, setObservationDrafts] = useState<Record<string, string>>({});
+  const [invoiceDialog, setInvoiceDialog] = useState<{ entry: DeliveredOrder; value: string } | null>(null);
 
   const accessors = {
     priority: (d: DeliveredOrder) => getOrder(d.orderId)?.priority || '',
@@ -43,6 +44,7 @@ const DeliveredOrdersPage: React.FC = () => {
     quantity: (d: DeliveredOrder) => getOrder(d.orderId)?.quantity ?? 0,
     deliveryDate: (d: DeliveredOrder) => d.deliveryDate,
     salePriceStatus: (d: DeliveredOrder) => PRICE_META[d.salePriceStatus].label,
+    invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
     observation: (d: DeliveredOrder) => d.observation || '',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveredOrders, accessors);
@@ -59,9 +61,10 @@ const DeliveredOrdersPage: React.FC = () => {
         Quantité: order?.quantity ?? '—',
         'تاريخ التسليم': formatDateFR(entry.deliveryDate),
         'ثمن البيع': PRICE_META[entry.salePriceStatus].label,
+        'رقم الفاتورة': entry.invoiceNumber || 'في الانتظار',
         Observation: entry.observation || '',
       };
-    }), [12, 20, 14, 24, 45, 10, 18, 22, 40]);
+    }), [12, 20, 14, 24, 45, 10, 18, 22, 20, 40]);
   };
 
   const requestPriceChange = (entry: DeliveredOrder, next: SalePriceStatus) => {
