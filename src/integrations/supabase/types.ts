@@ -238,6 +238,7 @@ export type Database = {
           manual_sort_order: number | null
           material_received_date: string | null
           material_status: Database["public"]["Enums"]["resource_status"]
+          notes_updated_at: string | null
           observation: string | null
           order_date: string
           order_number: string
@@ -265,6 +266,7 @@ export type Database = {
           manual_sort_order?: number | null
           material_received_date?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
+          notes_updated_at?: string | null
           observation?: string | null
           order_date?: string
           order_number: string
@@ -292,6 +294,7 @@ export type Database = {
           manual_sort_order?: number | null
           material_received_date?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
+          notes_updated_at?: string | null
           observation?: string | null
           order_date?: string
           order_number?: string
