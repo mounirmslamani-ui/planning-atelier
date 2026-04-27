@@ -183,7 +183,7 @@ const DeliveredOrdersPage: React.FC = () => {
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
@@ -201,6 +201,47 @@ const DeliveredOrdersPage: React.FC = () => {
         confirmLabel="Oui"
         cancelLabel="Non"
       />
+
+      <Dialog open={!!invoiceDialog} onOpenChange={(open) => { if (!open) setInvoiceDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-right">رقم الفاتورة</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={invoiceDialog?.value || ''}
+              onChange={(e) => setInvoiceDialog(d => d ? { ...d, value: e.target.value } : d)}
+              placeholder="أدخل رقم الفاتورة..."
+              className="text-right"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && invoiceDialog) {
+                  updateDeliveredOrder({ ...invoiceDialog.entry, invoiceNumber: invoiceDialog.value.trim() || undefined });
+                  setInvoiceDialog(null);
+                  toast.success('Numéro de facture enregistré');
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInvoiceDialog(null)}>Annuler</Button>
+            {invoiceDialog?.entry.invoiceNumber && (
+              <Button variant="ghost" onClick={() => {
+                if (!invoiceDialog) return;
+                updateDeliveredOrder({ ...invoiceDialog.entry, invoiceNumber: undefined });
+                setInvoiceDialog(null);
+                toast.success('Numéro de facture effacé');
+              }}>Effacer</Button>
+            )}
+            <Button onClick={() => {
+              if (!invoiceDialog) return;
+              updateDeliveredOrder({ ...invoiceDialog.entry, invoiceNumber: invoiceDialog.value.trim() || undefined });
+              setInvoiceDialog(null);
+              toast.success('Numéro de facture enregistré');
+            }}>Valider</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
