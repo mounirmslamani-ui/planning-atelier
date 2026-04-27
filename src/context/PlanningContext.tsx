@@ -319,11 +319,16 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const updateOrder = useCallback((order: Order) => {
     pushUndo();
     let previous: Order | undefined;
+    let next: Order = order;
     setOrders(prev => {
       previous = prev.find(o => o.id === order.id);
-      return prev.map(o => o.id === order.id ? order : o);
+      // Auto-stamp notesUpdatedAt when observation text changes
+      if (previous && (previous.observation || '') !== (order.observation || '')) {
+        next = { ...order, notesUpdatedAt: new Date().toISOString() };
+      }
+      return prev.map(o => o.id === order.id ? next : o);
     });
-    dbUpdateOrder(order).then(ok => {
+    dbUpdateOrder(next).then(ok => {
       if (!ok && previous) setOrders(prev => prev.map(o => o.id === order.id ? previous! : o));
     });
   }, [pushUndo]);

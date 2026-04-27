@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { formatDateFR } from '@/lib/utils';
+import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import PageHeader from '@/components/PageHeader';
@@ -680,7 +681,18 @@ const OrdersPage: React.FC = () => {
         const s = orderStatusMap.get(o.id);
         return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
       }
-      case 'observation': return <span className="text-xs text-muted-foreground whitespace-normal break-words block">{o.observation || '—'}</span>;
+      case 'observation': {
+        const content = <span className="text-xs text-muted-foreground whitespace-normal break-words block cursor-help">{o.observation || '—'}</span>;
+        if (!o.notesUpdatedAt) return content;
+        return (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              Modifié le {formatDateTimeFR(o.notesUpdatedAt)}
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
       case 'clientRepresentative': return <span className="text-xs whitespace-normal break-words block">{o.clientRepresentative || '—'}</span>;
       case 'instructions': return <span className="text-xs whitespace-normal break-words block">{o.instructions || '—'}</span>;
       case 'drawingModel': return <span className="text-xs whitespace-normal break-words block">{o.drawingModel || '—'}</span>;
