@@ -28,7 +28,7 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
 const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 'valide'];
 
 const DeliveredOrdersPage: React.FC = () => {
-  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder } = usePlanning();
+  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -187,8 +187,12 @@ const DeliveredOrdersPage: React.FC = () => {
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => confirm(
-                        'Êtes-vous sûr de vouloir retirer cette commande des livrées ?',
-                        () => { deleteDeliveredOrder(entry.id); toast.success('Commande retirée des livrées'); },
+                        'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
+                        () => {
+                          deleteDeliveredOrder(entry.id);
+                          deleteOrder(entry.orderId);
+                          toast.success('Commande supprimée définitivement');
+                        },
                         { variant: 'destructive' }
                       )}
                     >

@@ -17,7 +17,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry } = usePlanning();
+  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -147,8 +147,12 @@ const DeliveryPage: React.FC = () => {
                       size="icon"
                       className="h-7 w-7"
                       onClick={() => confirm(
-                        'Êtes-vous sûr de vouloir retirer cette commande de la livraison ?',
-                        () => { deleteDeliveryEntry(entry.id); toast.success('Commande retirée de la livraison'); },
+                        'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
+                        () => {
+                          deleteDeliveryEntry(entry.id);
+                          deleteOrder(entry.orderId);
+                          toast.success('Commande supprimée définitivement');
+                        },
                         { variant: 'destructive' }
                       )}
                     >
