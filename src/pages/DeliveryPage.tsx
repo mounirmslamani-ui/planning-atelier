@@ -11,12 +11,14 @@ import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveryEntry, DeliveredOrder } from '@/types/planning';
-import { Download } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
   const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
@@ -107,6 +109,7 @@ const DeliveryPage: React.FC = () => {
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">التسليم</TableHead>
+              <TableHead className="w-12 text-center text-xs font-semibold">حذف</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -138,12 +141,26 @@ const DeliveryPage: React.FC = () => {
                       className="h-8 w-36 text-xs"
                     />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => confirm(
+                        'Êtes-vous sûr de vouloir retirer cette commande de la livraison ?',
+                        () => { deleteDeliveryEntry(entry.id); toast.success('Commande retirée de la livraison'); },
+                        { variant: 'destructive' }
+                      )}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {deliveryEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
                 </TableCell>
               </TableRow>
@@ -160,6 +177,16 @@ const DeliveryPage: React.FC = () => {
         onCancel={handleCancelTransfer}
         confirmLabel="Oui, transférer"
         cancelLabel="Non"
+      />
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+        confirmLabel="Supprimer"
       />
     </div>
   );

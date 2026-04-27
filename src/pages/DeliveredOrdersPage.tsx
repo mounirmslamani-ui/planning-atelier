@@ -10,8 +10,9 @@ import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveredOrder, SalePriceStatus } from '@/types/planning';
-import { Download } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { useConfirm } from '@/hooks/use-confirm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -27,7 +28,8 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
 const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 'valide'];
 
 const DeliveredOrdersPage: React.FC = () => {
-  const { deliveredOrders, orders, clients, updateDeliveredOrder } = usePlanning();
+  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
@@ -114,6 +116,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
+              <TableHead className="w-12 text-center text-xs font-semibold">حذف</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -178,12 +181,26 @@ const DeliveredOrdersPage: React.FC = () => {
                       className="h-8 text-xs min-w-48"
                     />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => confirm(
+                        'Êtes-vous sûr de vouloir retirer cette commande des livrées ?',
+                        () => { deleteDeliveredOrder(entry.id); toast.success('Commande retirée des livrées'); },
+                        { variant: 'destructive' }
+                      )}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
@@ -242,6 +259,16 @@ const DeliveredOrdersPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+        confirmLabel="Supprimer"
+      />
     </div>
   );
 };

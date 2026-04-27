@@ -15,8 +15,10 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
-import { Download } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { useConfirm } from '@/hooks/use-confirm';
+import { toast } from 'sonner';
 
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'مطابق للمواصفات',
@@ -39,6 +41,7 @@ const QualityControlPage: React.FC = () => {
     addStep, steps, holidays, operations, operators,
     productionRecords, absenceOperationId,
   } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -161,6 +164,7 @@ const QualityControlPage: React.FC = () => {
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="w-12 text-center text-xs font-semibold">حذف</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -204,12 +208,26 @@ const QualityControlPage: React.FC = () => {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => confirm(
+                        'Êtes-vous sûr de vouloir retirer cette commande du contrôle qualité ?',
+                        () => { deleteQCEntry(entry.id); toast.success('Commande retirée du contrôle qualité'); },
+                        { variant: 'destructive' }
+                      )}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {qcEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucune commande en contrôle qualité.
                 </TableCell>
               </TableRow>
@@ -271,6 +289,16 @@ const QualityControlPage: React.FC = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+        confirmLabel="Supprimer"
+      />
     </div>
   );
 };
