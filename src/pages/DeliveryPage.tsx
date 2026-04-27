@@ -109,6 +109,7 @@ const DeliveryPage: React.FC = () => {
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">التسليم</TableHead>
+              <TableHead className="w-12 text-center text-xs font-semibold">حذف</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
