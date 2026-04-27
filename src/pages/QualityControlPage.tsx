@@ -289,6 +289,16 @@ const QualityControlPage: React.FC = () => {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+        confirmLabel="Supprimer"
+      />
     </div>
   );
 };
