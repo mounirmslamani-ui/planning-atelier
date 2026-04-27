@@ -41,6 +41,7 @@ const QualityControlPage: React.FC = () => {
     addStep, steps, holidays, operations, operators,
     productionRecords, absenceOperationId,
   } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
