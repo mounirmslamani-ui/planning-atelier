@@ -15,8 +15,10 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
-import { Download } from 'lucide-react';
+import { Download, Trash2 } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { useConfirm } from '@/hooks/use-confirm';
+import { toast } from 'sonner';
 
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'مطابق للمواصفات',
