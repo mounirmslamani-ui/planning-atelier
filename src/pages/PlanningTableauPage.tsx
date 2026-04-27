@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { formatDateFR } from '@/lib/utils';
+import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
 import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut, X } from 'lucide-react';
 import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIcons';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
@@ -1470,9 +1470,22 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         {/* Observation */}
                         <TableCell className="py-1.5 px-2 w-[200px] min-w-[200px] align-top">
-                          <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white' : 'text-muted-foreground'}`}>
-                            {order.observation || '—'}
-                          </span>
+                          {order.notesUpdatedAt ? (
+                            <Tooltip delayDuration={150}>
+                              <TooltipTrigger asChild>
+                                <span className={`text-xs whitespace-normal break-words block cursor-help ${blocked ? 'text-white' : 'text-muted-foreground'}`}>
+                                  {order.observation || '—'}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                Modifié le {formatDateTimeFR(order.notesUpdatedAt)}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white' : 'text-muted-foreground'}`}>
+                              {order.observation || '—'}
+                            </span>
+                          )}
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
