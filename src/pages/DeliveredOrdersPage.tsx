@@ -122,8 +122,46 @@ const DeliveredOrdersPage: React.FC = () => {
           <TableBody>
             {processed.map(entry => {
               const order = getOrder(entry.orderId);
-              if (!order) return null;
               const meta = PRICE_META[entry.salePriceStatus];
+              if (!order) {
+                // Orphan delivered entry (source order was deleted) — still show it so user can manage/clean it
+                return (
+                  <TableRow key={entry.id} className="bg-destructive/5">
+                    <TableCell colSpan={6} className="text-xs italic text-muted-foreground">
+                      ⚠ Commande source introuvable (supprimée) — ID: {entry.orderId.slice(0, 8)}…
+                    </TableCell>
+                    <TableCell className="text-sm">{formatDateFR(entry.deliveryDate)}</TableCell>
+                    <TableCell><span className="text-xs">{meta.emoji} {meta.label}</span></TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => setInvoiceDialog({ entry, value: entry.invoiceNumber || '' })}
+                        className={`text-xs px-2 py-1 rounded border hover:bg-accent transition-colors ${entry.invoiceNumber ? 'bg-primary/10 border-primary/30 text-primary font-medium' : 'bg-muted border-muted-foreground/20 text-muted-foreground italic'}`}
+                      >
+                        {entry.invoiceNumber || 'في الانتظار'}
+                      </button>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{entry.observation || '—'}</TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => confirm(
+                          'Cette ligne est orpheline (commande source supprimée). Supprimer définitivement cette entrée livrée ?',
+                          () => {
+                            deleteDeliveredOrder(entry.id);
+                            toast.success('Entrée orpheline supprimée');
+                          },
+                          { variant: 'destructive' }
+                        )}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              }
               const obsValue = observationDrafts[entry.id] !== undefined
                 ? observationDrafts[entry.id]
                 : (entry.observation || '');
