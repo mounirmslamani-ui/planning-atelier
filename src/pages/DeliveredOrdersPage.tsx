@@ -181,12 +181,26 @@ const DeliveredOrdersPage: React.FC = () => {
                       className="h-8 text-xs min-w-48"
                     />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => confirm(
+                        'Êtes-vous sûr de vouloir retirer cette commande des livrées ?',
+                        () => { deleteDeliveredOrder(entry.id); toast.success('Commande retirée des livrées'); },
+                        { variant: 'destructive' }
+                      )}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
