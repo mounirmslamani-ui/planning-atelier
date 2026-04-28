@@ -40,12 +40,32 @@ function getYearKey(orderNumber: string): string {
   return m ? m[1] : '99';
 }
 
+type DeliveryKey = 'delivered' | 'ready-for-delivery' | 'awaiting-qc' | 'in-progress' | 'on-hold';
+type PriceKey = SalePriceStatus; // 'gratuit' | 'non-calcule' | 'non-valide' | 'valide'
+
+const DELIVERY_BUTTONS: { key: DeliveryKey; label: string }[] = [
+  { key: 'delivered', label: 'مسلمة' },
+  { key: 'ready-for-delivery', label: 'جاهزة للتسليم' },
+  { key: 'awaiting-qc', label: 'في انتظار مراقبة الجودة' },
+  { key: 'in-progress', label: 'طلبيات في طور الإنجاز' },
+  { key: 'on-hold', label: 'طلبيات قيد الانتظار' },
+];
+
+const PRICE_BUTTONS: { key: PriceKey; label: string }[] = [
+  { key: 'gratuit', label: 'مجانا' },
+  { key: 'non-calcule', label: 'ثمن غير محسوب' },
+  { key: 'non-valide', label: 'ثمن غير مصادق عليه' },
+  { key: 'valide', label: 'ثمن مصادق عليه' },
+];
+
 type Row = {
   order: Order;
   clientName: string;
   statusLabel: string;
   deliveryDateOrProgress: string;
   series: string;
+  deliveryKey: DeliveryKey;
+  priceStatus: PriceKey;
 };
 
 const PendingInvoicingPage: React.FC = () => {
