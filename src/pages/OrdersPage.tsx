@@ -273,20 +273,20 @@ const OrdersPage: React.FC = () => {
 
   // ──────────────── Sanitization & Auto-reindex ────────────────
   // Keeps displayOrder strictly continuous (1..N) over the VISIBLE active list
-  // (excludes absence, delivered, and QC orders). Re-runs whenever an order
-  // leaves the flow (delivered / QC / deleted) so gaps cannot reappear.
+  // (excludes absence + delivered orders only). QC-pending orders STAY in the
+  // active list so the workshop dashboard reflects everything physically present.
   // Locked orders (frozenOrder) keep their relative position but slide up to
   // close gaps — the lock pins the slot, not the absolute number.
   useEffect(() => {
     const visible = orders
-      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id))
+      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
     if (visible.length === 0) return;
 
-    // Out-of-flow orders (QC / delivered) keep ids but get displayOrder = null
-    // so they no longer occupy a slot in the active sequence.
+    // Out-of-flow = delivered only. They get displayOrder = undefined so they
+    // no longer occupy a slot in the active sequence.
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
     );
 
     const needsReindex =
@@ -303,35 +303,35 @@ const OrdersPage: React.FC = () => {
       ...reindexedVisible,
       ...clearedOutOfFlow,
     ]);
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, setOrders]);
 
   // Auto-sort and apply when clicking "Trier auto"
   const handleAutoSort = useCallback(() => {
     const visible = orders.filter(o =>
-      o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id)
+      o.id !== absenceOrderId && !deliveredOrderIds.has(o.id)
     );
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
     ).map(o => ({ ...o, displayOrder: undefined }));
     const sorted = autoSortOrders(visible).map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...sorted, ...outOfFlow]);
     setOrderValidated(false);
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, autoSortOrders, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, autoSortOrders, setOrders]);
 
   // Validate: persist order to DB
   const handleValidateOrder = useCallback(() => {
     const visible = orders
-      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id))
+      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999))
       .map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
     ).map(o => ({ ...o, displayOrder: undefined }));
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...visible, ...outOfFlow]);
     setOrderValidated(true);
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, setOrders]);
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
