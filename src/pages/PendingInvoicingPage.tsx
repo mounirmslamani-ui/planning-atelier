@@ -492,6 +492,62 @@ const PendingInvoicingPage: React.FC = () => {
             </Button>
           }
         />
+
+        {/* Filter buttons — cross-filter (Delivery × Price) */}
+        <div className="mt-3 space-y-2">
+          {/* Delivery row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-muted-foreground min-w-20">تسليم:</span>
+            <Button
+              size="sm"
+              variant={allDeliveryActive ? 'default' : 'outline'}
+              className={cn('h-7 text-xs', allDeliveryActive && 'bg-primary text-primary-foreground')}
+              onClick={selectAllDelivery}
+            >
+              جميع الطلبيات
+            </Button>
+            {DELIVERY_BUTTONS.map(b => {
+              const active = !allDeliveryActive && deliveryFilter.has(b.key);
+              return (
+                <Button
+                  key={b.key}
+                  size="sm"
+                  variant={active ? 'default' : 'outline'}
+                  className={cn('h-7 text-xs', active && 'bg-blue-600 text-white hover:bg-blue-700')}
+                  onClick={() => toggleDelivery(b.key)}
+                >
+                  {b.label}
+                </Button>
+              );
+            })}
+          </div>
+          {/* Price row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-muted-foreground min-w-20">ثمن البيع:</span>
+            <Button
+              size="sm"
+              variant={allPriceActive ? 'default' : 'outline'}
+              className={cn('h-7 text-xs', allPriceActive && 'bg-primary text-primary-foreground')}
+              onClick={selectAllPrice}
+            >
+              جميع الطلبيات
+            </Button>
+            {PRICE_BUTTONS.map(b => {
+              const active = !allPriceActive && priceFilter.has(b.key);
+              return (
+                <Button
+                  key={b.key}
+                  size="sm"
+                  variant={active ? 'default' : 'outline'}
+                  className={cn('h-7 text-xs', active && 'bg-emerald-600 text-white hover:bg-emerald-700')}
+                  onClick={() => togglePrice(b.key)}
+                >
+                  {b.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
