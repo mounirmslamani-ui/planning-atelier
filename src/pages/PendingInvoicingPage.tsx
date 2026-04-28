@@ -466,7 +466,7 @@ const PendingInvoicingPage: React.FC = () => {
               </>
             ) : (
               <>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(order)} title="Modifier">
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(order, priceStatus)} title="Modifier">
                   <Pencil className="w-4 h-4" />
                 </Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(order)} title="Supprimer">
