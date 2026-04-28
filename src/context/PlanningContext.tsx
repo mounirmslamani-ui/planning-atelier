@@ -237,7 +237,20 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
         setQCEntries(data.qcEntries);
-        setDeliveryEntries(data.deliveryEntries);
+        // Dedupe delivery entries by orderId — keep most recent
+        const dedupedDelivery = (() => {
+          const byOrder = new Map<string, typeof data.deliveryEntries[number]>();
+          for (const e of data.deliveryEntries) {
+            const existing = byOrder.get(e.orderId);
+            const ts = (e.movedAt || e.createdAt || '') as string;
+            const exTs = existing ? ((existing.movedAt || existing.createdAt || '') as string) : '';
+            if (!existing || ts > exTs) byOrder.set(e.orderId, e);
+          }
+          const kept = new Set(Array.from(byOrder.values()).map(e => e.id));
+          data.deliveryEntries.filter(e => !kept.has(e.id)).forEach(e => { void dbDeleteDelivery(e.id); });
+          return Array.from(byOrder.values());
+        })();
+        setDeliveryEntries(dedupedDelivery);
         setDeliveredOrders(data.deliveredOrders);
 
         // Re-sync all data to DB to fix any previously failed inserts (date format issues)
