@@ -6,27 +6,33 @@ import { fetchAllData } from '@/lib/supabase-data';
 import { PanelLeftOpen } from 'lucide-react';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry } = usePlanning();
+  const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, deliveryEntries, deliveredOrders } = usePlanning();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const transferOrderToQualityControl = useCallback((orderId: string) => {
-    if (orderId === absenceOrderId || qcEntries.some(entry => entry.orderId === orderId)) return;
+    if (orderId === absenceOrderId) return;
+    if (qcEntries.some(entry => entry.orderId === orderId)) return;
+    if (deliveryEntries.some(entry => entry.orderId === orderId)) return;
+    if (deliveredOrders.some(entry => entry.orderId === orderId)) return;
     addQCEntry({
       id: crypto.randomUUID(),
       orderId,
       controlDate: new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
     });
-  }, [absenceOrderId, qcEntries, addQCEntry]);
+  }, [absenceOrderId, qcEntries, deliveryEntries, deliveredOrders, addQCEntry]);
 
   useEffect(() => {
     if (loading) return;
     orders.forEach(order => {
-      if (order.id === absenceOrderId || qcEntries.some(entry => entry.orderId === order.id)) return;
+      if (order.id === absenceOrderId) return;
+      if (qcEntries.some(entry => entry.orderId === order.id)) return;
+      if (deliveryEntries.some(entry => entry.orderId === order.id)) return;
+      if (deliveredOrders.some(entry => entry.orderId === order.id)) return;
       const check = getOrderQualityControlCheck(order.id, steps, productionRecords, absenceOperationId);
       if (check.isReady) transferOrderToQualityControl(order.id);
     });
-  }, [loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, transferOrderToQualityControl]);
+  }, [loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, deliveryEntries, deliveredOrders, transferOrderToQualityControl]);
 
   const handleProdDrop = useCallback((stepId: string) => {
     window.dispatchEvent(new CustomEvent('prod-register-drop', { detail: { stepId } }));
