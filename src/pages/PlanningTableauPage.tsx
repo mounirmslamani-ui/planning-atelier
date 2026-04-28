@@ -1477,7 +1477,7 @@ const PlanningTableauPage: React.FC = () => {
                                   {order.observation || '—'}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs">
+                              <TooltipContent side="top" className="text-xs !bg-white !text-black border border-border">
                                 Modifié le {formatDateTimeFR(order.notesUpdatedAt)}
                               </TooltipContent>
                             </Tooltip>
