@@ -525,6 +525,9 @@ const PendingInvoicingPage: React.FC = () => {
               <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="تاريخ التسليم/تقدم الأشغال" columnKey="statusLabel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.statusLabel || ''} onFilter={handleFilter} filterMode="select" filterOptions={[...new Set(rows.map(r => r.statusLabel))].sort()} />
               </TableHead>
+              <TableHead className="text-xs font-semibold whitespace-nowrap">
+                <ColumnHeader label="ثمن البيع" columnKey="priceStatus" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priceStatus || ''} onFilter={handleFilter} filterMode="select" filterOptions={PRICE_BUTTONS.map(p => p.key)} />
+              </TableHead>
               {OPERATOR_COLUMNS.map(name => (
                 <TableHead key={name} className="text-xs font-semibold whitespace-nowrap text-center">{name}</TableHead>
               ))}
