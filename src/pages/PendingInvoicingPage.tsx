@@ -355,12 +355,18 @@ const PendingInvoicingPage: React.FC = () => {
   const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1; // +1 price column, +1 actions
   const priorityOptions: OrderPriority[] = ['P1', 'P2', 'P3', 'P4'];
 
+  const deliveredByOrderId = useMemo(
+    () => new Map(deliveredOrders.map(d => [d.orderId, d])),
+    [deliveredOrders]
+  );
+
   // Render a data row (edit mode or view mode)
   const renderDataRow = (row: Row, clientNameOverride?: string) => {
-    const { order, statusLabel, deliveryDateOrProgress } = row;
+    const { order, statusLabel, deliveryDateOrProgress, priceStatus } = row;
     const clientName = clientNameOverride ?? row.clientName;
     const isEditing = editingId === order.id;
     const opIds = operatorIdsForOrder(order.id);
+    const delivered = deliveredByOrderId.get(order.id);
 
     return (
       <TableRow key={order.id}>
