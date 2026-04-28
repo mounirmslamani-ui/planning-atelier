@@ -242,8 +242,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const byOrder = new Map<string, typeof data.deliveryEntries[number]>();
           for (const e of data.deliveryEntries) {
             const existing = byOrder.get(e.orderId);
-            const ts = (e.movedAt || e.createdAt || '') as string;
-            const exTs = existing ? ((existing.movedAt || existing.createdAt || '') as string) : '';
+            const ts = (e.movedAt || '') as string;
+            const exTs = existing ? ((existing.movedAt || '') as string) : '';
             if (!existing || ts > exTs) byOrder.set(e.orderId, e);
           }
           const kept = new Set(Array.from(byOrder.values()).map(e => e.id));
