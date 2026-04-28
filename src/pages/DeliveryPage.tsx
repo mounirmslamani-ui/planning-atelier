@@ -6,12 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveryEntry, DeliveredOrder } from '@/types/planning';
-import { Download, Trash2 } from 'lucide-react';
+import type { DeliveryEntry, DeliveredOrder, Order } from '@/types/planning';
+import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
