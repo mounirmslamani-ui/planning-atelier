@@ -29,7 +29,7 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
 const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 'valide'];
 
 const DeliveredOrdersPage: React.FC = () => {
-  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder } = usePlanning();
+  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder, updateOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -37,6 +37,24 @@ const DeliveredOrdersPage: React.FC = () => {
   const [pendingPrice, setPendingPrice] = useState<{ entry: DeliveredOrder; next: SalePriceStatus } | null>(null);
   const [observationDrafts, setObservationDrafts] = useState<Record<string, string>>({});
   const [invoiceDialog, setInvoiceDialog] = useState<{ entry: DeliveredOrder; value: string } | null>(null);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Partial<Order>>({});
+
+  const startEdit = (order: Order) => {
+    setEditingOrderId(order.id);
+    setEditDraft({
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      clientId: order.clientId,
+      designation: order.designation,
+      quantity: order.quantity,
+    });
+  };
+  const cancelEdit = () => { setEditingOrderId(null); setEditDraft({}); };
+  const saveEdit = (order: Order) => {
+    updateOrder({ ...order, ...editDraft } as Order);
+    setEditingOrderId(null); setEditDraft({});
+  };
 
   const accessors = {
     priority: (d: DeliveredOrder) => getOrder(d.orderId)?.priority || '',
