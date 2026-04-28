@@ -7,15 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { QCDecision, QualityControlEntry } from '@/types/planning';
+import type { QCDecision, QualityControlEntry, Order } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
-import { Download, Trash2 } from 'lucide-react';
+import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
@@ -37,7 +38,7 @@ const decisionColors: Record<QCDecision, string> = {
 const QualityControlPage: React.FC = () => {
   const {
     qcEntries, updateQCEntry, orders, clients,
-    addDeliveryEntry, deleteQCEntry, deleteOrder,
+    addDeliveryEntry, deleteQCEntry, deleteOrder, updateOrder,
     addStep, steps, holidays, operations, operators,
     productionRecords, absenceOperationId,
   } = usePlanning();
@@ -51,6 +52,25 @@ const QualityControlPage: React.FC = () => {
   const [reworkNotes, setReworkNotes] = useState('');
   const [pendingDecision, setPendingDecision] = useState<{ entry: QualityControlEntry; decision: QCDecision } | null>(null);
   const [datePromptOpen, setDatePromptOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<Order>>({});
+
+  const startEdit = (order: Order) => {
+    setEditingOrderId(order.id);
+    setDraft({
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      clientId: order.clientId,
+      designation: order.designation,
+      quantity: order.quantity,
+      plannedDeadline: order.plannedDeadline,
+    });
+  };
+  const cancelEdit = () => { setEditingOrderId(null); setDraft({}); };
+  const saveEdit = (order: Order) => {
+    updateOrder({ ...order, ...draft } as Order);
+    setEditingOrderId(null); setDraft({});
+  };
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -164,24 +184,54 @@ const QualityControlPage: React.FC = () => {
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="w-12 text-center text-xs font-semibold">حذف</TableHead>
+              <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {processed.map(entry => {
               const order = getOrder(entry.orderId);
               if (!order) return null;
+              const isEditing = editingOrderId === order.id;
               return (
                 <TableRow key={entry.id}>
                   <TableCell>
                     <PriorityBadge priority={order.priority} className="" />
                   </TableCell>
-                  <TableCell className="font-heading text-sm">{order.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{formatDateFR(order.orderDate)}</TableCell>
-                  <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
-                  <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
-                  <TableCell className="text-sm">{order.quantity}</TableCell>
-                  <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
+                  <TableCell className="font-heading text-sm">
+                    {isEditing
+                      ? <Input value={draft.orderNumber ?? ''} onChange={e => setDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
+                      : order.orderNumber}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing
+                      ? <Input type="date" value={draft.orderDate ?? ''} onChange={e => setDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
+                      : formatDateFR(order.orderDate)}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing ? (
+                      <Select value={draft.clientId ?? ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
+                        <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : getClientName(order.clientId)}
+                  </TableCell>
+                  <TableCell className="text-sm max-w-48">
+                    {isEditing
+                      ? <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
+                      : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing
+                      ? <Input type="number" value={draft.quantity ?? 0} onChange={e => setDraft(d => ({ ...d, quantity: Number(e.target.value) }))} className="h-8 w-20" />
+                      : order.quantity}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing
+                      ? <Input type="date" value={draft.plannedDeadline ?? ''} onChange={e => setDraft(d => ({ ...d, plannedDeadline: e.target.value }))} className="h-8 w-36" />
+                      : formatDateFR(order.plannedDeadline)}
+                  </TableCell>
                   <TableCell>
                     <Input
                       type="date"
@@ -208,23 +258,40 @@ const QualityControlPage: React.FC = () => {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => confirm(
-                        'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
-                        () => {
-                          deleteQCEntry(entry.id);
-                          deleteOrder(entry.orderId);
-                          toast.success('Commande supprimée définitivement');
-                        },
-                        { variant: 'destructive' }
+                  <TableCell className="text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1">
+                      {isEditing ? (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => saveEdit(order)} title="Enregistrer">
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(order)} title="Modifier">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => confirm(
+                              'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
+                              () => {
+                                deleteQCEntry(entry.id);
+                                deleteOrder(entry.orderId);
+                                toast.success('Commande supprimée définitivement');
+                              },
+                              { variant: 'destructive' }
+                            )}
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </>
                       )}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );

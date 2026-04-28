@@ -9,8 +9,9 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveredOrder, SalePriceStatus } from '@/types/planning';
-import { Download, Trash2 } from 'lucide-react';
+import type { DeliveredOrder, SalePriceStatus, Order } from '@/types/planning';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -28,7 +29,7 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
 const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 'valide'];
 
 const DeliveredOrdersPage: React.FC = () => {
-  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder } = usePlanning();
+  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder, updateOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -36,6 +37,24 @@ const DeliveredOrdersPage: React.FC = () => {
   const [pendingPrice, setPendingPrice] = useState<{ entry: DeliveredOrder; next: SalePriceStatus } | null>(null);
   const [observationDrafts, setObservationDrafts] = useState<Record<string, string>>({});
   const [invoiceDialog, setInvoiceDialog] = useState<{ entry: DeliveredOrder; value: string } | null>(null);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Partial<Order>>({});
+
+  const startEdit = (order: Order) => {
+    setEditingOrderId(order.id);
+    setEditDraft({
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      clientId: order.clientId,
+      designation: order.designation,
+      quantity: order.quantity,
+    });
+  };
+  const cancelEdit = () => { setEditingOrderId(null); setEditDraft({}); };
+  const saveEdit = (order: Order) => {
+    updateOrder({ ...order, ...editDraft } as Order);
+    setEditingOrderId(null); setEditDraft({});
+  };
 
   const accessors = {
     priority: (d: DeliveredOrder) => getOrder(d.orderId)?.priority || '',
@@ -116,7 +135,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
-              <TableHead className="w-12 text-center text-xs font-semibold">حذف</TableHead>
+              <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -165,14 +184,40 @@ const DeliveredOrdersPage: React.FC = () => {
               const obsValue = observationDrafts[entry.id] !== undefined
                 ? observationDrafts[entry.id]
                 : (entry.observation || '');
+              const isEditing = editingOrderId === order.id;
               return (
                 <TableRow key={entry.id}>
                   <TableCell><PriorityBadge priority={order.priority} className="" /></TableCell>
-                  <TableCell className="font-heading text-sm">{order.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{formatDateFR(order.orderDate)}</TableCell>
-                  <TableCell className="text-sm">{getClientName(order.clientId)}</TableCell>
-                  <TableCell className="text-sm max-w-48 truncate">{order.designation}</TableCell>
-                  <TableCell className="text-sm">{order.quantity}</TableCell>
+                  <TableCell className="font-heading text-sm">
+                    {isEditing
+                      ? <Input value={editDraft.orderNumber ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
+                      : order.orderNumber}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing
+                      ? <Input type="date" value={editDraft.orderDate ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
+                      : formatDateFR(order.orderDate)}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing ? (
+                      <Select value={editDraft.clientId ?? ''} onValueChange={v => setEditDraft(d => ({ ...d, clientId: v }))}>
+                        <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : getClientName(order.clientId)}
+                  </TableCell>
+                  <TableCell className="text-sm max-w-48">
+                    {isEditing
+                      ? <Input value={editDraft.designation ?? ''} onChange={e => setEditDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
+                      : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {isEditing
+                      ? <Input type="number" value={editDraft.quantity ?? 0} onChange={e => setEditDraft(d => ({ ...d, quantity: Number(e.target.value) }))} className="h-8 w-20" />
+                      : order.quantity}
+                  </TableCell>
                   <TableCell className="text-sm">{formatDateFR(entry.deliveryDate)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -219,23 +264,40 @@ const DeliveredOrdersPage: React.FC = () => {
                       className="h-8 text-xs min-w-48"
                     />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => confirm(
-                        'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
-                        () => {
-                          deleteDeliveredOrder(entry.id);
-                          deleteOrder(entry.orderId);
-                          toast.success('Commande supprimée définitivement');
-                        },
-                        { variant: 'destructive' }
+                  <TableCell className="text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1">
+                      {isEditing ? (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => saveEdit(order)} title="Enregistrer">
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(order)} title="Modifier">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => confirm(
+                              'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
+                              () => {
+                                deleteDeliveredOrder(entry.id);
+                                deleteOrder(entry.orderId);
+                                toast.success('Commande supprimée définitivement');
+                              },
+                              { variant: 'destructive' }
+                            )}
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </>
                       )}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
