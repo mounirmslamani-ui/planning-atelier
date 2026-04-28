@@ -251,32 +251,42 @@ const OrdersPage: React.FC = () => {
   // Sort by displayOrder ascending (playlist style)
   // IDs of orders that have been delivered (conforme / conforme-derogation)
   const deliveredOrderIds = useMemo(() => new Set(deliveryEntries.map(de => de.orderId)), [deliveryEntries]);
-  const qualityControlOrderIds = useMemo(() => new Set(qcEntries.map(entry => entry.orderId)), [qcEntries]);
+  // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
+  // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
+  const pendingQcOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (!entry.decision || (entry.decision !== 'conforme' && entry.decision !== 'conforme-derogation')) {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
 
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id));
+    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds]);
+  }, [orders, absenceOrderId, deliveredOrderIds]);
 
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
 
   // ──────────────── Sanitization & Auto-reindex ────────────────
   // Keeps displayOrder strictly continuous (1..N) over the VISIBLE active list
-  // (excludes absence, delivered, and QC orders). Re-runs whenever an order
-  // leaves the flow (delivered / QC / deleted) so gaps cannot reappear.
+  // (excludes absence + delivered orders only). QC-pending orders STAY in the
+  // active list so the workshop dashboard reflects everything physically present.
   // Locked orders (frozenOrder) keep their relative position but slide up to
   // close gaps — the lock pins the slot, not the absolute number.
   useEffect(() => {
     const visible = orders
-      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id))
+      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
     if (visible.length === 0) return;
 
-    // Out-of-flow orders (QC / delivered) keep ids but get displayOrder = null
-    // so they no longer occupy a slot in the active sequence.
+    // Out-of-flow = delivered only. They get displayOrder = undefined so they
+    // no longer occupy a slot in the active sequence.
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
     );
 
     const needsReindex =
@@ -293,35 +303,35 @@ const OrdersPage: React.FC = () => {
       ...reindexedVisible,
       ...clearedOutOfFlow,
     ]);
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, setOrders]);
 
   // Auto-sort and apply when clicking "Trier auto"
   const handleAutoSort = useCallback(() => {
     const visible = orders.filter(o =>
-      o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id)
+      o.id !== absenceOrderId && !deliveredOrderIds.has(o.id)
     );
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
     ).map(o => ({ ...o, displayOrder: undefined }));
     const sorted = autoSortOrders(visible).map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...sorted, ...outOfFlow]);
     setOrderValidated(false);
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, autoSortOrders, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, autoSortOrders, setOrders]);
 
   // Validate: persist order to DB
   const handleValidateOrder = useCallback(() => {
     const visible = orders
-      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id))
+      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999))
       .map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && (deliveredOrderIds.has(o.id) || qualityControlOrderIds.has(o.id))
+      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
     ).map(o => ({ ...o, displayOrder: undefined }));
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...visible, ...outOfFlow]);
     setOrderValidated(true);
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds, setOrders]);
+  }, [orders, absenceOrderId, deliveredOrderIds, setOrders]);
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
@@ -663,7 +673,25 @@ const OrdersPage: React.FC = () => {
       case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
-      case 'globalStatus': return <GlobalStatusBadge status={getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)} />;
+      case 'globalStatus': {
+        const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+        const pendingQc = pendingQcOrderIds.has(o.id);
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <GlobalStatusBadge status={status} />
+            {pendingQc && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center rounded-full border border-urgent-moderate/40 bg-urgent-moderate/10 text-urgent-moderate px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap">
+                    ⏳ في انتظار المراقبة
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>En attente de contrôle qualité</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        );
+      }
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
