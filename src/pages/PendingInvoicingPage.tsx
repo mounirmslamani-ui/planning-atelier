@@ -81,6 +81,43 @@ const PendingInvoicingPage: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
 
+  // Cross-filter state — by default all selected
+  const [deliveryFilter, setDeliveryFilter] = useState<Set<DeliveryKey>>(
+    () => new Set(DELIVERY_BUTTONS.map(b => b.key))
+  );
+  const [priceFilter, setPriceFilter] = useState<Set<PriceKey>>(
+    () => new Set(PRICE_BUTTONS.map(b => b.key))
+  );
+
+  const allDeliveryActive = deliveryFilter.size === DELIVERY_BUTTONS.length;
+  const allPriceActive = priceFilter.size === PRICE_BUTTONS.length;
+
+  const toggleDelivery = (k: DeliveryKey) => {
+    setDeliveryFilter(prev => {
+      const next = new Set(prev);
+      // If "all" was active, clicking a single one selects only that one
+      if (next.size === DELIVERY_BUTTONS.length) {
+        return new Set([k]);
+      }
+      if (next.has(k)) next.delete(k); else next.add(k);
+      if (next.size === 0) return new Set(DELIVERY_BUTTONS.map(b => b.key));
+      return next;
+    });
+  };
+  const togglePrice = (k: PriceKey) => {
+    setPriceFilter(prev => {
+      const next = new Set(prev);
+      if (next.size === PRICE_BUTTONS.length) {
+        return new Set([k]);
+      }
+      if (next.has(k)) next.delete(k); else next.add(k);
+      if (next.size === 0) return new Set(PRICE_BUTTONS.map(b => b.key));
+      return next;
+    });
+  };
+  const selectAllDelivery = () => setDeliveryFilter(new Set(DELIVERY_BUTTONS.map(b => b.key)));
+  const selectAllPrice = () => setPriceFilter(new Set(PRICE_BUTTONS.map(b => b.key)));
+
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
   // Build flat row list
@@ -95,22 +132,29 @@ const PendingInvoicingPage: React.FC = () => {
       const delivered = deliveredById.get(order.id);
       let statusLabel = '';
       let deliveryDateOrProgress = '';
+      let deliveryKey: DeliveryKey;
+      let priceStatus: PriceKey = 'non-calcule';
 
       if (delivered) {
         if (delivered.invoiceNumber) continue;
         statusLabel = STATUS_LABELS['delivered-pending-invoice'];
         deliveryDateOrProgress = formatDateFR(delivered.deliveryDate);
+        deliveryKey = 'delivered';
+        priceStatus = delivered.salePriceStatus;
       } else if (deliveryReadyIds.has(order.id)) {
         statusLabel = STATUS_LABELS['ready-for-delivery'];
         deliveryDateOrProgress = '—';
+        deliveryKey = 'ready-for-delivery';
       } else if (qcIds.has(order.id)) {
         statusLabel = STATUS_LABELS['awaiting-qc'];
         deliveryDateOrProgress = '—';
+        deliveryKey = 'awaiting-qc';
       } else {
         const globalStatus = getOrderGlobalStatus(order.id, steps, productionRecords, absenceOperationId);
         if (globalStatus === 'En cours') {
           statusLabel = STATUS_LABELS['in-progress'];
           deliveryDateOrProgress = 'قيد الإنجاز';
+          deliveryKey = 'in-progress';
         } else if (globalStatus === 'En attente') {
           if (order.priority === 'P4') {
             statusLabel = STATUS_LABELS['p4'];
@@ -119,6 +163,7 @@ const PendingInvoicingPage: React.FC = () => {
             statusLabel = STATUS_LABELS['on-hold'];
             deliveryDateOrProgress = 'قيد الانتظار';
           }
+          deliveryKey = 'on-hold';
         } else {
           continue; // Terminée without delivery → skip
         }
@@ -130,10 +175,18 @@ const PendingInvoicingPage: React.FC = () => {
         statusLabel,
         deliveryDateOrProgress,
         series: getSeriesPrefix(order.orderNumber),
+        deliveryKey,
+        priceStatus,
       });
     }
     return result;
   }, [orders, deliveredOrders, deliveryEntries, qcEntries, steps, productionRecords, absenceOperationId, absenceOrderId, clients]);
+
+  // Apply button filters BEFORE column filters/sort
+  const buttonFilteredRows = useMemo(
+    () => rows.filter(r => deliveryFilter.has(r.deliveryKey) && priceFilter.has(r.priceStatus)),
+    [rows, deliveryFilter, priceFilter]
+  );
 
   // Sort/filter
   const accessors = useMemo(() => ({
@@ -146,10 +199,11 @@ const PendingInvoicingPage: React.FC = () => {
     priority: (r: Row) => r.order.priority || '',
     deliveryDeadline: (r: Row) => r.order.deliveryDeadline || '',
     statusLabel: (r: Row) => r.statusLabel,
+    priceStatus: (r: Row) => r.priceStatus,
   }), []);
 
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } =
-    useTableSortFilter<Row>(rows, accessors);
+    useTableSortFilter<Row>(buttonFilteredRows, accessors);
 
   const isFilteredOrSorted = sortKey !== null || Object.values(filters).some(Boolean);
 
