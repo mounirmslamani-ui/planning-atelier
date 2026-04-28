@@ -311,11 +311,18 @@ const PendingInvoicingPage: React.FC = () => {
     );
   }, [confirm, deleteOrder]);
 
+  const PRICE_LABELS: Record<SalePriceStatus, string> = {
+    'gratuit': 'مجانا',
+    'non-calcule': 'ثمن غير محسوب',
+    'non-valide': 'ثمن غير مصادق عليه',
+    'valide': 'ثمن مصادق عليه',
+  };
+
   const handleExportExcel = () => {
     const exportRows: Record<string, string | number>[] = [];
     for (const group of grouped) {
       for (const serie of group.series) {
-        for (const { order, statusLabel, deliveryDateOrProgress } of serie.rows) {
+        for (const { order, statusLabel, deliveryDateOrProgress, priceStatus } of serie.rows) {
           const opIds = operatorIdsForOrder(order.id);
           const row: Record<string, string | number> = {
             'الزبون': group.clientName,
@@ -328,6 +335,7 @@ const PendingInvoicingPage: React.FC = () => {
             'درجة الاستعجال': order.priority || '—',
             'أجل التسليم': order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—',
             'تاريخ التسليم/تقدم الأشغال': `${statusLabel} — ${deliveryDateOrProgress}`,
+            'ثمن البيع': PRICE_LABELS[priceStatus],
           };
           for (const opName of OPERATOR_COLUMNS) {
             const opId = operatorIdByName.get(opName);
@@ -344,7 +352,7 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   const totalRows = processed.length;
-  const totalCols = 10 + OPERATOR_COLUMNS.length + 3 + 1; // +1 actions column
+  const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1; // +1 price column, +1 actions
   const priorityOptions: OrderPriority[] = ['P1', 'P2', 'P3', 'P4'];
 
   // Render a data row (edit mode or view mode)
