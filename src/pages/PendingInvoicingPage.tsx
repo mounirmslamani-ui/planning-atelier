@@ -425,6 +425,20 @@ const PendingInvoicingPage: React.FC = () => {
           <br />
           <span className="font-medium">{deliveryDateOrProgress}</span>
         </TableCell>
+        <TableCell className="text-xs whitespace-nowrap">
+          {isEditing && delivered ? (
+            <Select value={draftPrice ?? priceStatus} onValueChange={v => setDraftPrice(v as SalePriceStatus)}>
+              <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PRICE_BUTTONS.map(p => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          ) : delivered ? (
+            <span className="font-medium">{PRICE_LABELS[priceStatus]}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </TableCell>
         {OPERATOR_COLUMNS.map(name => {
           const opId = operatorIdByName.get(name);
           const concerned = opId && opIds.has(opId);
