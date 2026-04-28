@@ -150,8 +150,18 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
           </div>
         ))}
       </nav>
-      <div className="p-4 border-t border-sidebar-border">
-        <p className="text-xs text-sidebar-foreground/50 font-heading">v1.0 — الورشة</p>
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        <button
+          type="button"
+          onClick={handleGlobalExport}
+          disabled={exporting}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          title="تنزيل أرشيف كامل لجميع الجداول"
+        >
+          <DownloadCloud className="w-4 h-4" />
+          {exporting ? '...جاري التحميل' : 'حفظ شامل'}
+        </button>
+        <p className="text-xs text-sidebar-foreground/50 font-heading text-center">v1.0 — الورشة</p>
       </div>
       </div>
     </aside>
