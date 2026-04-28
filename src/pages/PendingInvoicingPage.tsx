@@ -457,7 +457,7 @@ const PendingInvoicingPage: React.FC = () => {
           <div className="flex items-center justify-center gap-1">
             {isEditing ? (
               <>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => saveEdit(order)} title="Enregistrer">
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => saveEdit(order, delivered?.id)} title="Enregistrer">
                   <Check className="w-4 h-4" />
                 </Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
