@@ -59,7 +59,33 @@ interface AppSidebarProps {
 const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQcDrop }) => {
   const location = useLocation();
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
+  const planning = usePlanning();
+
+  const handleGlobalExport = () => {
+    try {
+      setExporting(true);
+      exportGlobalArchive({
+        orders: planning.orders,
+        steps: planning.steps,
+        productionRecords: planning.productionRecords,
+        clients: planning.clients,
+        operators: planning.operators,
+        operations: planning.operations,
+        deliveredOrders: planning.deliveredOrders,
+        qcEntries: planning.qcEntries,
+        absenceOrderId: planning.absenceOrderId,
+        absenceOperationId: planning.absenceOperationId,
+      });
+      toast.success('تم تنزيل الأرشيف الكامل');
+    } catch (e) {
+      console.error(e);
+      toast.error('فشل في إنشاء الأرشيف');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleDrop = (dropType: DropTargetType, e: React.DragEvent) => {
     e.preventDefault();
