@@ -38,7 +38,7 @@ const decisionColors: Record<QCDecision, string> = {
 const QualityControlPage: React.FC = () => {
   const {
     qcEntries, updateQCEntry, orders, clients,
-    addDeliveryEntry, deleteQCEntry, deleteOrder,
+    addDeliveryEntry, deleteQCEntry, deleteOrder, updateOrder,
     addStep, steps, holidays, operations, operators,
     productionRecords, absenceOperationId,
   } = usePlanning();
@@ -52,6 +52,25 @@ const QualityControlPage: React.FC = () => {
   const [reworkNotes, setReworkNotes] = useState('');
   const [pendingDecision, setPendingDecision] = useState<{ entry: QualityControlEntry; decision: QCDecision } | null>(null);
   const [datePromptOpen, setDatePromptOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<Order>>({});
+
+  const startEdit = (order: Order) => {
+    setEditingOrderId(order.id);
+    setDraft({
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      clientId: order.clientId,
+      designation: order.designation,
+      quantity: order.quantity,
+      plannedDeadline: order.plannedDeadline,
+    });
+  };
+  const cancelEdit = () => { setEditingOrderId(null); setDraft({}); };
+  const saveEdit = (order: Order) => {
+    updateOrder({ ...order, ...draft } as Order);
+    setEditingOrderId(null); setDraft({});
+  };
 
   const today = new Date().toISOString().split('T')[0];
 
