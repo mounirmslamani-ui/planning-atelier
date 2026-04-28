@@ -268,7 +268,8 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   // Edit handlers
-  const startEdit = useCallback((order: Order) => {
+  const [draftPrice, setDraftPrice] = useState<SalePriceStatus | undefined>(undefined);
+  const startEdit = useCallback((order: Order, currentPrice?: SalePriceStatus) => {
     setEditingId(order.id);
     setDraft({
       orderNumber: order.orderNumber,
@@ -280,18 +281,27 @@ const PendingInvoicingPage: React.FC = () => {
       priority: order.priority,
       deliveryDeadline: order.deliveryDeadline,
     });
+    setDraftPrice(currentPrice);
   }, []);
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
     setDraft({});
+    setDraftPrice(undefined);
   }, []);
 
-  const saveEdit = useCallback((order: Order) => {
+  const saveEdit = useCallback((order: Order, deliveredId?: string) => {
     updateOrder({ ...order, ...draft } as Order);
+    if (deliveredId && draftPrice) {
+      const existing = deliveredOrders.find(d => d.id === deliveredId);
+      if (existing && existing.salePriceStatus !== draftPrice) {
+        updateDeliveredOrder({ ...existing, salePriceStatus: draftPrice });
+      }
+    }
     setEditingId(null);
     setDraft({});
-  }, [draft, updateOrder]);
+    setDraftPrice(undefined);
+  }, [draft, draftPrice, updateOrder, updateDeliveredOrder, deliveredOrders]);
 
   const handleDelete = useCallback((order: Order) => {
     confirm(
