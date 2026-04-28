@@ -14,7 +14,8 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
-import type { Order, OrderPriority } from '@/types/planning';
+import type { Order, OrderPriority, SalePriceStatus } from '@/types/planning';
+import { cn } from '@/lib/utils';
 
 const OPERATOR_COLUMNS = [
   'محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة',
