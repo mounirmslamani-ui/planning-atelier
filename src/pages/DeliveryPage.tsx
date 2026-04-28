@@ -18,13 +18,32 @@ import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder } = usePlanning();
+  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
   const [pending, setPending] = useState<{ entryId: string; date: string } | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Partial<Order>>({});
+
+  const startEdit = (order: Order) => {
+    setEditingOrderId(order.id);
+    setEditDraft({
+      orderNumber: order.orderNumber,
+      orderDate: order.orderDate,
+      clientId: order.clientId,
+      designation: order.designation,
+      quantity: order.quantity,
+      plannedDeadline: order.plannedDeadline,
+    });
+  };
+  const cancelEdit = () => { setEditingOrderId(null); setEditDraft({}); };
+  const saveEdit = (order: Order) => {
+    updateOrder({ ...order, ...editDraft } as Order);
+    setEditingOrderId(null); setEditDraft({});
+  };
 
   const accessors = {
     priority: (e: DeliveryEntry) => getOrder(e.orderId)?.priority || '',
