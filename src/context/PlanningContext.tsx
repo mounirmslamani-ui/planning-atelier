@@ -403,7 +403,18 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Delivery Entry
   const addDeliveryEntry = useCallback((entry: DeliveryEntry) => {
-    pushUndo(); setDeliveryEntries(prev => [...prev, entry]); dbInsertDelivery(entry);
+    pushUndo();
+    setDeliveryEntries(prev => {
+      const existing = prev.find(e => e.orderId === entry.orderId);
+      if (existing) {
+        // Replace existing: delete old from DB, insert new
+        void dbDeleteDelivery(existing.id);
+        dbInsertDelivery(entry);
+        return prev.map(e => e.orderId === entry.orderId ? entry : e);
+      }
+      dbInsertDelivery(entry);
+      return [...prev, entry];
+    });
   }, [pushUndo]);
   const deleteDeliveryEntry = useCallback((id: string) => {
     pushUndo(); setDeliveryEntries(prev => prev.filter(e => e.id !== id)); dbDeleteDelivery(id);
