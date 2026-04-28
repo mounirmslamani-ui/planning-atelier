@@ -4,8 +4,12 @@ import {
   Users, Building2, ShoppingCart, CalendarDays, 
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
-  PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt
+  PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
+  DownloadCloud,
 } from 'lucide-react';
+import { usePlanning } from '@/context/PlanningContext';
+import { exportGlobalArchive } from '@/lib/globalArchiveExport';
+import { toast } from 'sonner';
 
 type DropTargetType = false | 'prod' | 'qc';
 
