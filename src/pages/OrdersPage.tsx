@@ -251,12 +251,22 @@ const OrdersPage: React.FC = () => {
   // Sort by displayOrder ascending (playlist style)
   // IDs of orders that have been delivered (conforme / conforme-derogation)
   const deliveredOrderIds = useMemo(() => new Set(deliveryEntries.map(de => de.orderId)), [deliveryEntries]);
-  const qualityControlOrderIds = useMemo(() => new Set(qcEntries.map(entry => entry.orderId)), [qcEntries]);
+  // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
+  // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
+  const pendingQcOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (!entry.decision || (entry.decision !== 'conforme' && entry.decision !== 'conforme-derogation')) {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
 
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id) && !qualityControlOrderIds.has(o.id));
+    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-  }, [orders, absenceOrderId, deliveredOrderIds, qualityControlOrderIds]);
+  }, [orders, absenceOrderId, deliveredOrderIds]);
 
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
