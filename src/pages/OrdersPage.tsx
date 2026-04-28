@@ -673,7 +673,25 @@ const OrdersPage: React.FC = () => {
       case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
-      case 'globalStatus': return <GlobalStatusBadge status={getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)} />;
+      case 'globalStatus': {
+        const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+        const pendingQc = pendingQcOrderIds.has(o.id);
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <GlobalStatusBadge status={status} />
+            {pendingQc && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center rounded-full border border-urgent-moderate/40 bg-urgent-moderate/10 text-urgent-moderate px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap">
+                    ⏳ في انتظار المراقبة
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>En attente de contrôle qualité</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        );
+      }
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
