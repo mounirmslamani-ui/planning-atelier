@@ -73,7 +73,7 @@ const PendingInvoicingPage: React.FC = () => {
     orders, clients, operators, steps, productionRecords,
     deliveredOrders, deliveryEntries, qcEntries,
     absenceOperationId, absenceOrderId,
-    updateOrder, deleteOrder,
+    updateOrder, deleteOrder, updateDeliveredOrder,
   } = usePlanning();
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
