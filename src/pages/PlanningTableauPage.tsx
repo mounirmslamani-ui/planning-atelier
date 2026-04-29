@@ -529,27 +529,11 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Manual positions always win when present: this preserves exact D&D order after reload.
-    // Otherwise fall back to the standard Cn / priority ordering.
+    // Default order = الترتيب (displayOrder) from الطلبيات الجارية.
+    // Frozen (cadenas) steps keep their current row index; non-frozen are sorted
+    // by displayOrder and fill the remaining slots.
     Object.values(result).forEach(group => {
-      group.tasks.sort((a, b) => {
-        const manualA = a.order.manualSortOrder;
-        const manualB = b.order.manualSortOrder;
-        if (manualA !== undefined || manualB !== undefined) {
-          return (manualA ?? Number.MAX_SAFE_INTEGER) - (manualB ?? Number.MAX_SAFE_INTEGER);
-        }
-        const cnA = a.order.displayOrder || 0;
-        const cnB = b.order.displayOrder || 0;
-        // Steps without Cn: sort by priority then keep natural order
-        if (cnA === 0 && cnB === 0) {
-          const pa = priorityRank[a.order.priority] ?? 9;
-          const pb = priorityRank[b.order.priority] ?? 9;
-          return pa - pb;
-        }
-        if (cnA === 0) return -1; // new steps go to top
-        if (cnB === 0) return 1;
-        return cnA - cnB;
-      });
+      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks);
     });
 
     return Object.values(result)
