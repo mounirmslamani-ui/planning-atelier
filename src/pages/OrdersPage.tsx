@@ -550,17 +550,19 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
-    { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
-    { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
     { key: 'instructions', label: 'ملاحظات تعليمات', className: 'w-[180px]' },
-    { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
+    { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
     { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
-    { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
     { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
-    { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
+    { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
+    { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
+    { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
+    { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
   ];
+  // Index after which to insert the "عمليات" (actions) column header/cells
+  const operationsInsertAfter = columns.findIndex(c => c.key === 'observation');
 
   const handleExportExcel = useCallback(() => {
     const rows = displayOrders.map((o, index) => {
@@ -865,12 +867,16 @@ const OrdersPage: React.FC = () => {
                 <Checkbox checked={selectedIds.size === displayOrders.length && displayOrders.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
               <TableHead className="w-14 text-center text-xs px-1">الترتيب</TableHead>
-              {columns.map(col => (
-                <TableHead key={col.key} className={col.className}>
-                  <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []} />
-                </TableHead>
+              {columns.map((col, ci) => (
+                <React.Fragment key={col.key}>
+                  <TableHead className={col.className}>
+                    <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []} />
+                  </TableHead>
+                  {ci === operationsInsertAfter && (
+                    <TableHead className="w-24 text-xs px-1">عمليات</TableHead>
+                  )}
+                </React.Fragment>
               ))}
-              <TableHead className="w-24 text-xs px-1">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -909,51 +915,58 @@ const OrdersPage: React.FC = () => {
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
                     </TableCell>
-                    {columns.map(col => (
-                      <TableCell key={col.key} className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>{renderCell(o, col.key, index)}</TableCell>
-                    ))}
-                    <TableCell className="px-1">
-                      <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                        {o.frozenOrder && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
-                            <Unlock className="w-3.5 h-3.5 text-primary" />
-                          </Button>
-                        )}
-                        {(() => {
-                          const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
-                          return (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 min-w-9"
-                              onClick={() => setPlanningOrder(o)}
-                              title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
-                            >
-                              {hasSteps ? (
-                                <CalendarCheck className="w-3.5 h-3.5" />
-                              ) : (
-                                <WarningTriangleIcon />
-                              )}
-                            </Button>
-                          );
-                        })()}
-                        {isRowEditing ? (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
-                              <span className="text-normal text-sm font-bold">✓</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="إلغاء">
-                              <span className="text-destructive text-sm font-bold">✕</span>
-                            </Button>
-                          </>
-                        ) : (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                      </div>
-                    </TableCell>
+                    {(() => {
+                      const actionsCell = (
+                        <TableCell className="px-1">
+                          <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
+                            {o.frozenOrder && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
+                                <Unlock className="w-3.5 h-3.5 text-primary" />
+                              </Button>
+                            )}
+                            {(() => {
+                              const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
+                              return (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 min-w-9"
+                                  onClick={() => setPlanningOrder(o)}
+                                  title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
+                                >
+                                  {hasSteps ? (
+                                    <CalendarCheck className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <WarningTriangleIcon />
+                                  )}
+                                </Button>
+                              );
+                            })()}
+                            {isRowEditing ? (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
+                                  <span className="text-normal text-sm font-bold">✓</span>
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="إلغاء">
+                                  <span className="text-destructive text-sm font-bold">✕</span>
+                                </Button>
+                              </>
+                            ) : (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      );
+                      return columns.map((col, ci) => (
+                        <React.Fragment key={col.key}>
+                          <TableCell className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>{renderCell(o, col.key, index)}</TableCell>
+                          {ci === operationsInsertAfter && actionsCell}
+                        </React.Fragment>
+                      ));
+                    })()}
                   </TableRow>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
