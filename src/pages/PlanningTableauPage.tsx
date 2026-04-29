@@ -729,29 +729,23 @@ const PlanningTableauPage: React.FC = () => {
     const group = operatorTasks.find(g => g.operator.id === operatorId);
     if (!group || group.tasks.length === 0) return;
 
-    const getLatestAvailDate = (step: ProductionStep): string => {
-      const dates: string[] = [];
-      if (step.studyDeadline && step.studyDeadline !== 'warning' && step.studyDeadline !== 'pending') dates.push(step.studyDeadline);
-      if (step.materialDeadline && step.materialDeadline !== 'warning' && step.materialDeadline !== 'pending') dates.push(step.materialDeadline);
-      if (step.toolingDeadline && step.toolingDeadline !== 'warning' && step.toolingDeadline !== 'pending') dates.push(step.toolingDeadline);
-      if (dates.length === 0) return '0000-00-00';
-      return dates.sort().reverse()[0];
-    };
+    // Sort by الترتيب (displayOrder) coming from الطلبيات الجارية.
+    // Frozen (cadenas) steps keep their current row index.
+    const sorted = sortByDisplayOrderKeepingFrozen(group.tasks);
 
-    const sorted = [...group.tasks].sort((a, b) => {
-      // Frozen steps stay at the top
-      if (a.step.frozen && !b.step.frozen) return -1;
-      if (!a.step.frozen && b.step.frozen) return 1;
-      const pa = priorityRank[a.order.priority] ?? 9;
-      const pb = priorityRank[b.order.priority] ?? 9;
-      if (pa !== pb) return pa - pb;
-      const da = getLatestAvailDate(a.step);
-      const db = getLatestAvailDate(b.step);
-      return da.localeCompare(db);
+    // Clear manualSortOrder for non-frozen so the displayOrder sort takes effect
+    // on subsequent re-renders (frozen orders keep their manual position).
+    const nextDraftOrders = draftOrders.map(order => {
+      const isFrozenStep = sorted.some(t => t.order.id === order.id && t.step.frozen);
+      if (isFrozenStep) return order;
+      if (order.manualSortOrder === undefined) return order;
+      return { ...order, manualSortOrder: undefined };
     });
+    setDraftOrders(nextDraftOrders);
 
-    applyReorder(sorted);
-  }, [operatorTasks, applyReorder]);
+    applyReorder(sorted, undefined, nextDraftOrders);
+  }, [operatorTasks, applyReorder, draftOrders]);
+
 
   // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
   const handleValidate = useCallback(() => {
