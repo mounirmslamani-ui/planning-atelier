@@ -915,51 +915,58 @@ const OrdersPage: React.FC = () => {
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
                     </TableCell>
-                    {columns.map(col => (
-                      <TableCell key={col.key} className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>{renderCell(o, col.key, index)}</TableCell>
-                    ))}
-                    <TableCell className="px-1">
-                      <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                        {o.frozenOrder && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
-                            <Unlock className="w-3.5 h-3.5 text-primary" />
-                          </Button>
-                        )}
-                        {(() => {
-                          const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
-                          return (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 min-w-9"
-                              onClick={() => setPlanningOrder(o)}
-                              title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
-                            >
-                              {hasSteps ? (
-                                <CalendarCheck className="w-3.5 h-3.5" />
-                              ) : (
-                                <WarningTriangleIcon />
-                              )}
-                            </Button>
-                          );
-                        })()}
-                        {isRowEditing ? (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
-                              <span className="text-normal text-sm font-bold">✓</span>
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="إلغاء">
-                              <span className="text-destructive text-sm font-bold">✕</span>
-                            </Button>
-                          </>
-                        ) : (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                      </div>
-                    </TableCell>
+                    {(() => {
+                      const actionsCell = (
+                        <TableCell className="px-1">
+                          <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
+                            {o.frozenOrder && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
+                                <Unlock className="w-3.5 h-3.5 text-primary" />
+                              </Button>
+                            )}
+                            {(() => {
+                              const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
+                              return (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 min-w-9"
+                                  onClick={() => setPlanningOrder(o)}
+                                  title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
+                                >
+                                  {hasSteps ? (
+                                    <CalendarCheck className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <WarningTriangleIcon />
+                                  )}
+                                </Button>
+                              );
+                            })()}
+                            {isRowEditing ? (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
+                                  <span className="text-normal text-sm font-bold">✓</span>
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="إلغاء">
+                                  <span className="text-destructive text-sm font-bold">✕</span>
+                                </Button>
+                              </>
+                            ) : (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      );
+                      return columns.map((col, ci) => (
+                        <React.Fragment key={col.key}>
+                          <TableCell className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>{renderCell(o, col.key, index)}</TableCell>
+                          {ci === operationsInsertAfter && actionsCell}
+                        </React.Fragment>
+                      ));
+                    })()}
                   </TableRow>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
