@@ -447,10 +447,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       <div className="flex flex-col gap-1">
                         {(row.rawMaterialNeeds && row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
                           <div key={idx} className="flex items-center gap-1">
-                            <Input
-                              className="h-8 text-xs"
-                              value={val}
-                              onChange={e => updateNeedField(row.id, 'rawMaterialNeeds', idx, e.target.value)}
+                            <StatusDot status={row.materialStatus} title="حالة المواد الأولية" />
                               placeholder="مادة أولية..."
                             />
                             {idx === (row.rawMaterialNeeds?.length ?? 1) - 1 ? (
