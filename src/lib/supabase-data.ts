@@ -423,7 +423,7 @@ export async function fetchAllData() {
     supabase.from('operations').select('*'),
     supabase.from('clients').select('*'),
     supabase.from('orders').select('*'),
-    supabase.from('production_steps').select('*'),
+    supabase.from('production_steps').select('*').order('step_order', { ascending: true }),
     supabase.from('holidays').select('*'),
     supabase.from('production_records').select('*'),
     supabase.from('quality_control_entries').select('*'),
