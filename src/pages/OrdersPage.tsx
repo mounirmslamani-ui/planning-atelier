@@ -550,17 +550,19 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
-    { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
-    { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
     { key: 'instructions', label: 'ملاحظات تعليمات', className: 'w-[180px]' },
-    { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
+    { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
     { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
-    { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
     { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
-    { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
+    { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
+    { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
+    { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
+    { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
   ];
+  // Index after which to insert the "عمليات" (actions) column header/cells
+  const operationsInsertAfter = columns.findIndex(c => c.key === 'observation');
 
   const handleExportExcel = useCallback(() => {
     const rows = displayOrders.map((o, index) => {
