@@ -30,6 +30,37 @@ const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد ال�
 
 const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
+/**
+ * Sort tasks by displayOrder (الترتيب) while keeping frozen (cadenas) tasks
+ * in their original row indexes. Non-frozen tasks fill the remaining slots
+ * in ascending displayOrder; tasks without a displayOrder go to the end.
+ */
+function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number } }>(tasks: T[]): T[] {
+  const frozenSlots = new Map<number, T>();
+  const movable: T[] = [];
+  tasks.forEach((t, idx) => {
+    if (t.step.frozen) frozenSlots.set(idx, t);
+    else movable.push(t);
+  });
+  movable.sort((a, b) => {
+    const da = a.order.displayOrder ?? 0;
+    const db = b.order.displayOrder ?? 0;
+    if (da === 0 && db === 0) return 0;
+    if (da === 0) return 1; // unranked at the end
+    if (db === 0) return -1;
+    return da - db;
+  });
+  const result: T[] = new Array(tasks.length);
+  frozenSlots.forEach((t, idx) => { result[idx] = t; });
+  let cursor = 0;
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === undefined) {
+      result[i] = movable[cursor++];
+    }
+  }
+  return result;
+}
+
 function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
   if (priority === 'P2') return 'bg-[hsl(30,90%,50%)]/10';
