@@ -465,7 +465,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs font-medium">{getRowProgressStatus(row)}</TableCell>
+                    <TableCell className="text-xs font-medium">{PROGRESS_AR[getRowProgressStatus(row)]}</TableCell>
                     <TableCell className="text-xs font-mono">{getRowActualDuration(row)}</TableCell>
                     <TableCell className="text-center">
                       <ResourceStatusPill
