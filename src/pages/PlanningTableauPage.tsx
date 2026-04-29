@@ -30,6 +30,37 @@ const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد ال�
 
 const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
+/**
+ * Sort tasks by displayOrder (الترتيب) while keeping frozen (cadenas) tasks
+ * in their original row indexes. Non-frozen tasks fill the remaining slots
+ * in ascending displayOrder; tasks without a displayOrder go to the end.
+ */
+function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number } }>(tasks: T[]): T[] {
+  const frozenSlots = new Map<number, T>();
+  const movable: T[] = [];
+  tasks.forEach((t, idx) => {
+    if (t.step.frozen) frozenSlots.set(idx, t);
+    else movable.push(t);
+  });
+  movable.sort((a, b) => {
+    const da = a.order.displayOrder ?? 0;
+    const db = b.order.displayOrder ?? 0;
+    if (da === 0 && db === 0) return 0;
+    if (da === 0) return 1; // unranked at the end
+    if (db === 0) return -1;
+    return da - db;
+  });
+  const result: T[] = new Array(tasks.length);
+  frozenSlots.forEach((t, idx) => { result[idx] = t; });
+  let cursor = 0;
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === undefined) {
+      result[i] = movable[cursor++];
+    }
+  }
+  return result;
+}
+
 function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
   if (priority === 'P2') return 'bg-[hsl(30,90%,50%)]/10';
@@ -529,27 +560,11 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Manual positions always win when present: this preserves exact D&D order after reload.
-    // Otherwise fall back to the standard Cn / priority ordering.
+    // Default order = الترتيب (displayOrder) from الطلبيات الجارية.
+    // Frozen (cadenas) steps keep their current row index; non-frozen are sorted
+    // by displayOrder and fill the remaining slots.
     Object.values(result).forEach(group => {
-      group.tasks.sort((a, b) => {
-        const manualA = a.order.manualSortOrder;
-        const manualB = b.order.manualSortOrder;
-        if (manualA !== undefined || manualB !== undefined) {
-          return (manualA ?? Number.MAX_SAFE_INTEGER) - (manualB ?? Number.MAX_SAFE_INTEGER);
-        }
-        const cnA = a.order.displayOrder || 0;
-        const cnB = b.order.displayOrder || 0;
-        // Steps without Cn: sort by priority then keep natural order
-        if (cnA === 0 && cnB === 0) {
-          const pa = priorityRank[a.order.priority] ?? 9;
-          const pb = priorityRank[b.order.priority] ?? 9;
-          return pa - pb;
-        }
-        if (cnA === 0) return -1; // new steps go to top
-        if (cnB === 0) return 1;
-        return cnA - cnB;
-      });
+      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks);
     });
 
     return Object.values(result)
@@ -714,29 +729,23 @@ const PlanningTableauPage: React.FC = () => {
     const group = operatorTasks.find(g => g.operator.id === operatorId);
     if (!group || group.tasks.length === 0) return;
 
-    const getLatestAvailDate = (step: ProductionStep): string => {
-      const dates: string[] = [];
-      if (step.studyDeadline && step.studyDeadline !== 'warning' && step.studyDeadline !== 'pending') dates.push(step.studyDeadline);
-      if (step.materialDeadline && step.materialDeadline !== 'warning' && step.materialDeadline !== 'pending') dates.push(step.materialDeadline);
-      if (step.toolingDeadline && step.toolingDeadline !== 'warning' && step.toolingDeadline !== 'pending') dates.push(step.toolingDeadline);
-      if (dates.length === 0) return '0000-00-00';
-      return dates.sort().reverse()[0];
-    };
+    // Sort by الترتيب (displayOrder) coming from الطلبيات الجارية.
+    // Frozen (cadenas) steps keep their current row index.
+    const sorted = sortByDisplayOrderKeepingFrozen(group.tasks);
 
-    const sorted = [...group.tasks].sort((a, b) => {
-      // Frozen steps stay at the top
-      if (a.step.frozen && !b.step.frozen) return -1;
-      if (!a.step.frozen && b.step.frozen) return 1;
-      const pa = priorityRank[a.order.priority] ?? 9;
-      const pb = priorityRank[b.order.priority] ?? 9;
-      if (pa !== pb) return pa - pb;
-      const da = getLatestAvailDate(a.step);
-      const db = getLatestAvailDate(b.step);
-      return da.localeCompare(db);
+    // Clear manualSortOrder for non-frozen so the displayOrder sort takes effect
+    // on subsequent re-renders (frozen orders keep their manual position).
+    const nextDraftOrders = draftOrders.map(order => {
+      const isFrozenStep = sorted.some(t => t.order.id === order.id && t.step.frozen);
+      if (isFrozenStep) return order;
+      if (order.manualSortOrder === undefined) return order;
+      return { ...order, manualSortOrder: undefined };
     });
+    setDraftOrders(nextDraftOrders);
 
-    applyReorder(sorted);
-  }, [operatorTasks, applyReorder]);
+    applyReorder(sorted, undefined, nextDraftOrders);
+  }, [operatorTasks, applyReorder, draftOrders]);
+
 
   // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
   const handleValidate = useCallback(() => {
