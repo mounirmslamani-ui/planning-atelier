@@ -294,9 +294,23 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     );
   };
 
-  const durationUnit = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 'j' : 'h';
+  const durationUnit = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 'يوم' : 'سا';
   const durationStep = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 0.5 : 0.25;
   const durationFactor = (type: 'operator' | 'subcontractor') => type === 'subcontractor' ? 450 : 60;
+  const STATUS_DOT: Record<ResourceStatus, string> = {
+    'disponible': 'bg-green-500',
+    'partiel': 'bg-orange-500',
+    'non-disponible': 'bg-red-500',
+    'non-applicable': 'bg-gray-300',
+  };
+  const StatusDot: React.FC<{ status: ResourceStatus; title?: string }> = ({ status, title }) => (
+    <span className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT[status]}`} title={title || status} />
+  );
+  const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
+    'Non entamée': 'لم تبدأ',
+    'En cours': 'قيد الإنجاز',
+    'Terminée': 'منتهية',
+  };
   const getRowRecords = (row: OperationRow): ProductionRecord[] => {
     if (!row.stepId) return [];
     return productionRecords.filter(record => record.stepId === row.stepId);
