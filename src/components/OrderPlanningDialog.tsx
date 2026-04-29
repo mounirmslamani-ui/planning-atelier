@@ -423,6 +423,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       <div className="flex flex-col gap-1">
                         {(row.specialToolingNeeds && row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
                           <div key={idx} className="flex items-center gap-1">
+                            <StatusDot status={row.toolingStatus} title="حالة العدة" />
                             <Input
                               className="h-8 text-xs"
                               value={val}
