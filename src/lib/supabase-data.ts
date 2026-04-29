@@ -616,7 +616,9 @@ export async function dbDeleteQCEntry(id: string) {
 
 // Delivery Entry
 export async function dbInsertDelivery(e: DeliveryEntry) {
-  const { error } = await supabase.from('delivery_entries').insert(mapDeliveryToDB(e));
+  const { error } = await supabase
+    .from('delivery_entries')
+    .upsert(mapDeliveryToDB(e), { onConflict: 'order_id' });
   if (error) logError('delivery', 'insert', error);
 }
 export async function dbDeleteDelivery(id: string) {

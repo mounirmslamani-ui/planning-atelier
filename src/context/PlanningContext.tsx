@@ -346,7 +346,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [pushUndo]);
   const deleteOrder = useCallback((id: string) => {
-    pushUndo(); setOrders(prev => prev.filter(o => o.id !== id)); dbDeleteOrder(id);
+    pushUndo();
+    setOrders(prev => prev.filter(o => o.id !== id));
+    setQCEntries(prev => prev.filter(e => e.orderId !== id));
+    setDeliveryEntries(prev => prev.filter(e => e.orderId !== id));
+    setDeliveredOrders(prev => prev.filter(e => e.orderId !== id));
+    dbDeleteOrder(id);
   }, [pushUndo]);
 
   // Wrapped setOrders that also syncs to DB
@@ -407,10 +412,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setDeliveryEntries(prev => {
       const existing = prev.find(e => e.orderId === entry.orderId);
       if (existing) {
-        // Replace existing: delete old from DB, insert new
-        void dbDeleteDelivery(existing.id);
-        dbInsertDelivery(entry);
-        return prev.map(e => e.orderId === entry.orderId ? entry : e);
+        const mergedEntry = { ...entry, id: existing.id };
+        dbInsertDelivery(mergedEntry);
+        return prev.map(e => e.orderId === entry.orderId ? mergedEntry : e);
       }
       dbInsertDelivery(entry);
       return [...prev, entry];
