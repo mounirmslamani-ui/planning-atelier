@@ -75,7 +75,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, qcEntries, productionRecords } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -249,8 +249,17 @@ const OrdersPage: React.FC = () => {
   }, [steps, absenceOperationId]);
 
   // Sort by displayOrder ascending (playlist style)
-  // IDs of orders that have been delivered (conforme / conforme-derogation)
-  const deliveredOrderIds = useMemo(() => new Set(deliveryEntries.map(de => de.orderId)), [deliveryEntries]);
+  // IDs of orders that have left the active workshop list:
+  // - in delivery_entries (ready for delivery), OR
+  // - in delivered_orders (already delivered)
+  // Both must be excluded — otherwise an order delivered to the client
+  // (which removes its delivery_entries row) would resurface in الطلبيات الحالية.
+  const deliveredOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    deliveryEntries.forEach(de => ids.add(de.orderId));
+    deliveredOrders.forEach(d => ids.add(d.orderId));
+    return ids;
+  }, [deliveryEntries, deliveredOrders]);
   // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
   // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
   const pendingQcOrderIds = useMemo(() => {
