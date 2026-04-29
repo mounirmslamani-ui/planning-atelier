@@ -342,7 +342,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           </DialogHeader>
 
           <div className="bg-card rounded-lg border overflow-x-auto">
-            <Table className="min-w-[1820px] table-fixed">
+            <Table className="w-full min-w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
