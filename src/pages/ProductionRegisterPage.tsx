@@ -27,6 +27,21 @@ const ProductionRegisterPage: React.FC = () => {
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
+  // Resolve display info for a record, falling back to snapshot fields when the
+  // source order has been deleted (e.g. after delivery cleanup).
+  const getRecordInfo = (rec: typeof productionRecords[0]) => {
+    const order = getOrder(rec.orderId);
+    return {
+      orderNumber: order?.orderNumber ?? rec.orderNumberSnapshot ?? '—',
+      clientName: order ? getClientName(order.clientId) : (rec.clientNameSnapshot ?? '—'),
+      designation: order?.designation ?? rec.designationSnapshot ?? '—',
+      quantity: order?.quantity ?? rec.quantitySnapshot ?? null,
+      operationName: getOperationName(rec.operationId) !== '—'
+        ? getOperationName(rec.operationId)
+        : (rec.operationNameSnapshot ?? '—'),
+    };
+  };
+
   const operatorsWithRecords = operators.filter(op =>
     productionRecords.some(r => r.operatorId === op.id)
   );
@@ -67,20 +82,28 @@ const ProductionRegisterPage: React.FC = () => {
     return Array.from(set).sort().reverse();
   }, [tabRecords]);
 
+  // For client filter we use display label as key (id when order exists, else snapshot name)
   const availableClients = useMemo(() => {
-    const set = new Set<string>();
+    const map = new Map<string, string>(); // value(id or name) -> label
     tabRecords.forEach(r => {
       const order = getOrder(r.orderId);
-      if (order) set.add(order.clientId);
+      if (order) {
+        map.set(order.clientId, getClientName(order.clientId));
+      } else if (r.clientNameSnapshot) {
+        map.set(`__snap__${r.clientNameSnapshot}`, r.clientNameSnapshot);
+      }
     });
-    return Array.from(set);
-  }, [tabRecords, orders]);
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [tabRecords, orders, clients]);
 
   const availableOrders = useMemo(() => {
-    const set = new Set<string>();
-    tabRecords.forEach(r => set.add(r.orderId));
-    return Array.from(set);
-  }, [tabRecords]);
+    const map = new Map<string, string>();
+    tabRecords.forEach(r => {
+      const info = getRecordInfo(r);
+      map.set(r.orderId, info.orderNumber);
+    });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [tabRecords, orders]);
 
   const availableOperations = useMemo(() => {
     const set = new Set<string>();
@@ -98,7 +121,8 @@ const ProductionRegisterPage: React.FC = () => {
       }
       if (filterClients.size > 0) {
         const order = getOrder(r.orderId);
-        if (!order || !filterClients.has(order.clientId)) return false;
+        const clientKey = order ? order.clientId : `__snap__${r.clientNameSnapshot ?? ''}`;
+        if (!filterClients.has(clientKey)) return false;
       }
       if (filterOrders.size > 0) {
         if (!filterOrders.has(r.orderId)) return false;
@@ -115,31 +139,21 @@ const ProductionRegisterPage: React.FC = () => {
     const arr = [...filteredRecords];
     const dir = sortDir === 'asc' ? 1 : -1;
     arr.sort((a, b) => {
+      const ia = getRecordInfo(a);
+      const ib = getRecordInfo(b);
       switch (sortField) {
         case 'date':
           return dir * (new Date(a.validatedAt).getTime() - new Date(b.validatedAt).getTime());
-        case 'orderNumber': {
-          const oA = getOrder(a.orderId)?.orderNumber || '';
-          const oB = getOrder(b.orderId)?.orderNumber || '';
-          return dir * oA.localeCompare(oB);
-        }
-        case 'client': {
-          const cA = getClientName(getOrder(a.orderId)?.clientId || '');
-          const cB = getClientName(getOrder(b.orderId)?.clientId || '');
-          return dir * cA.localeCompare(cB);
-        }
-        case 'designation': {
-          const dA = getOrder(a.orderId)?.designation || '';
-          const dB = getOrder(b.orderId)?.designation || '';
-          return dir * dA.localeCompare(dB);
-        }
-        case 'quantity': {
-          const qA = getOrder(a.orderId)?.quantity ?? 0;
-          const qB = getOrder(b.orderId)?.quantity ?? 0;
-          return dir * (qA - qB);
-        }
+        case 'orderNumber':
+          return dir * ia.orderNumber.localeCompare(ib.orderNumber);
+        case 'client':
+          return dir * ia.clientName.localeCompare(ib.clientName);
+        case 'designation':
+          return dir * ia.designation.localeCompare(ib.designation);
+        case 'quantity':
+          return dir * ((ia.quantity ?? 0) - (ib.quantity ?? 0));
         case 'operation':
-          return dir * getOperationName(a.operationId).localeCompare(getOperationName(b.operationId));
+          return dir * ia.operationName.localeCompare(ib.operationName);
         case 'duration':
           return dir * (a.actualDuration - b.actualDuration);
         default:
@@ -189,15 +203,15 @@ const ProductionRegisterPage: React.FC = () => {
 
   const buildExportRows = useCallback((records: typeof productionRecords): ExcelRow[] => {
     return records.map(rec => {
-      const order = getOrder(rec.orderId);
+      const info = getRecordInfo(rec);
       return {
         Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         Heure: new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        'رقم الطلبية': order?.orderNumber || '—',
-        Client: order ? getClientName(order.clientId) : '—',
-        Désignation: order?.designation || '—',
-        Quantité: order?.quantity ?? '—',
-        Opération: getOperationName(rec.operationId),
+        'رقم الطلبية': info.orderNumber,
+        Client: info.clientName,
+        Désignation: info.designation,
+        Quantité: info.quantity ?? '—',
+        Opération: info.operationName,
         'المدة (سا)': Number((rec.actualDuration / 60).toFixed(2)),
       };
     });
@@ -325,10 +339,7 @@ const ProductionRegisterPage: React.FC = () => {
                         رقم الطلبية <SortIcon field="orderNumber" />
                       </button>
                       <FilterPopover
-                        items={availableOrders.map(id => {
-                          const o = getOrder(id);
-                          return { value: id, label: o?.orderNumber || id };
-                        })}
+                        items={availableOrders}
                         selected={filterOrders}
                         onToggle={(v) => setFilterOrders(toggleSetItem(filterOrders, v))}
                         onClear={() => setFilterOrders(new Set())}
@@ -341,7 +352,7 @@ const ProductionRegisterPage: React.FC = () => {
                         الزبون <SortIcon field="client" />
                       </button>
                       <FilterPopover
-                        items={availableClients.map(id => ({ value: id, label: getClientName(id) }))}
+                        items={availableClients}
                         selected={filterClients}
                         onToggle={(v) => setFilterClients(toggleSetItem(filterClients, v))}
                         onClear={() => setFilterClients(new Set())}
@@ -381,8 +392,7 @@ const ProductionRegisterPage: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {sortedRecords.map(rec => {
-                  const order = getOrder(rec.orderId);
-                  const clientName = order ? getClientName(order.clientId) : '—';
+                  const info = getRecordInfo(rec);
                   return (
                     <TableRow key={rec.id}>
                       <TableCell className="text-xs">
@@ -390,11 +400,11 @@ const ProductionRegisterPage: React.FC = () => {
                         {' '}
                         {new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                       </TableCell>
-                      <TableCell className="font-medium">{order?.orderNumber || '—'}</TableCell>
-                      <TableCell className="text-xs">{clientName}</TableCell>
-                      <TableCell className="text-xs">{order?.designation || '—'}</TableCell>
-                      <TableCell className="text-xs">{order?.quantity ?? '—'}</TableCell>
-                      <TableCell>{getOperationName(rec.operationId)}</TableCell>
+                      <TableCell className="font-medium">{info.orderNumber}</TableCell>
+                      <TableCell className="text-xs">{info.clientName}</TableCell>
+                      <TableCell className="text-xs">{info.designation}</TableCell>
+                      <TableCell className="text-xs">{info.quantity ?? '—'}</TableCell>
+                      <TableCell>{info.operationName}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">

@@ -139,6 +139,12 @@ export interface ProductionRecord {
   actualDuration: number; // in minutes
   validatedAt: string; // ISO date-time
   workStatus?: 'done' | 'continue';
+  // Snapshots — preserved even if the source order is deleted later
+  orderNumberSnapshot?: string;
+  clientNameSnapshot?: string;
+  designationSnapshot?: string;
+  quantitySnapshot?: number;
+  operationNameSnapshot?: string;
 }
 
 export type GanttView = 'day' | 'week' | 'month';

@@ -317,6 +317,11 @@ export function mapRecordFromDB(row: any): ProductionRecord {
     actualDuration: row.actual_duration ?? 0,
     validatedAt: row.validated_at || row.created_at || '',
     workStatus: row.work_status || 'done',
+    orderNumberSnapshot: row.order_number_snapshot ?? undefined,
+    clientNameSnapshot: row.client_name_snapshot ?? undefined,
+    designationSnapshot: row.designation_snapshot ?? undefined,
+    quantitySnapshot: row.quantity_snapshot ?? undefined,
+    operationNameSnapshot: row.operation_name_snapshot ?? undefined,
   };
 }
 
@@ -330,6 +335,11 @@ export function mapRecordToDB(r: ProductionRecord) {
     actual_duration: r.actualDuration,
     validated_at: r.validatedAt || new Date().toISOString(),
     work_status: r.workStatus || 'done',
+    order_number_snapshot: r.orderNumberSnapshot ?? null,
+    client_name_snapshot: r.clientNameSnapshot ?? null,
+    designation_snapshot: r.designationSnapshot ?? null,
+    quantity_snapshot: r.quantitySnapshot ?? null,
+    operation_name_snapshot: r.operationNameSnapshot ?? null,
   };
 }
 
