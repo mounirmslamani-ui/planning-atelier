@@ -442,7 +442,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         value={row.assignType}
                         onChange={e => updateRow(row.id, 'assignType', e.target.value)}
                       >
-                        <option value="operator">العامل</option>
+                        <option value="operator">ورشة</option>
                         <option value="subcontractor">مناولة</option>
                       </select>
                     </TableCell>
