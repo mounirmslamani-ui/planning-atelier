@@ -339,10 +339,7 @@ const ProductionRegisterPage: React.FC = () => {
                         رقم الطلبية <SortIcon field="orderNumber" />
                       </button>
                       <FilterPopover
-                        items={availableOrders.map(id => {
-                          const o = getOrder(id);
-                          return { value: id, label: o?.orderNumber || id };
-                        })}
+                        items={availableOrders}
                         selected={filterOrders}
                         onToggle={(v) => setFilterOrders(toggleSetItem(filterOrders, v))}
                         onClear={() => setFilterOrders(new Set())}
@@ -355,7 +352,7 @@ const ProductionRegisterPage: React.FC = () => {
                         الزبون <SortIcon field="client" />
                       </button>
                       <FilterPopover
-                        items={availableClients.map(id => ({ value: id, label: getClientName(id) }))}
+                        items={availableClients}
                         selected={filterClients}
                         onToggle={(v) => setFilterClients(toggleSetItem(filterClients, v))}
                         onClear={() => setFilterClients(new Set())}
