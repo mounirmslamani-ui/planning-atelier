@@ -572,7 +572,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
-            <Button onClick={handlePlanifier} disabled={rows.length === 0 || rows.every(r => !r.option1)}>
+            <Button onClick={handlePlanifier} disabled={isLocked || rows.length === 0 || rows.every(r => !r.option1)}>
               <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'Replanifier' : 'Planifier'}
             </Button>
           </DialogFooter>
