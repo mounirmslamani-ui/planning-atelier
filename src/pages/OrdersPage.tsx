@@ -685,21 +685,27 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
       case 'globalStatus': {
-        const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
         const pendingQc = pendingQcOrderIds.has(o.id);
-        return (
-          <div className="flex flex-col items-center gap-1">
-            <GlobalStatusBadge status={status} />
-            {pendingQc && (
+        // When pending QC, the production is physically done — show ONLY the
+        // QC indicator (mutually exclusive with En attente / En cours).
+        if (pendingQc) {
+          return (
+            <div className="flex flex-col items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex items-center justify-center rounded-full border border-urgent-moderate/40 bg-urgent-moderate/10 text-urgent-moderate px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap">
+                  <span className="inline-flex items-center justify-center rounded-full border border-urgent-moderate/40 bg-urgent-moderate/10 text-urgent-moderate px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap">
                     ⏳ في انتظار المراقبة
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>En attente de contrôle qualité</TooltipContent>
               </Tooltip>
-            )}
+            </div>
+          );
+        }
+        const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <GlobalStatusBadge status={status} />
           </div>
         );
       }
