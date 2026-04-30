@@ -244,8 +244,24 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   };
 
   const handlePlanifier = () => {
+    // Hard guard: never wipe steps for orders that have moved past production.
+    if (isLocked) {
+      toast.error(lockReason);
+      return;
+    }
+
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
+
+    // Snapshot the existing step IDs (in row order) BEFORE deleting, so we can
+    // reuse them for unchanged rows. This preserves the link with
+    // production_records (validations) and prevents ghost/orphan data.
+    const existingIdsByRow: (string | undefined)[] = rows.map(r => {
+      if (!r.stepId) return undefined;
+      // Only reuse if the step still exists in DB
+      return existingOrderSteps.find(s => s.id === r.stepId)?.id;
+    });
+
     existingOrderSteps.forEach(s => deleteStep(s.id));
 
     const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === absenceOperationId);
@@ -266,7 +282,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order.id, deadline, opsToSchedule, stepsWithoutThisOrder, orders, holidays, equipments
     );
 
-    // Attach step-level prerequisites from rows
+    // Attach step-level prerequisites from rows AND reuse existing IDs where possible
     newSteps.forEach((s, i) => {
       if (rows[i]) {
         s.studyStatus = currentOrder.studyStatus ?? rows[i].studyStatus;
@@ -280,6 +296,12 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.toolingDeadline = rows[i].toolingDeadline;
         s.specialToolingNeeds = (rows[i].specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (rows[i].rawMaterialNeeds || []).filter(v => v.trim());
+      }
+      // Preserve original step ID for rows that already existed → keeps
+      // production_records linkage intact, no ghost data.
+      const reusedId = existingIdsByRow[i];
+      if (reusedId) {
+        s.id = reusedId;
       }
       addStep(s);
     });
