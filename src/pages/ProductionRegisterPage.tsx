@@ -27,6 +27,21 @@ const ProductionRegisterPage: React.FC = () => {
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
+  // Resolve display info for a record, falling back to snapshot fields when the
+  // source order has been deleted (e.g. after delivery cleanup).
+  const getRecordInfo = (rec: typeof productionRecords[0]) => {
+    const order = getOrder(rec.orderId);
+    return {
+      orderNumber: order?.orderNumber ?? rec.orderNumberSnapshot ?? '—',
+      clientName: order ? getClientName(order.clientId) : (rec.clientNameSnapshot ?? '—'),
+      designation: order?.designation ?? rec.designationSnapshot ?? '—',
+      quantity: order?.quantity ?? rec.quantitySnapshot ?? null,
+      operationName: getOperationName(rec.operationId) !== '—'
+        ? getOperationName(rec.operationId)
+        : (rec.operationNameSnapshot ?? '—'),
+    };
+  };
+
   const operatorsWithRecords = operators.filter(op =>
     productionRecords.some(r => r.operatorId === op.id)
   );
