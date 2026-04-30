@@ -203,15 +203,15 @@ const ProductionRegisterPage: React.FC = () => {
 
   const buildExportRows = useCallback((records: typeof productionRecords): ExcelRow[] => {
     return records.map(rec => {
-      const order = getOrder(rec.orderId);
+      const info = getRecordInfo(rec);
       return {
         Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         Heure: new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        'رقم الطلبية': order?.orderNumber || '—',
-        Client: order ? getClientName(order.clientId) : '—',
-        Désignation: order?.designation || '—',
-        Quantité: order?.quantity ?? '—',
-        Opération: getOperationName(rec.operationId),
+        'رقم الطلبية': info.orderNumber,
+        Client: info.clientName,
+        Désignation: info.designation,
+        Quantité: info.quantity ?? '—',
+        Opération: info.operationName,
         'المدة (سا)': Number((rec.actualDuration / 60).toFixed(2)),
       };
     });
@@ -392,8 +392,7 @@ const ProductionRegisterPage: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {sortedRecords.map(rec => {
-                  const order = getOrder(rec.orderId);
-                  const clientName = order ? getClientName(order.clientId) : '—';
+                  const info = getRecordInfo(rec);
                   return (
                     <TableRow key={rec.id}>
                       <TableCell className="text-xs">
@@ -401,11 +400,11 @@ const ProductionRegisterPage: React.FC = () => {
                         {' '}
                         {new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                       </TableCell>
-                      <TableCell className="font-medium">{order?.orderNumber || '—'}</TableCell>
-                      <TableCell className="text-xs">{clientName}</TableCell>
-                      <TableCell className="text-xs">{order?.designation || '—'}</TableCell>
-                      <TableCell className="text-xs">{order?.quantity ?? '—'}</TableCell>
-                      <TableCell>{getOperationName(rec.operationId)}</TableCell>
+                      <TableCell className="font-medium">{info.orderNumber}</TableCell>
+                      <TableCell className="text-xs">{info.clientName}</TableCell>
+                      <TableCell className="text-xs">{info.designation}</TableCell>
+                      <TableCell className="text-xs">{info.quantity ?? '—'}</TableCell>
+                      <TableCell>{info.operationName}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
