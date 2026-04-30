@@ -82,20 +82,28 @@ const ProductionRegisterPage: React.FC = () => {
     return Array.from(set).sort().reverse();
   }, [tabRecords]);
 
+  // For client filter we use display label as key (id when order exists, else snapshot name)
   const availableClients = useMemo(() => {
-    const set = new Set<string>();
+    const map = new Map<string, string>(); // value(id or name) -> label
     tabRecords.forEach(r => {
       const order = getOrder(r.orderId);
-      if (order) set.add(order.clientId);
+      if (order) {
+        map.set(order.clientId, getClientName(order.clientId));
+      } else if (r.clientNameSnapshot) {
+        map.set(`__snap__${r.clientNameSnapshot}`, r.clientNameSnapshot);
+      }
     });
-    return Array.from(set);
-  }, [tabRecords, orders]);
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [tabRecords, orders, clients]);
 
   const availableOrders = useMemo(() => {
-    const set = new Set<string>();
-    tabRecords.forEach(r => set.add(r.orderId));
-    return Array.from(set);
-  }, [tabRecords]);
+    const map = new Map<string, string>();
+    tabRecords.forEach(r => {
+      const info = getRecordInfo(r);
+      map.set(r.orderId, info.orderNumber);
+    });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [tabRecords, orders]);
 
   const availableOperations = useMemo(() => {
     const set = new Set<string>();
@@ -113,7 +121,8 @@ const ProductionRegisterPage: React.FC = () => {
       }
       if (filterClients.size > 0) {
         const order = getOrder(r.orderId);
-        if (!order || !filterClients.has(order.clientId)) return false;
+        const clientKey = order ? order.clientId : `__snap__${r.clientNameSnapshot ?? ''}`;
+        if (!filterClients.has(clientKey)) return false;
       }
       if (filterOrders.size > 0) {
         if (!filterOrders.has(r.orderId)) return false;
@@ -130,31 +139,21 @@ const ProductionRegisterPage: React.FC = () => {
     const arr = [...filteredRecords];
     const dir = sortDir === 'asc' ? 1 : -1;
     arr.sort((a, b) => {
+      const ia = getRecordInfo(a);
+      const ib = getRecordInfo(b);
       switch (sortField) {
         case 'date':
           return dir * (new Date(a.validatedAt).getTime() - new Date(b.validatedAt).getTime());
-        case 'orderNumber': {
-          const oA = getOrder(a.orderId)?.orderNumber || '';
-          const oB = getOrder(b.orderId)?.orderNumber || '';
-          return dir * oA.localeCompare(oB);
-        }
-        case 'client': {
-          const cA = getClientName(getOrder(a.orderId)?.clientId || '');
-          const cB = getClientName(getOrder(b.orderId)?.clientId || '');
-          return dir * cA.localeCompare(cB);
-        }
-        case 'designation': {
-          const dA = getOrder(a.orderId)?.designation || '';
-          const dB = getOrder(b.orderId)?.designation || '';
-          return dir * dA.localeCompare(dB);
-        }
-        case 'quantity': {
-          const qA = getOrder(a.orderId)?.quantity ?? 0;
-          const qB = getOrder(b.orderId)?.quantity ?? 0;
-          return dir * (qA - qB);
-        }
+        case 'orderNumber':
+          return dir * ia.orderNumber.localeCompare(ib.orderNumber);
+        case 'client':
+          return dir * ia.clientName.localeCompare(ib.clientName);
+        case 'designation':
+          return dir * ia.designation.localeCompare(ib.designation);
+        case 'quantity':
+          return dir * ((ia.quantity ?? 0) - (ib.quantity ?? 0));
         case 'operation':
-          return dir * getOperationName(a.operationId).localeCompare(getOperationName(b.operationId));
+          return dir * ia.operationName.localeCompare(ib.operationName);
         case 'duration':
           return dir * (a.actualDuration - b.actualDuration);
         default:
