@@ -320,33 +320,48 @@ export type Database = {
       production_records: {
         Row: {
           actual_duration: number
+          client_name_snapshot: string | null
           created_at: string
+          designation_snapshot: string | null
           id: string
           operation_id: string
+          operation_name_snapshot: string | null
           operator_id: string
           order_id: string
+          order_number_snapshot: string | null
+          quantity_snapshot: number | null
           step_id: string
           validated_at: string
           work_status: string
         }
         Insert: {
           actual_duration?: number
+          client_name_snapshot?: string | null
           created_at?: string
+          designation_snapshot?: string | null
           id?: string
           operation_id: string
+          operation_name_snapshot?: string | null
           operator_id: string
           order_id: string
+          order_number_snapshot?: string | null
+          quantity_snapshot?: number | null
           step_id: string
           validated_at?: string
           work_status?: string
         }
         Update: {
           actual_duration?: number
+          client_name_snapshot?: string | null
           created_at?: string
+          designation_snapshot?: string | null
           id?: string
           operation_id?: string
+          operation_name_snapshot?: string | null
           operator_id?: string
           order_id?: string
+          order_number_snapshot?: string | null
+          quantity_snapshot?: number | null
           step_id?: string
           validated_at?: string
           work_status?: string
