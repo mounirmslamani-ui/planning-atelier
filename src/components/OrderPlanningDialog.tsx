@@ -13,6 +13,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 import { getStepProgressStatus } from '@/lib/stepProgress';
+import { toast } from 'sonner';
 
 interface OperationRow {
   id: string;
@@ -42,10 +43,24 @@ interface Props {
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
+    qcEntries, deliveryEntries, deliveredOrders,
     addStep, updateStep, deleteStep, updateOrder, absenceOperationId,
   } = usePlanning();
 
   const currentOrder = orders.find(o => o.id === order.id) || order;
+
+  // Lock planning if the order has already moved past production
+  const isInQC = qcEntries.some(e => e.orderId === order.id);
+  const isInDelivery = deliveryEntries.some(e => e.orderId === order.id);
+  const isDelivered = deliveredOrders.some(d => d.orderId === order.id);
+  const isLocked = isInQC || isInDelivery || isDelivered;
+  const lockReason = isDelivered
+    ? 'الطلبية مسلَّمة — تعديل المراحل غير مسموح'
+    : isInDelivery
+      ? 'الطلبية في طور التسليم — تعديل المراحل غير مسموح'
+      : isInQC
+        ? 'الطلبية في مراقبة الجودة — تعديل المراحل غير مسموح'
+        : '';
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
 
@@ -230,8 +245,24 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   };
 
   const handlePlanifier = () => {
+    // Hard guard: never wipe steps for orders that have moved past production.
+    if (isLocked) {
+      toast.error(lockReason);
+      return;
+    }
+
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
+
+    // Snapshot the existing step IDs (in row order) BEFORE deleting, so we can
+    // reuse them for unchanged rows. This preserves the link with
+    // production_records (validations) and prevents ghost/orphan data.
+    const existingIdsByRow: (string | undefined)[] = rows.map(r => {
+      if (!r.stepId) return undefined;
+      // Only reuse if the step still exists in DB
+      return existingOrderSteps.find(s => s.id === r.stepId)?.id;
+    });
+
     existingOrderSteps.forEach(s => deleteStep(s.id));
 
     const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === absenceOperationId);
@@ -252,7 +283,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order.id, deadline, opsToSchedule, stepsWithoutThisOrder, orders, holidays, equipments
     );
 
-    // Attach step-level prerequisites from rows
+    // Attach step-level prerequisites from rows AND reuse existing IDs where possible
     newSteps.forEach((s, i) => {
       if (rows[i]) {
         s.studyStatus = currentOrder.studyStatus ?? rows[i].studyStatus;
@@ -266,6 +297,12 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.toolingDeadline = rows[i].toolingDeadline;
         s.specialToolingNeeds = (rows[i].specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (rows[i].rawMaterialNeeds || []).filter(v => v.trim());
+      }
+      // Preserve original step ID for rows that already existed → keeps
+      // production_records linkage intact, no ghost data.
+      const reusedId = existingIdsByRow[i];
+      if (reusedId) {
+        s.id = reusedId;
       }
       addStep(s);
     });
@@ -340,6 +377,12 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
               {clientName} - Commande N° {order.orderNumber} — {order.designation} — Qté : {order.quantity} — Délai : {formatDateFR(order.deliveryDeadline || order.plannedDeadline) || 'Non défini'}
             </p>
           </DialogHeader>
+
+          {isLocked && (
+            <div className="rounded-md border border-urgent-moderate/40 bg-urgent-moderate/10 px-4 py-2 text-sm text-urgent-moderate font-medium">
+              🔒 {lockReason}. لا يمكن إعادة برمجة المراحل.
+            </div>
+          )}
 
           <div className="bg-card rounded-lg border overflow-x-auto">
             <Table className="w-full min-w-full">
@@ -529,7 +572,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
-            <Button onClick={handlePlanifier} disabled={rows.length === 0 || rows.every(r => !r.option1)}>
+            <Button onClick={handlePlanifier} disabled={isLocked || rows.length === 0 || rows.every(r => !r.option1)}>
               <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'Replanifier' : 'Planifier'}
             </Button>
           </DialogFooter>
