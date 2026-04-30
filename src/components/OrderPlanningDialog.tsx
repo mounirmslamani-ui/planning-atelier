@@ -378,6 +378,12 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             </p>
           </DialogHeader>
 
+          {isLocked && (
+            <div className="rounded-md border border-urgent-moderate/40 bg-urgent-moderate/10 px-4 py-2 text-sm text-urgent-moderate font-medium">
+              🔒 {lockReason}. لا يمكن إعادة برمجة المراحل.
+            </div>
+          )}
+
           <div className="bg-card rounded-lg border overflow-x-auto">
             <Table className="w-full min-w-full">
               <TableHeader>
