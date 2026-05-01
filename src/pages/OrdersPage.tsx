@@ -929,6 +929,7 @@ const OrdersPage: React.FC = () => {
                     className={`transition-colors ${
                       !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
                     } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
+                    } ${!blocked && reworkOrderIds.has(o.id) ? 'bg-destructive/10 hover:bg-destructive/15 border-l-4 border-l-destructive' : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
                     } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''
