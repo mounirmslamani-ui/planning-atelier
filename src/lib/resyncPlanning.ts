@@ -39,7 +39,8 @@ export function computeResyncedSteps(
   absenceOrderId: string,
   today: Date = new Date(),
 ): ResyncResult {
-  const todayISO = isoDate(today);
+  const anchor = nextWorkStart(today, holidays);
+  const anchorISO = isoDate(anchor);
   const result: ProductionStep[] = [];
   let skipped = 0;
 
@@ -51,9 +52,8 @@ export function computeResyncedSteps(
     if (step.subcontractorId) continue; // subcontractor planning handled elsewhere
     if (step.operationId === absenceOperationId) continue;
     if (step.orderId === absenceOrderId) continue;
-    if (!step.startDate || !step.endDate) continue;
     if (getStepProgressStatus(step, records) === 'Terminée') continue;
-    if (step.startDate >= todayISO && step.endDate >= todayISO) continue;
+    if (step.startDate && step.endDate && step.startDate >= anchorISO && step.endDate >= anchorISO) continue;
 
     const key = step.operatorId!;
     if (!byOp.has(key)) byOp.set(key, []);
@@ -68,7 +68,7 @@ export function computeResyncedSteps(
       return ka.localeCompare(kb);
     });
 
-    let cursor = nextWorkStart(today, holidays);
+    let cursor = new Date(anchor);
     for (const step of opSteps) {
       const duration = step.estimatedDuration || 0;
       if (duration <= 0) { skipped++; continue; }
