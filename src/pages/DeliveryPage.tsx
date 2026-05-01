@@ -27,6 +27,28 @@ const DeliveryPage: React.FC = () => {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<Order>>({});
+  const [reintegratePending, setReintegratePending] = useState<{ entry: DeliveryEntry; decision: 'reprise-retouche' | 'non-conforme' } | null>(null);
+
+  const reintegrateOrder = (entry: DeliveryEntry, decision: 'reprise-retouche' | 'non-conforme') => {
+    // Recreate a QC entry marking it as "en attente de reprise"
+    const qc: QualityControlEntry = {
+      id: crypto.randomUUID(),
+      orderId: entry.orderId,
+      controlDate: entry.controlDate,
+      decision,
+      reworkNotes: decision === 'reprise-retouche' ? 'Réintégration depuis طلبيات جاهزة للتسليم' : undefined,
+      createdAt: new Date().toISOString(),
+    };
+    addQCEntry(qc);
+    // Bump priority to P1 (urgent rework)
+    const order = orders.find(o => o.id === entry.orderId);
+    if (order && order.priority !== 'P1') {
+      updateOrder({ ...order, priority: 'P1' });
+    }
+    // Remove from delivery list — this auto-unlocks the planning dialog
+    deleteDeliveryEntry(entry.id);
+    toast.success('تمت إعادة الطلبية إلى الإنتاج كأولوية عاجلة');
+  };
 
   const startEdit = (order: Order) => {
     setEditingOrderId(order.id);
