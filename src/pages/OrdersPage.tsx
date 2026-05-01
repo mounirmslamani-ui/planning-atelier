@@ -936,14 +936,14 @@ const OrdersPage: React.FC = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 min-w-9"
+                                  className="h-12 w-12 min-w-12"
                                   onClick={() => setPlanningOrder(o)}
                                   title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
                                 >
                                   {hasSteps ? (
-                                    <CalendarCheck className="w-3.5 h-3.5" />
+                                    <CalendarCheck className="w-7 h-7" />
                                   ) : (
-                                    <WarningTriangleIcon />
+                                    <WarningTriangleIcon className="w-7 h-7" />
                                   )}
                                 </Button>
                               );
