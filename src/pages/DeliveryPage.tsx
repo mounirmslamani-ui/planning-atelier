@@ -298,6 +298,24 @@ const DeliveryPage: React.FC = () => {
         variant={confirmState.variant}
         confirmLabel="Supprimer"
       />
+
+      <ConfirmDialog
+        open={!!reintegratePending}
+        title="إعادة الطلبية إلى الإنتاج؟"
+        description={
+          reintegratePending
+            ? `La commande sera retirée de 'طلبيات جاهزة للتسليم', réintégrée dans 'الطلبيات الحالية' avec la décision « ${reintegratePending.decision === 'reprise-retouche' ? 'إعادة/تعديل' : 'غير مطابق'} », sa priorité passera à P1 (urgence) et la fenêtre 'تحديد المراحل وتوزيعها' sera déverrouillée pour permettre l'ajout d'étapes de retouche.`
+            : ''
+        }
+        onConfirm={() => {
+          if (reintegratePending) reintegrateOrder(reintegratePending.entry, reintegratePending.decision);
+          setReintegratePending(null);
+        }}
+        onCancel={() => setReintegratePending(null)}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
+        variant="destructive"
+      />
     </div>
   );
 };
