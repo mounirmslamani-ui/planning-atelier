@@ -19,6 +19,7 @@ import {
   dbInsertDelivery, dbDeleteDelivery,
   dbInsertDeliveredOrder, dbUpdateDeliveredOrder, dbDeleteDeliveredOrder,
 } from '@/lib/supabase-data';
+import { computeResyncedSteps } from '@/lib/resyncPlanning';
 
 interface PlanningContextType {
   loading: boolean;
@@ -227,6 +228,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setAbsenceOperationId(absOp.id);
         setAbsenceOrderId(absOrder.id);
 
+        const initialResync = computeResyncedSteps(data.steps, data.productionRecords, data.holidays, absOp.id, absOrder.id);
+        if (initialResync.shifted.length > 0) {
+          const shiftedMap = new Map(initialResync.shifted.map(step => [step.id, step]));
+          data.steps = data.steps.map(step => shiftedMap.get(step.id) ?? step);
+        }
+
         setEquipments(data.equipments);
         setOperators(data.operators);
         setSubcontractors(data.subcontractors);
@@ -253,7 +260,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setDeliveryEntries(dedupedDelivery);
         setDeliveredOrders(data.deliveredOrders);
 
-        // Re-sync all data to DB to fix any previously failed inserts (date format issues)
+        // Re-sync all data to DB to fix date format issues and any automatic planning resync.
         await syncAllDataToDB(data);
       } catch (err) {
         console.error('[PlanningContext] Failed to load data:', err);
