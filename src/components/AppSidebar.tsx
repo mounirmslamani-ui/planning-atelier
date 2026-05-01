@@ -5,11 +5,15 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud,
+  DownloadCloud, RefreshCw,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
+import { computeResyncedSteps } from '@/lib/resyncPlanning';
+import { dbUpdateStep } from '@/lib/supabase-data';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 
 type DropTargetType = false | 'prod' | 'qc';
 
