@@ -26,8 +26,9 @@ export interface ResyncResult {
 }
 
 /**
- * Find every unfinished step whose start_date is in the past and shift its
- * dates forward, keeping the estimated duration. Frozen steps are kept in place.
+ * Find every unfinished step whose planned dates are in the past and shift them
+ * forward, keeping the estimated duration. Frozen steps keep their lock state,
+ * but are still moved because an active locked task must never be hidden.
  * Returns the new step objects (mutation is up to the caller).
  */
 export function computeResyncedSteps(
@@ -51,7 +52,6 @@ export function computeResyncedSteps(
     if (step.operationId === absenceOperationId) continue;
     if (step.orderId === absenceOrderId) continue;
     if (!step.startDate || !step.endDate) continue;
-    if (step.frozen) continue;
     if (getStepProgressStatus(step, records) === 'Terminée') continue;
     if (step.startDate >= todayISO && step.endDate >= todayISO) continue;
 
