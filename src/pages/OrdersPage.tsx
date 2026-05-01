@@ -271,6 +271,17 @@ const OrdersPage: React.FC = () => {
     });
     return ids;
   }, [qcEntries]);
+  // Reintegrated orders coming back from delivery (rework / non-conforme).
+  // Highlighted as urgent retouches.
+  const reworkOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (entry.decision === 'reprise-retouche' || entry.decision === 'non-conforme') {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
 
   const baseSorted = useMemo(() => {
     const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
