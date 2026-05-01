@@ -43,24 +43,25 @@ interface Props {
 const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
-    qcEntries, deliveryEntries, deliveredOrders,
+    qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
     addStep, updateStep, deleteStep, updateOrder, absenceOperationId,
   } = usePlanning();
 
   const currentOrder = orders.find(o => o.id === order.id) || order;
 
-  // Lock planning if the order has already moved past production
-  const isInQC = qcEntries.some(e => e.orderId === order.id);
+  // Lock planning ONLY after a final conformity validation (delivery / delivered).
+  // While the order is still in QC with a non-final decision (none / non-conforme /
+  // reprise-retouche), the gamme stays editable so retouches can be added.
+  const qcEntryForOrder = qcEntries.find(e => e.orderId === order.id);
+  const isInQC = !!qcEntryForOrder;
   const isInDelivery = deliveryEntries.some(e => e.orderId === order.id);
   const isDelivered = deliveredOrders.some(d => d.orderId === order.id);
-  const isLocked = isInQC || isInDelivery || isDelivered;
+  const isLocked = isInDelivery || isDelivered;
   const lockReason = isDelivered
     ? 'الطلبية مسلَّمة — تعديل المراحل غير مسموح'
     : isInDelivery
       ? 'الطلبية في طور التسليم — تعديل المراحل غير مسموح'
-      : isInQC
-        ? 'الطلبية في مراقبة الجودة — تعديل المراحل غير مسموح'
-        : '';
+      : '';
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
 
