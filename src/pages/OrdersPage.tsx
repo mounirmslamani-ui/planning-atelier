@@ -696,7 +696,23 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
       case 'globalStatus': {
+        const isRework = reworkOrderIds.has(o.id);
         const pendingQc = pendingQcOrderIds.has(o.id);
+        // Rework takes precedence: returned from delivery for retouches/non-conforme.
+        if (isRework) {
+          return (
+            <div className="flex flex-col items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center rounded-full border border-destructive/50 bg-destructive/15 text-destructive px-2 py-0.5 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                    🔧 إعادة عاجلة
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Reprise urgente — retour de مراقبة الجودة après contrôle</TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        }
         // When pending QC, the production is physically done — show ONLY the
         // QC indicator (mutually exclusive with En attente / En cours).
         if (pendingQc) {
