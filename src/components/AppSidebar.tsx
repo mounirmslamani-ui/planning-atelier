@@ -191,6 +191,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <button
           type="button"
+          onClick={handleResyncPlanning}
+          disabled={resyncing}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-secondary text-secondary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          title="نقل المهام المتأخرة غير المنجزة إلى اليوم"
+        >
+          <RefreshCw className={`w-4 h-4 ${resyncing ? 'animate-spin' : ''}`} />
+          {resyncing ? '...جاري التحديث' : 'تحديث الجدول'}
+        </button>
+        <button
+          type="button"
           onClick={handleGlobalExport}
           disabled={exporting}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
@@ -202,6 +212,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
         <p className="text-xs text-sidebar-foreground/50 font-heading text-center">v1.0 — الورشة</p>
       </div>
       </div>
+      <ConfirmDialog open={confirmState.open} title={confirmState.title} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
     </aside>
   );
 };
