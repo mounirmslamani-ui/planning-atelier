@@ -134,6 +134,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [currentDateKey, setCurrentDateKey] = useState(() => new Date().toISOString().split('T')[0]);
 
   // ───────────────────── Undo/Redo ─────────────────────
   const undoStack = useRef<Snapshot[]>([]);
@@ -272,11 +273,23 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     load();
   }, []);
 
+  useEffect(() => {
+    const refreshDateKey = () => setCurrentDateKey(new Date().toISOString().split('T')[0]);
+    const interval = window.setInterval(refreshDateKey, 60_000);
+    window.addEventListener('focus', refreshDateKey);
+    document.addEventListener('visibilitychange', refreshDateKey);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshDateKey);
+      document.removeEventListener('visibilitychange', refreshDateKey);
+    };
+  }, []);
+
   // Automatic planning resync: active operator tasks must never stay hidden in the past.
   useEffect(() => {
     if (loading || !absenceOperationId || !absenceOrderId || autoResyncInFlight.current) return;
 
-    const { shifted } = computeResyncedSteps(steps, productionRecords, holidays, absenceOperationId, absenceOrderId);
+    const { shifted } = computeResyncedSteps(steps, productionRecords, holidays, absenceOperationId, absenceOrderId, new Date(`${currentDateKey}T00:00:00`));
     if (shifted.length === 0) return;
 
     autoResyncInFlight.current = true;
@@ -286,7 +299,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     Promise.all(shifted.map(step => dbUpdateStep(step)))
       .catch(err => console.error('[PlanningContext] Automatic planning resync failed:', err))
       .finally(() => { autoResyncInFlight.current = false; });
-  }, [loading, steps, productionRecords, holidays, absenceOperationId, absenceOrderId]);
+  }, [loading, steps, productionRecords, holidays, absenceOperationId, absenceOrderId, currentDateKey]);
 
   // ───────────────────── CRUD with optimistic updates + DB sync ─────────────────────
 
