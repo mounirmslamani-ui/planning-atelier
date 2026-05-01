@@ -308,6 +308,16 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
+
+    // If the order was sitting in QC (waiting / non-conforme / reprise-retouche)
+    // and the user re-edited the gamme, send it back to active production
+    // ("قيد الانجاز") by removing the QC entry. AppLayout will re-transfer it
+    // to QC automatically once all steps are complete again.
+    if (qcEntryForOrder) {
+      deleteQCEntry(qcEntryForOrder.id);
+      toast.success('تمت إعادة الطلبية إلى الإنتاج (قيد الانجاز)');
+    }
+
     onOpenChange(false);
   };
 
