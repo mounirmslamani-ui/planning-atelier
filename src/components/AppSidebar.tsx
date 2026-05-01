@@ -5,15 +5,11 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud, RefreshCw,
+  DownloadCloud,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
-import { computeResyncedSteps } from '@/lib/resyncPlanning';
-import { dbUpdateStep } from '@/lib/supabase-data';
 import { toast } from 'sonner';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { useConfirm } from '@/hooks/use-confirm';
 
 type DropTargetType = false | 'prod' | 'qc';
 
@@ -64,42 +60,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
   const location = useLocation();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [resyncing, setResyncing] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
   const planning = usePlanning();
-  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
-
-  const handleResyncPlanning = () => {
-    confirm(
-      'إعادة مزامنة الجدول: سيتم نقل كل المهام غير المنجزة ذات تاريخ متأخر إلى اليوم. هل تريد المتابعة؟',
-      async () => {
-        try {
-          setResyncing(true);
-          const { shifted, skipped } = computeResyncedSteps(
-            planning.steps,
-            planning.productionRecords,
-            planning.holidays,
-            planning.absenceOperationId,
-            planning.absenceOrderId,
-          );
-          if (shifted.length === 0) {
-            toast.info('لا توجد مهام متأخرة. الجدول متزامن.');
-            return;
-          }
-          const shiftedMap = new Map(shifted.map(s => [s.id, s]));
-          const merged = planning.steps.map(s => shiftedMap.get(s.id) ?? s);
-          planning.setSteps(merged);
-          await Promise.all(shifted.map(s => dbUpdateStep(s)));
-          toast.success(`تم تحديث ${shifted.length} مهمة${skipped > 0 ? ` (تم تخطي ${skipped})` : ''}`);
-        } catch (e) {
-          console.error(e);
-          toast.error('فشلت إعادة المزامنة');
-        } finally {
-          setResyncing(false);
-        }
-      },
-    );
-  };
 
   const handleGlobalExport = () => {
     try {
@@ -191,16 +153,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <button
           type="button"
-          onClick={handleResyncPlanning}
-          disabled={resyncing}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-secondary text-secondary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          title="نقل المهام المتأخرة غير المنجزة إلى اليوم"
-        >
-          <RefreshCw className={`w-4 h-4 ${resyncing ? 'animate-spin' : ''}`} />
-          {resyncing ? '...جاري التحديث' : 'تحديث الجدول'}
-        </button>
-        <button
-          type="button"
           onClick={handleGlobalExport}
           disabled={exporting}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
@@ -212,7 +164,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
         <p className="text-xs text-sidebar-foreground/50 font-heading text-center">v1.0 — الورشة</p>
       </div>
       </div>
-      <ConfirmDialog open={confirmState.open} title={confirmState.title} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
     </aside>
   );
 };
