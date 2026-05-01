@@ -201,7 +201,24 @@ const DeliveryPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-sm">{formatDateFR(entry.controlDate)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-normal/15 text-normal">
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                      value={entry.decision}
+                      onChange={e => {
+                        const next = e.target.value as QCDecision;
+                        if (next === entry.decision) return;
+                        if (next === 'reprise-retouche' || next === 'non-conforme') {
+                          setReintegratePending({ entry, decision: next });
+                        }
+                      }}
+                      title="Modifier la décision"
+                    >
+                      <option value="conforme">مطابق للمواصفات</option>
+                      <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
+                      <option value="reprise-retouche">إعادة/تعديل</option>
+                      <option value="non-conforme">غير مطابق للمواصفات</option>
+                    </select>
+                    <Badge variant="outline" className="mt-1 bg-normal/15 text-normal">
                       {entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية'}
                     </Badge>
                   </TableCell>
