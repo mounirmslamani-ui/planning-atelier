@@ -138,6 +138,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // ───────────────────── Undo/Redo ─────────────────────
   const undoStack = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
+  const autoResyncInFlight = useRef(false);
   const [historyTrigger, setHistoryTrigger] = useState(0);
 
   const takeSnapshot = useCallback((): Snapshot => ({
@@ -270,6 +271,22 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     load();
   }, []);
+
+  // Automatic planning resync: active operator tasks must never stay hidden in the past.
+  useEffect(() => {
+    if (loading || !absenceOperationId || !absenceOrderId || autoResyncInFlight.current) return;
+
+    const { shifted } = computeResyncedSteps(steps, productionRecords, holidays, absenceOperationId, absenceOrderId);
+    if (shifted.length === 0) return;
+
+    autoResyncInFlight.current = true;
+    const shiftedMap = new Map(shifted.map(step => [step.id, step]));
+    setSteps(prev => prev.map(step => shiftedMap.get(step.id) ?? step));
+
+    Promise.all(shifted.map(step => dbUpdateStep(step)))
+      .catch(err => console.error('[PlanningContext] Automatic planning resync failed:', err))
+      .finally(() => { autoResyncInFlight.current = false; });
+  }, [loading, steps, productionRecords, holidays, absenceOperationId, absenceOrderId]);
 
   // ───────────────────── CRUD with optimistic updates + DB sync ─────────────────────
 
