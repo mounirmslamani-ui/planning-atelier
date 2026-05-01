@@ -11,14 +11,14 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveryEntry, DeliveredOrder, Order } from '@/types/planning';
+import type { DeliveryEntry, DeliveredOrder, Order, QCDecision, QualityControlEntry } from '@/types/planning';
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder } = usePlanning();
+  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder, addQCEntry } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
