@@ -26,8 +26,9 @@ export interface ResyncResult {
 }
 
 /**
- * Find every unfinished step whose start_date is in the past and shift its
- * dates forward, keeping the estimated duration. Frozen steps are kept in place.
+ * Find every unfinished step whose planned dates are in the past and shift them
+ * forward, keeping the estimated duration. Frozen steps keep their lock state,
+ * but are still moved because an active locked task must never be hidden.
  * Returns the new step objects (mutation is up to the caller).
  */
 export function computeResyncedSteps(
@@ -38,7 +39,8 @@ export function computeResyncedSteps(
   absenceOrderId: string,
   today: Date = new Date(),
 ): ResyncResult {
-  const todayISO = isoDate(today);
+  const anchor = nextWorkStart(today, holidays);
+  const anchorISO = isoDate(anchor);
   const result: ProductionStep[] = [];
   let skipped = 0;
 
@@ -50,10 +52,8 @@ export function computeResyncedSteps(
     if (step.subcontractorId) continue; // subcontractor planning handled elsewhere
     if (step.operationId === absenceOperationId) continue;
     if (step.orderId === absenceOrderId) continue;
-    if (!step.startDate || !step.endDate) continue;
-    if (step.frozen) continue;
     if (getStepProgressStatus(step, records) === 'Terminée') continue;
-    if (step.startDate >= todayISO && step.endDate >= todayISO) continue;
+    if (step.startDate && step.endDate && step.startDate >= anchorISO && step.endDate >= anchorISO) continue;
 
     const key = step.operatorId!;
     if (!byOp.has(key)) byOp.set(key, []);
@@ -68,7 +68,7 @@ export function computeResyncedSteps(
       return ka.localeCompare(kb);
     });
 
-    let cursor = nextWorkStart(today, holidays);
+    let cursor = new Date(anchor);
     for (const step of opSteps) {
       const duration = step.estimatedDuration || 0;
       if (duration <= 0) { skipped++; continue; }

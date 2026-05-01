@@ -19,6 +19,7 @@ import {
   dbInsertDelivery, dbDeleteDelivery,
   dbInsertDeliveredOrder, dbUpdateDeliveredOrder, dbDeleteDeliveredOrder,
 } from '@/lib/supabase-data';
+import { computeResyncedSteps } from '@/lib/resyncPlanning';
 
 interface PlanningContextType {
   loading: boolean;
@@ -133,10 +134,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [currentDateKey, setCurrentDateKey] = useState(() => new Date().toISOString().split('T')[0]);
 
   // ───────────────────── Undo/Redo ─────────────────────
   const undoStack = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
+  const autoResyncInFlight = useRef(false);
   const [historyTrigger, setHistoryTrigger] = useState(0);
 
   const takeSnapshot = useCallback((): Snapshot => ({
@@ -227,6 +230,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setAbsenceOperationId(absOp.id);
         setAbsenceOrderId(absOrder.id);
 
+        const initialResync = computeResyncedSteps(data.steps, data.productionRecords, data.holidays, absOp.id, absOrder.id);
+        if (initialResync.shifted.length > 0) {
+          const shiftedMap = new Map(initialResync.shifted.map(step => [step.id, step]));
+          data.steps = data.steps.map(step => shiftedMap.get(step.id) ?? step);
+        }
+
         setEquipments(data.equipments);
         setOperators(data.operators);
         setSubcontractors(data.subcontractors);
@@ -253,7 +262,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setDeliveryEntries(dedupedDelivery);
         setDeliveredOrders(data.deliveredOrders);
 
-        // Re-sync all data to DB to fix any previously failed inserts (date format issues)
+        // Re-sync all data to DB to fix date format issues and any automatic planning resync.
         await syncAllDataToDB(data);
       } catch (err) {
         console.error('[PlanningContext] Failed to load data:', err);
@@ -263,6 +272,34 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     load();
   }, []);
+
+  useEffect(() => {
+    const refreshDateKey = () => setCurrentDateKey(new Date().toISOString().split('T')[0]);
+    const interval = window.setInterval(refreshDateKey, 60_000);
+    window.addEventListener('focus', refreshDateKey);
+    document.addEventListener('visibilitychange', refreshDateKey);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshDateKey);
+      document.removeEventListener('visibilitychange', refreshDateKey);
+    };
+  }, []);
+
+  // Automatic planning resync: active operator tasks must never stay hidden in the past.
+  useEffect(() => {
+    if (loading || !absenceOperationId || !absenceOrderId || autoResyncInFlight.current) return;
+
+    const { shifted } = computeResyncedSteps(steps, productionRecords, holidays, absenceOperationId, absenceOrderId, new Date(`${currentDateKey}T00:00:00`));
+    if (shifted.length === 0) return;
+
+    autoResyncInFlight.current = true;
+    const shiftedMap = new Map(shifted.map(step => [step.id, step]));
+    setSteps(prev => prev.map(step => shiftedMap.get(step.id) ?? step));
+
+    Promise.all(shifted.map(step => dbUpdateStep(step)))
+      .catch(err => console.error('[PlanningContext] Automatic planning resync failed:', err))
+      .finally(() => { autoResyncInFlight.current = false; });
+  }, [loading, steps, productionRecords, holidays, absenceOperationId, absenceOrderId, currentDateKey]);
 
   // ───────────────────── CRUD with optimistic updates + DB sync ─────────────────────
 
