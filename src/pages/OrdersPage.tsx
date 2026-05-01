@@ -271,6 +271,17 @@ const OrdersPage: React.FC = () => {
     });
     return ids;
   }, [qcEntries]);
+  // Reintegrated orders coming back from delivery (rework / non-conforme).
+  // Highlighted as urgent retouches.
+  const reworkOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (entry.decision === 'reprise-retouche' || entry.decision === 'non-conforme') {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
 
   const baseSorted = useMemo(() => {
     const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
@@ -685,7 +696,23 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
       case 'globalStatus': {
+        const isRework = reworkOrderIds.has(o.id);
         const pendingQc = pendingQcOrderIds.has(o.id);
+        // Rework takes precedence: returned from delivery for retouches/non-conforme.
+        if (isRework) {
+          return (
+            <div className="flex flex-col items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center rounded-full border border-destructive/50 bg-destructive/15 text-destructive px-2 py-0.5 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                    🔧 إعادة عاجلة
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Reprise urgente — retour de مراقبة الجودة après contrôle</TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        }
         // When pending QC, the production is physically done — show ONLY the
         // QC indicator (mutually exclusive with En attente / En cours).
         if (pendingQc) {
@@ -902,6 +929,7 @@ const OrdersPage: React.FC = () => {
                     className={`transition-colors ${
                       !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
                     } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
+                    } ${!blocked && reworkOrderIds.has(o.id) ? 'bg-destructive/10 hover:bg-destructive/15 border-l-4 border-l-destructive' : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
                     } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''

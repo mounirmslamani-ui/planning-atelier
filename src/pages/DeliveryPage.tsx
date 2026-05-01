@@ -11,14 +11,14 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveryEntry, DeliveredOrder, Order } from '@/types/planning';
+import type { DeliveryEntry, DeliveredOrder, Order, QCDecision, QualityControlEntry } from '@/types/planning';
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder } = usePlanning();
+  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder, addQCEntry } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -27,6 +27,28 @@ const DeliveryPage: React.FC = () => {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<Order>>({});
+  const [reintegratePending, setReintegratePending] = useState<{ entry: DeliveryEntry; decision: 'reprise-retouche' | 'non-conforme' } | null>(null);
+
+  const reintegrateOrder = (entry: DeliveryEntry, decision: 'reprise-retouche' | 'non-conforme') => {
+    // Recreate a QC entry marking it as "en attente de reprise"
+    const qc: QualityControlEntry = {
+      id: crypto.randomUUID(),
+      orderId: entry.orderId,
+      controlDate: entry.controlDate,
+      decision,
+      reworkNotes: decision === 'reprise-retouche' ? 'Réintégration depuis طلبيات جاهزة للتسليم' : undefined,
+      createdAt: new Date().toISOString(),
+    };
+    addQCEntry(qc);
+    // Bump priority to P1 (urgent rework)
+    const order = orders.find(o => o.id === entry.orderId);
+    if (order && order.priority !== 'P1') {
+      updateOrder({ ...order, priority: 'P1' });
+    }
+    // Remove from delivery list — this auto-unlocks the planning dialog
+    deleteDeliveryEntry(entry.id);
+    toast.success('تمت إعادة الطلبية إلى الإنتاج كأولوية عاجلة');
+  };
 
   const startEdit = (order: Order) => {
     setEditingOrderId(order.id);
@@ -179,7 +201,24 @@ const DeliveryPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-sm">{formatDateFR(entry.controlDate)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-normal/15 text-normal">
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                      value={entry.decision}
+                      onChange={e => {
+                        const next = e.target.value as QCDecision;
+                        if (next === entry.decision) return;
+                        if (next === 'reprise-retouche' || next === 'non-conforme') {
+                          setReintegratePending({ entry, decision: next });
+                        }
+                      }}
+                      title="Modifier la décision"
+                    >
+                      <option value="conforme">مطابق للمواصفات</option>
+                      <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
+                      <option value="reprise-retouche">إعادة/تعديل</option>
+                      <option value="non-conforme">غير مطابق للمواصفات</option>
+                    </select>
+                    <Badge variant="outline" className="mt-1 bg-normal/15 text-normal">
                       {entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية'}
                     </Badge>
                   </TableCell>
@@ -258,6 +297,24 @@ const DeliveryPage: React.FC = () => {
         onCancel={handleCancel}
         variant={confirmState.variant}
         confirmLabel="Supprimer"
+      />
+
+      <ConfirmDialog
+        open={!!reintegratePending}
+        title="إعادة الطلبية إلى الإنتاج؟"
+        description={
+          reintegratePending
+            ? `La commande sera retirée de 'طلبيات جاهزة للتسليم', réintégrée dans 'الطلبيات الحالية' avec la décision « ${reintegratePending.decision === 'reprise-retouche' ? 'إعادة/تعديل' : 'غير مطابق'} », sa priorité passera à P1 (urgence) et la fenêtre 'تحديد المراحل وتوزيعها' sera déverrouillée pour permettre l'ajout d'étapes de retouche.`
+            : ''
+        }
+        onConfirm={() => {
+          if (reintegratePending) reintegrateOrder(reintegratePending.entry, reintegratePending.decision);
+          setReintegratePending(null);
+        }}
+        onCancel={() => setReintegratePending(null)}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
+        variant="destructive"
       />
     </div>
   );
