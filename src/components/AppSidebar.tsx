@@ -64,8 +64,42 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
   const location = useLocation();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
   const planning = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+
+  const handleResyncPlanning = () => {
+    confirm(
+      'إعادة مزامنة الجدول: سيتم نقل كل المهام غير المنجزة ذات تاريخ متأخر إلى اليوم. هل تريد المتابعة؟',
+      async () => {
+        try {
+          setResyncing(true);
+          const { shifted, skipped } = computeResyncedSteps(
+            planning.steps,
+            planning.productionRecords,
+            planning.holidays,
+            planning.absenceOperationId,
+            planning.absenceOrderId,
+          );
+          if (shifted.length === 0) {
+            toast.info('لا توجد مهام متأخرة. الجدول متزامن.');
+            return;
+          }
+          const shiftedMap = new Map(shifted.map(s => [s.id, s]));
+          const merged = planning.steps.map(s => shiftedMap.get(s.id) ?? s);
+          planning.setSteps(merged);
+          await Promise.all(shifted.map(s => dbUpdateStep(s)));
+          toast.success(`تم تحديث ${shifted.length} مهمة${skipped > 0 ? ` (تم تخطي ${skipped})` : ''}`);
+        } catch (e) {
+          console.error(e);
+          toast.error('فشلت إعادة المزامنة');
+        } finally {
+          setResyncing(false);
+        }
+      },
+    );
+  };
 
   const handleGlobalExport = () => {
     try {
