@@ -355,6 +355,7 @@ const OrdersPage: React.FC = () => {
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
+      case 'displayOrder': return String(o.displayOrder ?? '');
       case 'orderNumber': return o.orderNumber;
       case 'orderDate': return o.orderDate;
       case 'client': return getClientName(o.clientId);
