@@ -57,6 +57,7 @@ const StudyPage: React.FC = () => {
       if (!val) return;
       const lv = val.toLowerCase();
       list = list.filter(r => {
+        if (key === 'displayOrder') return String(r.order.displayOrder ?? '').includes(val);
         if (key === 'orderNumber') return r.order.orderNumber.toLowerCase().includes(lv);
         if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
