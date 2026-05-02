@@ -80,6 +80,7 @@ const SubcontractingPage: React.FC = () => {
       const lv = val.toLowerCase();
       result = result.filter(r => {
         switch (key as ColumnKey) {
+          case 'displayOrder': return String(r.order.displayOrder ?? '').includes(lv);
           case 'orderNumber': return r.order.orderNumber.toLowerCase().includes(lv);
           case 'orderDate': return r.order.orderDate.includes(lv);
           case 'client': return getClientName(r.order.clientId).toLowerCase().includes(lv);
