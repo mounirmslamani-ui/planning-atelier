@@ -5,11 +5,12 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud,
+  DownloadCloud, FileText,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
 import { toast } from 'sonner';
+import OrderReportDialog from './OrderReportDialog';
 
 type DropTargetType = false | 'prod' | 'qc';
 
