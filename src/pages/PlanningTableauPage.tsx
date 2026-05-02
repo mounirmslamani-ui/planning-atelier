@@ -238,7 +238,7 @@ interface TaskItem {
   order: Order;
 }
 
-type PlanningFilterKey = 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
+type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
  * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
