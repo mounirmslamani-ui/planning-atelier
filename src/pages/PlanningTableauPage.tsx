@@ -1299,7 +1299,9 @@ const PlanningTableauPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10 px-1 text-center text-xs">الترتيب</TableHead>
+                    <TableHead className="w-14 px-1 text-center text-xs">
+                      <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} />
+                    </TableHead>
                     <TableHead className="w-[95px] text-xs">
                       <ColumnHeader label="تاريخ البداية" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} filterMode="date" />
                     </TableHead>
