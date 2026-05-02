@@ -61,6 +61,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
   const location = useLocation();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
   const planning = usePlanning();
 
