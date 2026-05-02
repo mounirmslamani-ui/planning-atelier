@@ -900,7 +900,9 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-8 px-1">
                 <Checkbox checked={selectedIds.size === displayOrders.length && displayOrders.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
-              <TableHead className="w-14 text-center text-xs px-1">الترتيب</TableHead>
+              <TableHead className="w-20 text-center text-xs px-1">
+                <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} />
+              </TableHead>
               {columns.map((col, ci) => (
                 <React.Fragment key={col.key}>
                   <TableHead className={col.className}>
