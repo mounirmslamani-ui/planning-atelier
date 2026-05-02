@@ -54,6 +54,7 @@ const MaterialPurchasesPage: React.FC = () => {
       if (!val) return;
       const lv = val.toLowerCase();
       list = list.filter((r: any) => {
+        if (key === 'displayOrder') return String(r.order.displayOrder ?? '').includes(val);
         if (key === 'orderNumber') return r.order.orderNumber.toLowerCase().includes(lv);
         if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
@@ -119,7 +120,7 @@ const MaterialPurchasesPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12 text-center">#</TableHead>
+              <TableHead className="w-16 text-center"><ColumnHeader label="ترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
                 <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>

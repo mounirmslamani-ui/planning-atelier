@@ -39,7 +39,7 @@ const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; de
 };
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
@@ -355,6 +355,7 @@ const OrdersPage: React.FC = () => {
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
+      case 'displayOrder': return String(o.displayOrder ?? '');
       case 'orderNumber': return o.orderNumber;
       case 'orderDate': return o.orderDate;
       case 'client': return getClientName(o.clientId);
@@ -899,7 +900,9 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-8 px-1">
                 <Checkbox checked={selectedIds.size === displayOrders.length && displayOrders.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
-              <TableHead className="w-14 text-center text-xs px-1">الترتيب</TableHead>
+              <TableHead className="w-20 text-center text-xs px-1">
+                <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} />
+              </TableHead>
               {columns.map((col, ci) => (
                 <React.Fragment key={col.key}>
                   <TableHead className={col.className}>

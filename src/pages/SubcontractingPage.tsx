@@ -13,7 +13,7 @@ import { dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 
-type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
+type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
 const SubcontractingPage: React.FC = () => {
   const { orders, clients, steps, operations, subcontractors, updateStep, absenceOrderId } = usePlanning();
@@ -80,6 +80,7 @@ const SubcontractingPage: React.FC = () => {
       const lv = val.toLowerCase();
       result = result.filter(r => {
         switch (key as ColumnKey) {
+          case 'displayOrder': return String(r.order.displayOrder ?? '').includes(lv);
           case 'orderNumber': return r.order.orderNumber.toLowerCase().includes(lv);
           case 'orderDate': return r.order.orderDate.includes(lv);
           case 'client': return getClientName(r.order.clientId).toLowerCase().includes(lv);
@@ -167,7 +168,7 @@ const SubcontractingPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12 text-center">الترتيب</TableHead>
+              <TableHead className="w-16 text-center"><ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
