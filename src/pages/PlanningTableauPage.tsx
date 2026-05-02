@@ -1149,6 +1149,7 @@ const PlanningTableauPage: React.FC = () => {
       const needle = value.toLowerCase();
       result = result.filter(t => {
         switch (key as PlanningFilterKey) {
+          case 'displayOrder': return String(t.order.displayOrder ?? '').includes(needle);
           case 'startDate': return t.step.startDate === value;
           case 'endDate': return t.step.endDate === value;
           case 'orderNumber': return t.order.orderNumber.toLowerCase().includes(needle);
