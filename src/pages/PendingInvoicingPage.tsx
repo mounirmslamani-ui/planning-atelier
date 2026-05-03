@@ -16,6 +16,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority, SalePriceStatus } from '@/types/planning';
 import { cn } from '@/lib/utils';
+import ReintegrateButton from '@/components/orders/ReintegrateButton';
+import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 
 const OPERATOR_COLUMNS = [
   'محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة',
