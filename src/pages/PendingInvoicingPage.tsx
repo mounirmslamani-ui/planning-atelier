@@ -640,6 +640,16 @@ const PendingInvoicingPage: React.FC = () => {
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). La date de livraison sera supprimée si la commande n'a pas encore été facturée. Tout numéro de facture existant reste intact pour préserver l'intégrité comptable."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
