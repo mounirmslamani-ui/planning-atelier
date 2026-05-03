@@ -165,6 +165,7 @@ const DeliveredOrdersPage: React.FC = () => {
                       </button>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{entry.observation || '—'}</TableCell>
+                    <TableCell className="text-center">—</TableCell>
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
