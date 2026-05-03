@@ -42,7 +42,8 @@ const CancelledOrdersPage: React.FC = () => {
 
   return (
     <div className="space-y-4 p-4" dir="rtl">
-      <PageHeader title="طلبيات ملغاة" subtitle={`عدد الطلبيات الملغاة: ${cancelledOrders.length}`} />
+      <PageHeader title="طلبيات ملغاة" />
+      <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
 
       <div className="border rounded-md overflow-x-auto">
         <Table>
