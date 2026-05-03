@@ -377,6 +377,16 @@ const QualityControlPage: React.FC = () => {
         variant={confirmState.variant}
         confirmLabel="Supprimer"
       />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera retirée de ce tableau et réinjectée dans 'الطلبيات الحالية' avec une priorité P1 (Reprise/Retouche). Si elle a déjà été facturée, le numéro et la date de facture restent intacts."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
