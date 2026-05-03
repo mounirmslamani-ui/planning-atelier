@@ -178,3 +178,16 @@ export interface DeliveredOrder {
   observation?: string;
   invoiceNumber?: string;
 }
+
+export interface CancelledOrder {
+  id: string;
+  orderId: string;
+  orderNumberSnapshot: string;
+  clientNameSnapshot?: string;
+  designationSnapshot: string;
+  quantitySnapshot: number;
+  orderDateSnapshot?: string;
+  cancelDate: string;
+  reason: string;
+  note?: string;
+}
