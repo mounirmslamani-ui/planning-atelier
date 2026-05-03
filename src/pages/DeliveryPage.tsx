@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 const DeliveryPage: React.FC = () => {
   const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder, addQCEntry } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const reint = useReintegrateOrder();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
