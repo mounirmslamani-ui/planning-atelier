@@ -381,6 +381,16 @@ const DeliveredOrdersPage: React.FC = () => {
         variant={confirmState.variant}
         confirmLabel="Supprimer"
       />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). Si une facture existe déjà, son numéro et sa date sont CONSERVÉS intacts pour préserver l'intégrité comptable. Sinon, l'enregistrement de livraison est supprimé."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
