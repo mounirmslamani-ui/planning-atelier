@@ -482,6 +482,25 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setDeliveredOrders(prev => prev.filter(d => d.id !== id)); dbDeleteDeliveredOrder(id);
   }, [pushUndo]);
 
+  // Cancelled Orders
+  const addCancelledOrder = useCallback(async (entry: CancelledOrder) => {
+    pushUndo();
+    setCancelledOrders(prev => [...prev.filter(c => c.orderId !== entry.orderId), entry]);
+    const ok = await dbInsertCancelledOrder(entry);
+    if (!ok) setCancelledOrders(prev => prev.filter(c => c.id !== entry.id));
+    return ok;
+  }, [pushUndo]);
+  const updateCancelledOrder = useCallback((entry: CancelledOrder) => {
+    pushUndo();
+    setCancelledOrders(prev => prev.map(c => c.id === entry.id ? entry : c));
+    dbUpdateCancelledOrder(entry);
+  }, [pushUndo]);
+  const deleteCancelledOrder = useCallback((id: string) => {
+    pushUndo();
+    setCancelledOrders(prev => prev.filter(c => c.id !== id));
+    dbDeleteCancelledOrder(id);
+  }, [pushUndo]);
+
   return (
     <PlanningContext.Provider value={{
       loading,
@@ -498,6 +517,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
       deliveredOrders, addDeliveredOrder, updateDeliveredOrder, deleteDeliveredOrder,
+      cancelledOrders, addCancelledOrder, updateCancelledOrder, deleteCancelledOrder,
       equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
