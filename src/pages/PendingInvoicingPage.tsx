@@ -79,6 +79,7 @@ const PendingInvoicingPage: React.FC = () => {
   } = usePlanning();
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const reint = useReintegrateOrder();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
