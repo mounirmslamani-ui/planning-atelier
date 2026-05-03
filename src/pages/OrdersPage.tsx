@@ -1133,6 +1133,18 @@ const OrdersPage: React.FC = () => {
       )}
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 
+      {cancelTarget && (
+        <CancelOrderDialog
+          open={!!cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          orderLabel={cancelTarget.orderNumber}
+          onConfirm={async (data) => {
+            const ok = await cancelOrder(cancelTarget.id, data);
+            if (ok) setCancelTarget(null);
+          }}
+        />
+      )}
+
       {statusDatePrompt && (
         <DatePromptDialog
           open={!!statusDatePrompt}
