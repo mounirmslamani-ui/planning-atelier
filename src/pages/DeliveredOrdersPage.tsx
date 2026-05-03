@@ -33,6 +33,7 @@ const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 
 const DeliveredOrdersPage: React.FC = () => {
   const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder, updateOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const reint = useReintegrateOrder();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
