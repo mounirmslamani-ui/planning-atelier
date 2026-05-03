@@ -13,6 +13,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import type { DeliveryEntry, DeliveredOrder, Order, QCDecision, QualityControlEntry } from '@/types/planning';
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
+import ReintegrateButton from '@/components/orders/ReintegrateButton';
+import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
