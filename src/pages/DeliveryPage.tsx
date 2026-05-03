@@ -277,7 +277,7 @@ const DeliveryPage: React.FC = () => {
             })}
             {deliveryEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
                 </TableCell>
               </TableRow>
