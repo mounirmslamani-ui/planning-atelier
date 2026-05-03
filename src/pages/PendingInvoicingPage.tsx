@@ -355,7 +355,7 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   const totalRows = processed.length;
-  const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1; // +1 price column, +1 actions
+  const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1 + 1; // +1 price, +1 reintegrate, +1 actions
   const priorityOptions: OrderPriority[] = ['P1', 'P2', 'P3', 'P4'];
 
   const deliveredByOrderId = useMemo(
