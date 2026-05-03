@@ -3,7 +3,7 @@ import type {
   Equipment, Operator, Subcontractor, Operation, Client, Order,
   ProductionStep, Holiday, ProductionRecord, QualityControlEntry, DeliveryEntry,
   EquipmentType, EquipmentState, OperationCategory, ClientClass, OrderPriority, QCDecision,
-  ResourceStatus, DeliveredOrder, SalePriceStatus,
+  ResourceStatus, DeliveredOrder, SalePriceStatus, CancelledOrder,
 } from '@/types/planning';
 import { statusToBool, boolToStatus } from '@/types/planning';
 
@@ -409,6 +409,38 @@ export function mapDeliveredOrderToDB(d: DeliveredOrder) {
     sale_price_status: d.salePriceStatus,
     observation: d.observation || null,
     invoice_number: d.invoiceNumber || null,
+  };
+}
+
+// ───────────────────── CancelledOrder ─────────────────────
+
+export function mapCancelledOrderFromDB(row: any): CancelledOrder {
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    orderNumberSnapshot: row.order_number_snapshot,
+    clientNameSnapshot: row.client_name_snapshot || undefined,
+    designationSnapshot: row.designation_snapshot,
+    quantitySnapshot: row.quantity_snapshot ?? 1,
+    orderDateSnapshot: row.order_date_snapshot || undefined,
+    cancelDate: row.cancel_date || '',
+    reason: row.reason,
+    note: row.note || undefined,
+  };
+}
+
+export function mapCancelledOrderToDB(c: CancelledOrder) {
+  return {
+    id: c.id,
+    order_id: c.orderId,
+    order_number_snapshot: c.orderNumberSnapshot,
+    client_name_snapshot: c.clientNameSnapshot || null,
+    designation_snapshot: c.designationSnapshot,
+    quantity_snapshot: c.quantitySnapshot,
+    order_date_snapshot: toISODateOrNull(c.orderDateSnapshot),
+    cancel_date: toISODate(c.cancelDate),
+    reason: c.reason,
+    note: c.note || null,
   };
 }
 
