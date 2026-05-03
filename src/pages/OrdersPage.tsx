@@ -11,7 +11,9 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, ClipboardPaste, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
+import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
+import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
@@ -76,6 +78,8 @@ function formatMinutesToHM(minutes: number): string {
 
 const OrdersPage: React.FC = () => {
   const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords } = usePlanning();
+  const cancelOrder = useCancelOrder();
+  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
@@ -993,6 +997,9 @@ const OrdersPage: React.FC = () => {
                                 <Pencil className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
+                              <Ban className="w-3.5 h-3.5 text-orange-500" />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                           </div>
                         </TableCell>
@@ -1125,6 +1132,18 @@ const OrdersPage: React.FC = () => {
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
+
+      {cancelTarget && (
+        <CancelOrderDialog
+          open={!!cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          orderLabel={cancelTarget.orderNumber}
+          onConfirm={async (data) => {
+            const ok = await cancelOrder(cancelTarget.id, data);
+            if (ok) setCancelTarget(null);
+          }}
+        />
+      )}
 
       {statusDatePrompt && (
         <DatePromptDialog

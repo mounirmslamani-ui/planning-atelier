@@ -5,7 +5,7 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud, FileText,
+  DownloadCloud, FileText, Ban,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
@@ -36,6 +36,7 @@ const sidebarGroups = [
       { to: '/delivery', label: 'طلبيات جاهزة للتسليم', icon: PackageCheck, dropTarget: false as DropTargetType },
       { to: '/delivered-orders', label: 'طلبيات مسلمة', icon: Archive, dropTarget: false as DropTargetType },
       { to: '/pending-invoicing', label: 'طلبيات في انتظار الفوترة', icon: Receipt, dropTarget: false as DropTargetType },
+      { to: '/cancelled-orders', label: 'طلبيات ملغاة', icon: Ban, dropTarget: false as DropTargetType },
     ],
   },
   {

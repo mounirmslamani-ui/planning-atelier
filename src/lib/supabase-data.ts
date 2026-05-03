@@ -3,7 +3,7 @@ import type {
   Equipment, Operator, Subcontractor, Operation, Client, Order,
   ProductionStep, Holiday, ProductionRecord, QualityControlEntry, DeliveryEntry,
   EquipmentType, EquipmentState, OperationCategory, ClientClass, OrderPriority, QCDecision,
-  ResourceStatus, DeliveredOrder, SalePriceStatus,
+  ResourceStatus, DeliveredOrder, SalePriceStatus, CancelledOrder,
 } from '@/types/planning';
 import { statusToBool, boolToStatus } from '@/types/planning';
 
@@ -412,6 +412,38 @@ export function mapDeliveredOrderToDB(d: DeliveredOrder) {
   };
 }
 
+// ───────────────────── CancelledOrder ─────────────────────
+
+export function mapCancelledOrderFromDB(row: any): CancelledOrder {
+  return {
+    id: row.id,
+    orderId: row.order_id,
+    orderNumberSnapshot: row.order_number_snapshot,
+    clientNameSnapshot: row.client_name_snapshot || undefined,
+    designationSnapshot: row.designation_snapshot,
+    quantitySnapshot: row.quantity_snapshot ?? 1,
+    orderDateSnapshot: row.order_date_snapshot || undefined,
+    cancelDate: row.cancel_date || '',
+    reason: row.reason,
+    note: row.note || undefined,
+  };
+}
+
+export function mapCancelledOrderToDB(c: CancelledOrder) {
+  return {
+    id: c.id,
+    order_id: c.orderId,
+    order_number_snapshot: c.orderNumberSnapshot,
+    client_name_snapshot: c.clientNameSnapshot || null,
+    designation_snapshot: c.designationSnapshot,
+    quantity_snapshot: c.quantitySnapshot,
+    order_date_snapshot: toISODateOrNull(c.orderDateSnapshot),
+    cancel_date: toISODate(c.cancelDate),
+    reason: c.reason,
+    note: c.note || null,
+  };
+}
+
 export async function fetchAllData() {
   const [
     { data: equipments },
@@ -426,6 +458,7 @@ export async function fetchAllData() {
     { data: qcEntries },
     { data: deliveryEntries },
     { data: deliveredOrders },
+    { data: cancelledOrders },
   ] = await Promise.all([
     supabase.from('equipments').select('*'),
     supabase.from('operators').select('*'),
@@ -439,6 +472,7 @@ export async function fetchAllData() {
     supabase.from('quality_control_entries').select('*'),
     supabase.from('delivery_entries').select('*'),
     (supabase.from as any)('delivered_orders').select('*'),
+    (supabase.from as any)('cancelled_orders').select('*'),
   ]);
 
   return {
@@ -454,6 +488,7 @@ export async function fetchAllData() {
     qcEntries: (qcEntries || []).map(mapQCEntryFromDB),
     deliveryEntries: (deliveryEntries || []).map(mapDeliveryFromDB),
     deliveredOrders: (deliveredOrders || []).map(mapDeliveredOrderFromDB),
+    cancelledOrders: (cancelledOrders || []).map(mapCancelledOrderFromDB),
   };
 }
 
@@ -746,4 +781,20 @@ export async function syncAllDataToDB(data: {
   }
   
   console.log('[Sync] Full data sync complete.');
+}
+
+// Cancelled Orders
+export async function dbInsertCancelledOrder(c: CancelledOrder) {
+  const { error } = await (supabase.from as any)('cancelled_orders').insert(mapCancelledOrderToDB(c));
+  if (error) logError('cancelled_order', 'insert', error);
+  return !error;
+}
+export async function dbUpdateCancelledOrder(c: CancelledOrder) {
+  const { error } = await (supabase.from as any)('cancelled_orders').update(mapCancelledOrderToDB(c)).eq('id', c.id);
+  if (error) logError('cancelled_order', 'update', error);
+  return !error;
+}
+export async function dbDeleteCancelledOrder(id: string) {
+  const { error } = await (supabase.from as any)('cancelled_orders').delete().eq('id', id);
+  if (error) logError('cancelled_order', 'delete', error);
 }

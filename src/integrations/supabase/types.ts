@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      cancelled_orders: {
+        Row: {
+          cancel_date: string
+          client_name_snapshot: string | null
+          created_at: string
+          designation_snapshot: string
+          id: string
+          note: string | null
+          order_date_snapshot: string | null
+          order_id: string
+          order_number_snapshot: string
+          quantity_snapshot: number
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          cancel_date?: string
+          client_name_snapshot?: string | null
+          created_at?: string
+          designation_snapshot: string
+          id?: string
+          note?: string | null
+          order_date_snapshot?: string | null
+          order_id: string
+          order_number_snapshot: string
+          quantity_snapshot?: number
+          reason: string
+          updated_at?: string
+        }
+        Update: {
+          cancel_date?: string
+          client_name_snapshot?: string | null
+          created_at?: string
+          designation_snapshot?: string
+          id?: string
+          note?: string | null
+          order_date_snapshot?: string | null
+          order_id?: string
+          order_number_snapshot?: string
+          quantity_snapshot?: number
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           client_class: Database["public"]["Enums"]["client_class"] | null

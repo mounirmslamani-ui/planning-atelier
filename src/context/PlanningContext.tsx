@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type {
   Operator, Subcontractor, Operation, Client, Order, ProductionStep,
-  Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment, DeliveredOrder,
+  Holiday, GanttView, ProductionRecord, QualityControlEntry, DeliveryEntry, Equipment, DeliveredOrder, CancelledOrder,
 } from '@/types/planning';
 import {
   fetchAllData, syncAllDataToDB,
@@ -18,6 +18,7 @@ import {
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
   dbInsertDelivery, dbDeleteDelivery,
   dbInsertDeliveredOrder, dbUpdateDeliveredOrder, dbDeleteDeliveredOrder,
+  dbInsertCancelledOrder, dbUpdateCancelledOrder, dbDeleteCancelledOrder,
 } from '@/lib/supabase-data';
 import { computeResyncedSteps } from '@/lib/resyncPlanning';
 
@@ -36,6 +37,7 @@ interface PlanningContextType {
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
   deliveredOrders: DeliveredOrder[];
+  cancelledOrders: CancelledOrder[];
   equipments: Equipment[];
   ganttView: GanttView;
   ganttZeroDate: Date;
@@ -80,6 +82,9 @@ interface PlanningContextType {
   addDeliveredOrder: (entry: DeliveredOrder) => void;
   updateDeliveredOrder: (entry: DeliveredOrder) => void;
   deleteDeliveredOrder: (id: string) => void;
+  addCancelledOrder: (entry: CancelledOrder) => Promise<boolean>;
+  updateCancelledOrder: (entry: CancelledOrder) => void;
+  deleteCancelledOrder: (id: string) => void;
   setEquipments: (eqs: Equipment[]) => void;
   addEquipment: (eq: Equipment) => void;
   updateEquipment: (eq: Equipment) => void;
@@ -106,6 +111,7 @@ interface Snapshot {
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
   deliveredOrders: DeliveredOrder[];
+  cancelledOrders: CancelledOrder[];
   equipments: Equipment[];
 }
 
@@ -129,6 +135,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [qcEntries, setQCEntries] = useState<QualityControlEntry[]>([]);
   const [deliveryEntries, setDeliveryEntries] = useState<DeliveryEntry[]>([]);
   const [deliveredOrders, setDeliveredOrders] = useState<DeliveredOrder[]>([]);
+  const [cancelledOrders, setCancelledOrders] = useState<CancelledOrder[]>([]);
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [ganttView, setGanttView] = useState<GanttView>('day');
   const [ganttZeroDate, setGanttZeroDate] = useState<Date>(new Date());
@@ -154,8 +161,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     qcEntries: [...qcEntries],
     deliveryEntries: [...deliveryEntries],
     deliveredOrders: [...deliveredOrders],
+    cancelledOrders: [...cancelledOrders],
     equipments: [...equipments],
-  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, deliveredOrders, equipments]);
+  }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, equipments]);
 
   const pushUndo = useCallback(() => {
     const snap = takeSnapshot();
@@ -176,6 +184,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setQCEntries(snap.qcEntries);
     setDeliveryEntries(snap.deliveryEntries);
     setDeliveredOrders(snap.deliveredOrders);
+    setCancelledOrders(snap.cancelledOrders);
     setEquipments(snap.equipments);
   }, []);
 
@@ -261,6 +270,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         })();
         setDeliveryEntries(dedupedDelivery);
         setDeliveredOrders(data.deliveredOrders);
+        setCancelledOrders((data as any).cancelledOrders || []);
 
         // Re-sync all data to DB to fix date format issues and any automatic planning resync.
         await syncAllDataToDB(data);
@@ -472,6 +482,25 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setDeliveredOrders(prev => prev.filter(d => d.id !== id)); dbDeleteDeliveredOrder(id);
   }, [pushUndo]);
 
+  // Cancelled Orders
+  const addCancelledOrder = useCallback(async (entry: CancelledOrder) => {
+    pushUndo();
+    setCancelledOrders(prev => [...prev.filter(c => c.orderId !== entry.orderId), entry]);
+    const ok = await dbInsertCancelledOrder(entry);
+    if (!ok) setCancelledOrders(prev => prev.filter(c => c.id !== entry.id));
+    return ok;
+  }, [pushUndo]);
+  const updateCancelledOrder = useCallback((entry: CancelledOrder) => {
+    pushUndo();
+    setCancelledOrders(prev => prev.map(c => c.id === entry.id ? entry : c));
+    dbUpdateCancelledOrder(entry);
+  }, [pushUndo]);
+  const deleteCancelledOrder = useCallback((id: string) => {
+    pushUndo();
+    setCancelledOrders(prev => prev.filter(c => c.id !== id));
+    dbDeleteCancelledOrder(id);
+  }, [pushUndo]);
+
   return (
     <PlanningContext.Provider value={{
       loading,
@@ -488,6 +517,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
       deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
       deliveredOrders, addDeliveredOrder, updateDeliveredOrder, deleteDeliveredOrder,
+      cancelledOrders, addCancelledOrder, updateCancelledOrder, deleteCancelledOrder,
       equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
       ganttView, setGanttView,
       ganttZeroDate, setGanttZeroDate,
