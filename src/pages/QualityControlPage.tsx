@@ -262,6 +262,9 @@ const QualityControlPage: React.FC = () => {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="text-center">
+                    <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
+                  </TableCell>
                   <TableCell className="text-center whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
                       {isEditing ? (
