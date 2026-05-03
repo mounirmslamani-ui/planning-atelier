@@ -234,6 +234,9 @@ const DeliveryPage: React.FC = () => {
                       className="h-8 w-36 text-xs"
                     />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
+                  </TableCell>
                   <TableCell className="text-center whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
                       {isEditing ? (
