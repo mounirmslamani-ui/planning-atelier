@@ -456,6 +456,9 @@ const PendingInvoicingPage: React.FC = () => {
         <TableCell className="text-xs max-w-40 truncate" title={rawMaterialsForOrder(order.id)}>
           {rawMaterialsForOrder(order.id)}
         </TableCell>
+        <TableCell className="text-center">
+          <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
+        </TableCell>
         <TableCell className="text-center whitespace-nowrap">
           <div className="flex items-center justify-center gap-1">
             {isEditing ? (
