@@ -323,6 +323,16 @@ const DeliveryPage: React.FC = () => {
         cancelLabel="Annuler"
         variant="destructive"
       />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera retirée de 'طلبيات جاهزة للتسليم' et réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). La date de livraison n'a pas encore été enregistrée, rien à supprimer côté facturation."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
+      />
     </div>
   );
 };
