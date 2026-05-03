@@ -782,3 +782,19 @@ export async function syncAllDataToDB(data: {
   
   console.log('[Sync] Full data sync complete.');
 }
+
+// Cancelled Orders
+export async function dbInsertCancelledOrder(c: CancelledOrder) {
+  const { error } = await (supabase.from as any)('cancelled_orders').insert(mapCancelledOrderToDB(c));
+  if (error) logError('cancelled_order', 'insert', error);
+  return !error;
+}
+export async function dbUpdateCancelledOrder(c: CancelledOrder) {
+  const { error } = await (supabase.from as any)('cancelled_orders').update(mapCancelledOrderToDB(c)).eq('id', c.id);
+  if (error) logError('cancelled_order', 'update', error);
+  return !error;
+}
+export async function dbDeleteCancelledOrder(id: string) {
+  const { error } = await (supabase.from as any)('cancelled_orders').delete().eq('id', id);
+  if (error) logError('cancelled_order', 'delete', error);
+}
