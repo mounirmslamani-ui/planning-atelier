@@ -15,6 +15,8 @@ import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
+import ReintegrateButton from '@/components/orders/ReintegrateButton';
+import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { getOrderQualityControlCheck, buildOrderQualityControlErrorMessage } from '@/lib/stepProgress';
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
@@ -43,6 +45,7 @@ const QualityControlPage: React.FC = () => {
     productionRecords, absenceOperationId,
   } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const reint = useReintegrateOrder();
 
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
@@ -184,6 +187,7 @@ const QualityControlPage: React.FC = () => {
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إعادة إدماج</TableHead>
               <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
@@ -258,6 +262,9 @@ const QualityControlPage: React.FC = () => {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="text-center">
+                    <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
+                  </TableCell>
                   <TableCell className="text-center whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
                       {isEditing ? (
@@ -298,7 +305,7 @@ const QualityControlPage: React.FC = () => {
             })}
             {qcEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                   Aucune commande en contrôle qualité.
                 </TableCell>
               </TableRow>
@@ -369,6 +376,16 @@ const QualityControlPage: React.FC = () => {
         onCancel={handleCancel}
         variant={confirmState.variant}
         confirmLabel="Supprimer"
+      />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera retirée de ce tableau et réinjectée dans 'الطلبيات الحالية' avec une priorité P1 (Reprise/Retouche). Si elle a déjà été facturée, le numéro et la date de facture restent intacts."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
       />
     </div>
   );

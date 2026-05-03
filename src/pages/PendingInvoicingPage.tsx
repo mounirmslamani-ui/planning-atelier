@@ -16,6 +16,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority, SalePriceStatus } from '@/types/planning';
 import { cn } from '@/lib/utils';
+import ReintegrateButton from '@/components/orders/ReintegrateButton';
+import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 
 const OPERATOR_COLUMNS = [
   'محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة',
@@ -77,6 +79,7 @@ const PendingInvoicingPage: React.FC = () => {
   } = usePlanning();
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const reint = useReintegrateOrder();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
@@ -352,7 +355,7 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   const totalRows = processed.length;
-  const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1; // +1 price column, +1 actions
+  const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1 + 1; // +1 price, +1 reintegrate, +1 actions
   const priorityOptions: OrderPriority[] = ['P1', 'P2', 'P3', 'P4'];
 
   const deliveredByOrderId = useMemo(
@@ -452,6 +455,9 @@ const PendingInvoicingPage: React.FC = () => {
         <TableCell className="text-xs text-center">{orderHasSubcontracting(order.id) ? '✓' : ''}</TableCell>
         <TableCell className="text-xs max-w-40 truncate" title={rawMaterialsForOrder(order.id)}>
           {rawMaterialsForOrder(order.id)}
+        </TableCell>
+        <TableCell className="text-center">
+          <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
         </TableCell>
         <TableCell className="text-center whitespace-nowrap">
           <div className="flex items-center justify-center gap-1">
@@ -590,6 +596,7 @@ const PendingInvoicingPage: React.FC = () => {
               <TableHead className="text-xs font-semibold whitespace-nowrap">معالجة حرارية</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">مناولة</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">المواد الأولية المستعملة</TableHead>
+              <TableHead className="text-xs font-semibold whitespace-nowrap text-center">إعادة إدماج</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap text-center">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
@@ -632,6 +639,16 @@ const PendingInvoicingPage: React.FC = () => {
         variant={confirmState.variant}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+      />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). La date de livraison sera supprimée si la commande n'a pas encore été facturée. Tout numéro de facture existant reste intact pour préserver l'intégrité comptable."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
       />
     </div>
   );

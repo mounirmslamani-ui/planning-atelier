@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
+import ReintegrateButton from '@/components/orders/ReintegrateButton';
+import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -31,6 +33,7 @@ const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 
 const DeliveredOrdersPage: React.FC = () => {
   const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder, updateOrder } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const reint = useReintegrateOrder();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
@@ -135,6 +138,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
+              <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إعادة إدماج</TableHead>
               <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
@@ -161,6 +165,7 @@ const DeliveredOrdersPage: React.FC = () => {
                       </button>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{entry.observation || '—'}</TableCell>
+                    <TableCell className="text-center">—</TableCell>
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
@@ -264,6 +269,9 @@ const DeliveredOrdersPage: React.FC = () => {
                       className="h-8 text-xs min-w-48"
                     />
                   </TableCell>
+                  <TableCell className="text-center">
+                    <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
+                  </TableCell>
                   <TableCell className="text-center whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
                       {isEditing ? (
@@ -304,7 +312,7 @@ const DeliveredOrdersPage: React.FC = () => {
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
@@ -372,6 +380,16 @@ const DeliveredOrdersPage: React.FC = () => {
         onCancel={handleCancel}
         variant={confirmState.variant}
         confirmLabel="Supprimer"
+      />
+
+      <ConfirmDialog
+        open={!!reint.pending}
+        title="إعادة إدماج الطلبية"
+        description="La commande sera réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). Si une facture existe déjà, son numéro et sa date sont CONSERVÉS intacts pour préserver l'intégrité comptable. Sinon, l'enregistrement de livraison est supprimé."
+        onConfirm={reint.confirmReintegrate}
+        onCancel={reint.cancelReintegrate}
+        confirmLabel="Oui, réintégrer"
+        cancelLabel="Annuler"
       />
     </div>
   );
