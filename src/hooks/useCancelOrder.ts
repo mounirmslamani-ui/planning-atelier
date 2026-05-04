@@ -10,7 +10,7 @@ import { toast } from 'sonner';
  * Distinct from deleteOrder which permanently destroys data.
  */
 export function useCancelOrder() {
-  const { orders, clients, deleteOrder, addCancelledOrder } = usePlanning();
+  const { orders, clients, addCancelledOrder } = usePlanning();
 
   return useCallback(async (orderId: string, data: { cancelDate: string; reason: string; note: string }) => {
     const order = orders.find(o => o.id === orderId);
@@ -40,8 +40,9 @@ export function useCancelOrder() {
     }
 
     // Remove order from active list (and its dependent QC/delivery if any)
-    deleteOrder(order.id);
+    // Note: order itself stays in DB (preserved in سجل الطلبيات registry).
+    // Only the active workshop view filters out cancelled orders.
     toast.success(`Commande ${order.orderNumber} annulée`);
     return true;
-  }, [orders, clients, deleteOrder, addCancelledOrder]);
+  }, [orders, clients, addCancelledOrder]);
 }

@@ -19,6 +19,7 @@ import DeliveryPage from "./pages/DeliveryPage";
 import DeliveredOrdersPage from "./pages/DeliveredOrdersPage";
 import PendingInvoicingPage from "./pages/PendingInvoicingPage";
 import CancelledOrdersPage from "./pages/CancelledOrdersPage";
+import OrderRegistryPage from "./pages/OrderRegistryPage";
 import MaterialPurchasesPage from "./pages/MaterialPurchasesPage";
 import ToolingPurchasesPage from "./pages/ToolingPurchasesPage";
 import StudyPage from "./pages/StudyPage";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/operations" element={<OperationsPage />} />
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/subcontractors" element={<SubcontractorsPage />} />
+              <Route path="/order-registry" element={<OrderRegistryPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/steps" element={<StepsPage />} />
               <Route path="/holidays" element={<HolidaysPage />} />
