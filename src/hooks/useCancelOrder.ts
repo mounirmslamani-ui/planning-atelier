@@ -10,7 +10,7 @@ import { toast } from 'sonner';
  * Distinct from deleteOrder which permanently destroys data.
  */
 export function useCancelOrder() {
-  const { orders, clients, deleteOrder, addCancelledOrder } = usePlanning();
+  const { orders, clients, addCancelledOrder } = usePlanning();
 
   return useCallback(async (orderId: string, data: { cancelDate: string; reason: string; note: string }) => {
     const order = orders.find(o => o.id === orderId);
