@@ -5,7 +5,7 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud, FileText, Ban,
+  DownloadCloud, FileText, Ban, BookOpen,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
@@ -18,6 +18,7 @@ const sidebarGroups = [
   {
     title: 'القيادة والإدخال',
     items: [
+      { to: '/order-registry', label: 'سجل الطلبيات', icon: BookOpen, dropTarget: false as DropTargetType },
       { to: '/orders', label: 'الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
       { to: '/absences', label: 'الغيابات', icon: UserX, dropTarget: false as DropTargetType },
       { to: '/production-register', label: 'سجل الأعمال المنجزة', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
