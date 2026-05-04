@@ -77,7 +77,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords } = usePlanning();
+  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
   const cancelOrder = useCancelOrder();
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
@@ -262,8 +262,9 @@ const OrdersPage: React.FC = () => {
     const ids = new Set<string>();
     deliveryEntries.forEach(de => ids.add(de.orderId));
     deliveredOrders.forEach(d => ids.add(d.orderId));
+    cancelledOrders.forEach(c => ids.add(c.orderId));
     return ids;
-  }, [deliveryEntries, deliveredOrders]);
+  }, [deliveryEntries, deliveredOrders, cancelledOrders]);
   // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
   // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
   const pendingQcOrderIds = useMemo(() => {
