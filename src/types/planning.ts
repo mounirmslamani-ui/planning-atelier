@@ -51,6 +51,22 @@ export interface Client {
 
 export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'undetermined';
 
+export type OrderCategory = 'fabrication' | 'prestation' | 'divers' | 'slamani';
+
+export const ORDER_CATEGORY_PREFIX: Record<OrderCategory, string> = {
+  fabrication: 'F',
+  prestation: 'P',
+  divers: '',
+  slamani: 'S',
+};
+
+export const ORDER_CATEGORY_LABEL: Record<OrderCategory, string> = {
+  fabrication: 'Fabrications',
+  prestation: 'Prestations',
+  divers: 'Divers',
+  slamani: 'SLAMANI',
+};
+
 export type ResourceStatus = 'disponible' | 'non-disponible' | 'partiel' | 'non-applicable';
 
 // Helper: legacy boolean view of a 4-state status (true only when "disponible")
@@ -86,6 +102,7 @@ export interface Order {
   instructions?: string;
   drawingModel?: string;
   notesUpdatedAt?: string; // ISO timestamp of last observation change
+  category?: OrderCategory;
 }
 
 export interface ProductionStep {
