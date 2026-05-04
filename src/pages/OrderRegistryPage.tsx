@@ -249,7 +249,7 @@ const OrderRegistryPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-4" dir="rtl">
-      <PageHeader title="سجل الطلبيات" subtitle="Registre complet des commandes (4 catégories)" />
+      <PageHeader title="سجل الطلبيات" description="Registre complet des commandes (4 catégories)" />
 
       <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }}>
         <TabsList>
@@ -422,18 +422,25 @@ const OrderRegistryPage: React.FC = () => {
         existingOrderNumbers={realOrders.map(o => o.orderNumber)}
       />
 
-      {cancelTarget && (
-        <CancelOrderDialog
-          order={cancelTarget}
-          onClose={() => setCancelTarget(null)}
-          onConfirm={async (data) => {
-            const ok = await cancelOrder(cancelTarget.id, data);
-            if (ok) setCancelTarget(null);
-          }}
-        />
-      )}
+      <CancelOrderDialog
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={async (data) => {
+          if (!cancelTarget) return;
+          const ok = await cancelOrder(cancelTarget.id, data);
+          if (ok) setCancelTarget(null);
+        }}
+        orderLabel={cancelTarget?.orderNumber || ''}
+      />
 
-      <ConfirmDialog state={confirmState} onConfirm={handleConfirm} onCancel={handleCancel} />
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };
