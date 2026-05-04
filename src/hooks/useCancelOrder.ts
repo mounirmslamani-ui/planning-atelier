@@ -40,8 +40,9 @@ export function useCancelOrder() {
     }
 
     // Remove order from active list (and its dependent QC/delivery if any)
-    deleteOrder(order.id);
+    // Note: order itself stays in DB (preserved in سجل الطلبيات registry).
+    // Only the active workshop view filters out cancelled orders.
     toast.success(`Commande ${order.orderNumber} annulée`);
     return true;
-  }, [orders, clients, deleteOrder, addCancelledOrder]);
+  }, [orders, clients, addCancelledOrder]);
 }
