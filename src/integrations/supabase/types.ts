@@ -269,6 +269,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          category: string
           client_id: string | null
           client_representative: string | null
           complementary_quantity: number | null
@@ -297,6 +298,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string
           client_id?: string | null
           client_representative?: string | null
           complementary_quantity?: number | null
@@ -325,6 +327,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string
           client_id?: string | null
           client_representative?: string | null
           complementary_quantity?: number | null
