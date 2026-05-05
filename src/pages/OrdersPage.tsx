@@ -383,6 +383,7 @@ const OrdersPage: React.FC = () => {
       case 'instructions': return o.instructions || '';
       case 'drawingModel': return o.drawingModel || '';
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
+      case 'remainingSteps': return String(remainingStepsMap.get(o.id) ?? 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
       case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
       case 'tooling': { const n = orderStatusMap.get(o.id); return n?.tooling === 'disponible' ? '3' : n?.tooling === 'partiel' ? '2' : n?.tooling === 'non-applicable' ? '0' : '1'; }
