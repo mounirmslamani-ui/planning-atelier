@@ -33,7 +33,7 @@ const PRIORITIES: OrderPriority[] = ['P1', 'P2', 'P3', 'P4', 'undetermined'];
 const OrderRegistryPage: React.FC = () => {
   const {
     orders, clients, addOrder, updateOrder, deleteOrder,
-    qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps,
+    qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps, updateStep,
     absenceOrderId, absenceOperationId,
     cancelledOrders, deleteCancelledOrder,
   } = usePlanning();
@@ -44,10 +44,14 @@ const OrderRegistryPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
+  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [history, setHistory] = useState<Order[][]>([]);
   const [redoStack, setRedoStack] = useState<Order[][]>([]);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDirection>(null);
+  const [filters, setFilters] = useState<Record<string, string>>({});
 
   const realOrders = useMemo(
     () => orders.filter(o => o.id !== absenceOrderId),
