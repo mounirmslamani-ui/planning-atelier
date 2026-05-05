@@ -160,6 +160,16 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
+  const remainingStepsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
+      const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+      map.set(o.id, remaining);
+    });
+    return map;
+  }, [orders, steps, productionRecords, absenceOperationId, absenceOrderId]);
+
   const orderStatusMap = useMemo(() => {
     const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
