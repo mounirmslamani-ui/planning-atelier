@@ -383,9 +383,9 @@ const OrderRegistryPage: React.FC = () => {
                     const isEditing = editingId === o.id;
                     return (
                       <TableRow key={o.id} className={isCancelled ? 'opacity-60' : ''}>
-                        <TableCell>{renderEditableCell(o, 'orderNumber')}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'orderDate', 'date')}</TableCell>
-                        <TableCell>
+                        <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderNumber')}</TableCell>
+                        <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderDate', 'date')}</TableCell>
+                        <TableCell className="w-px whitespace-nowrap">
                           {isEditing ? (
                             <Select value={(draft.clientId ?? o.clientId) || ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
                               <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -397,7 +397,7 @@ const OrderRegistryPage: React.FC = () => {
                             <span className="text-xs">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
                           )}
                         </TableCell>
-                        <TableCell>{renderEditableCell(o, 'designation')}</TableCell>
+                        <TableCell style={{ width: 90, minWidth: 90, maxWidth: 90 }} className="truncate">{renderEditableCell(o, 'designation')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
                         <TableCell>
                           {isEditing ? (
@@ -413,6 +413,50 @@ const OrderRegistryPage: React.FC = () => {
                         </TableCell>
                         <TableCell>{renderEditableCell(o, 'clientRepresentative')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'observation')}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            {isEditing ? (
+                              <>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit(o)} title="Enregistrer">
+                                  <Save className="w-3.5 h-3.5 text-primary" />
+                                </Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(o)} title="Éditer">
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                {isCancelled ? (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRestore(o.id)} title="Réintégrer">
+                                    <RotateCcw className="w-3.5 h-3.5 text-green-600" />
+                                  </Button>
+                                ) : (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
+                                    <Ban className="w-3.5 h-3.5 text-orange-600" />
+                                  </Button>
+                                )}
+                                <Button
+                                  size="icon" variant="ghost" className="h-7 w-7"
+                                  onClick={() => confirm(
+                                    'Supprimer définitivement cette commande ?',
+                                    () => {
+                                      if (isCancelled) deleteCancelledOrder(cancelledMap.get(o.id)!.id);
+                                      deleteOrder(o.id);
+                                      toast.success('Supprimé');
+                                    },
+                                    { variant: 'destructive' },
+                                  )}
+                                  title="Supprimer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs whitespace-nowrap ${statusClass}`}>
                             {status}
@@ -459,50 +503,6 @@ const OrderRegistryPage: React.FC = () => {
                               }
                             }}
                           />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {isEditing ? (
-                              <>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit(o)} title="Enregistrer">
-                                  <Save className="w-3.5 h-3.5 text-primary" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
-                                  <X className="w-3.5 h-3.5" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(o)} title="Éditer">
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </Button>
-                                {isCancelled ? (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRestore(o.id)} title="Réintégrer">
-                                    <RotateCcw className="w-3.5 h-3.5 text-green-600" />
-                                  </Button>
-                                ) : (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
-                                    <Ban className="w-3.5 h-3.5 text-orange-600" />
-                                  </Button>
-                                )}
-                                <Button
-                                  size="icon" variant="ghost" className="h-7 w-7"
-                                  onClick={() => confirm(
-                                    'Supprimer définitivement cette commande ?',
-                                    () => {
-                                      if (isCancelled) deleteCancelledOrder(cancelledMap.get(o.id)!.id);
-                                      deleteOrder(o.id);
-                                      toast.success('Supprimé');
-                                    },
-                                    { variant: 'destructive' },
-                                  )}
-                                  title="Supprimer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
                         </TableCell>
                       </TableRow>
                     );
