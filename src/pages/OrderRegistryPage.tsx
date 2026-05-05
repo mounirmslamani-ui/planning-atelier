@@ -21,6 +21,8 @@ import type { Order, OrderCategory, OrderPriority } from '@/types/planning';
 import { ORDER_CATEGORY_LABEL, ORDER_CATEGORY_PREFIX } from '@/types/planning';
 import { generateOrderCode, getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
 import { getExportFilename } from '@/lib/excelExport';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
