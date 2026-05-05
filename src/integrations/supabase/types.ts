@@ -88,6 +88,7 @@ export type Database = {
           created_at: string
           delivery_date: string
           id: string
+          invoice_date: string | null
           invoice_number: string | null
           observation: string | null
           order_id: string
@@ -98,6 +99,7 @@ export type Database = {
           created_at?: string
           delivery_date?: string
           id?: string
+          invoice_date?: string | null
           invoice_number?: string | null
           observation?: string | null
           order_id: string
@@ -108,6 +110,7 @@ export type Database = {
           created_at?: string
           delivery_date?: string
           id?: string
+          invoice_date?: string | null
           invoice_number?: string | null
           observation?: string | null
           order_id?: string
