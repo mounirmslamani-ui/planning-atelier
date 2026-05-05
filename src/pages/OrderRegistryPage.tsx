@@ -352,7 +352,7 @@ const OrderRegistryPage: React.FC = () => {
                     <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
                     <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} filterMode="select" filterOptions={clients.map(c => c.name)} /></TableHead>
-                    <TableHead className="text-xs" style={{ width: 90, minWidth: 90, maxWidth: 90 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs" style={{ width: 200, minWidth: 200, maxWidth: 200 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1','P2','P3','P4','undetermined']} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} /></TableHead>
@@ -397,7 +397,7 @@ const OrderRegistryPage: React.FC = () => {
                             <span className="text-xs">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
                           )}
                         </TableCell>
-                        <TableCell style={{ width: 90, minWidth: 90, maxWidth: 90 }} className="truncate">{renderEditableCell(o, 'designation')}</TableCell>
+                        <TableCell style={{ width: 200, minWidth: 200, maxWidth: 200 }} className="truncate">{renderEditableCell(o, 'designation')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
                         <TableCell>
                           {isEditing ? (
