@@ -159,6 +159,45 @@ const OrderRegistryPage: React.FC = () => {
 
   const cancelEdit = () => { setEditingId(null); setDraft({}); };
 
+  /**
+   * Upsert delivered_order row from registry inline edits.
+   * - Setting an invoice number/date or a delivery date should remove the order
+   *   from active workshop list (الطلبيات الحالية) and surface it in طلبيات مسلمة.
+   * - The order itself remains in the registry (archive) untouched.
+   * - Existing invoice/delivery data is preserved if not changed.
+   */
+  const upsertDeliveredFields = useCallback((
+    order: Order,
+    patch: { invoiceNumber?: string; invoiceDate?: string; deliveryDate?: string },
+  ) => {
+    const existing = deliveredMap.get(order.id);
+    const hasInvoice = (patch.invoiceNumber ?? existing?.invoiceNumber ?? '').trim() !== '';
+    const hasDelivery = !!(patch.deliveryDate ?? existing?.deliveryDate);
+    if (!hasInvoice && !hasDelivery) return;
+
+    if (existing) {
+      updateDeliveredOrder({
+        ...existing,
+        invoiceNumber: patch.invoiceNumber !== undefined ? patch.invoiceNumber || undefined : existing.invoiceNumber,
+        invoiceDate: patch.invoiceDate !== undefined ? patch.invoiceDate || undefined : existing.invoiceDate,
+        deliveryDate: patch.deliveryDate ?? existing.deliveryDate,
+      });
+    } else {
+      const today = new Date().toISOString().split('T')[0];
+      addDeliveredOrder({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        deliveryDate: patch.deliveryDate || today,
+        salePriceStatus: 'non-calcule',
+        invoiceNumber: patch.invoiceNumber || undefined,
+        invoiceDate: patch.invoiceDate || undefined,
+      });
+    }
+    // Remove from "ready for delivery" queue if present — it has now moved past delivery.
+    const pending = deliveryEntries.find(d => d.orderId === order.id);
+    if (pending) deleteDeliveryEntry(pending.id);
+  }, [deliveredMap, deliveryEntries, addDeliveredOrder, updateDeliveredOrder, deleteDeliveryEntry]);
+
   const handleExcelImport = (rows: Omit<Order, 'id'>[]) => {
     rows.forEach((r, i) => {
       const code = r.orderNumber || generateOrderCode(activeCat, realOrders, new Date().getFullYear());
