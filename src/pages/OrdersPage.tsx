@@ -403,7 +403,7 @@ const OrdersPage: React.FC = () => {
       list.sort((a, b) => {
         const va = getColValue(a, sortKey as ColumnKey);
         const vb = getColValue(b, sortKey as ColumnKey);
-        if (sortKey === 'quantity' || sortKey === 'atelierTime') {
+        if (sortKey === 'quantity' || sortKey === 'atelierTime' || sortKey === 'remainingSteps') {
           const diff = (Number(va) || 0) - (Number(vb) || 0);
           return sortDir === 'asc' ? diff : -diff;
         }
