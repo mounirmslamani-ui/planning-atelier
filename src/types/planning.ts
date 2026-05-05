@@ -194,6 +194,7 @@ export interface DeliveredOrder {
   salePriceStatus: SalePriceStatus;
   observation?: string;
   invoiceNumber?: string;
+  invoiceDate?: string;
 }
 
 export interface CancelledOrder {
