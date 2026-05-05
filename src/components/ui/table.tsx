@@ -4,9 +4,7 @@ import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    // Wrapper scrolls both axes; capping height to the viewport keeps the
-    // horizontal scrollbar pinned to the bottom of the screen even on long tables.
-    <div className="relative w-full overflow-auto max-h-[calc(100vh-180px)]">
+    <div className="relative w-full overflow-auto">
       <table ref={ref} className={cn("w-full caption-bottom text-base font-bold", className)} {...props} />
     </div>
   ),
