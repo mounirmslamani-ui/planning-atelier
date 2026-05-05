@@ -96,7 +96,7 @@ const OrderRegistryPage: React.FC = () => {
     });
   }, [realOrders, activeCat, inferCategoryFromNumber]);
 
-  const displayed = useMemo(() => {
+  const baseList = useMemo(() => {
     const lower = search.trim().toLowerCase();
     const list = lower
       ? filteredByCat.filter(o =>
@@ -106,6 +106,28 @@ const OrderRegistryPage: React.FC = () => {
       : filteredByCat;
     return [...list].sort((a, b) => (a.orderNumber || '').localeCompare(b.orderNumber || '', 'fr', { numeric: true }));
   }, [filteredByCat, search, clients]);
+
+  const accessors = useMemo(() => ({
+    orderNumber: (o: Order) => o.orderNumber,
+    orderDate: (o: Order) => o.orderDate,
+    clientName: (o: Order) => clients.find(c => c.id === o.clientId)?.name || '',
+    designation: (o: Order) => o.designation,
+    quantity: (o: Order) => o.quantity,
+    priority: (o: Order) => o.priority || '',
+    clientRepresentative: (o: Order) => o.clientRepresentative || '',
+    observation: (o: Order) => o.observation || o.instructions || '',
+    status: (o: Order) => cancelledMap.has(o.id)
+      ? 'ملغاة'
+      : getOrderRegistryStatus(o, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId),
+    deliveryDeadline: (o: Order) => o.deliveryDeadline || o.plannedDeadline || '',
+    drawingModel: (o: Order) => o.drawingModel || '',
+    qcDate: (o: Order) => qcMap.get(o.id) || '',
+    deliveryDate: (o: Order) => deliveredMap.get(o.id)?.deliveryDate || '',
+    invoiceDate: (o: Order) => deliveredMap.get(o.id)?.invoiceDate || '',
+    invoiceNumber: (o: Order) => deliveredMap.get(o.id)?.invoiceNumber || '',
+  }), [clients, cancelledMap, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId, qcMap, deliveredMap]);
+
+  const { processed: displayed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(baseList, accessors);
 
   const pushHistory = useCallback(() => {
     setHistory(h => [...h.slice(-49), realOrders]);
