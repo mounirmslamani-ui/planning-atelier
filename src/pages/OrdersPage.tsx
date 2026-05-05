@@ -611,6 +611,7 @@ const OrdersPage: React.FC = () => {
         'مخطط/نموذج': o.drawingModel || '',
         'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
         'وقت في الورشة': formatMinutesToHM(atelierMinutes),
+        'عدد المراحل المتبقية': remainingStepsMap.get(o.id) ?? 0,
         'دراسة': status?.study || '',
         'مواد أولية': status?.material || '',
         'عدة': status?.tooling || '',
