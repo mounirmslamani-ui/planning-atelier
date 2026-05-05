@@ -100,16 +100,76 @@ const OrderRegistryPage: React.FC = () => {
     });
   }, [realOrders, activeCat, inferCategoryFromNumber]);
 
+  const getColValue = useCallback((o: Order, key: string): string => {
+    const delivered = deliveredMap.get(o.id);
+    switch (key) {
+      case 'orderNumber': return o.orderNumber || '';
+      case 'orderDate': return o.orderDate || '';
+      case 'client': return clients.find(c => c.id === o.clientId)?.name || '';
+      case 'designation': return o.designation || '';
+      case 'quantity': return String(o.quantity ?? 0);
+      case 'priority': return o.priority || '';
+      case 'clientRepresentative': return o.clientRepresentative || '';
+      case 'observation': return o.observation || o.instructions || '';
+      case 'status': return cancelledMap.has(o.id) ? 'ملغاة' : getOrderRegistryStatus(o, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
+      case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline || '';
+      case 'drawingModel': return o.drawingModel || '';
+      case 'qcDate': return qcMap.get(o.id) || '';
+      case 'deliveryDate': return delivered?.deliveryDate || '';
+      case 'invoiceDate': return delivered?.invoiceNumber ? (delivered.deliveryDate || '') : '';
+      case 'invoiceNumber': return delivered?.invoiceNumber || '';
+      case 'study': return o.studyStatus || 'non-disponible';
+      case 'material': return o.materialStatus || 'non-disponible';
+      case 'tooling': return o.toolingStatus || 'non-disponible';
+      default: return '';
+    }
+  }, [clients, cancelledMap, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, deliveredMap, qcMap, absenceOperationId]);
+
   const displayed = useMemo(() => {
     const lower = search.trim().toLowerCase();
-    const list = lower
+    let list = lower
       ? filteredByCat.filter(o =>
           o.orderNumber.toLowerCase().includes(lower) ||
           (o.designation || '').toLowerCase().includes(lower) ||
           (clients.find(c => c.id === o.clientId)?.name || '').toLowerCase().includes(lower))
       : filteredByCat;
-    return [...list].sort((a, b) => (a.orderNumber || '').localeCompare(b.orderNumber || '', 'fr', { numeric: true }));
-  }, [filteredByCat, search, clients]);
+    for (const [k, v] of Object.entries(filters)) {
+      if (!v) continue;
+      const needle = v.toLowerCase();
+      list = list.filter(o => getColValue(o, k).toLowerCase().includes(needle));
+    }
+    if (sortKey && sortDir) {
+      list = [...list].sort((a, b) => {
+        const va = getColValue(a, sortKey);
+        const vb = getColValue(b, sortKey);
+        if (sortKey === 'quantity') {
+          const diff = (Number(va) || 0) - (Number(vb) || 0);
+          return sortDir === 'asc' ? diff : -diff;
+        }
+        const cmp = va.localeCompare(vb, 'fr', { numeric: true });
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    } else {
+      list = [...list].sort((a, b) => (a.orderNumber || '').localeCompare(b.orderNumber || '', 'fr', { numeric: true }));
+    }
+    return list;
+  }, [filteredByCat, search, clients, filters, sortKey, sortDir, getColValue]);
+
+  const handleSort = (key: string, dir: SortDirection) => { setSortKey(dir ? key : null); setSortDir(dir); };
+  const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
+
+  const handleResourceChange = useCallback(async (order: Order, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
+    const isAvail = status === 'disponible';
+    const updatedOrder = { ...order, [statusKey]: status, [boolKey]: isAvail } as Order;
+    const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
+    const updatedSteps = orderSteps.map(s => ({ ...s, [statusKey]: status, [boolKey]: isAvail } as any));
+    const ok = await Promise.all([dbUpdateOrder(updatedOrder), ...updatedSteps.map(dbUpdateStep)]);
+    if (ok.some(r => !r)) { toast.error('Erreur lors de la mise à jour'); return; }
+    updateOrder(updatedOrder);
+    updatedSteps.forEach(updateStep);
+  }, [steps, absenceOperationId, updateOrder, updateStep]);
 
   const pushHistory = useCallback(() => {
     setHistory(h => [...h.slice(-49), realOrders]);
