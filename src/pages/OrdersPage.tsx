@@ -759,6 +759,14 @@ const OrdersPage: React.FC = () => {
         const mins = atelierTimeMap.get(o.id) || 0;
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
       }
+      case 'remainingSteps': {
+        const n = remainingStepsMap.get(o.id) ?? 0;
+        return (
+          <span className={`inline-flex items-center justify-center min-w-[28px] rounded-full border px-2 py-0.5 text-xs font-bold ${n === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/40 bg-accent/10 text-accent'}`}>
+            {n}
+          </span>
+        );
+      }
       case 'study': {
         const s = orderStatusMap.get(o.id);
         return <ResourceStatusPill value={s?.study} onChange={(next) => handleStatusChange(o.id, 'study', next)} />;
