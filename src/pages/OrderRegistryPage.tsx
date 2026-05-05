@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, ClipboardPaste, Download, Ban, RotateCcw, Trash2, Save, X, CalendarCheck } from 'lucide-react';
+import { Plus, Pencil, ClipboardPaste, Download, Ban, RotateCcw, Trash2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { formatDateFR } from '@/lib/utils';
@@ -17,13 +17,9 @@ import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import PriorityBadge from '@/components/orders/PriorityBadge';
-import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
-import ResourceStatusPill from '@/components/ResourceStatusPill';
-import OrderPlanningDialog from '@/components/OrderPlanningDialog';
-import type { Order, OrderCategory, OrderPriority, ResourceStatus } from '@/types/planning';
+import type { Order, OrderCategory, OrderPriority } from '@/types/planning';
 import { ORDER_CATEGORY_LABEL, ORDER_CATEGORY_PREFIX } from '@/types/planning';
 import { generateOrderCode, getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
-import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
@@ -33,7 +29,7 @@ const PRIORITIES: OrderPriority[] = ['P1', 'P2', 'P3', 'P4', 'undetermined'];
 const OrderRegistryPage: React.FC = () => {
   const {
     orders, clients, addOrder, updateOrder, deleteOrder,
-    qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps, updateStep,
+    qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps,
     absenceOrderId, absenceOperationId,
     cancelledOrders, deleteCancelledOrder,
   } = usePlanning();
@@ -44,14 +40,10 @@ const OrderRegistryPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
-  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [history, setHistory] = useState<Order[][]>([]);
   const [redoStack, setRedoStack] = useState<Order[][]>([]);
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
 
   const realOrders = useMemo(
     () => orders.filter(o => o.id !== absenceOrderId),
@@ -100,76 +92,16 @@ const OrderRegistryPage: React.FC = () => {
     });
   }, [realOrders, activeCat, inferCategoryFromNumber]);
 
-  const getColValue = useCallback((o: Order, key: string): string => {
-    const delivered = deliveredMap.get(o.id);
-    switch (key) {
-      case 'orderNumber': return o.orderNumber || '';
-      case 'orderDate': return o.orderDate || '';
-      case 'client': return clients.find(c => c.id === o.clientId)?.name || '';
-      case 'designation': return o.designation || '';
-      case 'quantity': return String(o.quantity ?? 0);
-      case 'priority': return o.priority || '';
-      case 'clientRepresentative': return o.clientRepresentative || '';
-      case 'observation': return o.observation || o.instructions || '';
-      case 'status': return cancelledMap.has(o.id) ? 'ملغاة' : getOrderRegistryStatus(o, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
-      case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline || '';
-      case 'drawingModel': return o.drawingModel || '';
-      case 'qcDate': return qcMap.get(o.id) || '';
-      case 'deliveryDate': return delivered?.deliveryDate || '';
-      case 'invoiceDate': return delivered?.invoiceNumber ? (delivered.deliveryDate || '') : '';
-      case 'invoiceNumber': return delivered?.invoiceNumber || '';
-      case 'study': return o.studyStatus || 'non-disponible';
-      case 'material': return o.materialStatus || 'non-disponible';
-      case 'tooling': return o.toolingStatus || 'non-disponible';
-      default: return '';
-    }
-  }, [clients, cancelledMap, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, deliveredMap, qcMap, absenceOperationId]);
-
   const displayed = useMemo(() => {
     const lower = search.trim().toLowerCase();
-    let list = lower
+    const list = lower
       ? filteredByCat.filter(o =>
           o.orderNumber.toLowerCase().includes(lower) ||
           (o.designation || '').toLowerCase().includes(lower) ||
           (clients.find(c => c.id === o.clientId)?.name || '').toLowerCase().includes(lower))
       : filteredByCat;
-    for (const [k, v] of Object.entries(filters)) {
-      if (!v) continue;
-      const needle = v.toLowerCase();
-      list = list.filter(o => getColValue(o, k).toLowerCase().includes(needle));
-    }
-    if (sortKey && sortDir) {
-      list = [...list].sort((a, b) => {
-        const va = getColValue(a, sortKey);
-        const vb = getColValue(b, sortKey);
-        if (sortKey === 'quantity') {
-          const diff = (Number(va) || 0) - (Number(vb) || 0);
-          return sortDir === 'asc' ? diff : -diff;
-        }
-        const cmp = va.localeCompare(vb, 'fr', { numeric: true });
-        return sortDir === 'asc' ? cmp : -cmp;
-      });
-    } else {
-      list = [...list].sort((a, b) => (a.orderNumber || '').localeCompare(b.orderNumber || '', 'fr', { numeric: true }));
-    }
-    return list;
-  }, [filteredByCat, search, clients, filters, sortKey, sortDir, getColValue]);
-
-  const handleSort = (key: string, dir: SortDirection) => { setSortKey(dir ? key : null); setSortDir(dir); };
-  const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
-
-  const handleResourceChange = useCallback(async (order: Order, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
-    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
-    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-    const isAvail = status === 'disponible';
-    const updatedOrder = { ...order, [statusKey]: status, [boolKey]: isAvail } as Order;
-    const orderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
-    const updatedSteps = orderSteps.map(s => ({ ...s, [statusKey]: status, [boolKey]: isAvail } as any));
-    const ok = await Promise.all([dbUpdateOrder(updatedOrder), ...updatedSteps.map(dbUpdateStep)]);
-    if (ok.some(r => !r)) { toast.error('Erreur lors de la mise à jour'); return; }
-    updateOrder(updatedOrder);
-    updatedSteps.forEach(updateStep);
-  }, [steps, absenceOperationId, updateOrder, updateStep]);
+    return [...list].sort((a, b) => (a.orderNumber || '').localeCompare(b.orderNumber || '', 'fr', { numeric: true }));
+  }, [filteredByCat, search, clients]);
 
   const pushHistory = useCallback(() => {
     setHistory(h => [...h.slice(-49), realOrders]);
@@ -348,36 +280,32 @@ const OrderRegistryPage: React.FC = () => {
               <Button size="sm" variant="outline" onClick={handleRedo} disabled={redoStack.length === 0}>رجوع</Button>
             </div>
 
-            <div className="border rounded-lg overflow-x-auto pb-1">
-              <Table className="min-w-[2200px]">
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="text-xs"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1','P2','P3','P4','undetermined']} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الحالة" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} filterMode="select" filterOptions={['قيد الانتظار','قيد الإنجاز','في انتظار مراقبة الجودة','في انتظار التسليم','في انتظار الفوترة','مفوترة','ملغاة']} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="مواد أولية" columnKey="material" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.material || ''} onFilter={handleFilter} filterMode="select" filterOptions={['disponible','partiel','non-disponible','non-applicable']} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="عدة" columnKey="tooling" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.tooling || ''} onFilter={handleFilter} filterMode="select" filterOptions={['disponible','partiel','non-disponible','non-applicable']} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="دراسة" columnKey="study" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.study || ''} onFilter={handleFilter} filterMode="select" filterOptions={['disponible','partiel','non-disponible','non-applicable']} /></TableHead>
-                    <TableHead className="text-xs">تحديد المهام وتوزيعها</TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="qcDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.qcDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="تاريخ الفوترة" columnKey="invoiceDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs">رقم الطلبية</TableHead>
+                    <TableHead className="text-xs">التاريخ</TableHead>
+                    <TableHead className="text-xs">الزبون</TableHead>
+                    <TableHead className="text-xs">التعيين</TableHead>
+                    <TableHead className="text-xs">الكمية</TableHead>
+                    <TableHead className="text-xs">الأولوية</TableHead>
+                    <TableHead className="text-xs">ممثل الزبون</TableHead>
+                    <TableHead className="text-xs">ملاحظات/تعليمات</TableHead>
+                    <TableHead className="text-xs">الحالة</TableHead>
+                    <TableHead className="text-xs">أجل التسليم</TableHead>
+                    <TableHead className="text-xs">مخطط/نموذج</TableHead>
+                    <TableHead className="text-xs">تاريخ مراقبة الجودة</TableHead>
+                    <TableHead className="text-xs">تاريخ التسليم</TableHead>
+                    <TableHead className="text-xs">تاريخ الفوترة</TableHead>
+                    <TableHead className="text-xs">رقم الفاتورة</TableHead>
                     <TableHead className="text-xs">عمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {displayed.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={20} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
+                      <TableCell colSpan={16} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
                     </TableRow>
                   )}
                   {displayed.map(o => {
@@ -424,20 +352,6 @@ const OrderRegistryPage: React.FC = () => {
                           <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs whitespace-nowrap ${statusClass}`}>
                             {status}
                           </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <ResourceStatusPill value={o.materialStatus} onChange={(s) => handleResourceChange(o, 'material', s)} />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <ResourceStatusPill value={o.toolingStatus} onChange={(s) => handleResourceChange(o, 'tooling', s)} />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <ResourceStatusPill value={o.studyStatus} onChange={(s) => handleResourceChange(o, 'study', s)} />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setPlanningOrder(o)} title="تحديد المهام وتوزيعها">
-                            <CalendarCheck className="w-4 h-4" />
-                          </Button>
                         </TableCell>
                         <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
@@ -518,14 +432,6 @@ const OrderRegistryPage: React.FC = () => {
         }}
         orderLabel={cancelTarget?.orderNumber || ''}
       />
-
-      {planningOrder && (
-        <OrderPlanningDialog
-          order={planningOrder}
-          open={!!planningOrder}
-          onOpenChange={(o) => { if (!o) setPlanningOrder(null); }}
-        />
-      )}
 
       <ConfirmDialog
         open={confirmState.open}
