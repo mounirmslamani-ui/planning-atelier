@@ -390,7 +390,7 @@ const OrdersPage: React.FC = () => {
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
+  }, [getClientName, atelierTimeMap, remainingStepsMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
