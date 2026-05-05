@@ -397,9 +397,45 @@ const OrderRegistryPage: React.FC = () => {
                         <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
                         <TableCell><span className="text-xs">{qcMap.get(o.id) ? formatDateFR(qcMap.get(o.id)!) : '—'}</span></TableCell>
-                        <TableCell><span className="text-xs">{delivered ? formatDateFR(delivered.deliveryDate) : '—'}</span></TableCell>
-                        <TableCell><span className="text-xs">{delivered?.invoiceNumber ? formatDateFR(delivered.deliveryDate) : '—'}</span></TableCell>
-                        <TableCell><span className="text-xs">{delivered?.invoiceNumber || '—'}</span></TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            className="h-7 text-xs w-32"
+                            defaultValue={delivered?.deliveryDate || ''}
+                            onBlur={e => {
+                              const v = e.target.value;
+                              if (v !== (delivered?.deliveryDate || '')) {
+                                upsertDeliveredFields(o, { deliveryDate: v });
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            className="h-7 text-xs w-32"
+                            defaultValue={delivered?.invoiceDate || ''}
+                            onBlur={e => {
+                              const v = e.target.value;
+                              if (v !== (delivered?.invoiceDate || '')) {
+                                upsertDeliveredFields(o, { invoiceDate: v });
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            className="h-7 text-xs w-28"
+                            defaultValue={delivered?.invoiceNumber || ''}
+                            onBlur={e => {
+                              const v = e.target.value;
+                              if (v !== (delivered?.invoiceNumber || '')) {
+                                upsertDeliveredFields(o, { invoiceNumber: v });
+                              }
+                            }}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             {isEditing ? (
