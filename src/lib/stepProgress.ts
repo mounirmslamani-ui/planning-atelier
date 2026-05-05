@@ -27,7 +27,21 @@ export function getStepProgressStatus(step: ProductionStep, records: ProductionR
     return step.subcontractingDone ? 'Terminée' : 'Non entamée';
   }
 
-  const stepRecords = records.filter(record => record.stepId === step.id);
+  // Primary match: by step ID (clean link).
+  let stepRecords = records.filter(record => record.stepId === step.id);
+
+  // Fallback: production_records can become orphaned when the planning gamme
+  // is re-saved (steps are deleted and recreated with new UUIDs). In that case
+  // we still want the actual work to be reflected, so we match by the logical
+  // tuple (order + operation + operator).
+  if (stepRecords.length === 0 && step.operatorId) {
+    stepRecords = records.filter(record =>
+      record.orderId === step.orderId &&
+      record.operationId === step.operationId &&
+      record.operatorId === step.operatorId,
+    );
+  }
+
   if (stepRecords.some(record => normalizeRecordStatus(record.workStatus) === 'done')) return 'Terminée';
   if (stepRecords.some(record => normalizeRecordStatus(record.workStatus) === 'continue')) return 'En cours';
   return 'Non entamée';
