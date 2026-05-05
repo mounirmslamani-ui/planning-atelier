@@ -32,6 +32,8 @@ const OrderRegistryPage: React.FC = () => {
     qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps,
     absenceOrderId, absenceOperationId,
     cancelledOrders, deleteCancelledOrder,
+    addDeliveredOrder, updateDeliveredOrder,
+    deleteDeliveryEntry,
   } = usePlanning();
   const cancelOrder = useCancelOrder();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
