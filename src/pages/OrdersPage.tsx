@@ -574,6 +574,7 @@ const OrdersPage: React.FC = () => {
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
     { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
+    { key: 'remainingSteps', label: 'عدد المراحل المتبقية', className: 'w-[80px]' },
     { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
     { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
