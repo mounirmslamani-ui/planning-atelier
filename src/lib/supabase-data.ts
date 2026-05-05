@@ -400,6 +400,7 @@ export function mapDeliveredOrderFromDB(row: any): DeliveredOrder {
     salePriceStatus: (row.sale_price_status || 'non-calcule') as SalePriceStatus,
     observation: row.observation || undefined,
     invoiceNumber: row.invoice_number || undefined,
+    invoiceDate: row.invoice_date || undefined,
   };
 }
 
@@ -411,6 +412,7 @@ export function mapDeliveredOrderToDB(d: DeliveredOrder) {
     sale_price_status: d.salePriceStatus,
     observation: d.observation || null,
     invoice_number: d.invoiceNumber || null,
+    invoice_date: d.invoiceDate ? toISODate(d.invoiceDate) : null,
   };
 }
 

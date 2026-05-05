@@ -146,6 +146,20 @@
       hsl(var(--foreground) / 0.15) 5px
     );
   }
+
+  /* Sticky horizontal scrollbar — table scrolls inside its container, which
+     is sized to the viewport. The horizontal scrollbar therefore stays at the
+     bottom of the screen instead of being pushed below thousands of rows. */
+  .sticky-x-scroll {
+    overflow: auto;
+    max-height: calc(100vh - 220px);
+  }
+  .sticky-x-scroll thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: hsl(var(--background));
+  }
 }
 
 @media print {

@@ -32,6 +32,8 @@ const OrderRegistryPage: React.FC = () => {
     qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps,
     absenceOrderId, absenceOperationId,
     cancelledOrders, deleteCancelledOrder,
+    addDeliveredOrder, updateDeliveredOrder,
+    deleteDeliveryEntry,
   } = usePlanning();
   const cancelOrder = useCancelOrder();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
@@ -156,6 +158,45 @@ const OrderRegistryPage: React.FC = () => {
   };
 
   const cancelEdit = () => { setEditingId(null); setDraft({}); };
+
+  /**
+   * Upsert delivered_order row from registry inline edits.
+   * - Setting an invoice number/date or a delivery date should remove the order
+   *   from active workshop list (الطلبيات الحالية) and surface it in طلبيات مسلمة.
+   * - The order itself remains in the registry (archive) untouched.
+   * - Existing invoice/delivery data is preserved if not changed.
+   */
+  const upsertDeliveredFields = useCallback((
+    order: Order,
+    patch: { invoiceNumber?: string; invoiceDate?: string; deliveryDate?: string },
+  ) => {
+    const existing = deliveredMap.get(order.id);
+    const hasInvoice = (patch.invoiceNumber ?? existing?.invoiceNumber ?? '').trim() !== '';
+    const hasDelivery = !!(patch.deliveryDate ?? existing?.deliveryDate);
+    if (!hasInvoice && !hasDelivery) return;
+
+    if (existing) {
+      updateDeliveredOrder({
+        ...existing,
+        invoiceNumber: patch.invoiceNumber !== undefined ? patch.invoiceNumber || undefined : existing.invoiceNumber,
+        invoiceDate: patch.invoiceDate !== undefined ? patch.invoiceDate || undefined : existing.invoiceDate,
+        deliveryDate: patch.deliveryDate ?? existing.deliveryDate,
+      });
+    } else {
+      const today = new Date().toISOString().split('T')[0];
+      addDeliveredOrder({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        deliveryDate: patch.deliveryDate || today,
+        salePriceStatus: 'non-calcule',
+        invoiceNumber: patch.invoiceNumber || undefined,
+        invoiceDate: patch.invoiceDate || undefined,
+      });
+    }
+    // Remove from "ready for delivery" queue if present — it has now moved past delivery.
+    const pending = deliveryEntries.find(d => d.orderId === order.id);
+    if (pending) deleteDeliveryEntry(pending.id);
+  }, [deliveredMap, deliveryEntries, addDeliveredOrder, updateDeliveredOrder, deleteDeliveryEntry]);
 
   const handleExcelImport = (rows: Omit<Order, 'id'>[]) => {
     rows.forEach((r, i) => {
@@ -356,9 +397,45 @@ const OrderRegistryPage: React.FC = () => {
                         <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
                         <TableCell><span className="text-xs">{qcMap.get(o.id) ? formatDateFR(qcMap.get(o.id)!) : '—'}</span></TableCell>
-                        <TableCell><span className="text-xs">{delivered ? formatDateFR(delivered.deliveryDate) : '—'}</span></TableCell>
-                        <TableCell><span className="text-xs">{delivered?.invoiceNumber ? formatDateFR(delivered.deliveryDate) : '—'}</span></TableCell>
-                        <TableCell><span className="text-xs">{delivered?.invoiceNumber || '—'}</span></TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            className="h-7 text-xs w-32"
+                            defaultValue={delivered?.deliveryDate || ''}
+                            onBlur={e => {
+                              const v = e.target.value;
+                              if (v !== (delivered?.deliveryDate || '')) {
+                                upsertDeliveredFields(o, { deliveryDate: v });
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="date"
+                            className="h-7 text-xs w-32"
+                            defaultValue={delivered?.invoiceDate || ''}
+                            onBlur={e => {
+                              const v = e.target.value;
+                              if (v !== (delivered?.invoiceDate || '')) {
+                                upsertDeliveredFields(o, { invoiceDate: v });
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            className="h-7 text-xs w-28"
+                            defaultValue={delivered?.invoiceNumber || ''}
+                            onBlur={e => {
+                              const v = e.target.value;
+                              if (v !== (delivered?.invoiceNumber || '')) {
+                                upsertDeliveredFields(o, { invoiceNumber: v });
+                              }
+                            }}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             {isEditing ? (
