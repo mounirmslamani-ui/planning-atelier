@@ -7,7 +7,7 @@ import { PanelLeftOpen } from 'lucide-react';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, deliveryEntries, deliveredOrders } = usePlanning();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const transferOrderToQualityControl = useCallback((orderId: string) => {
     if (orderId === absenceOrderId) return;
