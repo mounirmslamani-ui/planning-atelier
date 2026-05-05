@@ -526,6 +526,8 @@ const OrderRegistryPage: React.FC = () => {
           onOpenChange={(o) => { if (!o) setPlanningOrder(null); }}
         />
       )}
+
+      <ConfirmDialog
         open={confirmState.open}
         title={confirmState.title}
         description={confirmState.description}
