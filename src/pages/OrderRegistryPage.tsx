@@ -21,6 +21,8 @@ import type { Order, OrderCategory, OrderPriority } from '@/types/planning';
 import { ORDER_CATEGORY_LABEL, ORDER_CATEGORY_PREFIX } from '@/types/planning';
 import { generateOrderCode, getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
 import { getExportFilename } from '@/lib/excelExport';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
@@ -94,7 +96,7 @@ const OrderRegistryPage: React.FC = () => {
     });
   }, [realOrders, activeCat, inferCategoryFromNumber]);
 
-  const displayed = useMemo(() => {
+  const baseList = useMemo(() => {
     const lower = search.trim().toLowerCase();
     const list = lower
       ? filteredByCat.filter(o =>
@@ -104,6 +106,28 @@ const OrderRegistryPage: React.FC = () => {
       : filteredByCat;
     return [...list].sort((a, b) => (a.orderNumber || '').localeCompare(b.orderNumber || '', 'fr', { numeric: true }));
   }, [filteredByCat, search, clients]);
+
+  const accessors = useMemo(() => ({
+    orderNumber: (o: Order) => o.orderNumber,
+    orderDate: (o: Order) => o.orderDate,
+    clientName: (o: Order) => clients.find(c => c.id === o.clientId)?.name || '',
+    designation: (o: Order) => o.designation,
+    quantity: (o: Order) => o.quantity,
+    priority: (o: Order) => o.priority || '',
+    clientRepresentative: (o: Order) => o.clientRepresentative || '',
+    observation: (o: Order) => o.observation || o.instructions || '',
+    status: (o: Order) => cancelledMap.has(o.id)
+      ? 'ملغاة'
+      : getOrderRegistryStatus(o, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId),
+    deliveryDeadline: (o: Order) => o.deliveryDeadline || o.plannedDeadline || '',
+    drawingModel: (o: Order) => o.drawingModel || '',
+    qcDate: (o: Order) => qcMap.get(o.id) || '',
+    deliveryDate: (o: Order) => deliveredMap.get(o.id)?.deliveryDate || '',
+    invoiceDate: (o: Order) => deliveredMap.get(o.id)?.invoiceDate || '',
+    invoiceNumber: (o: Order) => deliveredMap.get(o.id)?.invoiceNumber || '',
+  }), [clients, cancelledMap, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId, qcMap, deliveredMap]);
+
+  const { processed: displayed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(baseList, accessors);
 
   const pushHistory = useCallback(() => {
     setHistory(h => [...h.slice(-49), realOrders]);
@@ -325,21 +349,21 @@ const OrderRegistryPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="text-xs">رقم الطلبية</TableHead>
-                    <TableHead className="text-xs">التاريخ</TableHead>
-                    <TableHead className="text-xs">الزبون</TableHead>
-                    <TableHead className="text-xs">التعيين</TableHead>
-                    <TableHead className="text-xs">الكمية</TableHead>
-                    <TableHead className="text-xs">الأولوية</TableHead>
-                    <TableHead className="text-xs">ممثل الزبون</TableHead>
-                    <TableHead className="text-xs">ملاحظات/تعليمات</TableHead>
-                    <TableHead className="text-xs">الحالة</TableHead>
-                    <TableHead className="text-xs">أجل التسليم</TableHead>
-                    <TableHead className="text-xs">مخطط/نموذج</TableHead>
-                    <TableHead className="text-xs">تاريخ مراقبة الجودة</TableHead>
-                    <TableHead className="text-xs">تاريخ التسليم</TableHead>
-                    <TableHead className="text-xs">تاريخ الفوترة</TableHead>
-                    <TableHead className="text-xs">رقم الفاتورة</TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} filterMode="select" filterOptions={clients.map(c => c.name)} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1','P2','P3','P4','undetermined']} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الحالة" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} filterMode="select" filterOptions={['قيد الانتظار','قيد الإنجاز','في انتظار مراقبة الجودة','في انتظار التسليم','في انتظار الفوترة','مفوترة','ملغاة']} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="qcDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.qcDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="تاريخ الفوترة" columnKey="invoiceDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs">عمليات</TableHead>
                   </TableRow>
                 </TableHeader>
