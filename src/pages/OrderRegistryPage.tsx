@@ -519,7 +519,13 @@ const OrderRegistryPage: React.FC = () => {
         orderLabel={cancelTarget?.orderNumber || ''}
       />
 
-      <ConfirmDialog
+      {planningOrder && (
+        <OrderPlanningDialog
+          order={planningOrder}
+          open={!!planningOrder}
+          onOpenChange={(o) => { if (!o) setPlanningOrder(null); }}
+        />
+      )}
         open={confirmState.open}
         title={confirmState.title}
         description={confirmState.description}
