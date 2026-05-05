@@ -44,7 +44,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
     qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
-    addStep, updateStep, deleteStep, updateOrder, absenceOperationId,
+    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, absenceOperationId,
   } = usePlanning();
 
   const currentOrder = orders.find(o => o.id === order.id) || order;
@@ -308,6 +308,22 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
+
+    // Re-link production_records that pointed to old (now-deleted) step IDs.
+    // Match by (orderId + operationId + operatorId) so validated work stays
+    // visible as "منتهية" / "قيد الإنجاز" in the gamme after re-planning.
+    const recordsForOrder = productionRecords.filter(r => r.orderId === order.id);
+    const liveStepIdsAfter = new Set(newSteps.map(ns => ns.id));
+    recordsForOrder.forEach(rec => {
+      if (liveStepIdsAfter.has(rec.stepId)) return; // still valid
+      const match = newSteps.find(ns =>
+        ns.operationId === rec.operationId &&
+        ns.operatorId && ns.operatorId === rec.operatorId,
+      );
+      if (match && match.id !== rec.stepId) {
+        updateProductionRecord({ ...rec, stepId: match.id });
+      }
+    });
 
     // If the order was sitting in QC (waiting / non-conforme / reprise-retouche)
     // and the user re-edited the gamme, send it back to active production
