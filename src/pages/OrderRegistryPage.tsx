@@ -349,14 +349,15 @@ const OrderRegistryPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="text-xs"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} filterMode="select" filterOptions={clients.map(c => c.name)} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
+                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} filterMode="select" filterOptions={clients.map(c => c.name)} /></TableHead>
+                    <TableHead className="text-xs" style={{ width: 90, minWidth: 90, maxWidth: 90 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1','P2','P3','P4','undetermined']} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs">عمليات</TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الحالة" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} filterMode="select" filterOptions={['قيد الانتظار','قيد الإنجاز','في انتظار مراقبة الجودة','في انتظار التسليم','في انتظار الفوترة','مفوترة','ملغاة']} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} /></TableHead>
@@ -364,7 +365,6 @@ const OrderRegistryPage: React.FC = () => {
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ الفوترة" columnKey="invoiceDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs">عمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -383,9 +383,9 @@ const OrderRegistryPage: React.FC = () => {
                     const isEditing = editingId === o.id;
                     return (
                       <TableRow key={o.id} className={isCancelled ? 'opacity-60' : ''}>
-                        <TableCell>{renderEditableCell(o, 'orderNumber')}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'orderDate', 'date')}</TableCell>
-                        <TableCell>
+                        <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderNumber')}</TableCell>
+                        <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderDate', 'date')}</TableCell>
+                        <TableCell className="w-px whitespace-nowrap">
                           {isEditing ? (
                             <Select value={(draft.clientId ?? o.clientId) || ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
                               <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -397,7 +397,7 @@ const OrderRegistryPage: React.FC = () => {
                             <span className="text-xs">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
                           )}
                         </TableCell>
-                        <TableCell>{renderEditableCell(o, 'designation')}</TableCell>
+                        <TableCell style={{ width: 90, minWidth: 90, maxWidth: 90 }} className="truncate">{renderEditableCell(o, 'designation')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
                         <TableCell>
                           {isEditing ? (
@@ -413,6 +413,50 @@ const OrderRegistryPage: React.FC = () => {
                         </TableCell>
                         <TableCell>{renderEditableCell(o, 'clientRepresentative')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'observation')}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            {isEditing ? (
+                              <>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit(o)} title="Enregistrer">
+                                  <Save className="w-3.5 h-3.5 text-primary" />
+                                </Button>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(o)} title="Éditer">
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                {isCancelled ? (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRestore(o.id)} title="Réintégrer">
+                                    <RotateCcw className="w-3.5 h-3.5 text-green-600" />
+                                  </Button>
+                                ) : (
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
+                                    <Ban className="w-3.5 h-3.5 text-orange-600" />
+                                  </Button>
+                                )}
+                                <Button
+                                  size="icon" variant="ghost" className="h-7 w-7"
+                                  onClick={() => confirm(
+                                    'Supprimer définitivement cette commande ?',
+                                    () => {
+                                      if (isCancelled) deleteCancelledOrder(cancelledMap.get(o.id)!.id);
+                                      deleteOrder(o.id);
+                                      toast.success('Supprimé');
+                                    },
+                                    { variant: 'destructive' },
+                                  )}
+                                  title="Supprimer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs whitespace-nowrap ${statusClass}`}>
                             {status}
@@ -459,50 +503,6 @@ const OrderRegistryPage: React.FC = () => {
                               }
                             }}
                           />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {isEditing ? (
-                              <>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit(o)} title="Enregistrer">
-                                  <Save className="w-3.5 h-3.5 text-primary" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
-                                  <X className="w-3.5 h-3.5" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(o)} title="Éditer">
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </Button>
-                                {isCancelled ? (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRestore(o.id)} title="Réintégrer">
-                                    <RotateCcw className="w-3.5 h-3.5 text-green-600" />
-                                  </Button>
-                                ) : (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
-                                    <Ban className="w-3.5 h-3.5 text-orange-600" />
-                                  </Button>
-                                )}
-                                <Button
-                                  size="icon" variant="ghost" className="h-7 w-7"
-                                  onClick={() => confirm(
-                                    'Supprimer définitivement cette commande ?',
-                                    () => {
-                                      if (isCancelled) deleteCancelledOrder(cancelledMap.get(o.id)!.id);
-                                      deleteOrder(o.id);
-                                      toast.success('Supprimé');
-                                    },
-                                    { variant: 'destructive' },
-                                  )}
-                                  title="Supprimer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
                         </TableCell>
                       </TableRow>
                     );
