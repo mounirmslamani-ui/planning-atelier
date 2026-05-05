@@ -27,7 +27,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
-import { getOrderGlobalStatus, type OrderGlobalStatus } from '@/lib/stepProgress';
+import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
@@ -41,7 +41,7 @@ const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; de
 };
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
-type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'remainingSteps' | 'study' | 'material' | 'tooling' | 'observation';
 
 const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
@@ -159,6 +159,16 @@ const OrdersPage: React.FC = () => {
     });
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
+
+  const remainingStepsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
+      const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+      map.set(o.id, remaining);
+    });
+    return map;
+  }, [orders, steps, productionRecords, absenceOperationId, absenceOrderId]);
 
   const orderStatusMap = useMemo(() => {
     const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
@@ -373,13 +383,14 @@ const OrdersPage: React.FC = () => {
       case 'instructions': return o.instructions || '';
       case 'drawingModel': return o.drawingModel || '';
       case 'atelierTime': return String(atelierTimeMap.get(o.id) || 0);
+      case 'remainingSteps': return String(remainingStepsMap.get(o.id) ?? 0);
       case 'study': { const n = orderStatusMap.get(o.id); return n?.study === 'disponible' ? '3' : n?.study === 'partiel' ? '2' : n?.study === 'non-applicable' ? '0' : '1'; }
       case 'material': { const n = orderStatusMap.get(o.id); return n?.material === 'disponible' ? '3' : n?.material === 'partiel' ? '2' : n?.material === 'non-applicable' ? '0' : '1'; }
       case 'tooling': { const n = orderStatusMap.get(o.id); return n?.tooling === 'disponible' ? '3' : n?.tooling === 'partiel' ? '2' : n?.tooling === 'non-applicable' ? '0' : '1'; }
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
+  }, [getClientName, atelierTimeMap, remainingStepsMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
@@ -392,7 +403,7 @@ const OrdersPage: React.FC = () => {
       list.sort((a, b) => {
         const va = getColValue(a, sortKey as ColumnKey);
         const vb = getColValue(b, sortKey as ColumnKey);
-        if (sortKey === 'quantity' || sortKey === 'atelierTime') {
+        if (sortKey === 'quantity' || sortKey === 'atelierTime' || sortKey === 'remainingSteps') {
           const diff = (Number(va) || 0) - (Number(vb) || 0);
           return sortDir === 'asc' ? diff : -diff;
         }
@@ -574,6 +585,7 @@ const OrdersPage: React.FC = () => {
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
     { key: 'atelierTime', label: 'وقت في الورشة', className: 'w-[70px]' },
+    { key: 'remainingSteps', label: 'عدد المراحل المتبقية', className: 'w-[80px]' },
     { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
     { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
@@ -599,6 +611,7 @@ const OrdersPage: React.FC = () => {
         'مخطط/نموذج': o.drawingModel || '',
         'الحالة': getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId),
         'وقت في الورشة': formatMinutesToHM(atelierMinutes),
+        'عدد المراحل المتبقية': remainingStepsMap.get(o.id) ?? 0,
         'دراسة': status?.study || '',
         'مواد أولية': status?.material || '',
         'عدة': status?.tooling || '',
@@ -746,6 +759,14 @@ const OrdersPage: React.FC = () => {
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
         return <span className="text-xs font-medium">{formatMinutesToHM(mins)}</span>;
+      }
+      case 'remainingSteps': {
+        const n = remainingStepsMap.get(o.id) ?? 0;
+        return (
+          <span className={`inline-flex items-center justify-center min-w-[28px] rounded-full border px-2 py-0.5 text-xs font-bold ${n === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/40 bg-accent/10 text-accent'}`}>
+            {n}
+          </span>
+        );
       }
       case 'study': {
         const s = orderStatusMap.get(o.id);
