@@ -425,6 +425,20 @@ const OrderRegistryPage: React.FC = () => {
                             {status}
                           </span>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <ResourceStatusPill value={o.materialStatus} onChange={(s) => handleResourceChange(o, 'material', s)} />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <ResourceStatusPill value={o.toolingStatus} onChange={(s) => handleResourceChange(o, 'tooling', s)} />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <ResourceStatusPill value={o.studyStatus} onChange={(s) => handleResourceChange(o, 'study', s)} />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setPlanningOrder(o)} title="تحديد المهام وتوزيعها">
+                            <CalendarCheck className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
                         <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
                         <TableCell><span className="text-xs">{qcMap.get(o.id) ? formatDateFR(qcMap.get(o.id)!) : '—'}</span></TableCell>
