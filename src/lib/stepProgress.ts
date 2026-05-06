@@ -27,20 +27,14 @@ export function getStepProgressStatus(step: ProductionStep, records: ProductionR
     return step.subcontractingDone ? 'Terminée' : 'Non entamée';
   }
 
-  // Primary match: by step ID (clean link).
-  let stepRecords = records.filter(record => record.stepId === step.id);
-
-  // Fallback: production_records can become orphaned when the planning gamme
-  // is re-saved (steps are deleted and recreated with new UUIDs). In that case
-  // we still want the actual work to be reflected, so we match by the logical
-  // tuple (order + operation + operator).
-  if (stepRecords.length === 0 && step.operatorId) {
-    stepRecords = records.filter(record =>
-      record.orderId === step.orderId &&
-      record.operationId === step.operationId &&
-      record.operatorId === step.operatorId,
-    );
-  }
+  // Match strictly by step ID. The re-planification flow in
+  // OrderPlanningDialog preserves step IDs for unchanged rows, so historical
+  // production_records keep linking correctly. We deliberately do NOT fall
+  // back to a (order+operation+operator) tuple match: that fallback caused
+  // freshly-added corrective steps (after a "Reprise/Retouche" reintegration)
+  // to inherit prior validations, marking them as "Terminée" and triggering
+  // an automatic transfer back to QC.
+  const stepRecords = records.filter(record => record.stepId === step.id);
 
   if (stepRecords.some(record => normalizeRecordStatus(record.workStatus) === 'done')) return 'Terminée';
   if (stepRecords.some(record => normalizeRecordStatus(record.workStatus) === 'continue')) return 'En cours';
