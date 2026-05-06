@@ -172,6 +172,24 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, absenceOrderId]);
 
+  const remainingStepsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
+      const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+      map.set(o.id, remaining);
+    });
+    return map;
+  }, [orders, steps, productionRecords, absenceOperationId, absenceOrderId]);
+
+  const hasStepsMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      map.set(o.id, steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId));
+    });
+    return map;
+  }, [orders, steps, absenceOperationId, absenceOrderId]);
+
   // Date prompt for red/orange transitions
   const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
   const [pendingMaterialStatus, setPendingMaterialStatus] = useState<{ orderId: string; status: ResourceStatus } | null>(null);
