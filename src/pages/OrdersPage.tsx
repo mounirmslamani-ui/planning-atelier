@@ -27,7 +27,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
-import { getOrderGlobalStatus, type OrderGlobalStatus } from '@/lib/stepProgress';
+import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
@@ -41,7 +41,7 @@ const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; de
 };
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
-type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'remainingSteps' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
@@ -171,6 +171,24 @@ const OrdersPage: React.FC = () => {
     });
     return map;
   }, [orders, absenceOrderId]);
+
+  const remainingStepsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
+      const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+      map.set(o.id, remaining);
+    });
+    return map;
+  }, [orders, steps, productionRecords, absenceOperationId, absenceOrderId]);
+
+  const hasStepsMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    orders.filter(o => o.id !== absenceOrderId).forEach(o => {
+      map.set(o.id, steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId));
+    });
+    return map;
+  }, [orders, steps, absenceOperationId, absenceOrderId]);
 
   // Date prompt for red/orange transitions
   const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
@@ -368,6 +386,7 @@ const OrdersPage: React.FC = () => {
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
       case 'globalStatus': return globalStatusLabel[getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)];
+      case 'remainingSteps': return String(remainingStepsMap.get(o.id) ?? 0);
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
       case 'clientRepresentative': return o.clientRepresentative || '';
       case 'instructions': return o.instructions || '';
@@ -379,12 +398,17 @@ const OrdersPage: React.FC = () => {
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
+  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId, remainingStepsMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
     for (const [key, val] of Object.entries(filters)) {
       if (!val) continue;
+      if (key === 'planning') {
+        if (val === 'غير محددة') list = list.filter(o => !hasStepsMap.get(o.id));
+        else if (val === 'محددة') list = list.filter(o => hasStepsMap.get(o.id));
+        continue;
+      }
       const lower = val.toLowerCase();
       list = list.filter(o => getColValue(o, key as ColumnKey).toLowerCase().includes(lower));
     }
@@ -392,7 +416,7 @@ const OrdersPage: React.FC = () => {
       list.sort((a, b) => {
         const va = getColValue(a, sortKey as ColumnKey);
         const vb = getColValue(b, sortKey as ColumnKey);
-        if (sortKey === 'quantity' || sortKey === 'atelierTime') {
+        if (sortKey === 'quantity' || sortKey === 'atelierTime' || sortKey === 'remainingSteps') {
           const diff = (Number(va) || 0) - (Number(vb) || 0);
           return sortDir === 'asc' ? diff : -diff;
         }
@@ -405,7 +429,7 @@ const OrdersPage: React.FC = () => {
       });
     }
     return list;
-  }, [baseSorted, filters, sortKey, sortDir, getColValue]);
+  }, [baseSorted, filters, sortKey, sortDir, getColValue, hasStepsMap]);
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(dir ? key : null); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
@@ -570,6 +594,7 @@ const OrdersPage: React.FC = () => {
     { key: 'instructions', label: 'ملاحظات تعليمات', className: 'w-[180px]' },
     { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
     { key: 'globalStatus', label: 'الحالة', className: 'w-[105px] min-w-[105px]' },
+    { key: 'remainingSteps', label: 'عدد المراحل المتبقية', className: 'w-[110px] min-w-[110px] text-center' },
     { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
@@ -742,6 +767,16 @@ const OrdersPage: React.FC = () => {
           </div>
         );
       }
+      case 'remainingSteps': {
+        const n = remainingStepsMap.get(o.id) ?? 0;
+        const hasSteps = hasStepsMap.get(o.id);
+        if (!hasSteps) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${n === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/30 bg-accent/10 text-accent'}`}>
+            {n}
+          </span>
+        );
+      }
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
@@ -911,10 +946,32 @@ const OrdersPage: React.FC = () => {
               {columns.map((col, ci) => (
                 <React.Fragment key={col.key}>
                   <TableHead className={col.className}>
-                    <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []} />
+                    <ColumnHeader
+                      label={col.label}
+                      columnKey={col.key}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      filterValue={filters[col.key] || ''}
+                      onFilter={handleFilter}
+                      filterMode={col.key === 'globalStatus' ? 'select' : 'text'}
+                      filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []}
+                    />
                   </TableHead>
                   {ci === operationsInsertAfter && (
-                    <TableHead className="w-24 text-xs px-1">عمليات</TableHead>
+                    <TableHead className="w-32 text-xs px-1">
+                      <ColumnHeader
+                        label="عمليات"
+                        columnKey="planning"
+                        sortKey={null}
+                        sortDir={null}
+                        onSort={() => {}}
+                        filterValue={filters.planning || ''}
+                        onFilter={handleFilter}
+                        filterMode="select"
+                        filterOptions={['غير محددة', 'محددة']}
+                      />
+                    </TableHead>
                   )}
                 </React.Fragment>
               ))}
