@@ -398,12 +398,17 @@ const OrdersPage: React.FC = () => {
       case 'observation': return o.observation || '';
       default: return '';
     }
-  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId]);
+  }, [getClientName, atelierTimeMap, orderStatusMap, steps, productionRecords, absenceOperationId, remainingStepsMap]);
 
   const displayOrders = useMemo(() => {
     let list = [...baseSorted];
     for (const [key, val] of Object.entries(filters)) {
       if (!val) continue;
+      if (key === 'planning') {
+        if (val === 'undefined') list = list.filter(o => !hasStepsMap.get(o.id));
+        else if (val === 'defined') list = list.filter(o => hasStepsMap.get(o.id));
+        continue;
+      }
       const lower = val.toLowerCase();
       list = list.filter(o => getColValue(o, key as ColumnKey).toLowerCase().includes(lower));
     }
@@ -411,7 +416,7 @@ const OrdersPage: React.FC = () => {
       list.sort((a, b) => {
         const va = getColValue(a, sortKey as ColumnKey);
         const vb = getColValue(b, sortKey as ColumnKey);
-        if (sortKey === 'quantity' || sortKey === 'atelierTime') {
+        if (sortKey === 'quantity' || sortKey === 'atelierTime' || sortKey === 'remainingSteps') {
           const diff = (Number(va) || 0) - (Number(vb) || 0);
           return sortDir === 'asc' ? diff : -diff;
         }
@@ -424,7 +429,7 @@ const OrdersPage: React.FC = () => {
       });
     }
     return list;
-  }, [baseSorted, filters, sortKey, sortDir, getColValue]);
+  }, [baseSorted, filters, sortKey, sortDir, getColValue, hasStepsMap]);
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(dir ? key : null); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
