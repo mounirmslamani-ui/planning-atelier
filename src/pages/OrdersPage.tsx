@@ -405,8 +405,8 @@ const OrdersPage: React.FC = () => {
     for (const [key, val] of Object.entries(filters)) {
       if (!val) continue;
       if (key === 'planning') {
-        if (val === 'undefined') list = list.filter(o => !hasStepsMap.get(o.id));
-        else if (val === 'defined') list = list.filter(o => hasStepsMap.get(o.id));
+        if (val === 'غير محددة') list = list.filter(o => !hasStepsMap.get(o.id));
+        else if (val === 'محددة') list = list.filter(o => hasStepsMap.get(o.id));
         continue;
       }
       const lower = val.toLowerCase();
