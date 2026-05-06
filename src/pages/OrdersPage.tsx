@@ -946,10 +946,32 @@ const OrdersPage: React.FC = () => {
               {columns.map((col, ci) => (
                 <React.Fragment key={col.key}>
                   <TableHead className={col.className}>
-                    <ColumnHeader label={col.label} columnKey={col.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[col.key] || ''} onFilter={handleFilter} filterMode={col.key === 'globalStatus' ? 'select' : 'text'} filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []} />
+                    <ColumnHeader
+                      label={col.label}
+                      columnKey={col.key}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                      filterValue={filters[col.key] || ''}
+                      onFilter={handleFilter}
+                      filterMode={col.key === 'globalStatus' ? 'select' : 'text'}
+                      filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []}
+                    />
                   </TableHead>
                   {ci === operationsInsertAfter && (
-                    <TableHead className="w-24 text-xs px-1">عمليات</TableHead>
+                    <TableHead className="w-32 text-xs px-1">
+                      <ColumnHeader
+                        label="عمليات"
+                        columnKey="planning"
+                        sortKey={null}
+                        sortDir={null}
+                        onSort={() => {}}
+                        filterValue={filters.planning || ''}
+                        onFilter={handleFilter}
+                        filterMode="select"
+                        filterOptions={['undefined', 'defined']}
+                      />
+                    </TableHead>
                   )}
                 </React.Fragment>
               ))}
