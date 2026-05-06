@@ -767,6 +767,16 @@ const OrdersPage: React.FC = () => {
           </div>
         );
       }
+      case 'remainingSteps': {
+        const n = remainingStepsMap.get(o.id) ?? 0;
+        const hasSteps = hasStepsMap.get(o.id);
+        if (!hasSteps) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${n === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/30 bg-accent/10 text-accent'}`}>
+            {n}
+          </span>
+        );
+      }
       case 'deliveryDeadline': return <span className="text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</span>;
       case 'atelierTime': {
         const mins = atelierTimeMap.get(o.id) || 0;
