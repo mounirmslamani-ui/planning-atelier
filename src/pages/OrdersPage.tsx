@@ -969,7 +969,7 @@ const OrdersPage: React.FC = () => {
                         filterValue={filters.planning || ''}
                         onFilter={handleFilter}
                         filterMode="select"
-                        filterOptions={['undefined', 'defined']}
+                        filterOptions={['غير محددة', 'محددة']}
                       />
                     </TableHead>
                   )}
