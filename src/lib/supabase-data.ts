@@ -584,6 +584,16 @@ export async function dbUpdateOrder(o: Order) {
   return !error;
 }
 export async function dbDeleteOrder(id: string) {
+  // Hard delete: remove all dependent rows so the order_number is fully released
+  // and can be reused immediately by another order.
+  await Promise.all([
+    supabase.from('production_records').delete().eq('order_id', id),
+    supabase.from('production_steps').delete().eq('order_id', id),
+    supabase.from('quality_control_entries').delete().eq('order_id', id),
+    supabase.from('delivery_entries').delete().eq('order_id', id),
+    supabase.from('delivered_orders').delete().eq('order_id', id),
+    supabase.from('cancelled_orders').delete().eq('order_id', id),
+  ]);
   const { error } = await supabase.from('orders').delete().eq('id', id);
   if (error) logError('order', 'delete', error);
 }
