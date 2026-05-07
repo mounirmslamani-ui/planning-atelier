@@ -307,27 +307,37 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order.id, deadline, opsToSchedule, stepsWithoutThisOrder, orders, holidays, equipments
     );
 
+    // Map newSteps back to their source row in `schedulableRows`
+    const schedulableIdsByIdx: (string | undefined)[] = schedulableRows.map(r => {
+      if (!r.stepId) return undefined;
+      return existingOrderSteps.find(s => s.id === r.stepId)?.id;
+    });
+
     // Attach step-level prerequisites from rows AND reuse existing IDs where possible
     newSteps.forEach((s, i) => {
-      if (rows[i]) {
-        s.studyStatus = currentOrder.studyStatus ?? rows[i].studyStatus;
-        s.materialStatus = currentOrder.materialStatus ?? rows[i].materialStatus;
-        s.toolingStatus = currentOrder.toolingStatus ?? rows[i].toolingStatus;
+      const sourceRow = schedulableRows[i];
+      if (sourceRow) {
+        s.studyStatus = currentOrder.studyStatus ?? sourceRow.studyStatus;
+        s.materialStatus = currentOrder.materialStatus ?? sourceRow.materialStatus;
+        s.toolingStatus = currentOrder.toolingStatus ?? sourceRow.toolingStatus;
         s.studyReady = s.studyStatus === 'disponible';
         s.materialAvailable = s.materialStatus === 'disponible';
         s.toolingAvailable = s.toolingStatus === 'disponible';
-        s.studyDeadline = rows[i].studyDeadline;
-        s.materialDeadline = rows[i].materialDeadline;
-        s.toolingDeadline = rows[i].toolingDeadline;
-        s.specialToolingNeeds = (rows[i].specialToolingNeeds || []).filter(v => v.trim());
-        s.rawMaterialNeeds = (rows[i].rawMaterialNeeds || []).filter(v => v.trim());
+        s.studyDeadline = sourceRow.studyDeadline;
+        s.materialDeadline = sourceRow.materialDeadline;
+        s.toolingDeadline = sourceRow.toolingDeadline;
+        s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
+        s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
       }
       // Preserve original step ID for rows that already existed → keeps
       // production_records linkage intact, no ghost data.
-      const reusedId = existingIdsByRow[i];
+      const reusedId = schedulableIdsByIdx[i];
       if (reusedId) {
         s.id = reusedId;
       }
+      // Recompute step_order accounting for historical steps that come first
+      const baseOrder = historicalStepIds.size;
+      s.order = baseOrder + i + 1;
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
