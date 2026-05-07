@@ -255,19 +255,42 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
+    // Identify "historical" steps that must NEVER be deleted or rescheduled:
+    // any step that has a production_record with workStatus 'done' or 'continue',
+    // OR any subcontracting step already marked as done. This preserves the
+    // complete production history (Réintégration is additive, not destructive).
+    const isHistorical = (stepId: string): boolean => {
+      const recs = productionRecords.filter(r => r.stepId === stepId);
+      if (recs.some(r => (r.workStatus || '').toLowerCase() === 'done' || (r.workStatus || '').toLowerCase() === 'continue')) return true;
+      const st = existingOrderSteps.find(s => s.id === stepId);
+      if (st?.subcontractingDone) return true;
+      return false;
+    };
+    const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
+
     // Snapshot the existing step IDs (in row order) BEFORE deleting, so we can
     // reuse them for unchanged rows. This preserves the link with
     // production_records (validations) and prevents ghost/orphan data.
-    const existingIdsByRow: (string | undefined)[] = rows.map(r => {
+    const _existingIdsByRow: (string | undefined)[] = rows.map(r => {
       if (!r.stepId) return undefined;
       // Only reuse if the step still exists in DB
       return existingOrderSteps.find(s => s.id === r.stepId)?.id;
     });
 
-    existingOrderSteps.forEach(s => deleteStep(s.id));
+    // Only delete NON-historical steps. Historical (completed / in-progress)
+    // steps stay untouched as immutable production history.
+    existingOrderSteps.forEach(s => { if (!historicalStepIds.has(s.id)) deleteStep(s.id); });
 
-    const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === absenceOperationId);
-    const opsToSchedule: OperationToSchedule[] = rows.map(row => {
+    // Rows that correspond to historical steps are NOT rescheduled — they keep
+    // their existing dates / durations / assignee.
+    const schedulableRows = rows.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
+
+    // The scheduler must see historical steps as immovable obstacles so it
+    // doesn't double-book the operator's time.
+    const stepsWithoutThisOrder = steps.filter(s =>
+      s.orderId !== order.id || s.operationId === absenceOperationId || historicalStepIds.has(s.id)
+    );
+    const opsToSchedule: OperationToSchedule[] = schedulableRows.map(row => {
       const isSub = row.assignType === 'subcontractor';
       const options = [row.option1]
         .filter(Boolean)
@@ -284,27 +307,37 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order.id, deadline, opsToSchedule, stepsWithoutThisOrder, orders, holidays, equipments
     );
 
+    // Map newSteps back to their source row in `schedulableRows`
+    const schedulableIdsByIdx: (string | undefined)[] = schedulableRows.map(r => {
+      if (!r.stepId) return undefined;
+      return existingOrderSteps.find(s => s.id === r.stepId)?.id;
+    });
+
     // Attach step-level prerequisites from rows AND reuse existing IDs where possible
     newSteps.forEach((s, i) => {
-      if (rows[i]) {
-        s.studyStatus = currentOrder.studyStatus ?? rows[i].studyStatus;
-        s.materialStatus = currentOrder.materialStatus ?? rows[i].materialStatus;
-        s.toolingStatus = currentOrder.toolingStatus ?? rows[i].toolingStatus;
+      const sourceRow = schedulableRows[i];
+      if (sourceRow) {
+        s.studyStatus = currentOrder.studyStatus ?? sourceRow.studyStatus;
+        s.materialStatus = currentOrder.materialStatus ?? sourceRow.materialStatus;
+        s.toolingStatus = currentOrder.toolingStatus ?? sourceRow.toolingStatus;
         s.studyReady = s.studyStatus === 'disponible';
         s.materialAvailable = s.materialStatus === 'disponible';
         s.toolingAvailable = s.toolingStatus === 'disponible';
-        s.studyDeadline = rows[i].studyDeadline;
-        s.materialDeadline = rows[i].materialDeadline;
-        s.toolingDeadline = rows[i].toolingDeadline;
-        s.specialToolingNeeds = (rows[i].specialToolingNeeds || []).filter(v => v.trim());
-        s.rawMaterialNeeds = (rows[i].rawMaterialNeeds || []).filter(v => v.trim());
+        s.studyDeadline = sourceRow.studyDeadline;
+        s.materialDeadline = sourceRow.materialDeadline;
+        s.toolingDeadline = sourceRow.toolingDeadline;
+        s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
+        s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
       }
       // Preserve original step ID for rows that already existed → keeps
       // production_records linkage intact, no ghost data.
-      const reusedId = existingIdsByRow[i];
+      const reusedId = schedulableIdsByIdx[i];
       if (reusedId) {
         s.id = reusedId;
       }
+      // Recompute step_order accounting for historical steps that come first
+      const baseOrder = historicalStepIds.size;
+      s.order = baseOrder + i + 1;
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
