@@ -255,6 +255,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
+    // Identify "historical" steps that must NEVER be deleted or rescheduled:
+    // any step that has a production_record with workStatus 'done' or 'continue',
+    // OR any subcontracting step already marked as done. This preserves the
+    // complete production history (Réintégration is additive, not destructive).
+    const isHistorical = (stepId: string): boolean => {
+      const recs = productionRecords.filter(r => r.stepId === stepId);
+      if (recs.some(r => (r.workStatus || '').toLowerCase() === 'done' || (r.workStatus || '').toLowerCase() === 'continue')) return true;
+      const st = existingOrderSteps.find(s => s.id === stepId);
+      if (st?.subcontractingDone) return true;
+      return false;
+    };
+    const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
+
     // Snapshot the existing step IDs (in row order) BEFORE deleting, so we can
     // reuse them for unchanged rows. This preserves the link with
     // production_records (validations) and prevents ghost/orphan data.
@@ -264,10 +277,20 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       return existingOrderSteps.find(s => s.id === r.stepId)?.id;
     });
 
-    existingOrderSteps.forEach(s => deleteStep(s.id));
+    // Only delete NON-historical steps. Historical (completed / in-progress)
+    // steps stay untouched as immutable production history.
+    existingOrderSteps.forEach(s => { if (!historicalStepIds.has(s.id)) deleteStep(s.id); });
 
-    const stepsWithoutThisOrder = steps.filter(s => s.orderId !== order.id || s.operationId === absenceOperationId);
-    const opsToSchedule: OperationToSchedule[] = rows.map(row => {
+    // Rows that correspond to historical steps are NOT rescheduled — they keep
+    // their existing dates / durations / assignee.
+    const schedulableRows = rows.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
+
+    // The scheduler must see historical steps as immovable obstacles so it
+    // doesn't double-book the operator's time.
+    const stepsWithoutThisOrder = steps.filter(s =>
+      s.orderId !== order.id || s.operationId === absenceOperationId || historicalStepIds.has(s.id)
+    );
+    const opsToSchedule: OperationToSchedule[] = schedulableRows.map(row => {
       const isSub = row.assignType === 'subcontractor';
       const options = [row.option1]
         .filter(Boolean)
