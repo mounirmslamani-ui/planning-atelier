@@ -271,7 +271,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     // Snapshot the existing step IDs (in row order) BEFORE deleting, so we can
     // reuse them for unchanged rows. This preserves the link with
     // production_records (validations) and prevents ghost/orphan data.
-    const existingIdsByRow: (string | undefined)[] = rows.map(r => {
+    const _existingIdsByRow: (string | undefined)[] = rows.map(r => {
       if (!r.stepId) return undefined;
       // Only reuse if the step still exists in DB
       return existingOrderSteps.find(s => s.id === r.stepId)?.id;
