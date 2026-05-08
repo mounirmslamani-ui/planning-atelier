@@ -8,7 +8,10 @@ import { Pencil, Trash2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
-import type { CancelledOrder } from '@/types/planning';
+import type { CancelledOrder, OrderCategory } from '@/types/planning';
+import { ORDER_CATEGORY_LABEL } from '@/types/planning';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { formatDateFR } from '@/lib/utils';
 
 const CancelledOrdersPage: React.FC = () => {
@@ -16,12 +19,20 @@ const CancelledOrdersPage: React.FC = () => {
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [editing, setEditing] = useState<CancelledOrder | null>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
   const sorted = useMemo(() => {
     return [...cancelledOrders].sort((a, b) => (b.cancelDate || '').localeCompare(a.cancelDate || ''));
   }, [cancelledOrders]);
 
-  const filtered = useMemo(() => sorted.filter(c => {
+  const byCat = useMemo(
+    () => sorted.filter(c => inferCategoryFromOrderNumber(c.orderNumberSnapshot) === activeCat),
+    [sorted, activeCat]
+  );
+  const catCount = (cat: OrderCategory) =>
+    cancelledOrders.filter(c => inferCategoryFromOrderNumber(c.orderNumberSnapshot) === cat).length;
+
+  const filtered = useMemo(() => byCat.filter(c => {
     return Object.entries(filters).every(([k, v]) => {
       if (!v) return true;
       const val = v.toLowerCase();
