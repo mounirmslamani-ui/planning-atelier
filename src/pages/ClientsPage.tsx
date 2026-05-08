@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Star, Download } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import type { Client, ClientClass } from '@/types/planning';
+import type { Client, ClientClass, Representative } from '@/types/planning';
+import RepresentativesEditor from '@/components/RepresentativesEditor';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { exportTableToExcel } from '@/lib/excelExport';
@@ -31,15 +32,16 @@ const ClientsPage: React.FC = () => {
   const [editing, setEditing] = useState<Client | null>(null);
   const [scoringClient, setScoringClient] = useState<Client | null>(null);
   const [name, setName] = useState('');
+  const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClientClass | ''>('');
 
-  const openNew = () => { setEditing(null); setName(''); setDialogOpen(true); };
-  const openEdit = (c: Client) => { setEditing(c); setName(c.name); setDialogOpen(true); };
+  const openNew = () => { setEditing(null); setName(''); setRepresentatives([]); setDialogOpen(true); };
+  const openEdit = (c: Client) => { setEditing(c); setName(c.name); setRepresentatives(c.representatives || []); setDialogOpen(true); };
   const openScore = (c: Client) => { setScoringClient(c); setSelectedClass(c.clientClass || ''); setScoreDialogOpen(true); };
 
   const handleSave = () => {
-    if (editing) updateClient({ ...editing, name });
-    else addClient({ id: crypto.randomUUID(), name });
+    if (editing) updateClient({ ...editing, name, representatives });
+    else addClient({ id: crypto.randomUUID(), name, representatives });
     setDialogOpen(false);
   };
 
