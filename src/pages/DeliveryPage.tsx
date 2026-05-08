@@ -151,6 +151,17 @@ const DeliveryPage: React.FC = () => {
         } />
       </div>
 
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2">
+        <TabsList>
+          {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+            <TabsTrigger key={c} value={c}>
+              {ORDER_CATEGORY_LABEL[c]}
+              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
