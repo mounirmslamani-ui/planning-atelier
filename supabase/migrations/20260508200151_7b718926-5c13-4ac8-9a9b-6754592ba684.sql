@@ -1,0 +1,2 @@
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS representatives jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.subcontractors ADD COLUMN IF NOT EXISTS representatives jsonb NOT NULL DEFAULT '[]'::jsonb;
