@@ -26,11 +26,20 @@ export interface Operator {
   secondaryEquipments?: string[];
 }
 
+export interface Representative {
+  id: string;
+  name: string;
+  phones: string[];
+  addresses: string[];
+  emails: string[];
+}
+
 export interface Subcontractor {
   id: string;
   companyName: string;
   mainActivity: string;
   secondaryActivities: string[];
+  representatives?: Representative[];
 }
 
 export type OperationCategory = 'operator' | 'subcontractor';
@@ -47,6 +56,7 @@ export interface Client {
   id: string;
   name: string;
   clientClass?: ClientClass;
+  representatives?: Representative[];
 }
 
 export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'undetermined';

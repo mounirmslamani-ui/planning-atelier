@@ -100,6 +100,7 @@ export function mapSubcontractorFromDB(row: any): Subcontractor {
     companyName: row.company_name,
     mainActivity: row.main_activity,
     secondaryActivities: row.secondary_activities || [],
+    representatives: Array.isArray(row.representatives) ? row.representatives : [],
   };
 }
 
@@ -109,6 +110,7 @@ export function mapSubcontractorToDB(sub: Subcontractor) {
     company_name: sub.companyName,
     main_activity: sub.mainActivity,
     secondary_activities: sub.secondaryActivities,
+    representatives: (sub.representatives || []) as any,
   };
 }
 
@@ -137,6 +139,7 @@ export function mapClientFromDB(row: any): Client {
     id: row.id,
     name: row.name,
     clientClass: row.client_class as ClientClass | undefined,
+    representatives: Array.isArray(row.representatives) ? row.representatives : [],
   };
 }
 
@@ -145,6 +148,7 @@ export function mapClientToDB(c: Client) {
     id: c.id,
     name: c.name,
     client_class: c.clientClass || null,
+    representatives: (c.representatives || []) as any,
   };
 }
 

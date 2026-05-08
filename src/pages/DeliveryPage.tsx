@@ -11,7 +11,10 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveryEntry, DeliveredOrder, Order, QCDecision, QualityControlEntry } from '@/types/planning';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
+import { ORDER_CATEGORY_LABEL } from '@/types/planning';
+import type { DeliveryEntry, DeliveredOrder, Order, OrderCategory, QCDecision, QualityControlEntry } from '@/types/planning';
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import ReintegrateButton from '@/components/orders/ReintegrateButton';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
@@ -31,6 +34,14 @@ const DeliveryPage: React.FC = () => {
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<Order>>({});
   const [reintegratePending, setReintegratePending] = useState<{ entry: DeliveryEntry; decision: 'reprise-retouche' | 'non-conforme' } | null>(null);
+  const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
+
+  const filteredEntries = React.useMemo(
+    () => deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === activeCat),
+    [deliveryEntries, activeCat, orders]
+  );
+  const catCount = (cat: OrderCategory) =>
+    deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === cat).length;
 
   const reintegrateOrder = (entry: DeliveryEntry, decision: 'reprise-retouche' | 'non-conforme') => {
     // Recreate a QC entry marking it as "en attente de reprise"
@@ -81,7 +92,7 @@ const DeliveryPage: React.FC = () => {
     controlDate: (e: DeliveryEntry) => e.controlDate,
     decision: (e: DeliveryEntry) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveryEntries, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(filteredEntries, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('طلبيات جاهزة للتسليم', processed.map(entry => {
@@ -139,6 +150,17 @@ const DeliveryPage: React.FC = () => {
           </Button>
         } />
       </div>
+
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2">
+        <TabsList>
+          {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+            <TabsTrigger key={c} value={c}>
+              {ORDER_CATEGORY_LABEL[c]}
+              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>

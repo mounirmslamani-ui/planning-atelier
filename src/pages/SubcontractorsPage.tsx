@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
-import type { Subcontractor } from '@/types/planning';
+import type { Subcontractor, Representative } from '@/types/planning';
+import RepresentativesEditor from '@/components/RepresentativesEditor';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { exportTableToExcel } from '@/lib/excelExport';
@@ -22,12 +23,14 @@ const SubcontractorsPage: React.FC = () => {
   const [mainActivity, setMainActivity] = useState('');
   const [secondaryActivities, setSecondaryActivities] = useState<string[]>([]);
   const [newSecondary, setNewSecondary] = useState('');
+  const [representatives, setRepresentatives] = useState<Representative[]>([]);
 
   const openNew = () => {
     setEditing(null);
     setCompanyName('');
     setMainActivity(operations[0]?.name || '');
     setSecondaryActivities([]);
+    setRepresentatives([]);
     setDialogOpen(true);
   };
 
@@ -36,6 +39,7 @@ const SubcontractorsPage: React.FC = () => {
     setCompanyName(s.companyName);
     setMainActivity(s.mainActivity);
     setSecondaryActivities([...s.secondaryActivities]);
+    setRepresentatives(s.representatives || []);
     setDialogOpen(true);
   };
 
@@ -45,6 +49,7 @@ const SubcontractorsPage: React.FC = () => {
       companyName,
       mainActivity,
       secondaryActivities,
+      representatives,
     };
     if (editing) updateSubcontractor(data);
     else addSubcontractor(data);
@@ -148,7 +153,7 @@ const SubcontractorsPage: React.FC = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un sous-traitant</DialogTitle>
           </DialogHeader>
@@ -195,6 +200,7 @@ const SubcontractorsPage: React.FC = () => {
                 </Button>
               </div>
             </div>
+            <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>

@@ -14,7 +14,10 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
-import type { Order, OrderPriority, SalePriceStatus } from '@/types/planning';
+import type { Order, OrderPriority, SalePriceStatus, OrderCategory } from '@/types/planning';
+import { ORDER_CATEGORY_LABEL } from '@/types/planning';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { cn } from '@/lib/utils';
 import ReintegrateButton from '@/components/orders/ReintegrateButton';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
@@ -91,6 +94,7 @@ const PendingInvoicingPage: React.FC = () => {
   const [priceFilter, setPriceFilter] = useState<Set<PriceKey>>(
     () => new Set(PRICE_BUTTONS.map(b => b.key))
   );
+  const [activeCat, setActiveCat] = useState<Extract<OrderCategory, 'fabrication' | 'prestation'>>('fabrication');
 
   const allDeliveryActive = deliveryFilter.size === DELIVERY_BUTTONS.length;
   const allPriceActive = priceFilter.size === PRICE_BUTTONS.length;
@@ -187,9 +191,16 @@ const PendingInvoicingPage: React.FC = () => {
 
   // Apply button filters BEFORE column filters/sort
   const buttonFilteredRows = useMemo(
-    () => rows.filter(r => deliveryFilter.has(r.deliveryKey) && priceFilter.has(r.priceStatus)),
-    [rows, deliveryFilter, priceFilter]
+    () => rows.filter(r =>
+      deliveryFilter.has(r.deliveryKey) &&
+      priceFilter.has(r.priceStatus) &&
+      inferCategoryFromOrderNumber(r.order.orderNumber) === activeCat
+    ),
+    [rows, deliveryFilter, priceFilter, activeCat]
   );
+
+  const catCount = (cat: 'fabrication' | 'prestation') =>
+    rows.filter(r => inferCategoryFromOrderNumber(r.order.orderNumber) === cat).length;
 
   // Sort/filter
   const accessors = useMemo(() => ({
@@ -555,6 +566,17 @@ const PendingInvoicingPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as 'fabrication' | 'prestation')} className="flex-none mb-2">
+        <TabsList>
+          {(['fabrication','prestation'] as const).map(c => (
+            <TabsTrigger key={c} value={c}>
+              {ORDER_CATEGORY_LABEL[c]}
+              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>

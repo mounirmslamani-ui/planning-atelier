@@ -9,7 +9,10 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import type { DeliveredOrder, SalePriceStatus, Order } from '@/types/planning';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
+import { ORDER_CATEGORY_LABEL } from '@/types/planning';
+import type { DeliveredOrder, SalePriceStatus, Order, OrderCategory } from '@/types/planning';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
@@ -42,6 +45,14 @@ const DeliveredOrdersPage: React.FC = () => {
   const [invoiceDialog, setInvoiceDialog] = useState<{ entry: DeliveredOrder; value: string } | null>(null);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<Order>>({});
+  const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
+
+  const filteredDelivered = React.useMemo(
+    () => deliveredOrders.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === activeCat),
+    [deliveredOrders, activeCat, orders]
+  );
+  const catCount = (cat: OrderCategory) =>
+    deliveredOrders.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === cat).length;
 
   const startEdit = (order: Order) => {
     setEditingOrderId(order.id);
@@ -71,7 +82,7 @@ const DeliveredOrdersPage: React.FC = () => {
     invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
     observation: (d: DeliveredOrder) => d.observation || '',
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(deliveredOrders, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(filteredDelivered, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('طلبيات مسلمة', processed.map(entry => {
@@ -123,6 +134,17 @@ const DeliveredOrdersPage: React.FC = () => {
           }
         />
       </div>
+
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2">
+        <TabsList>
+          {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+            <TabsTrigger key={c} value={c}>
+              {ORDER_CATEGORY_LABEL[c]}
+              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>

@@ -24,6 +24,21 @@ export function generateOrderCode(category: OrderCategory, existingOrders: Order
   return `${yy}/${prefix}${next}`;
 }
 
+/**
+ * Infer the order category from its number using the prefix convention:
+ *   aa/Fxxx → fabrication, aa/Pxxx → prestation, aa/Sxxx → slamani, aa/xxx → divers.
+ * Returns 'fabrication' when nothing matches (safe default for legacy data).
+ */
+export function inferCategoryFromOrderNumber(orderNumber: string | undefined | null): OrderCategory {
+  const m = (orderNumber || '').match(/^\d{2}\/([A-Za-z]?)\d+/);
+  if (!m) return 'fabrication';
+  const p = m[1].toUpperCase();
+  if (p === 'F') return 'fabrication';
+  if (p === 'P') return 'prestation';
+  if (p === 'S') return 'slamani';
+  return 'divers';
+}
+
 export function getOrderRegistryStatus(
   order: Order,
   steps: ProductionStep[],
