@@ -94,6 +94,7 @@ const PendingInvoicingPage: React.FC = () => {
   const [priceFilter, setPriceFilter] = useState<Set<PriceKey>>(
     () => new Set(PRICE_BUTTONS.map(b => b.key))
   );
+  const [activeCat, setActiveCat] = useState<Extract<OrderCategory, 'fabrication' | 'prestation'>>('fabrication');
 
   const allDeliveryActive = deliveryFilter.size === DELIVERY_BUTTONS.length;
   const allPriceActive = priceFilter.size === PRICE_BUTTONS.length;
