@@ -110,7 +110,7 @@ export function mapSubcontractorToDB(sub: Subcontractor) {
     company_name: sub.companyName,
     main_activity: sub.mainActivity,
     secondary_activities: sub.secondaryActivities,
-    representatives: sub.representatives || [],
+    representatives: (sub.representatives || []) as any,
   };
 }
 
@@ -148,7 +148,7 @@ export function mapClientToDB(c: Client) {
     id: c.id,
     name: c.name,
     client_class: c.clientClass || null,
-    representatives: c.representatives || [],
+    representatives: (c.representatives || []) as any,
   };
 }
 
