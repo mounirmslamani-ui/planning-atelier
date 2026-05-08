@@ -56,6 +56,17 @@ const CancelledOrdersPage: React.FC = () => {
       <PageHeader title="طلبيات ملغاة" />
       <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
 
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)}>
+        <TabsList>
+          {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+            <TabsTrigger key={c} value={c}>
+              {ORDER_CATEGORY_LABEL[c]}
+              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
       <div className="border rounded-md overflow-x-auto">
         <Table>
           <TableHeader>
