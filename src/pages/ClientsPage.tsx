@@ -109,9 +109,15 @@ const ClientsPage: React.FC = () => {
 
       {/* Edit/Add dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un client</DialogTitle></DialogHeader>
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">اسم الزبون</label>
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+            </div>
+            <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
             <Button onClick={handleSave} disabled={!name}>حفظ</Button>
