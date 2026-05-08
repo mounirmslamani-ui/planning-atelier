@@ -191,9 +191,16 @@ const PendingInvoicingPage: React.FC = () => {
 
   // Apply button filters BEFORE column filters/sort
   const buttonFilteredRows = useMemo(
-    () => rows.filter(r => deliveryFilter.has(r.deliveryKey) && priceFilter.has(r.priceStatus)),
-    [rows, deliveryFilter, priceFilter]
+    () => rows.filter(r =>
+      deliveryFilter.has(r.deliveryKey) &&
+      priceFilter.has(r.priceStatus) &&
+      inferCategoryFromOrderNumber(r.order.orderNumber) === activeCat
+    ),
+    [rows, deliveryFilter, priceFilter, activeCat]
   );
+
+  const catCount = (cat: 'fabrication' | 'prestation') =>
+    rows.filter(r => inferCategoryFromOrderNumber(r.order.orderNumber) === cat).length;
 
   // Sort/filter
   const accessors = useMemo(() => ({
