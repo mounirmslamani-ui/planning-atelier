@@ -153,7 +153,7 @@ const SubcontractorsPage: React.FC = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un sous-traitant</DialogTitle>
           </DialogHeader>
@@ -200,6 +200,7 @@ const SubcontractorsPage: React.FC = () => {
                 </Button>
               </div>
             </div>
+            <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
