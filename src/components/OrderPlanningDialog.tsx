@@ -208,17 +208,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-    const isAvailable = status === 'disponible';
-    const updatedOrder = {
-      ...currentOrder,
-      [statusKey]: status,
-      [boolKey]: isAvailable,
-      ...(field === 'material' && !isAvailable ? { materialReceivedDate: undefined } : {}),
-    } as Order;
 
-    updateOrder(updatedOrder);
-    setRows(prev => prev.map(row => ({
+    // Update only the targeted row (granular per-step status).
+    setRows(prev => prev.map(row => row.id !== rowId ? row : ({
       ...row,
       [statusKey]: status,
       ...(status === 'disponible' || status === 'non-applicable' ? { [deadlineKey]: '' } : {}),
