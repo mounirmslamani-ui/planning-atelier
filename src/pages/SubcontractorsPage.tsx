@@ -128,7 +128,11 @@ const SubcontractorsPage: React.FC = () => {
               <TableHead><ColumnHeader label="اسم المناول" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="المناولة الأساسية" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="مناولات أخرى" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="w-24">عمليات</TableHead>
+              <TableHead><ColumnHeader label="الهاتف" columnKey="phones" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.phones || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان الإلكتروني" columnKey="emails" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.emails || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان" columnKey="addresses" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.addresses || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الممثلون" columnKey="representatives" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.representatives || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -149,8 +153,21 @@ const SubcontractorsPage: React.FC = () => {
                     ))}
                   </div>
                 </TableCell>
+                <TableCell className="text-xs">{(s.phones || []).join(' / ') || '—'}</TableCell>
+                <TableCell className="text-xs">{(s.emails || []).join(' / ') || '—'}</TableCell>
+                <TableCell className="text-xs max-w-[260px] truncate" title={(s.addresses || []).join(' / ')}>{(s.addresses || []).join(' / ') || '—'}</TableCell>
+                <TableCell className="text-xs">
+                  {(s.representatives || []).length === 0 ? '—' : (s.representatives || []).map(r => r.name).filter(Boolean).join(' / ')}
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <ContactDetailsPopover
+                      companyName={s.companyName}
+                      phones={s.phones}
+                      emails={s.emails}
+                      addresses={s.addresses}
+                      representatives={s.representatives}
+                    />
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
@@ -163,7 +180,7 @@ const SubcontractorsPage: React.FC = () => {
             ))}
             {subcontractors.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Aucun sous-traitant. Cliquez sur "Ajouter" pour commencer.
                 </TableCell>
               </TableRow>
