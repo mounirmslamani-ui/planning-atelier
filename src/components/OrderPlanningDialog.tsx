@@ -101,9 +101,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           assignType: (isSub ? 'subcontractor' : 'operator') as 'operator' | 'subcontractor',
           option1: isSub ? s.subcontractorId! : s.operatorId,
           equipmentIds: s.equipmentIds || [],
-          studyStatus: (currentOrder.studyStatus ?? s.studyStatus ?? 'non-disponible') as ResourceStatus,
-          materialStatus: (currentOrder.materialStatus ?? s.materialStatus ?? 'non-disponible') as ResourceStatus,
-          toolingStatus: (currentOrder.toolingStatus ?? s.toolingStatus ?? 'non-disponible') as ResourceStatus,
+          // Per-step statuses (granular). Fallback to order-level only when the step
+          // has never been edited (rétroactivité : commandes existantes sans détail par étape).
+          studyStatus: (s.studyStatus ?? currentOrder.studyStatus ?? 'non-disponible') as ResourceStatus,
+          materialStatus: (s.materialStatus ?? currentOrder.materialStatus ?? 'non-disponible') as ResourceStatus,
+          toolingStatus: (s.toolingStatus ?? currentOrder.toolingStatus ?? 'non-disponible') as ResourceStatus,
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
@@ -114,23 +116,24 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     } else {
       setRows([]);
     }
-  }, [open, order.id, steps, absenceOperationId, currentOrder.studyStatus, currentOrder.materialStatus, currentOrder.toolingStatus]);
+  }, [open, order.id, steps, absenceOperationId]);
 
+  // Re-sync only deadlines from DB when steps change (no longer override per-row statuses
+  // with the order-level value — statuses are now per-step).
   useEffect(() => {
     if (!open || rows.length === 0) return;
     setRows(prev => prev.map(row => {
-      const step = row.stepId ? steps.find(s => s.id === row.stepId) : undefined;
+      if (!row.stepId) return row;
+      const step = steps.find(s => s.id === row.stepId);
+      if (!step) return row;
       return {
         ...row,
-        studyStatus: (currentOrder.studyStatus ?? step?.studyStatus ?? row.studyStatus) as ResourceStatus,
-        materialStatus: (currentOrder.materialStatus ?? step?.materialStatus ?? row.materialStatus) as ResourceStatus,
-        toolingStatus: (currentOrder.toolingStatus ?? step?.toolingStatus ?? row.toolingStatus) as ResourceStatus,
-        studyDeadline: step?.studyDeadline || row.studyDeadline,
-        materialDeadline: step?.materialDeadline || row.materialDeadline,
-        toolingDeadline: step?.toolingDeadline || row.toolingDeadline,
+        studyDeadline: step.studyDeadline || row.studyDeadline,
+        materialDeadline: step.materialDeadline || row.materialDeadline,
+        toolingDeadline: step.toolingDeadline || row.toolingDeadline,
       };
     }));
-  }, [open, steps, currentOrder.studyStatus, currentOrder.materialStatus, currentOrder.toolingStatus]);
+  }, [open, steps]);
 
   const addRow = () => {
     setRows(prev => [...prev, {
