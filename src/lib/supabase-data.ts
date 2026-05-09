@@ -101,6 +101,9 @@ export function mapSubcontractorFromDB(row: any): Subcontractor {
     mainActivity: row.main_activity,
     secondaryActivities: row.secondary_activities || [],
     representatives: Array.isArray(row.representatives) ? row.representatives : [],
+    phones: row.phones || [],
+    addresses: row.addresses || [],
+    emails: row.emails || [],
   };
 }
 
@@ -111,6 +114,9 @@ export function mapSubcontractorToDB(sub: Subcontractor) {
     main_activity: sub.mainActivity,
     secondary_activities: sub.secondaryActivities,
     representatives: (sub.representatives || []) as any,
+    phones: sub.phones || [],
+    addresses: sub.addresses || [],
+    emails: sub.emails || [],
   };
 }
 
