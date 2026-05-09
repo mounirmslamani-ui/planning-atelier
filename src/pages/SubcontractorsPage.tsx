@@ -26,6 +26,9 @@ const SubcontractorsPage: React.FC = () => {
   const [secondaryActivities, setSecondaryActivities] = useState<string[]>([]);
   const [newSecondary, setNewSecondary] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [phones, setPhones] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [emails, setEmails] = useState<string[]>([]);
 
   const openNew = () => {
     setEditing(null);
@@ -33,6 +36,7 @@ const SubcontractorsPage: React.FC = () => {
     setMainActivity(operations[0]?.name || '');
     setSecondaryActivities([]);
     setRepresentatives([]);
+    setPhones([]); setAddresses([]); setEmails([]);
     setDialogOpen(true);
   };
 
@@ -42,8 +46,11 @@ const SubcontractorsPage: React.FC = () => {
     setMainActivity(s.mainActivity);
     setSecondaryActivities([...s.secondaryActivities]);
     setRepresentatives(s.representatives || []);
+    setPhones(s.phones || []); setAddresses(s.addresses || []); setEmails(s.emails || []);
     setDialogOpen(true);
   };
+
+  const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 
   const handleSave = () => {
     const data: Subcontractor = {
@@ -52,6 +59,9 @@ const SubcontractorsPage: React.FC = () => {
       mainActivity,
       secondaryActivities,
       representatives,
+      phones: cleanArr(phones),
+      addresses: cleanArr(addresses),
+      emails: cleanArr(emails),
     };
     if (editing) updateSubcontractor(data);
     else addSubcontractor(data);
@@ -73,6 +83,10 @@ const SubcontractorsPage: React.FC = () => {
     companyName: (s: Subcontractor) => s.companyName,
     mainActivity: (s: Subcontractor) => s.mainActivity,
     secondaryActivities: (s: Subcontractor) => s.secondaryActivities.join(', '),
+    phones: (s: Subcontractor) => (s.phones || []).join(' '),
+    emails: (s: Subcontractor) => (s.emails || []).join(' '),
+    addresses: (s: Subcontractor) => (s.addresses || []).join(' '),
+    representatives: (s: Subcontractor) => (s.representatives || []).map(r => r.name).join(' '),
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
 
@@ -81,7 +95,11 @@ const SubcontractorsPage: React.FC = () => {
       'اسم المناول': s.companyName,
       'المناولة الأساسية': s.mainActivity,
       'مناولات أخرى': s.secondaryActivities.join(', '),
-    })), [32, 28, 45]);
+      'الهاتف': (s.phones || []).join(' / '),
+      'العنوان الإلكتروني': (s.emails || []).join(' / '),
+      'العنوان': (s.addresses || []).join(' / '),
+      'الممثلون': (s.representatives || []).map(r => r.name).join(' / '),
+    })), [32, 28, 45, 24, 30, 35, 30]);
   };
 
   return (
