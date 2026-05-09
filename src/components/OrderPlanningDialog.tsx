@@ -313,9 +313,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     newSteps.forEach((s, i) => {
       const sourceRow = schedulableRows[i];
       if (sourceRow) {
-        s.studyStatus = currentOrder.studyStatus ?? sourceRow.studyStatus;
-        s.materialStatus = currentOrder.materialStatus ?? sourceRow.materialStatus;
-        s.toolingStatus = currentOrder.toolingStatus ?? sourceRow.toolingStatus;
+        s.studyStatus = sourceRow.studyStatus;
+        s.materialStatus = sourceRow.materialStatus;
+        s.toolingStatus = sourceRow.toolingStatus;
         s.studyReady = s.studyStatus === 'disponible';
         s.materialAvailable = s.materialStatus === 'disponible';
         s.toolingAvailable = s.toolingStatus === 'disponible';
@@ -337,6 +337,21 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
+
+    // Synthesize order-level status from ALL steps (including historical ones)
+    // so the main table's global indicators reflect per-step granularity.
+    const historicalSteps = existingOrderSteps.filter(s => historicalStepIds.has(s.id));
+    const allFinalSteps = [...historicalSteps, ...newSteps];
+    const syntheticOrder: Order = {
+      ...currentOrder,
+      studyStatus: synthesizeResourceStatuses(allFinalSteps.map(s => s.studyStatus ?? 'non-disponible')),
+      materialStatus: synthesizeResourceStatuses(allFinalSteps.map(s => s.materialStatus ?? 'non-disponible')),
+      toolingStatus: synthesizeResourceStatuses(allFinalSteps.map(s => s.toolingStatus ?? 'non-disponible')),
+    } as Order;
+    syntheticOrder.studyReady = syntheticOrder.studyStatus === 'disponible';
+    syntheticOrder.materialAvailable = syntheticOrder.materialStatus === 'disponible';
+    syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
+    updateOrder(syntheticOrder);
 
     // Re-link production_records that pointed to old (now-deleted) step IDs.
     // Match by (orderId + operationId + operatorId) so validated work stays
