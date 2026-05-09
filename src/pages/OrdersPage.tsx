@@ -28,6 +28,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
+import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
@@ -163,14 +164,17 @@ const OrdersPage: React.FC = () => {
   const orderStatusMap = useMemo(() => {
     const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
-      map.set(o.id, {
+      // Synthesize from per-step statuses when steps exist; otherwise fall back
+      // to the order-level value (rétroactivité : commandes anciennes sans détail par étape).
+      const synth = computeOrderStatusFromSteps(o, steps, absenceOperationId);
+      map.set(o.id, synth ?? {
         study: o.studyStatus ?? 'non-disponible',
         material: o.materialStatus ?? 'non-disponible',
         tooling: o.toolingStatus ?? 'non-disponible',
       });
     });
     return map;
-  }, [orders, absenceOrderId]);
+  }, [orders, steps, absenceOperationId, absenceOrderId]);
 
   const remainingStepsMap = useMemo(() => {
     const map = new Map<string, number>();

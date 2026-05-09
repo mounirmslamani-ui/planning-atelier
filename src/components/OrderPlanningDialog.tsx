@@ -13,6 +13,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 import { getStepProgressStatus } from '@/lib/stepProgress';
+import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 
 interface OperationRow {
@@ -100,9 +101,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           assignType: (isSub ? 'subcontractor' : 'operator') as 'operator' | 'subcontractor',
           option1: isSub ? s.subcontractorId! : s.operatorId,
           equipmentIds: s.equipmentIds || [],
-          studyStatus: (currentOrder.studyStatus ?? s.studyStatus ?? 'non-disponible') as ResourceStatus,
-          materialStatus: (currentOrder.materialStatus ?? s.materialStatus ?? 'non-disponible') as ResourceStatus,
-          toolingStatus: (currentOrder.toolingStatus ?? s.toolingStatus ?? 'non-disponible') as ResourceStatus,
+          // Per-step statuses (granular). Fallback to order-level only when the step
+          // has never been edited (rétroactivité : commandes existantes sans détail par étape).
+          studyStatus: (s.studyStatus ?? currentOrder.studyStatus ?? 'non-disponible') as ResourceStatus,
+          materialStatus: (s.materialStatus ?? currentOrder.materialStatus ?? 'non-disponible') as ResourceStatus,
+          toolingStatus: (s.toolingStatus ?? currentOrder.toolingStatus ?? 'non-disponible') as ResourceStatus,
           studyDeadline: s.studyDeadline || '',
           materialDeadline: s.materialDeadline || '',
           toolingDeadline: s.toolingDeadline || '',
@@ -113,23 +116,24 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     } else {
       setRows([]);
     }
-  }, [open, order.id, steps, absenceOperationId, currentOrder.studyStatus, currentOrder.materialStatus, currentOrder.toolingStatus]);
+  }, [open, order.id, steps, absenceOperationId]);
 
+  // Re-sync only deadlines from DB when steps change (no longer override per-row statuses
+  // with the order-level value — statuses are now per-step).
   useEffect(() => {
     if (!open || rows.length === 0) return;
     setRows(prev => prev.map(row => {
-      const step = row.stepId ? steps.find(s => s.id === row.stepId) : undefined;
+      if (!row.stepId) return row;
+      const step = steps.find(s => s.id === row.stepId);
+      if (!step) return row;
       return {
         ...row,
-        studyStatus: (currentOrder.studyStatus ?? step?.studyStatus ?? row.studyStatus) as ResourceStatus,
-        materialStatus: (currentOrder.materialStatus ?? step?.materialStatus ?? row.materialStatus) as ResourceStatus,
-        toolingStatus: (currentOrder.toolingStatus ?? step?.toolingStatus ?? row.toolingStatus) as ResourceStatus,
-        studyDeadline: step?.studyDeadline || row.studyDeadline,
-        materialDeadline: step?.materialDeadline || row.materialDeadline,
-        toolingDeadline: step?.toolingDeadline || row.toolingDeadline,
+        studyDeadline: step.studyDeadline || row.studyDeadline,
+        materialDeadline: step.materialDeadline || row.materialDeadline,
+        toolingDeadline: step.toolingDeadline || row.toolingDeadline,
       };
     }));
-  }, [open, steps, currentOrder.studyStatus, currentOrder.materialStatus, currentOrder.toolingStatus]);
+  }, [open, steps]);
 
   const addRow = () => {
     setRows(prev => [...prev, {
@@ -204,17 +208,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
     const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-    const isAvailable = status === 'disponible';
-    const updatedOrder = {
-      ...currentOrder,
-      [statusKey]: status,
-      [boolKey]: isAvailable,
-      ...(field === 'material' && !isAvailable ? { materialReceivedDate: undefined } : {}),
-    } as Order;
 
-    updateOrder(updatedOrder);
-    setRows(prev => prev.map(row => ({
+    // Update only the targeted row (granular per-step status).
+    setRows(prev => prev.map(row => row.id !== rowId ? row : ({
       ...row,
       [statusKey]: status,
       ...(status === 'disponible' || status === 'non-applicable' ? { [deadlineKey]: '' } : {}),
@@ -317,9 +313,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     newSteps.forEach((s, i) => {
       const sourceRow = schedulableRows[i];
       if (sourceRow) {
-        s.studyStatus = currentOrder.studyStatus ?? sourceRow.studyStatus;
-        s.materialStatus = currentOrder.materialStatus ?? sourceRow.materialStatus;
-        s.toolingStatus = currentOrder.toolingStatus ?? sourceRow.toolingStatus;
+        s.studyStatus = sourceRow.studyStatus;
+        s.materialStatus = sourceRow.materialStatus;
+        s.toolingStatus = sourceRow.toolingStatus;
         s.studyReady = s.studyStatus === 'disponible';
         s.materialAvailable = s.materialStatus === 'disponible';
         s.toolingAvailable = s.toolingStatus === 'disponible';
@@ -341,6 +337,21 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
+
+    // Synthesize order-level status from ALL steps (including historical ones)
+    // so the main table's global indicators reflect per-step granularity.
+    const historicalSteps = existingOrderSteps.filter(s => historicalStepIds.has(s.id));
+    const allFinalSteps = [...historicalSteps, ...newSteps];
+    const syntheticOrder: Order = {
+      ...currentOrder,
+      studyStatus: synthesizeResourceStatuses(allFinalSteps.map(s => s.studyStatus ?? 'non-disponible')),
+      materialStatus: synthesizeResourceStatuses(allFinalSteps.map(s => s.materialStatus ?? 'non-disponible')),
+      toolingStatus: synthesizeResourceStatuses(allFinalSteps.map(s => s.toolingStatus ?? 'non-disponible')),
+    } as Order;
+    syntheticOrder.studyReady = syntheticOrder.studyStatus === 'disponible';
+    syntheticOrder.materialAvailable = syntheticOrder.materialStatus === 'disponible';
+    syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
+    updateOrder(syntheticOrder);
 
     // Re-link production_records that pointed to old (now-deleted) step IDs.
     // Match by (orderId + operationId + operatorId) so validated work stays
@@ -644,21 +655,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           open={!!datePrompt}
           label={datePrompt.label}
           onConfirm={(date) => {
-            setRows(prev => prev.map(row => ({ ...row, [datePrompt.field]: date } as OperationRow)));
+            // Apply deadline to the targeted row only
+            setRows(prev => prev.map(row => row.id !== datePrompt.rowId ? row : ({ ...row, [datePrompt.field]: date } as OperationRow)));
             setDatePrompt(null);
           }}
           onCancel={() => {
-            // Revert status to "disponible" since user cancelled
+            // Revert that row's status to "disponible" since user cancelled (no cascade to the order)
             const statusMap: Record<string, 'studyStatus' | 'materialStatus' | 'toolingStatus'> = {
               studyDeadline: 'studyStatus',
               materialDeadline: 'materialStatus',
               toolingDeadline: 'toolingStatus',
             };
             const statusKey = statusMap[datePrompt.field];
-            const field = statusKey.replace('Status', '') as 'study' | 'material' | 'tooling';
-            const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-            updateOrder({ ...currentOrder, [statusKey]: 'disponible', [boolKey]: true } as Order);
-            setRows(prev => prev.map(row => ({ ...row, [statusKey]: 'disponible', [datePrompt.field]: '' } as OperationRow)));
+            setRows(prev => prev.map(row => row.id !== datePrompt.rowId ? row : ({ ...row, [statusKey]: 'disponible', [datePrompt.field]: '' } as OperationRow)));
             setDatePrompt(null);
           }}
         />
