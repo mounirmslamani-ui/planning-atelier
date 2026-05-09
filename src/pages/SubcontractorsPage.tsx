@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
 import type { Subcontractor, Representative } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
+import StringListEditor from '@/components/StringListEditor';
+import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { exportTableToExcel } from '@/lib/excelExport';
@@ -24,6 +26,9 @@ const SubcontractorsPage: React.FC = () => {
   const [secondaryActivities, setSecondaryActivities] = useState<string[]>([]);
   const [newSecondary, setNewSecondary] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [phones, setPhones] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [emails, setEmails] = useState<string[]>([]);
 
   const openNew = () => {
     setEditing(null);
@@ -31,6 +36,7 @@ const SubcontractorsPage: React.FC = () => {
     setMainActivity(operations[0]?.name || '');
     setSecondaryActivities([]);
     setRepresentatives([]);
+    setPhones([]); setAddresses([]); setEmails([]);
     setDialogOpen(true);
   };
 
@@ -40,8 +46,11 @@ const SubcontractorsPage: React.FC = () => {
     setMainActivity(s.mainActivity);
     setSecondaryActivities([...s.secondaryActivities]);
     setRepresentatives(s.representatives || []);
+    setPhones(s.phones || []); setAddresses(s.addresses || []); setEmails(s.emails || []);
     setDialogOpen(true);
   };
+
+  const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 
   const handleSave = () => {
     const data: Subcontractor = {
@@ -50,6 +59,9 @@ const SubcontractorsPage: React.FC = () => {
       mainActivity,
       secondaryActivities,
       representatives,
+      phones: cleanArr(phones),
+      addresses: cleanArr(addresses),
+      emails: cleanArr(emails),
     };
     if (editing) updateSubcontractor(data);
     else addSubcontractor(data);
@@ -71,6 +83,10 @@ const SubcontractorsPage: React.FC = () => {
     companyName: (s: Subcontractor) => s.companyName,
     mainActivity: (s: Subcontractor) => s.mainActivity,
     secondaryActivities: (s: Subcontractor) => s.secondaryActivities.join(', '),
+    phones: (s: Subcontractor) => (s.phones || []).join(' '),
+    emails: (s: Subcontractor) => (s.emails || []).join(' '),
+    addresses: (s: Subcontractor) => (s.addresses || []).join(' '),
+    representatives: (s: Subcontractor) => (s.representatives || []).map(r => r.name).join(' '),
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
 
@@ -79,7 +95,11 @@ const SubcontractorsPage: React.FC = () => {
       'اسم المناول': s.companyName,
       'المناولة الأساسية': s.mainActivity,
       'مناولات أخرى': s.secondaryActivities.join(', '),
-    })), [32, 28, 45]);
+      'الهاتف': (s.phones || []).join(' / '),
+      'العنوان الإلكتروني': (s.emails || []).join(' / '),
+      'العنوان': (s.addresses || []).join(' / '),
+      'الممثلون': (s.representatives || []).map(r => r.name).join(' / '),
+    })), [32, 28, 45, 24, 30, 35, 30]);
   };
 
   return (
@@ -108,7 +128,11 @@ const SubcontractorsPage: React.FC = () => {
               <TableHead><ColumnHeader label="اسم المناول" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="المناولة الأساسية" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="مناولات أخرى" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="w-24">عمليات</TableHead>
+              <TableHead><ColumnHeader label="الهاتف" columnKey="phones" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.phones || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان الإلكتروني" columnKey="emails" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.emails || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان" columnKey="addresses" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.addresses || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الممثلون" columnKey="representatives" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.representatives || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,8 +153,21 @@ const SubcontractorsPage: React.FC = () => {
                     ))}
                   </div>
                 </TableCell>
+                <TableCell className="text-xs">{(s.phones || []).join(' / ') || '—'}</TableCell>
+                <TableCell className="text-xs">{(s.emails || []).join(' / ') || '—'}</TableCell>
+                <TableCell className="text-xs max-w-[260px] truncate" title={(s.addresses || []).join(' / ')}>{(s.addresses || []).join(' / ') || '—'}</TableCell>
+                <TableCell className="text-xs">
+                  {(s.representatives || []).length === 0 ? '—' : (s.representatives || []).map(r => r.name).filter(Boolean).join(' / ')}
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
+                    <ContactDetailsPopover
+                      companyName={s.companyName}
+                      phones={s.phones}
+                      emails={s.emails}
+                      addresses={s.addresses}
+                      representatives={s.representatives}
+                    />
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
@@ -143,7 +180,7 @@ const SubcontractorsPage: React.FC = () => {
             ))}
             {subcontractors.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Aucun sous-traitant. Cliquez sur "Ajouter" pour commencer.
                 </TableCell>
               </TableRow>
@@ -153,7 +190,7 @@ const SubcontractorsPage: React.FC = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un sous-traitant</DialogTitle>
           </DialogHeader>
@@ -198,6 +235,14 @@ const SubcontractorsPage: React.FC = () => {
                 <Button variant="outline" size="sm" onClick={addSecondary} disabled={!newSecondary}>
                   <Plus className="w-3 h-3" />
                 </Button>
+              </div>
+            </div>
+            <div className="border rounded-md p-3 space-y-3 bg-muted/30">
+              <div className="text-sm font-semibold">معلومات الاتصال (مستوى المؤسسة)</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <StringListEditor label="أرقام الهاتف" value={phones} onChange={setPhones} type="tel" placeholder="+213 ..." />
+                <StringListEditor label="البريد الإلكتروني" value={emails} onChange={setEmails} type="email" placeholder="contact@..." />
+                <StringListEditor label="العناوين" value={addresses} onChange={setAddresses} placeholder="العنوان الفيزيائي" />
               </div>
             </div>
             <RepresentativesEditor value={representatives} onChange={setRepresentatives} />

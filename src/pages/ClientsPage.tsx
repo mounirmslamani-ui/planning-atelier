@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Plus, Pencil, Trash2, Star, Download } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import type { Client, ClientClass, Representative } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
+import StringListEditor from '@/components/StringListEditor';
+import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { exportTableToExcel } from '@/lib/excelExport';
@@ -23,8 +23,6 @@ const CLIENT_CLASSES: { value: ClientClass; label: string; description: string; 
   { value: 'E', label: 'Classe E - Clients Sous Conditions', description: 'Historique de retards de paiement, litiges fréquents, ou relationnel difficile. Client très occasionnel et "coûteux" en temps de gestion.', color: 'bg-red-500/15 text-red-700 border-red-500/30' },
 ];
 
-const getClassInfo = (c?: ClientClass) => CLIENT_CLASSES.find(cl => cl.value === c);
-
 const ClientsPage: React.FC = () => {
   const { clients, addClient, updateClient, deleteClient } = usePlanning();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,15 +31,36 @@ const ClientsPage: React.FC = () => {
   const [scoringClient, setScoringClient] = useState<Client | null>(null);
   const [name, setName] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [phones, setPhones] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<string[]>([]);
+  const [emails, setEmails] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClientClass | ''>('');
 
-  const openNew = () => { setEditing(null); setName(''); setRepresentatives([]); setDialogOpen(true); };
-  const openEdit = (c: Client) => { setEditing(c); setName(c.name); setRepresentatives(c.representatives || []); setDialogOpen(true); };
+  const openNew = () => {
+    setEditing(null); setName(''); setRepresentatives([]);
+    setPhones([]); setAddresses([]); setEmails([]);
+    setDialogOpen(true);
+  };
+  const openEdit = (c: Client) => {
+    setEditing(c); setName(c.name);
+    setRepresentatives(c.representatives || []);
+    setPhones(c.phones || []); setAddresses(c.addresses || []); setEmails(c.emails || []);
+    setDialogOpen(true);
+  };
   const openScore = (c: Client) => { setScoringClient(c); setSelectedClass(c.clientClass || ''); setScoreDialogOpen(true); };
 
+  const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
+
   const handleSave = () => {
-    if (editing) updateClient({ ...editing, name, representatives });
-    else addClient({ id: crypto.randomUUID(), name, representatives });
+    const payload = {
+      name,
+      representatives,
+      phones: cleanArr(phones),
+      addresses: cleanArr(addresses),
+      emails: cleanArr(emails),
+    };
+    if (editing) updateClient({ ...editing, ...payload });
+    else addClient({ id: crypto.randomUUID(), ...payload });
     setDialogOpen(false);
   };
 
@@ -54,14 +73,21 @@ const ClientsPage: React.FC = () => {
 
   const accessors = {
     name: (c: Client) => c.name,
-    clientClass: (c: Client) => c.clientClass || '',
+    phones: (c: Client) => (c.phones || []).join(' '),
+    emails: (c: Client) => (c.emails || []).join(' '),
+    addresses: (c: Client) => (c.addresses || []).join(' '),
+    representatives: (c: Client) => (c.representatives || []).map(r => r.name).join(' '),
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('الزبائن', processed.map(c => ({
       'اسم الزبون': c.name,
-    })), [32]);
+      'الهاتف': (c.phones || []).join(' / '),
+      'العنوان الإلكتروني': (c.emails || []).join(' / '),
+      'العنوان': (c.addresses || []).join(' / '),
+      'الممثلون': (c.representatives || []).map(r => r.name).join(' / '),
+    })), [28, 24, 30, 35, 30]);
   };
 
   return (
@@ -79,16 +105,34 @@ const ClientsPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead><ColumnHeader label="اسم الزبون" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الهاتف" columnKey="phones" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.phones || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان الإلكتروني" columnKey="emails" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.emails || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان" columnKey="addresses" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.addresses || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الممثلون" columnKey="representatives" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.representatives || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {processed.map(c => {
+              const reps = c.representatives || [];
               return (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell className="text-xs">{(c.phones || []).join(' / ') || '—'}</TableCell>
+                  <TableCell className="text-xs">{(c.emails || []).join(' / ') || '—'}</TableCell>
+                  <TableCell className="text-xs max-w-[260px] truncate" title={(c.addresses || []).join(' / ')}>{(c.addresses || []).join(' / ') || '—'}</TableCell>
+                  <TableCell className="text-xs">
+                    {reps.length === 0 ? '—' : reps.map(r => r.name).filter(Boolean).join(' / ')}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <ContactDetailsPopover
+                        companyName={c.name}
+                        phones={c.phones}
+                        emails={c.emails}
+                        addresses={c.addresses}
+                        representatives={c.representatives}
+                      />
                       <Button variant="ghost" size="icon" onClick={() => openScore(c)} title="Classifier">
                         <Star className="w-3.5 h-3.5 text-amber-500" />
                       </Button>
@@ -109,12 +153,20 @@ const ClientsPage: React.FC = () => {
 
       {/* Edit/Add dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un client</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1 block">اسم الزبون</label>
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+            </div>
+            <div className="border rounded-md p-3 space-y-3 bg-muted/30">
+              <div className="text-sm font-semibold">معلومات الاتصال (مستوى المؤسسة)</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <StringListEditor label="أرقام الهاتف" value={phones} onChange={setPhones} type="tel" placeholder="+213 ..." />
+                <StringListEditor label="البريد الإلكتروني" value={emails} onChange={setEmails} type="email" placeholder="contact@..." />
+                <StringListEditor label="العناوين" value={addresses} onChange={setAddresses} placeholder="العنوان الفيزيائي" />
+              </div>
             </div>
             <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
           </div>
