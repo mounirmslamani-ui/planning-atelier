@@ -60,6 +60,9 @@ export interface Client {
   name: string;
   clientClass?: ClientClass;
   representatives?: Representative[];
+  phones?: string[];
+  addresses?: string[];
+  emails?: string[];
 }
 
 export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'undetermined';
