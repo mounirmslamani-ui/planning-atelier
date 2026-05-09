@@ -146,6 +146,9 @@ export function mapClientFromDB(row: any): Client {
     name: row.name,
     clientClass: row.client_class as ClientClass | undefined,
     representatives: Array.isArray(row.representatives) ? row.representatives : [],
+    phones: row.phones || [],
+    addresses: row.addresses || [],
+    emails: row.emails || [],
   };
 }
 
@@ -155,6 +158,9 @@ export function mapClientToDB(c: Client) {
     name: c.name,
     client_class: c.clientClass || null,
     representatives: (c.representatives || []) as any,
+    phones: c.phones || [],
+    addresses: c.addresses || [],
+    emails: c.emails || [],
   };
 }
 
