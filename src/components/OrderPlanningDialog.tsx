@@ -13,6 +13,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 import { getStepProgressStatus } from '@/lib/stepProgress';
+import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 
 interface OperationRow {
