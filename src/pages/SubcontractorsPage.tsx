@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
 import type { Subcontractor, Representative } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
+import StringListEditor from '@/components/StringListEditor';
+import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { exportTableToExcel } from '@/lib/excelExport';
