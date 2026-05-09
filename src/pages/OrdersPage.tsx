@@ -163,14 +163,17 @@ const OrdersPage: React.FC = () => {
   const orderStatusMap = useMemo(() => {
     const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
-      map.set(o.id, {
+      // Synthesize from per-step statuses when steps exist; otherwise fall back
+      // to the order-level value (rétroactivité : commandes anciennes sans détail par étape).
+      const synth = computeOrderStatusFromSteps(o, steps, absenceOperationId);
+      map.set(o.id, synth ?? {
         study: o.studyStatus ?? 'non-disponible',
         material: o.materialStatus ?? 'non-disponible',
         tooling: o.toolingStatus ?? 'non-disponible',
       });
     });
     return map;
-  }, [orders, absenceOrderId]);
+  }, [orders, steps, absenceOperationId, absenceOrderId]);
 
   const remainingStepsMap = useMemo(() => {
     const map = new Map<string, number>();
