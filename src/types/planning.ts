@@ -40,6 +40,9 @@ export interface Subcontractor {
   mainActivity: string;
   secondaryActivities: string[];
   representatives?: Representative[];
+  phones?: string[];
+  addresses?: string[];
+  emails?: string[];
 }
 
 export type OperationCategory = 'operator' | 'subcontractor';
