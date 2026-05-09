@@ -61,26 +61,35 @@ export type Database = {
       }
       clients: {
         Row: {
+          addresses: string[]
           client_class: Database["public"]["Enums"]["client_class"] | null
           created_at: string
+          emails: string[]
           id: string
           name: string
+          phones: string[]
           representatives: Json
           updated_at: string
         }
         Insert: {
+          addresses?: string[]
           client_class?: Database["public"]["Enums"]["client_class"] | null
           created_at?: string
+          emails?: string[]
           id?: string
           name: string
+          phones?: string[]
           representatives?: Json
           updated_at?: string
         }
         Update: {
+          addresses?: string[]
           client_class?: Database["public"]["Enums"]["client_class"] | null
           created_at?: string
+          emails?: string[]
           id?: string
           name?: string
+          phones?: string[]
           representatives?: Json
           updated_at?: string
         }
@@ -616,28 +625,37 @@ export type Database = {
       }
       subcontractors: {
         Row: {
+          addresses: string[]
           company_name: string
           created_at: string
+          emails: string[]
           id: string
           main_activity: string
+          phones: string[]
           representatives: Json
           secondary_activities: string[]
           updated_at: string
         }
         Insert: {
+          addresses?: string[]
           company_name: string
           created_at?: string
+          emails?: string[]
           id?: string
           main_activity: string
+          phones?: string[]
           representatives?: Json
           secondary_activities?: string[]
           updated_at?: string
         }
         Update: {
+          addresses?: string[]
           company_name?: string
           created_at?: string
+          emails?: string[]
           id?: string
           main_activity?: string
+          phones?: string[]
           representatives?: Json
           secondary_activities?: string[]
           updated_at?: string
