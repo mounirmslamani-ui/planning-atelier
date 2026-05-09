@@ -237,6 +237,14 @@ const SubcontractorsPage: React.FC = () => {
                 </Button>
               </div>
             </div>
+            <div className="border rounded-md p-3 space-y-3 bg-muted/30">
+              <div className="text-sm font-semibold">معلومات الاتصال (مستوى المؤسسة)</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <StringListEditor label="أرقام الهاتف" value={phones} onChange={setPhones} type="tel" placeholder="+213 ..." />
+                <StringListEditor label="البريد الإلكتروني" value={emails} onChange={setEmails} type="email" placeholder="contact@..." />
+                <StringListEditor label="العناوين" value={addresses} onChange={setAddresses} placeholder="العنوان الفيزيائي" />
+              </div>
+            </div>
             <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
           </div>
           <DialogFooter>
