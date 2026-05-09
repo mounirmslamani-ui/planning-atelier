@@ -655,21 +655,19 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           open={!!datePrompt}
           label={datePrompt.label}
           onConfirm={(date) => {
-            setRows(prev => prev.map(row => ({ ...row, [datePrompt.field]: date } as OperationRow)));
+            // Apply deadline to the targeted row only
+            setRows(prev => prev.map(row => row.id !== datePrompt.rowId ? row : ({ ...row, [datePrompt.field]: date } as OperationRow)));
             setDatePrompt(null);
           }}
           onCancel={() => {
-            // Revert status to "disponible" since user cancelled
+            // Revert that row's status to "disponible" since user cancelled (no cascade to the order)
             const statusMap: Record<string, 'studyStatus' | 'materialStatus' | 'toolingStatus'> = {
               studyDeadline: 'studyStatus',
               materialDeadline: 'materialStatus',
               toolingDeadline: 'toolingStatus',
             };
             const statusKey = statusMap[datePrompt.field];
-            const field = statusKey.replace('Status', '') as 'study' | 'material' | 'tooling';
-            const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-            updateOrder({ ...currentOrder, [statusKey]: 'disponible', [boolKey]: true } as Order);
-            setRows(prev => prev.map(row => ({ ...row, [statusKey]: 'disponible', [datePrompt.field]: '' } as OperationRow)));
+            setRows(prev => prev.map(row => row.id !== datePrompt.rowId ? row : ({ ...row, [statusKey]: 'disponible', [datePrompt.field]: '' } as OperationRow)));
             setDatePrompt(null);
           }}
         />
