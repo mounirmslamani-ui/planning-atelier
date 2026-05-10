@@ -308,6 +308,7 @@ export type Database = {
           prototype_deadline: string | null
           prototype_quantity: number | null
           quantity: number
+          reintegrated_at: string | null
           study_status: Database["public"]["Enums"]["resource_status"]
           tooling_status: Database["public"]["Enums"]["resource_status"]
           updated_at: string
@@ -337,6 +338,7 @@ export type Database = {
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
+          reintegrated_at?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
           tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
@@ -366,6 +368,7 @@ export type Database = {
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
+          reintegrated_at?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
           tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
