@@ -248,9 +248,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       return;
     }
 
-    // Validation: prevent any row with duration <= 0 from being saved (this was
-    // the root of the "0h00" bug where a malformed row corrupted the DB).
-    const invalidRow = rows.find(r => !r.estimatedDuration || r.estimatedDuration <= 0);
+    // Validation: prevent any row with duration <= 0 from being saved — EXCEPT
+    // for steps already marked "منتهية" (Terminée), where reassigning the operator
+    // must not require re-entering a duration.
+    const invalidRow = rows.find(r => {
+      if (r.estimatedDuration && r.estimatedDuration > 0) return false;
+      const existing = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
+      const isFinished = existing ? getStepProgressStatus(existing, productionRecords) === 'Terminée' : false;
+      return !isFinished;
+    });
     if (invalidRow) {
       toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`);
       return;
