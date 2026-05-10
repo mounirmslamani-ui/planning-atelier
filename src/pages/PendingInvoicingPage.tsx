@@ -21,6 +21,7 @@ import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { cn } from '@/lib/utils';
 import ReintegrateButton from '@/components/orders/ReintegrateButton';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
+import { isReintegratedOrder } from '@/lib/reintegration';
 
 const OPERATOR_COLUMNS = [
   'محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة',
