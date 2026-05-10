@@ -248,13 +248,17 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       return;
     }
 
+    // Validation: prevent any row with duration <= 0 from being saved (this was
+    // the root of the "0h00" bug where a malformed row corrupted the DB).
+    const invalidRow = rows.find(r => !r.estimatedDuration || r.estimatedDuration <= 0);
+    if (invalidRow) {
+      toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`);
+      return;
+    }
+
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
-    // Identify "historical" steps that must NEVER be deleted or rescheduled:
-    // any step that has a production_record with workStatus 'done' or 'continue',
-    // OR any subcontracting step already marked as done. This preserves the
-    // complete production history (Réintégration is additive, not destructive).
     const isHistorical = (stepId: string): boolean => {
       const recs = productionRecords.filter(r => r.stepId === stepId);
       if (recs.some(r => (r.workStatus || '').toLowerCase() === 'done' || (r.workStatus || '').toLowerCase() === 'continue')) return true;
@@ -264,33 +268,17 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     };
     const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
 
-    // Snapshot the existing step IDs (in row order) BEFORE deleting, so we can
-    // reuse them for unchanged rows. This preserves the link with
-    // production_records (validations) and prevents ghost/orphan data.
-    const _existingIdsByRow: (string | undefined)[] = rows.map(r => {
-      if (!r.stepId) return undefined;
-      // Only reuse if the step still exists in DB
-      return existingOrderSteps.find(s => s.id === r.stepId)?.id;
-    });
-
-    // Only delete NON-historical steps. Historical (completed / in-progress)
-    // steps stay untouched as immutable production history.
+    // Only delete NON-historical steps. Historical (completed / in-progress) stays.
     existingOrderSteps.forEach(s => { if (!historicalStepIds.has(s.id)) deleteStep(s.id); });
 
-    // Rows that correspond to historical steps are NOT rescheduled — they keep
-    // their existing dates / durations / assignee.
     const schedulableRows = rows.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
 
-    // The scheduler must see historical steps as immovable obstacles so it
-    // doesn't double-book the operator's time.
     const stepsWithoutThisOrder = steps.filter(s =>
       s.orderId !== order.id || s.operationId === absenceOperationId || historicalStepIds.has(s.id)
     );
     const opsToSchedule: OperationToSchedule[] = schedulableRows.map(row => {
       const isSub = row.assignType === 'subcontractor';
-      const options = [row.option1]
-        .filter(Boolean)
-        .map(id => ({ id, isSub }));
+      const options = [row.option1].filter(Boolean).map(id => ({ id, isSub }));
       return {
         operationId: row.operationId,
         estimatedDuration: row.estimatedDuration,
@@ -303,13 +291,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       order.id, deadline, opsToSchedule, stepsWithoutThisOrder, orders, holidays, equipments
     );
 
-    // Map newSteps back to their source row in `schedulableRows`
     const schedulableIdsByIdx: (string | undefined)[] = schedulableRows.map(r => {
       if (!r.stepId) return undefined;
       return existingOrderSteps.find(s => s.id === r.stepId)?.id;
     });
 
-    // Attach step-level prerequisites from rows AND reuse existing IDs where possible
+    // UI row position is authoritative for step_order — fixes "ordre inversé" bug.
+    const orderByRowId = new Map<string, number>();
+    rows.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
+
     newSteps.forEach((s, i) => {
       const sourceRow = schedulableRows[i];
       if (sourceRow) {
@@ -324,19 +314,26 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.toolingDeadline = sourceRow.toolingDeadline;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
+        // Final safety net: never persist a step with 0/negative duration.
+        if (!s.estimatedDuration || s.estimatedDuration <= 0) {
+          s.estimatedDuration = sourceRow.estimatedDuration;
+        }
+        s.order = orderByRowId.get(sourceRow.id) ?? (i + 1);
       }
-      // Preserve original step ID for rows that already existed → keeps
-      // production_records linkage intact, no ghost data.
       const reusedId = schedulableIdsByIdx[i];
-      if (reusedId) {
-        s.id = reusedId;
-      }
-      // Recompute step_order accounting for historical steps that come first
-      const baseOrder = historicalStepIds.size;
-      s.order = baseOrder + i + 1;
+      if (reusedId) s.id = reusedId;
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
+
+    // Re-sync step_order on historical steps too — UI row order is authoritative.
+    rows.forEach((row, idx) => {
+      if (!row.stepId || !historicalStepIds.has(row.stepId)) return;
+      const hist = existingOrderSteps.find(s => s.id === row.stepId);
+      if (hist && hist.order !== idx + 1) {
+        updateStep({ ...hist, order: idx + 1 });
+      }
+    });
 
     // Synthesize order-level status from ALL steps (including historical ones)
     // so the main table's global indicators reflect per-step granularity.
