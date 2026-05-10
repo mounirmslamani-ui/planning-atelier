@@ -199,6 +199,7 @@ export function mapOrderFromDB(row: any): Order {
     drawingModel: row.drawing_model || undefined,
     notesUpdatedAt: row.notes_updated_at || undefined,
     category: (row.category || 'fabrication') as any,
+    reintegratedAt: (row as any).reintegrated_at || undefined,
   };
 }
 
