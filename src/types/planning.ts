@@ -119,6 +119,8 @@ export interface Order {
   drawingModel?: string;
   notesUpdatedAt?: string; // ISO timestamp of last observation change
   category?: OrderCategory;
+  /** ISO timestamp set when the order was reintegrated from QC/Delivery/Delivered. Persistent — survives observation edits. */
+  reintegratedAt?: string;
 }
 
 export interface ProductionStep {
