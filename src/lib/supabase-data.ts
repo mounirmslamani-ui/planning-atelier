@@ -234,6 +234,7 @@ export function mapOrderToDB(o: Order) {
     drawing_model: o.drawingModel || null,
     notes_updated_at: o.notesUpdatedAt || null,
     category: o.category || 'fabrication',
+    reintegrated_at: o.reintegratedAt || null,
   };
 }
 
