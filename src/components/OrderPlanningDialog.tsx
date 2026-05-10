@@ -323,10 +323,10 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.toolingDeadline = sourceRow.toolingDeadline;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
-        // Final safety net: never persist a step with 0/negative duration.
-        if (!s.estimatedDuration || s.estimatedDuration <= 0) {
-          s.estimatedDuration = sourceRow.estimatedDuration;
-        }
+        // ALWAYS trust the user-entered duration. The scheduler may keep its
+        // own value, but the source of truth is what the user typed in the UI.
+        // This locks duration against any silent reset (0h00 bug on Adel/F101/26).
+        s.estimatedDuration = sourceRow.estimatedDuration;
         s.order = orderByRowId.get(sourceRow.id) ?? (i + 1);
       }
       const reusedId = schedulableIdsByIdx[i];
