@@ -47,12 +47,16 @@ const DeliveredOrdersPage: React.FC = () => {
   const [editDraft, setEditDraft] = useState<Partial<Order>>({});
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
+  const visibleDelivered = React.useMemo(
+    () => deliveredOrders.filter(d => !isReintegratedOrder(getOrder(d.orderId))),
+    [deliveredOrders, orders]
+  );
   const filteredDelivered = React.useMemo(
-    () => deliveredOrders.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === activeCat),
-    [deliveredOrders, activeCat, orders]
+    () => visibleDelivered.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === activeCat),
+    [visibleDelivered, activeCat, orders]
   );
   const catCount = (cat: OrderCategory) =>
-    deliveredOrders.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === cat).length;
+    visibleDelivered.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === cat).length;
 
   const startEdit = (order: Order) => {
     setEditingOrderId(order.id);
