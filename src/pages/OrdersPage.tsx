@@ -28,6 +28,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
+import { isReintegratedOrder } from '@/lib/reintegration';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
@@ -280,13 +281,22 @@ const OrdersPage: React.FC = () => {
   // - in delivered_orders (already delivered)
   // Both must be excluded — otherwise an order delivered to the client
   // (which removes its delivery_entries row) would resurface in الطلبيات الحالية.
+  // Reintegrated orders (⟲ Reprise/Retouche): always visible in الطلبيات الحالية,
+  // even if an invoiced delivered_orders row was preserved for accounting integrity.
+  const reintegratedOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    orders.forEach(o => { if (isReintegratedOrder(o)) ids.add(o.id); });
+    return ids;
+  }, [orders]);
   const deliveredOrderIds = useMemo(() => {
     const ids = new Set<string>();
     deliveryEntries.forEach(de => ids.add(de.orderId));
     deliveredOrders.forEach(d => ids.add(d.orderId));
     cancelledOrders.forEach(c => ids.add(c.orderId));
+    // Reintegration overrides delivery / invoicing visibility.
+    reintegratedOrderIds.forEach(id => ids.delete(id));
     return ids;
-  }, [deliveryEntries, deliveredOrders, cancelledOrders]);
+  }, [deliveryEntries, deliveredOrders, cancelledOrders, reintegratedOrderIds]);
   // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
   // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
   const pendingQcOrderIds = useMemo(() => {

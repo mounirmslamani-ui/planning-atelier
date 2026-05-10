@@ -15,6 +15,7 @@ import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 import { getStepProgressStatus } from '@/lib/stepProgress';
 import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
+import { isReintegratedOrder } from '@/lib/reintegration';
 
 interface OperationRow {
   id: string;
@@ -57,12 +58,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const isInQC = !!qcEntryForOrder;
   const isInDelivery = deliveryEntries.some(e => e.orderId === order.id);
   const isDelivered = deliveredOrders.some(d => d.orderId === order.id);
-  const isLocked = isInDelivery || isDelivered;
-  const lockReason = isDelivered
-    ? 'الطلبية مسلَّمة — تعديل المراحل غير مسموح'
-    : isInDelivery
-      ? 'الطلبية في طور التسليم — تعديل المراحل غير مسموح'
-      : '';
+  // A reintegrated order (⟲ Reprise/Retouche) is back in production:
+  // unlock the gamme even if an invoiced delivered_orders row was preserved.
+  const isReintegrated = isReintegratedOrder(currentOrder);
+  const isLocked = !isReintegrated && (isInDelivery || isDelivered);
+  const lockReason = isLocked
+    ? (isDelivered
+        ? 'الطلبية مسلَّمة — تعديل المراحل غير مسموح'
+        : 'الطلبية في طور التسليم — تعديل المراحل غير مسموح')
+    : '';
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
 
