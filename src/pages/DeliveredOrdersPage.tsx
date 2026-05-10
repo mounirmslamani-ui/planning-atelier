@@ -24,6 +24,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { isReintegratedOrder } from '@/lib/reintegration';
 
 const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
   'gratuit': { emoji: '⚪', label: 'Gratuit' },
