@@ -136,6 +136,7 @@ const PendingInvoicingPage: React.FC = () => {
 
     for (const order of orders) {
       if (order.id === absenceOrderId) continue;
+      if (isReintegratedOrder(order)) continue;
       const delivered = deliveredById.get(order.id);
       let statusLabel = '';
       let deliveryDateOrProgress = '';
