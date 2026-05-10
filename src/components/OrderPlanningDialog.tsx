@@ -255,6 +255,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`);
       return;
     }
+    // Validation: every row must have an assignee selected. Without this check,
+    // the scheduler silently skips the row (op.options.length === 0), which
+    // caused an index misalignment between newSteps and schedulableRows and
+    // corrupted Adel's duration to 0h00.
+    const noAssignee = rows.find(r => !r.option1);
+    if (noAssignee) {
+      toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`);
+      return;
+    }
 
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
@@ -314,10 +323,10 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.toolingDeadline = sourceRow.toolingDeadline;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
-        // Final safety net: never persist a step with 0/negative duration.
-        if (!s.estimatedDuration || s.estimatedDuration <= 0) {
-          s.estimatedDuration = sourceRow.estimatedDuration;
-        }
+        // ALWAYS trust the user-entered duration. The scheduler may keep its
+        // own value, but the source of truth is what the user typed in the UI.
+        // This locks duration against any silent reset (0h00 bug on Adel/F101/26).
+        s.estimatedDuration = sourceRow.estimatedDuration;
         s.order = orderByRowId.get(sourceRow.id) ?? (i + 1);
       }
       const reusedId = schedulableIdsByIdx[i];
