@@ -15,6 +15,7 @@ import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 import { getStepProgressStatus } from '@/lib/stepProgress';
 import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
+import { isReintegratedOrder } from '@/lib/reintegration';
 
 interface OperationRow {
   id: string;
