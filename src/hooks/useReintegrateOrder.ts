@@ -54,11 +54,12 @@ export function useReintegrateOrder() {
     }
 
     // 4. Bump priority + mark as "Reprise/Retouche" in the observation
+    // 4. Bump priority + mark as "Reprise/Retouche" (persistent column + observation tag for visibility)
     const reprisedTag = '⟲ Reprise/Retouche';
     const baseObs = (order.observation || '').replace(/⟲ Reprise\/Retouche\s*[—-]?\s*/g, '').trim();
     const stamp = new Date().toLocaleDateString('fr-FR');
     const nextObs = `${reprisedTag} (${stamp})${baseObs ? ` — ${baseObs}` : ''}`;
-    const next: Order = { ...order, priority: 'P1', observation: nextObs };
+    const next: Order = { ...order, priority: 'P1', observation: nextObs, reintegratedAt: order.reintegratedAt || new Date().toISOString() };
     updateOrder(next);
 
     toast.success(`Commande ${order.orderNumber} réintégrée dans 'الطلبيات الحالية' (P1 — Reprise)`);
