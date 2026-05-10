@@ -255,6 +255,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`);
       return;
     }
+    // Validation: every row must have an assignee selected. Without this check,
+    // the scheduler silently skips the row (op.options.length === 0), which
+    // caused an index misalignment between newSteps and schedulableRows and
+    // corrupted Adel's duration to 0h00.
+    const noAssignee = rows.find(r => !r.option1);
+    if (noAssignee) {
+      toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`);
+      return;
+    }
 
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
