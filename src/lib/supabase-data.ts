@@ -629,8 +629,11 @@ export async function dbInsertStep(s: ProductionStep, absenceOpId?: string, abse
     return;
   }
   const mapped = mapStepToDB(s);
-  const { error } = await supabase.from('production_steps').insert(mapped);
-  if (error) logError('step', 'insert', error);
+  // Use UPSERT (not plain INSERT) so reused IDs from rescheduling don't crash
+  // with a duplicate-key error (which previously caused step data loss / the
+  // dreaded "duration → 0h00 + wrong order" bug on F101/26).
+  const { error } = await supabase.from('production_steps').upsert(mapped, { onConflict: 'id' });
+  if (error) logError('step', 'upsert', error);
 }
 export async function dbUpdateStep(s: ProductionStep) {
   const { error } = await supabase.from('production_steps').update(mapStepToDB(s)).eq('id', s.id);
