@@ -1046,8 +1046,11 @@ const PlanningTableauPage: React.FC = () => {
 
   const handleProdDialogOk = useCallback(() => {
     if (!prodDialog.step || !prodDialog.order) return;
-    const durationTodayMin = parseDurationHHMM(prodDialog.durationToday);
-    if (durationTodayMin === null) return;
+    const durationTodayMin = computeActualDuration(prodDialog.startTime, prodDialog.endTime, prodDialog.pauseTime);
+    if (durationTodayMin === null) {
+      setProdDurationError("الرجاء إدخال ساعة بداية وساعة نهاية صحيحتين");
+      return;
+    }
     if (durationTodayMin > MAX_SESSION_DURATION_MINUTES) {
       setProdDurationError('La durée maximale par session est de 12h00');
       return;
