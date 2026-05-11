@@ -196,6 +196,31 @@ function parseDurationHHMM(value: string): number | null {
   return hours * 60 + minutes;
 }
 
+// Parse strict HH:mm time-of-day (0..24h, 0..59min)
+function parseTimeHHMM(value: string): number | null {
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [h, m] = value.split(':').map(Number);
+  if (h > 24 || m > 59) return null;
+  return h * 60 + m;
+}
+
+// Auto pause rule: start < 12:00 AND end > 12:30 → 00:30, else 00:00
+function computeAutoPause(start: string, end: string): string {
+  const s = parseTimeHHMM(start);
+  const e = parseTimeHHMM(end);
+  if (s === null || e === null) return '00:00';
+  return (s < 12 * 60 && e > 12 * 60 + 30) ? '00:30' : '00:00';
+}
+
+function computeActualDuration(start: string, end: string, pause: string): number | null {
+  const s = parseTimeHHMM(start);
+  const e = parseTimeHHMM(end);
+  const p = parseDurationHHMM(pause) ?? 0;
+  if (s === null || e === null) return null;
+  const diff = e - s - p;
+  return diff > 0 ? diff : null;
+}
+
 function isStepFinished(step: ProductionStep, records: ProductionRecord[]): boolean {
   return getStepProgressStatus(step, records) === 'Terminée';
 }
