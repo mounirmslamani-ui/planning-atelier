@@ -70,6 +70,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     : '';
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
+  const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
 
   // Track whether we've initialized for this dialog open session
   const initializedRef = React.useRef(false);
