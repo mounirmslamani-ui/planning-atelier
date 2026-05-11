@@ -710,6 +710,36 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           }}
         />
       )}
+
+      {forcePrompt && (
+        <ConfirmDialog
+          open={!!forcePrompt}
+          title="تم إنجاز هذه المرحلة مع وجود مورد واحد على الأقل غير متوفر. فرض تغيير حالة الموارد إلى متوفرة؟"
+          confirmLabel="فرض التغيير"
+          cancelLabel="إلغاء"
+          onConfirm={() => {
+            const ids = new Set(forcePrompt.rowIds);
+            const forced = rows.map(r => ids.has(r.id) ? ({
+              ...r,
+              studyStatus: 'disponible' as ResourceStatus,
+              materialStatus: 'disponible' as ResourceStatus,
+              toolingStatus: 'disponible' as ResourceStatus,
+              studyDeadline: '',
+              materialDeadline: '',
+              toolingDeadline: '',
+            }) : r);
+            setRows(forced);
+            setForcePrompt(null);
+            doSave(forced);
+          }}
+          onCancel={() => {
+            // Save anyway, keeping resource statuses unchanged.
+            const snapshot = rows;
+            setForcePrompt(null);
+            doSave(snapshot);
+          }}
+        />
+      )}
     </>
   );
 };
