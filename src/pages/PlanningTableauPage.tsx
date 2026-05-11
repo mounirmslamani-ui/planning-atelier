@@ -1621,51 +1621,96 @@ const PlanningTableauPage: React.FC = () => {
       <Dialog open={prodDialog.open} onOpenChange={(o) => { if (!o) { setProdDialog(prev => ({ ...prev, open: false })); setProdDurationError(''); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-heading">Enregistrement au registre des travaux effectués</DialogTitle>
+            <DialogTitle className="text-sm font-heading">التسجيل في سجل الأشغال المنجزة</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
-              <span className="text-muted-foreground">Opérateur :</span>
+              <span className="text-muted-foreground">العامل :</span>
               <span className="font-medium">{prodDialog.operatorName}</span>
-              <span className="text-muted-foreground">N° Cde :</span>
+              <span className="text-muted-foreground">رقم الطلبية :</span>
               <span className="font-medium">{prodDialog.order?.orderNumber || '—'}</span>
               <span className="text-muted-foreground">Désignation :</span>
               <span className="font-medium">{prodDialog.order?.designation || '—'}</span>
-              <span className="text-muted-foreground">Qté :</span>
+              <span className="text-muted-foreground">الكمية :</span>
               <span className="font-medium">{prodDialog.order?.quantity || '—'}</span>
-              <span className="text-muted-foreground">Opération :</span>
+              <span className="text-muted-foreground">العملية :</span>
               <span className="font-medium">{prodDialog.operationName}</span>
-              <span className="text-muted-foreground">Durée totale estimée :</span>
+              <span className="text-muted-foreground">المدة الكلية المقدرة للشغل :</span>
               <span className="font-medium">{prodDialog.step ? formatMinutesToHM(prodDialog.step.estimatedDuration) : '—'}</span>
             </div>
-            <div className="border-t pt-3">
-              <label className="text-sm text-muted-foreground mb-1 block">Durée de l'intervention (HH:mm)</label>
-              <Input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{2}:[0-9]{2}"
-                placeholder="02:30"
-                maxLength={5}
-                className="h-9 w-32 font-mono"
-                value={prodDialog.durationToday}
-                onChange={e => {
-                  const value = normalizeDurationInput(e.target.value);
-                  const minutes = parseDurationHHMM(value);
-                  setProdDialog(prev => ({ ...prev, durationToday: value }));
-                  setProdDurationError(minutes !== null && minutes > MAX_SESSION_DURATION_MINUTES ? 'La durée maximale par session est de 12h00' : '');
-                }}
-              />
-              {prodDurationError && <p className="mt-1 text-xs text-destructive">{prodDurationError}</p>}
+            <div className="border-t pt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">ساعة البداية</label>
+                <Input
+                  type="time"
+                  className="h-9 font-mono"
+                  value={prodDialog.startTime}
+                  onChange={e => {
+                    const startTime = e.target.value;
+                    setProdDialog(prev => {
+                      const pauseTime = prev.pauseManual ? prev.pauseTime : computeAutoPause(startTime, prev.endTime);
+                      return { ...prev, startTime, pauseTime };
+                    });
+                    setProdDurationError('');
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">ساعة النهاية</label>
+                <Input
+                  type="time"
+                  className="h-9 font-mono"
+                  value={prodDialog.endTime}
+                  onChange={e => {
+                    const endTime = e.target.value;
+                    setProdDialog(prev => {
+                      const pauseTime = prev.pauseManual ? prev.pauseTime : computeAutoPause(prev.startTime, endTime);
+                      return { ...prev, endTime, pauseTime };
+                    });
+                    setProdDurationError('');
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">الوقت المستقطع (HH:mm)</label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{2}:[0-9]{2}"
+                  placeholder="00:30"
+                  maxLength={5}
+                  className="h-9 font-mono"
+                  value={prodDialog.pauseTime}
+                  onChange={e => {
+                    const pauseTime = normalizeDurationInput(e.target.value);
+                    setProdDialog(prev => ({ ...prev, pauseTime, pauseManual: true }));
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">المدة الفعلية</label>
+                <Input
+                  type="text"
+                  readOnly
+                  disabled
+                  className="h-9 font-mono bg-muted"
+                  value={(() => {
+                    const m = computeActualDuration(prodDialog.startTime, prodDialog.endTime, prodDialog.pauseTime);
+                    return m === null ? '—' : formatMinutesToHM(m);
+                  })()}
+                />
+              </div>
             </div>
+            {prodDurationError && <p className="text-xs text-destructive">{prodDurationError}</p>}
             <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2">
-              <span className="text-muted-foreground">المدة الفعلية totale :</span>
+              <span className="text-muted-foreground">المدة الفعلية الإجمالية :</span>
               <span className="font-medium">{(() => {
-                const todayMin = parseDurationHHMM(prodDialog.durationToday) ?? 0;
+                const todayMin = computeActualDuration(prodDialog.startTime, prodDialog.endTime, prodDialog.pauseTime) ?? 0;
                 return formatMinutesToHM(prodDialog.totalDoneAlready + todayMin);
               })()}</span>
               <span className="text-muted-foreground">Durée estimée restante :</span>
               <span className="font-medium">{(() => {
-                const todayMin = parseDurationHHMM(prodDialog.durationToday) ?? 0;
+                const todayMin = computeActualDuration(prodDialog.startTime, prodDialog.endTime, prodDialog.pauseTime) ?? 0;
                 const remaining = Math.max(0, (prodDialog.step?.estimatedDuration || 0) - prodDialog.totalDoneAlready - todayMin);
                 return formatMinutesToHM(remaining);
               })()}</span>
@@ -1673,7 +1718,7 @@ const PlanningTableauPage: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setProdDialog(prev => ({ ...prev, open: false })); setProdDurationError(''); }}>إلغاء</Button>
-            <Button onClick={handleProdDialogOk} disabled={parseDurationHHMM(prodDialog.durationToday) === null || !!prodDurationError}>OK</Button>
+            <Button onClick={handleProdDialogOk} disabled={computeActualDuration(prodDialog.startTime, prodDialog.endTime, prodDialog.pauseTime) === null || !!prodDurationError}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
