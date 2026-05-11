@@ -247,16 +247,14 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       .map(s => ({ value: s.id, label: s.companyName }));
   };
 
+  const isBadStatus = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
+
   const handlePlanifier = () => {
-    // Hard guard: never wipe steps for orders that have moved past production.
     if (isLocked) {
       toast.error(lockReason);
       return;
     }
-
-    // Validation: prevent any row with duration <= 0 from being saved — EXCEPT
-    // for steps already marked "منتهية" (Terminée), where reassigning the operator
-    // must not require re-entering a duration.
+    // Validation: prevent any row with duration <= 0 — except already-terminated steps.
     const invalidRow = rows.find(r => {
       if (r.estimatedDuration && r.estimatedDuration > 0) return false;
       const existing = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
@@ -267,16 +265,28 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`);
       return;
     }
-    // Validation: every row must have an assignee selected. Without this check,
-    // the scheduler silently skips the row (op.options.length === 0), which
-    // caused an index misalignment between newSteps and schedulableRows and
-    // corrupted Adel's duration to 0h00.
     const noAssignee = rows.find(r => !r.option1);
     if (noAssignee) {
       toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`);
       return;
     }
 
+    // Detect terminée rows where at least one resource is red/orange → ask user
+    // whether to force them all to green.
+    const finishedWithBadRes = rows.filter(r => {
+      const step = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
+      const finished = step ? getStepProgressStatus(step, productionRecords) === 'Terminée' : false;
+      if (!finished) return false;
+      return isBadStatus(r.studyStatus) || isBadStatus(r.materialStatus) || isBadStatus(r.toolingStatus);
+    });
+    if (finishedWithBadRes.length > 0) {
+      setForcePrompt({ rowIds: finishedWithBadRes.map(r => r.id) });
+      return;
+    }
+    doSave(rows);
+  };
+
+  const doSave = (rowsToSave: OperationRow[]) => {
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
@@ -289,10 +299,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     };
     const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
 
-    // Only delete NON-historical steps. Historical (completed / in-progress) stays.
     existingOrderSteps.forEach(s => { if (!historicalStepIds.has(s.id)) deleteStep(s.id); });
 
-    const schedulableRows = rows.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
+    const schedulableRows = rowsToSave.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
 
     const stepsWithoutThisOrder = steps.filter(s =>
       s.orderId !== order.id || s.operationId === absenceOperationId || historicalStepIds.has(s.id)
@@ -317,9 +326,8 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       return existingOrderSteps.find(s => s.id === r.stepId)?.id;
     });
 
-    // UI row position is authoritative for step_order — fixes "ordre inversé" bug.
     const orderByRowId = new Map<string, number>();
-    rows.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
+    rowsToSave.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
 
     newSteps.forEach((s, i) => {
       const sourceRow = schedulableRows[i];
@@ -335,9 +343,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.toolingDeadline = sourceRow.toolingDeadline;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
-        // ALWAYS trust the user-entered duration. The scheduler may keep its
-        // own value, but the source of truth is what the user typed in the UI.
-        // This locks duration against any silent reset (0h00 bug on Adel/F101/26).
         s.estimatedDuration = sourceRow.estimatedDuration;
         s.order = orderByRowId.get(sourceRow.id) ?? (i + 1);
       }
@@ -347,18 +352,40 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     });
     updatedSteps.forEach(s => updateStep(s));
 
-    // Re-sync step_order on historical steps too — UI row order is authoritative.
-    rows.forEach((row, idx) => {
+    // Persist UI changes (resource status, deadlines, needs, order) on historical
+    // (terminée / en cours) steps too — independence per step.
+    rowsToSave.forEach((row, idx) => {
       if (!row.stepId || !historicalStepIds.has(row.stepId)) return;
       const hist = existingOrderSteps.find(s => s.id === row.stepId);
-      if (hist && hist.order !== idx + 1) {
-        updateStep({ ...hist, order: idx + 1 });
-      }
+      if (!hist) return;
+      updateStep({
+        ...hist,
+        order: idx + 1,
+        studyStatus: row.studyStatus,
+        materialStatus: row.materialStatus,
+        toolingStatus: row.toolingStatus,
+        studyReady: row.studyStatus === 'disponible',
+        materialAvailable: row.materialStatus === 'disponible',
+        toolingAvailable: row.toolingStatus === 'disponible',
+        studyDeadline: row.studyDeadline,
+        materialDeadline: row.materialDeadline,
+        toolingDeadline: row.toolingDeadline,
+        specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
+        rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
+      });
     });
 
-    // Synthesize order-level status from ALL steps (including historical ones)
-    // so the main table's global indicators reflect per-step granularity.
-    const historicalSteps = existingOrderSteps.filter(s => historicalStepIds.has(s.id));
+    const historicalSteps = existingOrderSteps
+      .filter(s => historicalStepIds.has(s.id))
+      .map(s => {
+        const row = rowsToSave.find(r => r.stepId === s.id);
+        return row ? {
+          ...s,
+          studyStatus: row.studyStatus,
+          materialStatus: row.materialStatus,
+          toolingStatus: row.toolingStatus,
+        } : s;
+      });
     const allFinalSteps = [...historicalSteps, ...newSteps];
     const syntheticOrder: Order = {
       ...currentOrder,
@@ -371,13 +398,10 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
     updateOrder(syntheticOrder);
 
-    // Re-link production_records that pointed to old (now-deleted) step IDs.
-    // Match by (orderId + operationId + operatorId) so validated work stays
-    // visible as "منتهية" / "قيد الإنجاز" in the gamme after re-planning.
     const recordsForOrder = productionRecords.filter(r => r.orderId === order.id);
     const liveStepIdsAfter = new Set(newSteps.map(ns => ns.id));
     recordsForOrder.forEach(rec => {
-      if (liveStepIdsAfter.has(rec.stepId)) return; // still valid
+      if (liveStepIdsAfter.has(rec.stepId)) return;
       const match = newSteps.find(ns =>
         ns.operationId === rec.operationId &&
         ns.operatorId && ns.operatorId === rec.operatorId,
@@ -387,10 +411,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       }
     });
 
-    // If the order was sitting in QC (waiting / non-conforme / reprise-retouche)
-    // and the user re-edited the gamme, send it back to active production
-    // ("قيد الانجاز") by removing the QC entry. AppLayout will re-transfer it
-    // to QC automatically once all steps are complete again.
     if (qcEntryForOrder) {
       deleteQCEntry(qcEntryForOrder.id);
       toast.success('تمت إعادة الطلبية إلى الإنتاج (قيد الانجاز)');
