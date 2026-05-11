@@ -376,7 +376,10 @@ interface ProductionDialogState {
   order: Order | null;
   operatorName: string;
   operationName: string;
-  durationToday: string;
+  startTime: string;
+  endTime: string;
+  pauseTime: string;
+  pauseManual: boolean;
   totalDoneAlready: number;
 }
 
