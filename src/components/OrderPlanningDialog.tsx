@@ -762,6 +762,23 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
           }}
         />
       )}
+
+      {removePrompt && (
+        <ConfirmDialog
+          open={!!removePrompt}
+          title={`حذف هذه المرحلة من القائمة؟ (${removePrompt.label})`}
+          description="لن يتم تطبيق الحذف نهائيًا إلا بعد الضغط على « إعادة التخطيط ». اضغط « تأكيد » مرة ثانية للحذف."
+          confirmLabel="نعم، احذف"
+          cancelLabel="إلغاء"
+          variant="destructive"
+          onConfirm={() => {
+            const rid = removePrompt.rowId;
+            setRemovePrompt(null);
+            setRows(prev => prev.filter(r => r.id !== rid).map((r, i) => ({ ...r, order: i + 1 })));
+          }}
+          onCancel={() => setRemovePrompt(null)}
+        />
+      )}
     </>
   );
 };
