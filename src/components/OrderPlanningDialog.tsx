@@ -673,7 +673,10 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => removeRow(row.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        const opName = operations.find(o => o.id === row.operationId)?.name || '?';
+                        setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
+                      }}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     </TableCell>
