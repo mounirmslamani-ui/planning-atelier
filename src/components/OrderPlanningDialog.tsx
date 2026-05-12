@@ -71,6 +71,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const [rows, setRows] = useState<OperationRow[]>([]);
   const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
+  const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
 
   // Track whether we've initialized for this dialog open session
   const initializedRef = React.useRef(false);
@@ -299,8 +300,6 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     };
     const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
 
-    existingOrderSteps.forEach(s => { if (!historicalStepIds.has(s.id)) deleteStep(s.id); });
-
     const schedulableRows = rowsToSave.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
 
     const stepsWithoutThisOrder = steps.filter(s =>
@@ -314,23 +313,34 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         estimatedDuration: row.estimatedDuration,
         options,
         equipmentIds: row.equipmentIds,
+        sourceId: row.id,
       };
     });
 
-    const { newSteps, updatedSteps } = scheduleOrder(
+    const { newSteps, updatedSteps, failures, sourceIdByStepId } = scheduleOrder(
       order.id, deadline, opsToSchedule, stepsWithoutThisOrder, orders, holidays, equipments
     );
 
-    const schedulableIdsByIdx: (string | undefined)[] = schedulableRows.map(r => {
-      if (!r.stepId) return undefined;
-      return existingOrderSteps.find(s => s.id === r.stepId)?.id;
-    });
+    // SAFETY GUARD — refuse to delete anything if scheduling failed for any row.
+    if (failures.length > 0 || newSteps.length !== schedulableRows.length) {
+      const reasons = failures.map(f => {
+        const op = operations.find(o => o.id === f.operationId)?.name || '?';
+        const why = f.reason === 'equipment-down' ? 'معدّة معطّلة' : f.reason === 'no-options' ? 'بدون عامل' : 'لا يوجد فضاء زمني';
+        return `${op} (${why})`;
+      }).join('، ');
+      toast.error(`فشل التخطيط: لم تُحفظ أي تعديلات. ${reasons || ''}`);
+      return;
+    }
 
     const orderByRowId = new Map<string, number>();
     rowsToSave.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
 
-    newSteps.forEach((s, i) => {
-      const sourceRow = schedulableRows[i];
+    // Reuse existing step IDs by sourceId (row.id) — NOT by index. This is what
+    // prevents step IDs from being scrambled when the scheduler reorders ops.
+    const reusedIds = new Set<string>();
+    newSteps.forEach(s => {
+      const rowId = sourceIdByStepId[s.id];
+      const sourceRow = rowsToSave.find(r => r.id === rowId);
       if (sourceRow) {
         s.studyStatus = sourceRow.studyStatus;
         s.materialStatus = sourceRow.materialStatus;
@@ -344,13 +354,22 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
         s.estimatedDuration = sourceRow.estimatedDuration;
-        s.order = orderByRowId.get(sourceRow.id) ?? (i + 1);
+        s.order = orderByRowId.get(sourceRow.id) ?? s.order;
+        if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
+          s.id = sourceRow.stepId;
+          reusedIds.add(sourceRow.stepId);
+        }
       }
-      const reusedId = schedulableIdsByIdx[i];
-      if (reusedId) s.id = reusedId;
       addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
+
+    // Now safely delete only existing non-historical steps that were NOT reused.
+    existingOrderSteps.forEach(s => {
+      if (historicalStepIds.has(s.id)) return;
+      if (reusedIds.has(s.id)) return;
+      deleteStep(s.id);
+    });
 
     // Persist UI changes (resource status, deadlines, needs, order) on historical
     // (terminée / en cours) steps too — independence per step.
@@ -654,7 +673,10 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => removeRow(row.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        const opName = operations.find(o => o.id === row.operationId)?.name || '?';
+                        setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
+                      }}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     </TableCell>
@@ -738,6 +760,23 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             setForcePrompt(null);
             doSave(snapshot);
           }}
+        />
+      )}
+
+      {removePrompt && (
+        <ConfirmDialog
+          open={!!removePrompt}
+          title={`حذف هذه المرحلة من القائمة؟ (${removePrompt.label})`}
+          description="لن يتم تطبيق الحذف نهائيًا إلا بعد الضغط على « إعادة التخطيط ». اضغط « تأكيد » مرة ثانية للحذف."
+          confirmLabel="نعم، احذف"
+          cancelLabel="إلغاء"
+          variant="destructive"
+          onConfirm={() => {
+            const rid = removePrompt.rowId;
+            setRemovePrompt(null);
+            setRows(prev => prev.filter(r => r.id !== rid).map((r, i) => ({ ...r, order: i + 1 })));
+          }}
+          onCancel={() => setRemovePrompt(null)}
         />
       )}
     </>
