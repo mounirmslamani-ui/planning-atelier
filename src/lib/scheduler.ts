@@ -6,6 +6,15 @@ export interface OperationToSchedule {
   estimatedDuration: number; // in minutes
   options: { id: string; isSub: boolean }[];
   equipmentIds?: string[];
+  /** Optional caller-provided id to map result back to the source row. */
+  sourceId?: string;
+}
+
+/** Reason an operation could not be scheduled — surfaced to the caller for safe rollback. */
+export interface SchedulingFailure {
+  sourceId?: string;
+  operationId: string;
+  reason: 'no-options' | 'equipment-down' | 'no-candidate';
 }
 
 // Module-level absence operation ID — set by context after initial load
