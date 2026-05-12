@@ -141,19 +141,24 @@ export function scheduleOrder(
   allOrders: Order[],
   holidays: Holiday[],
   equipments?: Equipment[]
-): { newSteps: ProductionStep[]; updatedSteps: ProductionStep[] } {
+): { newSteps: ProductionStep[]; updatedSteps: ProductionStep[]; failures: SchedulingFailure[]; sourceIdByStepId: Record<string, string> } {
   const newSteps: ProductionStep[] = [];
   const updatedSteps: ProductionStep[] = [];
+  const failures: SchedulingFailure[] = [];
+  const sourceIdByStepId: Record<string, string> = {};
   let workingSteps = [...existingSteps];
 
   const currentOrder = allOrders.find(o => o.id === orderId);
-  if (!currentOrder) return { newSteps, updatedSteps };
+  if (!currentOrder) return { newSteps, updatedSteps, failures, sourceIdByStepId };
 
   let previousOpEnd = new Date();
 
   for (let i = 0; i < operationsToSchedule.length; i++) {
     const op = operationsToSchedule[i];
-    if (op.options.length === 0) continue;
+    if (op.options.length === 0) {
+      failures.push({ sourceId: op.sourceId, operationId: op.operationId, reason: 'no-options' });
+      continue;
+    }
 
     // Check equipment availability — skip if any required equipment is "En panne"
     const requiredEqIds = op.equipmentIds || [];
@@ -162,7 +167,10 @@ export function scheduleOrder(
         const eq = equipments.find(e => e.id === eqId);
         return eq && eq.state !== 'En panne';
       });
-      if (!allAvailable) continue; // skip this operation — equipment unavailable
+      if (!allAvailable) {
+        failures.push({ sourceId: op.sourceId, operationId: op.operationId, reason: 'equipment-down' });
+        continue;
+      }
     }
 
     let bestCandidate: ScheduleCandidate | null = null;
@@ -203,6 +211,7 @@ export function scheduleOrder(
       };
 
       newSteps.push(step);
+      if (op.sourceId) sourceIdByStepId[step.id] = op.sourceId;
       workingSteps.push(step);
 
       // Reschedule displaced steps
@@ -237,8 +246,10 @@ export function scheduleOrder(
       }
 
       previousOpEnd = bestCandidate.end;
+    } else {
+      failures.push({ sourceId: op.sourceId, operationId: op.operationId, reason: 'no-candidate' });
     }
   }
 
-  return { newSteps, updatedSteps };
+  return { newSteps, updatedSteps, failures, sourceIdByStepId };
 }
