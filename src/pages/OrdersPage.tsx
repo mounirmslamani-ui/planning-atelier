@@ -827,45 +827,8 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  // Compute last order numbers for each series (F, P, numeric, S) — priorité à l'année (avant /), puis au numéro (après /)
-  const lastSeriesNumbers = useMemo(() => {
-    const parse = (on: string, prefix: 'F' | 'P' | 'S' | '') => {
-      const re = prefix
-        ? new RegExp(`^(\\d+)\\s*/\\s*${prefix}(\\d+)\\b`, 'i')
-        : /^(\d+)\s*\/\s*(\d+)\b/;
-      const m = on.match(re);
-      if (!m) return null;
-      return { year: parseInt(m[1], 10), num: parseInt(m[2], 10) };
-    };
-    const isBetter = (a: { num: number; year: number }, b: { num: number; year: number } | null) => {
-      if (!b) return true;
-      if (a.year !== b.year) return a.year > b.year;
-      return a.num > b.num;
-    };
-    const allOrders = orders.filter(o => o.orderNumber !== 'ABS');
-    let lastF = '', lastP = '', lastNum = '', lastS = '';
-    let bestF: { num: number; year: number } | null = null;
-    let bestP: { num: number; year: number } | null = null;
-    let bestN: { num: number; year: number } | null = null;
-    let bestS: { num: number; year: number } | null = null;
-    for (const o of allOrders) {
-      const on = o.orderNumber.trim();
-      if (/^\d+\s*\/\s*F\d+/i.test(on)) {
-        const p = parse(on, 'F');
-        if (p && isBetter(p, bestF)) { bestF = p; lastF = on; }
-      } else if (/^\d+\s*\/\s*P\d+/i.test(on)) {
-        const p = parse(on, 'P');
-        if (p && isBetter(p, bestP)) { bestP = p; lastP = on; }
-      } else if (/^\d+\s*\/\s*S\d+/i.test(on)) {
-        const p = parse(on, 'S');
-        if (p && isBetter(p, bestS)) { bestS = p; lastS = on; }
-      } else if (/^\d+\s*\/\s*\d+\b/.test(on)) {
-        const p = parse(on, '');
-        if (p && isBetter(p, bestN)) { bestN = p; lastNum = on; }
-      }
-    }
-    return { lastF, lastP, lastNum, lastS };
-  }, [orders]);
+  // Compute last order numbers for each series (F, P, S, divers).
+  const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(orders), [orders]);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
