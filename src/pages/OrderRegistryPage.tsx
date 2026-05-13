@@ -224,6 +224,104 @@ const OrderRegistryPage: React.FC = () => {
     if (pending) deleteDeliveryEntry(pending.id);
   }, [deliveredMap, deliveryEntries, addDeliveredOrder, updateDeliveredOrder, deleteDeliveryEntry]);
 
+  /**
+   * Manual status change from the registry: forces the order into the right
+   * downstream table (active workshop, QC queue, delivery queue, delivered,
+   * pending invoicing). Strict transfer — an order is never present in two
+   * flows simultaneously.
+   */
+  const changeStatus = useCallback((order: Order, target: RegistryStatus | 'ملغاة') => {
+    if (target === 'ملغاة') {
+      setCancelTarget(order);
+      return;
+    }
+    // If currently cancelled, restore it first.
+    const cancelled = cancelledMap.get(order.id);
+    if (cancelled) deleteCancelledOrder(cancelled.id);
+
+    const today = new Date().toISOString().split('T')[0];
+    const nowIso = new Date().toISOString();
+    const orderId = order.id;
+
+    const existingQc = qcEntries.find(q => q.orderId === orderId);
+    const existingDelivery = deliveryEntries.find(d => d.orderId === orderId);
+    const existingDelivered = deliveredOrders.find(d => d.orderId === orderId);
+
+    // Helper to clear flow rows we don't want anymore
+    const clearQc = () => { if (existingQc) deleteQCEntry(existingQc.id); };
+    const clearDelivery = () => { if (existingDelivery) deleteDeliveryEntry(existingDelivery.id); };
+    const clearDelivered = (preserveInvoiced = true) => {
+      if (!existingDelivered) return;
+      if (preserveInvoiced && existingDelivered.invoiceNumber) return;
+      deleteDeliveredOrder(existingDelivered.id);
+    };
+
+    switch (target) {
+      case 'قيد الانتظار':
+      case 'قيد الإنجاز': {
+        clearQc(); clearDelivery(); clearDelivered(false);
+        // mark reintegration so the order resurfaces in الطلبيات الجارية even if it had progress
+        if (existingQc || existingDelivery || existingDelivered) {
+          updateOrder({ ...order, reintegratedAt: order.reintegratedAt || nowIso });
+        }
+        break;
+      }
+      case 'في انتظار مراقبة الجودة': {
+        clearDelivery(); clearDelivered(false);
+        if (!existingQc) {
+          addQCEntry({ id: crypto.randomUUID(), orderId, controlDate: today, createdAt: nowIso });
+        }
+        break;
+      }
+      case 'في انتظار التسليم': {
+        clearQc(); clearDelivered(false);
+        if (!existingDelivery) {
+          addDeliveryEntry({
+            id: crypto.randomUUID(), orderId, controlDate: today,
+            decision: 'conforme', movedAt: nowIso,
+          });
+        }
+        break;
+      }
+      case 'في انتظار الفوترة': {
+        clearQc(); clearDelivery();
+        if (existingDelivered) {
+          if (existingDelivered.invoiceNumber) {
+            // strip invoice to put it back into pending invoicing
+            updateDeliveredOrder({ ...existingDelivered, invoiceNumber: undefined, invoiceDate: undefined });
+          }
+        } else {
+          addDeliveredOrder({
+            id: crypto.randomUUID(), orderId,
+            deliveryDate: today, salePriceStatus: 'non-calcule',
+          });
+        }
+        break;
+      }
+      case 'مفوترة': {
+        clearQc(); clearDelivery();
+        if (!existingDelivered) {
+          toast.error('Veuillez saisir un numéro de facture pour passer à "مفوترة".');
+          return;
+        }
+        if (!existingDelivered.invoiceNumber) {
+          toast.error('Renseignez d\'abord le numéro de facture dans la colonne "رقم الفاتورة".');
+          return;
+        }
+        break;
+      }
+    }
+    toast.success(`Statut mis à jour : ${target}`);
+  }, [
+    cancelledMap, deleteCancelledOrder,
+    qcEntries, deliveryEntries, deliveredOrders,
+    deleteQCEntry, deleteDeliveryEntry, deleteDeliveredOrder,
+    addQCEntry, addDeliveryEntry, addDeliveredOrder, updateDeliveredOrder,
+    updateOrder,
+  ]);
+
+  const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(realOrders), [realOrders]);
+
   const handleExcelImport = (rows: Omit<Order, 'id'>[]) => {
     rows.forEach((r, i) => {
       const code = r.orderNumber || generateOrderCode(activeCat, realOrders, new Date().getFullYear());
