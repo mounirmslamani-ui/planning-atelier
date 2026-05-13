@@ -416,6 +416,17 @@ const OrderRegistryPage: React.FC = () => {
     <div className="p-6 space-y-4" dir="rtl">
       <PageHeader title="سجل الطلبيات" description="Registre complet des commandes (4 catégories)" />
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">آخر الأرقام:</span>
+        {(['lastF', 'lastP', 'lastS', 'lastNum'] as const).map(k =>
+          lastSeriesNumbers[k] ? (
+            <span key={k} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium ring-1 ring-inset ring-border">
+              {lastSeriesNumbers[k]}
+            </span>
+          ) : null,
+        )}
+      </div>
+
       <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }}>
         <TabsList>
           {CATEGORIES.map(c => (
