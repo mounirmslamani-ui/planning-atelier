@@ -28,6 +28,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
+import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
