@@ -569,9 +569,22 @@ const OrderRegistryPage: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs whitespace-nowrap ${statusClass}`}>
-                            {status}
-                          </span>
+                          <Select
+                            value={status}
+                            onValueChange={v => {
+                              if (v === status) return;
+                              changeStatus(o, v as RegistryStatus | 'ملغاة');
+                            }}
+                          >
+                            <SelectTrigger className={`h-7 text-xs w-44 border ${statusClass}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(['قيد الانتظار','قيد الإنجاز','في انتظار مراقبة الجودة','في انتظار التسليم','في انتظار الفوترة','مفوترة','ملغاة'] as const).map(s => (
+                                <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
