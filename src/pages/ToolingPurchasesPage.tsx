@@ -13,9 +13,11 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 const ToolingPurchasesPage: React.FC = () => {
-  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId } = usePlanning();
+  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
+  const excludedIds = useMemo(() => buildOutOfPreparationFlowSet({ orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId }), [orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId]);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
