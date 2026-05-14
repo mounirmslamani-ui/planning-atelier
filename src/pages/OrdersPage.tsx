@@ -29,7 +29,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
-import { isReintegratedOrder } from '@/lib/reintegration';
+import { buildOutOfActiveProductionSet } from '@/lib/orderFlow';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
@@ -276,28 +276,16 @@ const OrdersPage: React.FC = () => {
     });
   }, [steps, absenceOperationId]);
 
-  // Sort by displayOrder ascending (playlist style)
-  // IDs of orders that have left the active workshop list:
-  // - in delivery_entries (ready for delivery), OR
-  // - in delivered_orders (already delivered)
-  // Both must be excluded — otherwise an order delivered to the client
-  // (which removes its delivery_entries row) would resurface in الطلبيات الحالية.
-  // Reintegrated orders (⟲ Reprise/Retouche): always visible in الطلبيات الحالية,
-  // even if an invoiced delivered_orders row was preserved for accounting integrity.
-  const reintegratedOrderIds = useMemo(() => {
-    const ids = new Set<string>();
-    orders.forEach(o => { if (isReintegratedOrder(o)) ids.add(o.id); });
-    return ids;
-  }, [orders]);
-  const deliveredOrderIds = useMemo(() => {
-    const ids = new Set<string>();
-    deliveryEntries.forEach(de => ids.add(de.orderId));
-    deliveredOrders.forEach(d => ids.add(d.orderId));
-    cancelledOrders.forEach(c => ids.add(c.orderId));
-    // Reintegration overrides delivery / invoicing visibility.
-    reintegratedOrderIds.forEach(id => ids.delete(id));
-    return ids;
-  }, [deliveryEntries, deliveredOrders, cancelledOrders, reintegratedOrderIds]);
+  // Sort by displayOrder ascending (playlist style). Orders leave active
+  // production as soon as the CURRENT cycle is conforming / ready / delivered /
+  // invoiced / cancelled. Older delivered rows preserved before a reintegration
+  // do not hide a genuinely reopened cycle.
+  const outOfActiveProductionIds = useMemo(() => buildOutOfActiveProductionSet(orders, {
+    qcEntries,
+    deliveryEntries,
+    deliveredOrders,
+    cancelledOrders,
+  }), [orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
   // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
   // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
   const pendingQcOrderIds = useMemo(() => {
@@ -322,9 +310,9 @@ const OrdersPage: React.FC = () => {
   }, [qcEntries]);
 
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
+    const real = orders.filter(o => o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id));
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-  }, [orders, absenceOrderId, deliveredOrderIds]);
+  }, [orders, absenceOrderId, outOfActiveProductionIds]);
 
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
@@ -337,14 +325,14 @@ const OrdersPage: React.FC = () => {
   // close gaps — the lock pins the slot, not the absolute number.
   useEffect(() => {
     const visible = orders
-      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id))
+      .filter(o => o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
     if (visible.length === 0) return;
 
     // Out-of-flow = delivered only. They get displayOrder = undefined so they
     // no longer occupy a slot in the active sequence.
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
+      o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
     );
 
     const needsReindex =
@@ -361,35 +349,35 @@ const OrdersPage: React.FC = () => {
       ...reindexedVisible,
       ...clearedOutOfFlow,
     ]);
-  }, [orders, absenceOrderId, deliveredOrderIds, setOrders]);
+  }, [orders, absenceOrderId, outOfActiveProductionIds, setOrders]);
 
   // Auto-sort and apply when clicking "Trier auto"
   const handleAutoSort = useCallback(() => {
     const visible = orders.filter(o =>
-      o.id !== absenceOrderId && !deliveredOrderIds.has(o.id)
+      o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id)
     );
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
+      o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
     ).map(o => ({ ...o, displayOrder: undefined }));
     const sorted = autoSortOrders(visible).map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...sorted, ...outOfFlow]);
     setOrderValidated(false);
-  }, [orders, absenceOrderId, deliveredOrderIds, autoSortOrders, setOrders]);
+  }, [orders, absenceOrderId, outOfActiveProductionIds, autoSortOrders, setOrders]);
 
   // Validate: persist order to DB
   const handleValidateOrder = useCallback(() => {
     const visible = orders
-      .filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id))
+      .filter(o => o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999))
       .map((o, i) => ({ ...o, displayOrder: i + 1 }));
     const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && deliveredOrderIds.has(o.id)
+      o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
     ).map(o => ({ ...o, displayOrder: undefined }));
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...visible, ...outOfFlow]);
     setOrderValidated(true);
-  }, [orders, absenceOrderId, deliveredOrderIds, setOrders]);
+  }, [orders, absenceOrderId, outOfActiveProductionIds, setOrders]);
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {

@@ -419,6 +419,7 @@ export function mapDeliveredOrderFromDB(row: any): DeliveredOrder {
     observation: row.observation || undefined,
     invoiceNumber: row.invoice_number || undefined,
     invoiceDate: row.invoice_date || undefined,
+    createdAt: row.created_at || undefined,
   };
 }
 
