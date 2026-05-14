@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 interface PurchaseRowDialogProps {
   open: boolean;
@@ -14,7 +15,8 @@ interface PurchaseRowDialogProps {
 }
 
 const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChange, title, type }) => {
-  const { orders, clients, absenceOrderId } = usePlanning();
+  const { orders, clients, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOrderId, absenceOperationId } = usePlanning();
+  const excludedIds = useMemo(() => buildOutOfPreparationFlowSet({ orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId }), [orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId]);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -22,6 +24,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
   const pendingOrders = useMemo(() => {
     let result = orders
       .filter(o => o.id !== absenceOrderId)
+      .filter(o => !excludedIds.has(o.id))
       .filter(o => type === 'material' ? !o.materialAvailable : !o.toolingAvailable)
       .map(o => {
         const client = clients.find(c => c.id === o.clientId);
@@ -63,7 +66,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
     }
 
     return result;
-  }, [orders, clients, filters, sortKey, sortDir, type]);
+  }, [orders, clients, filters, sortKey, sortDir, type, absenceOrderId, excludedIds]);
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
