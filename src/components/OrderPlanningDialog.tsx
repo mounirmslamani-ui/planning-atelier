@@ -47,7 +47,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
     qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
-    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, absenceOperationId,
+    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, absenceOperationId,
   } = usePlanning();
 
   const currentOrder = orders.find(o => o.id === order.id) || order;
