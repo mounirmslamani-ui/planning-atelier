@@ -30,11 +30,11 @@ const ToolingPurchasesPage: React.FC = () => {
     const isToolingBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
     orders
-      .filter(o => o.id !== absenceOrderId && isToolingBlocked(o.toolingStatus))
+      .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isToolingBlocked(o.toolingStatus))
       .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
-      if (!order || !isToolingBlocked(s.toolingStatus ?? order.toolingStatus)) return;
+      if (!order || excludedIds.has(order.id) || !isToolingBlocked(s.toolingStatus ?? order.toolingStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.toolingDeadline || '' });
