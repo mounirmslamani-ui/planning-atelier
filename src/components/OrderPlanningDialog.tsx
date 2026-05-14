@@ -639,7 +639,25 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs font-medium">{PROGRESS_AR[getRowProgressStatus(row)]}</TableCell>
+                    <TableCell className="text-xs font-medium">
+                      {(() => {
+                        const st = getRowProgressStatus(row);
+                        if (st === 'En cours' && row.stepId) {
+                          const opName = operations.find(o => o.id === row.operationId)?.name || '?';
+                          return (
+                            <button
+                              type="button"
+                              className="underline decoration-dotted text-primary hover:text-primary/80"
+                              title="انقر لإغلاق المرحلة يدويًا (منتهية)"
+                              onClick={() => setCloseStepPrompt({ rowId: row.id, label: `#${row.order} — ${opName}` })}
+                            >
+                              {PROGRESS_AR[st]}
+                            </button>
+                          );
+                        }
+                        return PROGRESS_AR[st];
+                      })()}
+                    </TableCell>
                     <TableCell className="text-xs font-mono">{getRowActualDuration(row)}</TableCell>
                     <TableCell className="text-center">
                       <ResourceStatusPill
