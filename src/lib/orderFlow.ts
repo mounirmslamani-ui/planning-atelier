@@ -40,7 +40,7 @@ export function hasCurrentPostProductionFlow(order: Pick<Order, 'id' | 'reintegr
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
   deliveredOrders: DeliveredOrder[];
-  cancelledOrders: CancelledOrder[];
+  cancelledOrders: Pick<CancelledOrder, 'orderId'>[];
 }): boolean {
   if (flow.cancelledOrders.some(entry => entry.orderId === order.id)) return true;
   if (flow.deliveryEntries.some(entry => isDeliveryEntryCurrentForOrder(order, entry))) return true;
@@ -52,7 +52,7 @@ export function buildOutOfActiveProductionSet(orders: Order[], flow: {
   qcEntries: QualityControlEntry[];
   deliveryEntries: DeliveryEntry[];
   deliveredOrders: DeliveredOrder[];
-  cancelledOrders: CancelledOrder[];
+  cancelledOrders: Pick<CancelledOrder, 'orderId'>[];
 }): Set<string> {
   const ids = new Set<string>();
   orders.forEach(order => {
