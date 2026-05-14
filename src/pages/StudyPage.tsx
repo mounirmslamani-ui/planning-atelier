@@ -51,7 +51,7 @@ const StudyPage: React.FC = () => {
       if (order && order.id !== absenceOrderId) result.push({ orderId, ...info });
     });
     return result;
-  }, [steps, orders, absenceOrderId, absenceOperationId]);
+  }, [steps, orders, absenceOrderId, absenceOperationId, excludedIds]);
 
   const filteredRows = useMemo(() => {
     let list = rows.map(r => ({ ...r, order: orders.find(o => o.id === r.orderId)! })).filter(r => r.order);
