@@ -31,12 +31,12 @@ const StudyPage: React.FC = () => {
     const result: { orderId: string; stepIds: string[]; deadline: string; done: boolean }[] = [];
     const orderMap = new Map<string, { stepIds: string[]; deadline: string; done: boolean }>();
     orders
-      .filter(o => o.id !== absenceOrderId && isStudyBlocked(o.studyStatus))
+      .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isStudyBlocked(o.studyStatus))
       .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '', done: false }));
 
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
-      if (!order || !isStudyBlocked(s.studyStatus ?? order.studyStatus)) return;
+      if (!order || excludedIds.has(order.id) || !isStudyBlocked(s.studyStatus ?? order.studyStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.studyDeadline || '', done: false });
