@@ -7,7 +7,7 @@ import type {
   DeliveredOrder,
 } from '@/types/planning';
 import { getOrderGlobalStatus } from '@/lib/stepProgress';
-import { isReintegratedOrder } from '@/lib/reintegration';
+import { hasCurrentPostProductionFlow } from '@/lib/orderFlow';
 
 /**
  * Set of order IDs that must be excluded from the preparation lists
@@ -38,11 +38,8 @@ export function buildOutOfPreparationFlowSet(args: {
   const { orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId } = args;
   const ids = new Set<string>();
 
-  deliveryEntries.forEach(d => ids.add(d.orderId));
-  deliveredOrders.forEach(d => ids.add(d.orderId));
-  cancelledOrders.forEach(c => ids.add(c.orderId));
-  qcEntries.forEach(q => {
-    if (q.decision === 'conforme' || q.decision === 'conforme-derogation') ids.add(q.orderId);
+  orders.forEach(o => {
+    if (hasCurrentPostProductionFlow(o, { qcEntries, deliveryEntries, deliveredOrders, cancelledOrders })) ids.add(o.id);
   });
 
   // Orders whose entire active production is finished are "ready for QC" and
@@ -52,16 +49,6 @@ export function buildOutOfPreparationFlowSet(args: {
     if (!hasActiveStep) return;
     const g = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
     if (g === 'Terminée') ids.add(o.id);
-  });
-
-  // SAV / Reintegration override: if a reintegrated order is back to "En cours"
-  // it must reappear in preparation lists when one of its new steps still
-  // requires a resource. We strip it from the exclusion set; the per-page
-  // resource-status filter then decides whether to actually show it.
-  orders.forEach(o => {
-    if (!isReintegratedOrder(o)) return;
-    const g = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
-    if (g === 'En cours' || g === 'En attente') ids.delete(o.id);
   });
 
   return ids;
