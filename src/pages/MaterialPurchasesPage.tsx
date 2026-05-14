@@ -30,11 +30,11 @@ const MaterialPurchasesPage: React.FC = () => {
     const isMaterialBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
     orders
-      .filter(o => o.id !== absenceOrderId && isMaterialBlocked(o.materialStatus))
+      .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isMaterialBlocked(o.materialStatus))
       .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
-      if (!order || !isMaterialBlocked(order.materialStatus)) return;
+      if (!order || excludedIds.has(order.id) || !isMaterialBlocked(order.materialStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.materialDeadline || '' });
