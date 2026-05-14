@@ -48,7 +48,7 @@ const ToolingPurchasesPage: React.FC = () => {
       if (!order || order.id === absenceOrderId) return null;
       return { orderId, order, ...info };
     }).filter(Boolean) as any[];
-  }, [steps, orders, absenceOrderId, absenceOperationId]);
+  }, [steps, orders, absenceOrderId, absenceOperationId, excludedIds]);
 
   const filteredRows = useMemo(() => {
     let list = [...rows];
