@@ -213,6 +213,7 @@ export interface DeliveredOrder {
   observation?: string;
   invoiceNumber?: string;
   invoiceDate?: string;
+  createdAt?: string;
 }
 
 export interface CancelledOrder {
