@@ -29,7 +29,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
-import { isReintegratedOrder } from '@/lib/reintegration';
+import { buildOutOfActiveProductionSet } from '@/lib/orderFlow';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
@@ -276,28 +276,16 @@ const OrdersPage: React.FC = () => {
     });
   }, [steps, absenceOperationId]);
 
-  // Sort by displayOrder ascending (playlist style)
-  // IDs of orders that have left the active workshop list:
-  // - in delivery_entries (ready for delivery), OR
-  // - in delivered_orders (already delivered)
-  // Both must be excluded — otherwise an order delivered to the client
-  // (which removes its delivery_entries row) would resurface in الطلبيات الحالية.
-  // Reintegrated orders (⟲ Reprise/Retouche): always visible in الطلبيات الحالية,
-  // even if an invoiced delivered_orders row was preserved for accounting integrity.
-  const reintegratedOrderIds = useMemo(() => {
-    const ids = new Set<string>();
-    orders.forEach(o => { if (isReintegratedOrder(o)) ids.add(o.id); });
-    return ids;
-  }, [orders]);
-  const deliveredOrderIds = useMemo(() => {
-    const ids = new Set<string>();
-    deliveryEntries.forEach(de => ids.add(de.orderId));
-    deliveredOrders.forEach(d => ids.add(d.orderId));
-    cancelledOrders.forEach(c => ids.add(c.orderId));
-    // Reintegration overrides delivery / invoicing visibility.
-    reintegratedOrderIds.forEach(id => ids.delete(id));
-    return ids;
-  }, [deliveryEntries, deliveredOrders, cancelledOrders, reintegratedOrderIds]);
+  // Sort by displayOrder ascending (playlist style). Orders leave active
+  // production as soon as the CURRENT cycle is conforming / ready / delivered /
+  // invoiced / cancelled. Older delivered rows preserved before a reintegration
+  // do not hide a genuinely reopened cycle.
+  const outOfActiveProductionIds = useMemo(() => buildOutOfActiveProductionSet(orders, {
+    qcEntries,
+    deliveryEntries,
+    deliveredOrders,
+    cancelledOrders,
+  }), [orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
   // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
   // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
   const pendingQcOrderIds = useMemo(() => {
@@ -322,9 +310,9 @@ const OrdersPage: React.FC = () => {
   }, [qcEntries]);
 
   const baseSorted = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId && !deliveredOrderIds.has(o.id));
+    const real = orders.filter(o => o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id));
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
-  }, [orders, absenceOrderId, deliveredOrderIds]);
+  }, [orders, absenceOrderId, outOfActiveProductionIds]);
 
   // Track if order has been validated (saved to DB)
   const [orderValidated, setOrderValidated] = useState(true);
