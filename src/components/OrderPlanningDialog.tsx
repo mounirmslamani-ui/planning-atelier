@@ -782,6 +782,42 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         />
       )}
 
+      {closeStepPrompt && (() => {
+        const row = rows.find(r => r.id === closeStepPrompt.rowId);
+        return (
+          <ConfirmDialog
+            open={!!closeStepPrompt}
+            title={`إغلاق هذه المرحلة يدويًا كـ « منتهية »؟ (${closeStepPrompt.label})`}
+            description="سيتم تسجيل هذه المرحلة كمنتهية حتى مع نفاد الوقت المخصص (0:00)، ممّا يتيح إعادة توزيع المهمة على عامل آخر بدون رسالة خطأ."
+            confirmLabel="نعم، أغلق المرحلة"
+            cancelLabel="إلغاء"
+            onConfirm={() => {
+              if (row && row.stepId && row.assignType === 'operator' && row.option1) {
+                const op = operations.find(o => o.id === row.operationId);
+                addProductionRecord({
+                  id: `prod-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  stepId: row.stepId,
+                  orderId: order.id,
+                  operatorId: row.option1,
+                  operationId: row.operationId,
+                  actualDuration: 0,
+                  validatedAt: new Date().toISOString(),
+                  workStatus: 'done',
+                  orderNumberSnapshot: order.orderNumber,
+                  clientNameSnapshot: clientName,
+                  designationSnapshot: order.designation,
+                  quantitySnapshot: order.quantity,
+                  operationNameSnapshot: op?.name,
+                });
+                toast.success('تم إغلاق المرحلة كمنتهية');
+              }
+              setCloseStepPrompt(null);
+            }}
+            onCancel={() => setCloseStepPrompt(null)}
+          />
+        );
+      })()}
+
       {removePrompt && (
         <ConfirmDialog
           open={!!removePrompt}
