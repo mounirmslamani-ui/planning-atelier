@@ -13,9 +13,11 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 const MaterialPurchasesPage: React.FC = () => {
-  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId } = usePlanning();
+  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
+  const excludedIds = useMemo(() => buildOutOfPreparationFlowSet({ orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId }), [orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId]);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -28,11 +30,11 @@ const MaterialPurchasesPage: React.FC = () => {
     const isMaterialBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
     orders
-      .filter(o => o.id !== absenceOrderId && isMaterialBlocked(o.materialStatus))
+      .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isMaterialBlocked(o.materialStatus))
       .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
-      if (!order || !isMaterialBlocked(order.materialStatus)) return;
+      if (!order || excludedIds.has(order.id) || !isMaterialBlocked(order.materialStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.materialDeadline || '' });
@@ -46,7 +48,7 @@ const MaterialPurchasesPage: React.FC = () => {
       if (!order || order.id === absenceOrderId) return null;
       return { orderId, order, ...info };
     }).filter(Boolean) as any[];
-  }, [steps, orders, absenceOrderId, absenceOperationId]);
+  }, [steps, orders, absenceOrderId, absenceOperationId, excludedIds]);
 
   const filteredRows = useMemo(() => {
     let list = [...rows];
