@@ -325,6 +325,9 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   };
 
   const doSave = (rowsToSave: OperationRow[]) => {
+    const finalRows = rowsToSave.map((row, idx) => ({ ...row, order: idx + 1 }));
+    if (!validateRowsBeforeSave(finalRows)) return;
+
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
@@ -337,7 +340,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     };
     const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
 
-    const schedulableRows = rowsToSave.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
+    const schedulableRows = finalRows.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
 
     const stepsWithoutThisOrder = steps.filter(s =>
       s.orderId !== order.id || s.operationId === absenceOperationId || historicalStepIds.has(s.id)
@@ -370,14 +373,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     }
 
     const orderByRowId = new Map<string, number>();
-    rowsToSave.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
+    finalRows.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
 
     // Reuse existing step IDs by sourceId (row.id) — NOT by index. This is what
     // prevents step IDs from being scrambled when the scheduler reorders ops.
     const reusedIds = new Set<string>();
     newSteps.forEach(s => {
       const rowId = sourceIdByStepId[s.id];
-      const sourceRow = rowsToSave.find(r => r.id === rowId);
+      const sourceRow = finalRows.find(r => r.id === rowId);
+      let reusedExistingStep = false;
       if (sourceRow) {
         s.studyStatus = sourceRow.studyStatus;
         s.materialStatus = sourceRow.materialStatus;
@@ -395,9 +399,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
           s.id = sourceRow.stepId;
           reusedIds.add(sourceRow.stepId);
+          reusedExistingStep = true;
         }
       }
-      addStep(s);
+      if (reusedExistingStep) updateStep(s);
+      else addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
 
