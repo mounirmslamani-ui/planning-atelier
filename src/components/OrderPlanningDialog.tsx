@@ -416,7 +416,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
     // Persist UI changes (resource status, deadlines, needs, order) on historical
     // (terminée / en cours) steps too — independence per step.
-    rowsToSave.forEach((row, idx) => {
+    finalRows.forEach((row, idx) => {
       if (!row.stepId || !historicalStepIds.has(row.stepId)) return;
       const hist = existingOrderSteps.find(s => s.id === row.stepId);
       if (!hist) return;
@@ -440,7 +440,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     const historicalSteps = existingOrderSteps
       .filter(s => historicalStepIds.has(s.id))
       .map(s => {
-        const row = rowsToSave.find(r => r.stepId === s.id);
+        const row = finalRows.find(r => r.stepId === s.id);
         return row ? {
           ...s,
           studyStatus: row.studyStatus,
