@@ -461,7 +461,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     updateOrder(syntheticOrder);
 
     const recordsForOrder = productionRecords.filter(r => r.orderId === order.id);
-    const liveStepIdsAfter = new Set(newSteps.map(ns => ns.id));
+    const liveStepIdsAfter = new Set([...historicalSteps, ...newSteps].map(ns => ns.id));
     recordsForOrder.forEach(rec => {
       if (liveStepIdsAfter.has(rec.stepId)) return;
       const match = newSteps.find(ns =>
