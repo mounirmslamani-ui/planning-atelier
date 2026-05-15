@@ -411,10 +411,31 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Step
   const addStep = useCallback((step: ProductionStep) => {
-    pushUndo(); setSteps(prev => [...prev, step]); dbInsertStep(step);
+    pushUndo();
+    setSteps(prev => prev.some(s => s.id === step.id)
+      ? prev.map(s => s.id === step.id ? step : s)
+      : [...prev, step]
+    );
+    dbInsertStep(step);
   }, [pushUndo]);
   const updateStep = useCallback((step: ProductionStep) => {
-    pushUndo(); setSteps(prev => prev.map(s => s.id === step.id ? step : s)); dbUpdateStep(step);
+    pushUndo();
+    setSteps(prev => {
+      let replaced = false;
+      const next: ProductionStep[] = [];
+      for (const current of prev) {
+        if (current.id !== step.id) {
+          next.push(current);
+          continue;
+        }
+        if (!replaced) {
+          next.push(step);
+          replaced = true;
+        }
+      }
+      return replaced ? next : [...next, step];
+    });
+    dbUpdateStep(step);
   }, [pushUndo]);
   const deleteStep = useCallback((id: string) => {
     pushUndo(); setSteps(prev => prev.filter(s => s.id !== id)); dbDeleteStep(id);

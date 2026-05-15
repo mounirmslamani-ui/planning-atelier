@@ -73,6 +73,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
+  const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
 
   // Track whether we've initialized for this dialog open session
   const initializedRef = React.useRef(false);
@@ -251,6 +252,40 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
   const isBadStatus = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
 
+  const normalizeNeeds = (values?: string[]) => (values || []).map(v => v.trim()).filter(Boolean).join('|');
+
+  const buildRowSignature = (row: OperationRow) => [
+    row.operationId,
+    row.assignType,
+    row.option1,
+    row.estimatedDuration,
+    [...(row.equipmentIds || [])].sort().join(','),
+    normalizeNeeds(row.specialToolingNeeds),
+    normalizeNeeds(row.rawMaterialNeeds),
+  ].join('::');
+
+  const validateRowsBeforeSave = (rowsToValidate: OperationRow[]): boolean => {
+    const ordersSeen = new Set<number>();
+    const signaturesSeen = new Set<string>();
+
+    for (const row of rowsToValidate) {
+      if (ordersSeen.has(row.order)) {
+        toast.error(`لا يمكن حفظ مرحلتين بنفس رقم الترتيب #${row.order}`);
+        return false;
+      }
+      ordersSeen.add(row.order);
+
+      const signature = buildRowSignature(row);
+      if (signaturesSeen.has(signature)) {
+        toast.error(`المرحلة #${row.order} مكررة بنفس الخصائص`);
+        return false;
+      }
+      signaturesSeen.add(signature);
+    }
+
+    return true;
+  };
+
   const handlePlanifier = () => {
     if (isLocked) {
       toast.error(lockReason);
@@ -272,6 +307,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`);
       return;
     }
+    if (!validateRowsBeforeSave(rows)) return;
 
     // Detect terminée rows where at least one resource is red/orange → ask user
     // whether to force them all to green.
@@ -285,10 +321,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       setForcePrompt({ rowIds: finishedWithBadRes.map(r => r.id) });
       return;
     }
-    doSave(rows);
+    setSavePrompt(rows.map(row => ({ ...row })));
   };
 
   const doSave = (rowsToSave: OperationRow[]) => {
+    const finalRows = rowsToSave.map((row, idx) => ({ ...row, order: idx + 1 }));
+    if (!validateRowsBeforeSave(finalRows)) return;
+
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
 
@@ -301,7 +340,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     };
     const historicalStepIds = new Set(existingOrderSteps.filter(s => isHistorical(s.id)).map(s => s.id));
 
-    const schedulableRows = rowsToSave.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
+    const schedulableRows = finalRows.filter(r => !r.stepId || !historicalStepIds.has(r.stepId));
 
     const stepsWithoutThisOrder = steps.filter(s =>
       s.orderId !== order.id || s.operationId === absenceOperationId || historicalStepIds.has(s.id)
@@ -334,14 +373,15 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     }
 
     const orderByRowId = new Map<string, number>();
-    rowsToSave.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
+    finalRows.forEach((r, idx) => orderByRowId.set(r.id, idx + 1));
 
     // Reuse existing step IDs by sourceId (row.id) — NOT by index. This is what
     // prevents step IDs from being scrambled when the scheduler reorders ops.
     const reusedIds = new Set<string>();
     newSteps.forEach(s => {
       const rowId = sourceIdByStepId[s.id];
-      const sourceRow = rowsToSave.find(r => r.id === rowId);
+      const sourceRow = finalRows.find(r => r.id === rowId);
+      let reusedExistingStep = false;
       if (sourceRow) {
         s.studyStatus = sourceRow.studyStatus;
         s.materialStatus = sourceRow.materialStatus;
@@ -359,9 +399,11 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
           s.id = sourceRow.stepId;
           reusedIds.add(sourceRow.stepId);
+          reusedExistingStep = true;
         }
       }
-      addStep(s);
+      if (reusedExistingStep) updateStep(s);
+      else addStep(s);
     });
     updatedSteps.forEach(s => updateStep(s));
 
@@ -374,7 +416,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
     // Persist UI changes (resource status, deadlines, needs, order) on historical
     // (terminée / en cours) steps too — independence per step.
-    rowsToSave.forEach((row, idx) => {
+    finalRows.forEach((row, idx) => {
       if (!row.stepId || !historicalStepIds.has(row.stepId)) return;
       const hist = existingOrderSteps.find(s => s.id === row.stepId);
       if (!hist) return;
@@ -398,7 +440,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     const historicalSteps = existingOrderSteps
       .filter(s => historicalStepIds.has(s.id))
       .map(s => {
-        const row = rowsToSave.find(r => r.stepId === s.id);
+        const row = finalRows.find(r => r.stepId === s.id);
         return row ? {
           ...s,
           studyStatus: row.studyStatus,
@@ -419,7 +461,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
     updateOrder(syntheticOrder);
 
     const recordsForOrder = productionRecords.filter(r => r.orderId === order.id);
-    const liveStepIdsAfter = new Set(newSteps.map(ns => ns.id));
+    const liveStepIdsAfter = new Set([...historicalSteps, ...newSteps].map(ns => ns.id));
     recordsForOrder.forEach(rec => {
       if (liveStepIdsAfter.has(rec.stepId)) return;
       const match = newSteps.find(ns =>
@@ -771,14 +813,30 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             }) : r);
             setRows(forced);
             setForcePrompt(null);
-            doSave(forced);
+            setSavePrompt(forced.map(row => ({ ...row })));
           }}
           onCancel={() => {
             // Save anyway, keeping resource statuses unchanged.
             const snapshot = rows;
             setForcePrompt(null);
+            setSavePrompt(snapshot.map(row => ({ ...row })));
+          }}
+        />
+      )}
+
+      {savePrompt && (
+        <ConfirmDialog
+          open={!!savePrompt}
+          title={`Voulez-vous enregistrer ces ${savePrompt.length} étapes ?`}
+          description="La base de données recevra exactement les lignes visibles dans cette fenêtre, dans cet ordre."
+          confirmLabel="Oui, enregistrer"
+          cancelLabel="إلغاء"
+          onConfirm={() => {
+            const snapshot = savePrompt;
+            setSavePrompt(null);
             doSave(snapshot);
           }}
+          onCancel={() => setSavePrompt(null)}
         />
       )}
 
