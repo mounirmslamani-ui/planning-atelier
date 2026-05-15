@@ -637,6 +637,7 @@ export async function dbInsertStep(s: ProductionStep, absenceOpId?: string, abse
   // dreaded "duration → 0h00 + wrong order" bug on F101/26).
   const { error } = await supabase.from('production_steps').upsert(mapped, { onConflict: 'id' });
   if (error) logError('step', 'upsert', error);
+  return !error;
 }
 export async function dbUpdateStep(s: ProductionStep) {
   const { error } = await supabase.from('production_steps').update(mapStepToDB(s)).eq('id', s.id);
@@ -646,6 +647,7 @@ export async function dbUpdateStep(s: ProductionStep) {
 export async function dbDeleteStep(id: string) {
   const { error } = await supabase.from('production_steps').delete().eq('id', id);
   if (error) logError('step', 'delete', error);
+  return !error;
 }
 export async function dbBulkInsertSteps(steps: ProductionStep[]) {
   const mapped = steps.map(mapStepToDB);
