@@ -252,6 +252,40 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
 
   const isBadStatus = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
 
+  const normalizeNeeds = (values?: string[]) => (values || []).map(v => v.trim()).filter(Boolean).join('|');
+
+  const buildRowSignature = (row: OperationRow) => [
+    row.operationId,
+    row.assignType,
+    row.option1,
+    row.estimatedDuration,
+    [...(row.equipmentIds || [])].sort().join(','),
+    normalizeNeeds(row.specialToolingNeeds),
+    normalizeNeeds(row.rawMaterialNeeds),
+  ].join('::');
+
+  const validateRowsBeforeSave = (rowsToValidate: OperationRow[]): boolean => {
+    const ordersSeen = new Set<number>();
+    const signaturesSeen = new Set<string>();
+
+    for (const row of rowsToValidate) {
+      if (ordersSeen.has(row.order)) {
+        toast.error(`لا يمكن حفظ مرحلتين بنفس رقم الترتيب #${row.order}`);
+        return false;
+      }
+      ordersSeen.add(row.order);
+
+      const signature = buildRowSignature(row);
+      if (signaturesSeen.has(signature)) {
+        toast.error(`المرحلة #${row.order} مكررة بنفس الخصائص`);
+        return false;
+      }
+      signaturesSeen.add(signature);
+    }
+
+    return true;
+  };
+
   const handlePlanifier = () => {
     if (isLocked) {
       toast.error(lockReason);
@@ -273,6 +307,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`);
       return;
     }
+    if (!validateRowsBeforeSave(rows)) return;
 
     // Detect terminée rows where at least one resource is red/orange → ask user
     // whether to force them all to green.
