@@ -73,6 +73,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
+  const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
 
   // Track whether we've initialized for this dialog open session
   const initializedRef = React.useRef(false);
@@ -285,7 +286,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
       setForcePrompt({ rowIds: finishedWithBadRes.map(r => r.id) });
       return;
     }
-    doSave(rows);
+    setSavePrompt(rows.map(row => ({ ...row })));
   };
 
   const doSave = (rowsToSave: OperationRow[]) => {
