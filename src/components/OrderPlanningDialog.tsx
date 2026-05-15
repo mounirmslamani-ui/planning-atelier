@@ -813,14 +813,30 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
             }) : r);
             setRows(forced);
             setForcePrompt(null);
-            doSave(forced);
+            setSavePrompt(forced.map(row => ({ ...row })));
           }}
           onCancel={() => {
             // Save anyway, keeping resource statuses unchanged.
             const snapshot = rows;
             setForcePrompt(null);
+            setSavePrompt(snapshot.map(row => ({ ...row })));
+          }}
+        />
+      )}
+
+      {savePrompt && (
+        <ConfirmDialog
+          open={!!savePrompt}
+          title={`Voulez-vous enregistrer ces ${savePrompt.length} étapes ?`}
+          description="La base de données recevra exactement les lignes visibles dans cette fenêtre, dans cet ordre."
+          confirmLabel="Oui, enregistrer"
+          cancelLabel="إلغاء"
+          onConfirm={() => {
+            const snapshot = savePrompt;
+            setSavePrompt(null);
             doSave(snapshot);
           }}
+          onCancel={() => setSavePrompt(null)}
         />
       )}
 
