@@ -389,15 +389,19 @@ export type Database = {
           client_name_snapshot: string | null
           created_at: string
           designation_snapshot: string | null
+          end_time: string | null
           id: string
           operation_id: string
           operation_name_snapshot: string | null
           operator_id: string
           order_id: string
           order_number_snapshot: string | null
+          pause_minutes: number | null
           quantity_snapshot: number | null
+          start_time: string | null
           step_id: string
           validated_at: string
+          work_date: string | null
           work_status: string
         }
         Insert: {
@@ -405,15 +409,19 @@ export type Database = {
           client_name_snapshot?: string | null
           created_at?: string
           designation_snapshot?: string | null
+          end_time?: string | null
           id?: string
           operation_id: string
           operation_name_snapshot?: string | null
           operator_id: string
           order_id: string
           order_number_snapshot?: string | null
+          pause_minutes?: number | null
           quantity_snapshot?: number | null
+          start_time?: string | null
           step_id: string
           validated_at?: string
+          work_date?: string | null
           work_status?: string
         }
         Update: {
@@ -421,15 +429,19 @@ export type Database = {
           client_name_snapshot?: string | null
           created_at?: string
           designation_snapshot?: string | null
+          end_time?: string | null
           id?: string
           operation_id?: string
           operation_name_snapshot?: string | null
           operator_id?: string
           order_id?: string
           order_number_snapshot?: string | null
+          pause_minutes?: number | null
           quantity_snapshot?: number | null
+          start_time?: string | null
           step_id?: string
           validated_at?: string
+          work_date?: string | null
           work_status?: string
         }
         Relationships: [
