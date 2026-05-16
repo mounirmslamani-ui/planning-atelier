@@ -473,8 +473,8 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
         onCancel={reintegration.cancelReintegrate}
         title="إعادة إدماج الطلبية"
         description={`إعادة إدماج الطلبية ${order.orderNumber} ضمن الطلبيات الحالية مع الحفاظ على سجل المراقبة السابق ؟`}
-        confirmText="تأكيد"
-        cancelText="إلغاء"
+        confirmLabel="تأكيد"
+        cancelLabel="إلغاء"
       />
     </>
   );
