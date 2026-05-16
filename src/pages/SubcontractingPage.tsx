@@ -115,8 +115,30 @@ const SubcontractingPage: React.FC = () => {
       });
     }
 
+    if (activeSubTab !== '__all__') {
+      result = result.filter(r => (r.subcontractorId || '__none__') === activeSubTab);
+    }
+
     return result;
-  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName]);
+  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab]);
+
+  // Tabs: derived from all non-done rows (before tab filter), distinct subcontractors with counts
+  const subTabs = useMemo(() => {
+    const counts = new Map<string, number>();
+    subcontractingRows.filter(r => !r.done).forEach(r => {
+      const key = r.subcontractorId || '__none__';
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const entries = Array.from(counts.entries()).map(([id, count]) => ({
+      id,
+      name: id === '__none__' ? 'بدون مناول' : getSubcontractorName(id),
+      count,
+    }));
+    entries.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    return entries;
+  }, [subcontractingRows, getSubcontractorName]);
+
+  const totalActive = useMemo(() => subcontractingRows.filter(r => !r.done).length, [subcontractingRows]);
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
