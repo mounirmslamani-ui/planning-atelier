@@ -376,12 +376,18 @@ interface ProductionDialogState {
   order: Order | null;
   operatorName: string;
   operationName: string;
+  workDate: string; // YYYY-MM-DD
   startTime: string;
   endTime: string;
   pauseTime: string;
   pauseManual: boolean;
   totalDoneAlready: number;
 }
+
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const NUMDAYS_STORAGE_KEY = 'planning-tableau-numdays';
 const PLANNING_HISTORY_LIMIT = 50;
@@ -518,7 +524,7 @@ const PlanningTableauPage: React.FC = () => {
 
   // Production register dialog
   const [prodDialog, setProdDialog] = useState<ProductionDialogState>({
-    open: false, step: null, order: null, operatorName: '', operationName: '', startTime: '', endTime: '', pauseTime: '00:00', pauseManual: false, totalDoneAlready: 0,
+    open: false, step: null, order: null, operatorName: '', operationName: '', workDate: todayISO(), startTime: '', endTime: '', pauseTime: '00:00', pauseManual: false, totalDoneAlready: 0,
   });
   const [prodDurationError, setProdDurationError] = useState('');
   const [completionDialog, setCompletionDialog] = useState<{
@@ -530,6 +536,10 @@ const PlanningTableauPage: React.FC = () => {
     totalEstimated: number;
     totalDone: number;
     durationToday: number;
+    workDate: string;
+    startTime: string;
+    endTime: string;
+    pauseMinutes: number;
   } | null>(null);
 
   // Drag & drop state - use REFS to avoid stale closure issues
@@ -1001,6 +1011,7 @@ const PlanningTableauPage: React.FC = () => {
       open: true, step, order,
       operatorName: operator?.name || '—',
       operationName: getOperationName(step.operationId),
+      workDate: todayISO(),
       startTime: '', endTime: '', pauseTime: '00:00', pauseManual: false, totalDoneAlready,
     });
     setProdDurationError('');
@@ -1057,10 +1068,13 @@ const PlanningTableauPage: React.FC = () => {
     }
 
     const totalDone = prodDialog.totalDoneAlready + durationTodayMin;
+    const pauseMin = parseDurationHHMM(prodDialog.pauseTime) ?? 0;
     setCompletionDialog({
       open: true, stepId: prodDialog.step.id, orderId: prodDialog.order.id,
       operatorId: prodDialog.step.operatorId || '', operationId: prodDialog.step.operationId,
       totalEstimated: prodDialog.step.estimatedDuration, totalDone, durationToday: durationTodayMin,
+      workDate: prodDialog.workDate || todayISO(),
+      startTime: prodDialog.startTime, endTime: prodDialog.endTime, pauseMinutes: pauseMin,
     });
     setProdDialog(prev => ({ ...prev, open: false }));
   }, [prodDialog]);
@@ -1069,7 +1083,7 @@ const PlanningTableauPage: React.FC = () => {
 
   const handleCompletionAnswer = useCallback((finished: boolean) => {
     if (!completionDialog) return;
-    const { stepId, orderId, operatorId, operationId, durationToday, totalEstimated, totalDone } = completionDialog;
+    const { stepId, orderId, operatorId, operationId, durationToday, totalEstimated, totalDone, workDate, startTime, endTime, pauseMinutes } = completionDialog;
 
     // Debounce: prevent double registration for same step in same interaction
     const dedupeKey = `${stepId}-${durationToday}-${Date.now().toString().slice(0, -3)}`;
@@ -1082,6 +1096,7 @@ const PlanningTableauPage: React.FC = () => {
     const record: ProductionRecord = {
       id: crypto.randomUUID(), stepId, orderId, operatorId, operationId,
       actualDuration: durationToday, validatedAt: new Date().toISOString(),
+      workDate, startTime: startTime || undefined, endTime: endTime || undefined, pauseMinutes,
       workStatus: finished ? 'done' : 'continue',
     };
     addProductionRecord(record);
@@ -1637,6 +1652,15 @@ const PlanningTableauPage: React.FC = () => {
               <span className="font-medium">{prodDialog.operationName}</span>
               <span className="text-muted-foreground">المدة الكلية المقدرة للشغل :</span>
               <span className="font-medium">{prodDialog.step ? formatMinutesToHM(prodDialog.step.estimatedDuration) : '—'}</span>
+            </div>
+            <div className="border-t pt-3">
+              <label className="text-xs text-muted-foreground mb-1 block">تاريخ الأشغال</label>
+              <Input
+                type="date"
+                className="h-9 font-mono"
+                value={prodDialog.workDate}
+                onChange={e => setProdDialog(prev => ({ ...prev, workDate: e.target.value }))}
+              />
             </div>
             <div className="border-t pt-3 grid grid-cols-2 gap-3">
               <div>

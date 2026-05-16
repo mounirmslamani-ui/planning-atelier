@@ -20,6 +20,19 @@ const MONTHS = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
 
+// Date affichée = workDate (saisi) si présent, sinon date de validatedAt (rétrocompat).
+const recordDisplayDate = (rec: { workDate?: string; validatedAt: string }): Date => {
+  if (rec.workDate) return new Date(rec.workDate + 'T12:00:00');
+  return new Date(rec.validatedAt);
+};
+
+const fmtHM = (minutes?: number | null) => {
+  if (minutes == null || minutes <= 0) return '—';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
 const ProductionRegisterPage: React.FC = () => {
   const { productionRecords, deleteProductionRecord, updateProductionRecord, operators, operations, orders, clients } = usePlanning();
 
@@ -27,8 +40,6 @@ const ProductionRegisterPage: React.FC = () => {
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
-  // Resolve display info for a record, falling back to snapshot fields when the
-  // source order has been deleted (e.g. after delivery cleanup).
   const getRecordInfo = (rec: typeof productionRecords[0]) => {
     const order = getOrder(rec.orderId);
     return {
@@ -49,22 +60,23 @@ const ProductionRegisterPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const validTab = activeTab && operatorsWithRecords.some(o => o.id === activeTab) ? activeTab : operatorsWithRecords[0]?.id || null;
 
-  // Filters (checkbox sets)
   const [filterMonths, setFilterMonths] = useState<Set<string>>(new Set());
   const [filterClients, setFilterClients] = useState<Set<string>>(new Set());
   const [filterOrders, setFilterOrders] = useState<Set<string>>(new Set());
   const [filterOperations, setFilterOperations] = useState<Set<string>>(new Set());
 
-  // Sort
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  // Edit dialog
   const [editRecord, setEditRecord] = useState<{
-    id: string; validatedAt: string; actualDuration: string;
+    id: string;
+    workDate: string;
+    startTime: string;
+    endTime: string;
+    pauseHHMM: string;
+    actualDuration: string;
   } | null>(null);
 
-  // Confirm dialog
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   const tabRecords = useMemo(() =>
@@ -72,19 +84,17 @@ const ProductionRegisterPage: React.FC = () => {
     [productionRecords, validTab]
   );
 
-  // Available filter values
   const availableMonths = useMemo(() => {
     const set = new Set<string>();
     tabRecords.forEach(r => {
-      const d = new Date(r.validatedAt);
+      const d = recordDisplayDate(r);
       set.add(`${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`);
     });
     return Array.from(set).sort().reverse();
   }, [tabRecords]);
 
-  // For client filter we use display label as key (id when order exists, else snapshot name)
   const availableClients = useMemo(() => {
-    const map = new Map<string, string>(); // value(id or name) -> label
+    const map = new Map<string, string>();
     tabRecords.forEach(r => {
       const order = getOrder(r.orderId);
       if (order) {
@@ -111,11 +121,10 @@ const ProductionRegisterPage: React.FC = () => {
     return Array.from(set);
   }, [tabRecords]);
 
-  // Filtered records
   const filteredRecords = useMemo(() => {
     return tabRecords.filter(r => {
       if (filterMonths.size > 0) {
-        const d = new Date(r.validatedAt);
+        const d = recordDisplayDate(r);
         const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
         if (!filterMonths.has(key)) return false;
       }
@@ -134,7 +143,6 @@ const ProductionRegisterPage: React.FC = () => {
     });
   }, [tabRecords, filterMonths, filterClients, filterOrders, filterOperations, orders]);
 
-  // Sorted records
   const sortedRecords = useMemo(() => {
     const arr = [...filteredRecords];
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -143,7 +151,7 @@ const ProductionRegisterPage: React.FC = () => {
       const ib = getRecordInfo(b);
       switch (sortField) {
         case 'date':
-          return dir * (new Date(a.validatedAt).getTime() - new Date(b.validatedAt).getTime());
+          return dir * (recordDisplayDate(a).getTime() - recordDisplayDate(b).getTime());
         case 'orderNumber':
           return dir * ia.orderNumber.localeCompare(ib.orderNumber);
         case 'client':
@@ -205,14 +213,16 @@ const ProductionRegisterPage: React.FC = () => {
     return records.map(rec => {
       const info = getRecordInfo(rec);
       return {
-        Date: new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-        Heure: new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        'تاريخ الأشغال': recordDisplayDate(rec).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        'ساعة البداية': rec.startTime ?? '—',
+        'ساعة النهاية': rec.endTime ?? '—',
+        'الوقت المستقطع': fmtHM(rec.pauseMinutes ?? 0),
         'رقم الطلبية': info.orderNumber,
         Client: info.clientName,
         Désignation: info.designation,
         Quantité: info.quantity ?? '—',
         Opération: info.operationName,
-        'المدة (سا)': Number((rec.actualDuration / 60).toFixed(2)),
+        'المدة الفعلية (سا)': Number((rec.actualDuration / 60).toFixed(2)),
       };
     });
   }, [orders, clients, operations]);
@@ -223,33 +233,58 @@ const ProductionRegisterPage: React.FC = () => {
       rows: buildExportRows(
         productionRecords
           .filter(r => r.operatorId === op.id)
-          .sort((a, b) => new Date(b.validatedAt).getTime() - new Date(a.validatedAt).getTime())
+          .sort((a, b) => recordDisplayDate(b).getTime() - recordDisplayDate(a).getTime())
       ),
-      columnWidths: [12, 10, 18, 24, 45, 10, 24, 12],
+      columnWidths: [12, 8, 8, 10, 14, 22, 38, 8, 22, 12],
     })));
   };
 
   const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
-    const dt = new Date(rec.validatedAt);
+    const dt = recordDisplayDate(rec);
     const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     const hh = Math.floor(rec.actualDuration / 60);
     const mm = rec.actualDuration % 60;
+    const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
+    const pM = (rec.pauseMinutes ?? 0) % 60;
     setEditRecord({
       id: rec.id,
-      validatedAt: dateStr,
-      actualDuration: `${hh}:${String(mm).padStart(2, '0')}`,
+      workDate: dateStr,
+      startTime: rec.startTime ?? '',
+      endTime: rec.endTime ?? '',
+      pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
+      actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
     });
   }, []);
+
+  const parseHHMM = (s: string): number | null => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  };
 
   const saveEdit = useCallback(() => {
     if (!editRecord) return;
     const rec = productionRecords.find(r => r.id === editRecord.id);
     if (!rec) return;
-    const [hh, mm] = (editRecord.actualDuration || '0:0').split(':').map(Number);
-    const dur = (hh || 0) * 60 + (mm || 0);
+
+    // Si début + fin saisies → recalcul de la durée réelle.
+    let dur = parseHHMM(editRecord.actualDuration) ?? 0;
+    const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
+    const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
+    const pauseMin = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    if (startMin !== null && endMin !== null && endMin > startMin) {
+      dur = Math.max(0, endMin - startMin - pauseMin);
+    }
     if (dur <= 0) return;
-    const newDate = new Date(editRecord.validatedAt + 'T12:00:00');
-    updateProductionRecord({ ...rec, validatedAt: newDate.toISOString(), actualDuration: dur });
+
+    updateProductionRecord({
+      ...rec,
+      workDate: editRecord.workDate,
+      startTime: editRecord.startTime || undefined,
+      endTime: editRecord.endTime || undefined,
+      pauseMinutes: pauseMin || undefined,
+      actualDuration: dur,
+    });
     setEditRecord(null);
   }, [editRecord, productionRecords, updateProductionRecord]);
 
@@ -294,7 +329,6 @@ const ProductionRegisterPage: React.FC = () => {
             })}
           </div>
 
-          {/* Content */}
           <div className="flex-none py-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="text-sm">
@@ -317,13 +351,13 @@ const ProductionRegisterPage: React.FC = () => {
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-            <Table>
+            <Table className="text-xs">
               <TableHeader>
                 <TableRow>
-                  <TableHead>
+                  <TableHead className="w-24">
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        التاريخ <SortIcon field="date" />
+                        تاريخ الأشغال <SortIcon field="date" />
                       </button>
                       <FilterPopover
                         items={availableMonths.map(k => ({ value: k, label: formatMonthLabel(k) }))}
@@ -333,7 +367,10 @@ const ProductionRegisterPage: React.FC = () => {
                       />
                     </div>
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="w-16 text-center">ساعة البداية</TableHead>
+                  <TableHead className="w-16 text-center">ساعة النهاية</TableHead>
+                  <TableHead className="w-16 text-center">الوقت المستقطع</TableHead>
+                  <TableHead className="w-20">
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('orderNumber')} className="flex items-center gap-1 hover:text-foreground transition-colors">
                         رقم الطلبية <SortIcon field="orderNumber" />
@@ -364,8 +401,8 @@ const ProductionRegisterPage: React.FC = () => {
                       التعيين <SortIcon field="designation" />
                     </button>
                   </TableHead>
-                  <TableHead>
-                    <button onClick={() => toggleSort('quantity')} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                  <TableHead className="w-14 text-center">
+                    <button onClick={() => toggleSort('quantity')} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors">
                       الكمية <SortIcon field="quantity" />
                     </button>
                   </TableHead>
@@ -382,12 +419,12 @@ const ProductionRegisterPage: React.FC = () => {
                       />
                     </div>
                   </TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="w-20 text-right">
                     <button onClick={() => toggleSort('duration')} className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors">
-                      المدة (سا) <SortIcon field="duration" />
+                      المدة الفعلية <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-20 text-center">عمليات</TableHead>
+                  <TableHead className="w-16 text-center">عمليات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -395,15 +432,16 @@ const ProductionRegisterPage: React.FC = () => {
                   const info = getRecordInfo(rec);
                   return (
                     <TableRow key={rec.id}>
-                      <TableCell className="text-xs">
-                        {new Date(rec.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                        {' '}
-                        {new Date(rec.validatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      <TableCell className="whitespace-nowrap">
+                        {recordDisplayDate(rec).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </TableCell>
+                      <TableCell className="text-center font-mono">{rec.startTime ?? '—'}</TableCell>
+                      <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
+                      <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
                       <TableCell className="font-medium">{info.orderNumber}</TableCell>
-                      <TableCell className="text-xs">{info.clientName}</TableCell>
-                      <TableCell className="text-xs">{info.designation}</TableCell>
-                      <TableCell className="text-xs">{info.quantity ?? '—'}</TableCell>
+                      <TableCell>{info.clientName}</TableCell>
+                      <TableCell>{info.designation}</TableCell>
+                      <TableCell className="text-center">{info.quantity ?? '—'}</TableCell>
                       <TableCell>{info.operationName}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
                       <TableCell>
@@ -433,30 +471,62 @@ const ProductionRegisterPage: React.FC = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-sm">Modifier l'enregistrement</DialogTitle>
           </DialogHeader>
           {editRecord && (
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">التاريخ</label>
+                <label className="text-xs font-medium text-muted-foreground">تاريخ الأشغال</label>
                 <Input
                   type="date"
-                  value={editRecord.validatedAt}
-                  onChange={e => setEditRecord({ ...editRecord, validatedAt: e.target.value })}
+                  value={editRecord.workDate}
+                  onChange={e => setEditRecord({ ...editRecord, workDate: e.target.value })}
                   className="h-8 text-xs"
                 />
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Durée (hh:mm)</label>
-                <Input
-                  value={editRecord.actualDuration}
-                  onChange={e => setEditRecord({ ...editRecord, actualDuration: e.target.value })}
-                  placeholder="1:30"
-                  className="h-8 text-xs"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ساعة البداية</label>
+                  <Input
+                    type="time"
+                    value={editRecord.startTime}
+                    onChange={e => setEditRecord({ ...editRecord, startTime: e.target.value })}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ساعة النهاية</label>
+                  <Input
+                    type="time"
+                    value={editRecord.endTime}
+                    onChange={e => setEditRecord({ ...editRecord, endTime: e.target.value })}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">الوقت المستقطع (HH:mm)</label>
+                  <Input
+                    value={editRecord.pauseHHMM}
+                    onChange={e => setEditRecord({ ...editRecord, pauseHHMM: e.target.value })}
+                    placeholder="00:30"
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">المدة الفعلية (hh:mm)</label>
+                  <Input
+                    value={editRecord.actualDuration}
+                    onChange={e => setEditRecord({ ...editRecord, actualDuration: e.target.value })}
+                    placeholder="1:30"
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
               </div>
+              <p className="text-[10px] text-muted-foreground">
+                Si l'heure de début et l'heure de fin sont renseignées, la durée réelle est recalculée automatiquement (fin − début − pause).
+              </p>
             </div>
           )}
           <DialogFooter>
@@ -466,7 +536,6 @@ const ProductionRegisterPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Dialog */}
       <ConfirmDialog
         open={confirmState.open}
         title={confirmState.title}
@@ -479,7 +548,6 @@ const ProductionRegisterPage: React.FC = () => {
   );
 };
 
-// Reusable filter popover
 const FilterPopover: React.FC<{
   items: { value: string; label: string }[];
   selected: Set<string>;
