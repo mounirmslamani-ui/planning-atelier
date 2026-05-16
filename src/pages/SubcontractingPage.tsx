@@ -20,6 +20,7 @@ const SubcontractingPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [activeSubTab, setActiveSubTab] = useState<string>('__all__');
   const [pendingDone, setPendingDone] = useState<{ stepIds: string[] } | null>(null);
   const [datePromptOpen, setDatePromptOpen] = useState(false);
   const today = new Date().toISOString().split('T')[0];
@@ -114,8 +115,30 @@ const SubcontractingPage: React.FC = () => {
       });
     }
 
+    if (activeSubTab !== '__all__') {
+      result = result.filter(r => (r.subcontractorId || '__none__') === activeSubTab);
+    }
+
     return result;
-  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName]);
+  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab]);
+
+  // Tabs: derived from all non-done rows (before tab filter), distinct subcontractors with counts
+  const subTabs = useMemo(() => {
+    const counts = new Map<string, number>();
+    subcontractingRows.filter(r => !r.done).forEach(r => {
+      const key = r.subcontractorId || '__none__';
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const entries = Array.from(counts.entries()).map(([id, count]) => ({
+      id,
+      name: id === '__none__' ? 'بدون مناول' : getSubcontractorName(id),
+      count,
+    }));
+    entries.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    return entries;
+  }, [subcontractingRows, getSubcontractorName]);
+
+  const totalActive = useMemo(() => subcontractingRows.filter(r => !r.done).length, [subcontractingRows]);
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
@@ -163,6 +186,25 @@ const SubcontractingPage: React.FC = () => {
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
+      </div>
+      <div className="flex-none mb-3 flex flex-wrap gap-1 border-b border-border">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('__all__')}
+          className={`px-3 py-1.5 text-xs font-heading rounded-t-md transition-colors ${activeSubTab === '__all__' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+        >
+          الكل ({totalActive})
+        </button>
+        {subTabs.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveSubTab(tab.id)}
+            className={`px-3 py-1.5 text-xs font-heading rounded-t-md transition-colors ${activeSubTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+          >
+            {tab.name} ({tab.count})
+          </button>
+        ))}
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
