@@ -187,6 +187,25 @@ const SubcontractingPage: React.FC = () => {
           </Button>
         } />
       </div>
+      <div className="flex-none mb-3 flex flex-wrap gap-1 border-b border-border">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('__all__')}
+          className={`px-3 py-1.5 text-xs font-heading rounded-t-md transition-colors ${activeSubTab === '__all__' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+        >
+          الكل ({totalActive})
+        </button>
+        {subTabs.map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveSubTab(tab.id)}
+            className={`px-3 py-1.5 text-xs font-heading rounded-t-md transition-colors ${activeSubTab === tab.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
+          >
+            {tab.name} ({tab.count})
+          </button>
+        ))}
+      </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
