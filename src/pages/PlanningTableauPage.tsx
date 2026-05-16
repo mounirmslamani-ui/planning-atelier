@@ -1653,6 +1653,15 @@ const PlanningTableauPage: React.FC = () => {
               <span className="text-muted-foreground">المدة الكلية المقدرة للشغل :</span>
               <span className="font-medium">{prodDialog.step ? formatMinutesToHM(prodDialog.step.estimatedDuration) : '—'}</span>
             </div>
+            <div className="border-t pt-3">
+              <label className="text-xs text-muted-foreground mb-1 block">تاريخ الأشغال</label>
+              <Input
+                type="date"
+                className="h-9 font-mono"
+                value={prodDialog.workDate}
+                onChange={e => setProdDialog(prev => ({ ...prev, workDate: e.target.value }))}
+              />
+            </div>
             <div className="border-t pt-3 grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">ساعة البداية</label>
