@@ -376,12 +376,18 @@ interface ProductionDialogState {
   order: Order | null;
   operatorName: string;
   operationName: string;
+  workDate: string; // YYYY-MM-DD
   startTime: string;
   endTime: string;
   pauseTime: string;
   pauseManual: boolean;
   totalDoneAlready: number;
 }
+
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const NUMDAYS_STORAGE_KEY = 'planning-tableau-numdays';
 const PLANNING_HISTORY_LIMIT = 50;
