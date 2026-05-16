@@ -21,6 +21,7 @@ import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import PrintTrackingSheetDialog from '@/components/PrintTrackingSheetDialog';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
+import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
@@ -91,6 +92,7 @@ const OrdersPage: React.FC = () => {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -723,7 +725,16 @@ const OrdersPage: React.FC = () => {
 
     // Read-only display
     switch (col) {
-      case 'orderNumber': return <span className="font-heading text-xs">{o.orderNumber}</span>;
+      case 'orderNumber': return (
+        <button
+          type="button"
+          className="font-heading text-xs underline-offset-2 hover:underline text-primary"
+          title="فتح بطاقة متابعة الطلبية"
+          onClick={(e) => { e.stopPropagation(); setUnifiedOrderId(o.id); }}
+        >
+          {o.orderNumber}
+        </button>
+      );
       case 'orderDate': return <span className="text-xs">{formatDateFR(o.orderDate)}</span>;
       case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
       case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
@@ -822,7 +833,7 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="الطلبيات الحالية" description={
+        <PageHeader title="ترتيب إنجاز الطلبيات الحالية" description={
         <div className="flex items-center gap-3">
           <span>{displayOrders.length} commande(s)</span>
           {lastSeriesNumbers.lastF && (
@@ -1155,6 +1166,11 @@ const OrdersPage: React.FC = () => {
       {planningOrder && (
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
+      <OrderUnifiedSheet
+        orderId={unifiedOrderId}
+        open={!!unifiedOrderId}
+        onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
+      />
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 
       {cancelTarget && (
