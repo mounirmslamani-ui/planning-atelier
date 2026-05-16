@@ -16,39 +16,41 @@ type DropTargetType = false | 'prod' | 'qc';
 
 const sidebarGroups = [
   {
-    title: 'القيادة والإدخال',
+    title: 'قائمة الطلبيات',
     items: [
       { to: '/order-registry', label: 'سجل الطلبيات', icon: BookOpen, dropTarget: false as DropTargetType },
-      { to: '/orders', label: 'الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
-      { to: '/absences', label: 'الغيابات', icon: UserX, dropTarget: false as DropTargetType },
-      { to: '/production-register', label: 'سجل الأعمال المنجزة', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
+      { to: '/orders', label: 'ترتيب الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
+      { to: '/pending-invoicing', label: 'طلبيات في انتظار الفوترة', icon: Receipt, dropTarget: false as DropTargetType },
     ],
   },
   {
     title: 'البرمجة والمتابعة',
     items: [
       { to: '/planning-tableau', label: 'جدول البرمجة', icon: TableProperties, dropTarget: false as DropTargetType },
-      { to: '/planning-gantt', label: 'برنامج غانت', icon: LayoutDashboard, dropTarget: false as DropTargetType },
       { to: '/study', label: 'دراسة', icon: FileSearch, dropTarget: false as DropTargetType },
       { to: '/material-purchases', label: 'مشتريات المواد الأولية', icon: PackagePlus, dropTarget: false as DropTargetType },
       { to: '/tooling-purchases', label: 'مشتريات العدة', icon: Hammer, dropTarget: false as DropTargetType },
       { to: '/subcontracting', label: 'مناولة', icon: Factory, dropTarget: false as DropTargetType },
       { to: '/quality-control', label: 'مراقبة الجودة', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
+    ],
+  },
+  {
+    title: 'متابعة التسليم والفوترة',
+    items: [
       { to: '/delivery', label: 'طلبيات جاهزة للتسليم', icon: PackageCheck, dropTarget: false as DropTargetType },
       { to: '/delivered-orders', label: 'طلبيات مسلمة', icon: Archive, dropTarget: false as DropTargetType },
-      { to: '/pending-invoicing', label: 'طلبيات في انتظار الفوترة', icon: Receipt, dropTarget: false as DropTargetType },
       { to: '/cancelled-orders', label: 'طلبيات ملغاة', icon: Ban, dropTarget: false as DropTargetType },
     ],
   },
   {
     title: 'إعدادات',
     items: [
-      { to: '/clients', label: 'الزبائن', icon: Building2, dropTarget: false as DropTargetType },
       { to: '/operators', label: 'العمال', icon: Users, dropTarget: false as DropTargetType },
-      { to: '/equipment', label: 'المعدات', icon: Cog, dropTarget: false as DropTargetType },
-      { to: '/operations', label: 'العمليات', icon: Drill, dropTarget: false as DropTargetType },
-      { to: '/subcontractors', label: 'المناولون', icon: Handshake, dropTarget: false as DropTargetType },
+      { to: '/absences', label: 'الغيابات', icon: UserX, dropTarget: false as DropTargetType },
       { to: '/holidays', label: 'العطل الرسمية', icon: CalendarDays, dropTarget: false as DropTargetType },
+      { to: '/clients', label: 'الزبائن', icon: Building2, dropTarget: false as DropTargetType },
+      { to: '/subcontractors', label: 'المناولون', icon: Handshake, dropTarget: false as DropTargetType },
+      { to: '/operations', label: 'العمليات', icon: Drill, dropTarget: false as DropTargetType },
     ],
   },
 ];
