@@ -536,6 +536,10 @@ const PlanningTableauPage: React.FC = () => {
     totalEstimated: number;
     totalDone: number;
     durationToday: number;
+    workDate: string;
+    startTime: string;
+    endTime: string;
+    pauseMinutes: number;
   } | null>(null);
 
   // Drag & drop state - use REFS to avoid stale closure issues
