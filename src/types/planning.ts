@@ -172,7 +172,11 @@ export interface ProductionRecord {
   operatorId: string;
   operationId: string;
   actualDuration: number; // in minutes
-  validatedAt: string; // ISO date-time
+  validatedAt: string; // ISO date-time (system timestamp)
+  workDate?: string; // ISO date (YYYY-MM-DD) — date des travaux saisie par l'utilisateur
+  startTime?: string; // HH:mm
+  endTime?: string;   // HH:mm
+  pauseMinutes?: number;
   workStatus?: 'done' | 'continue';
   // Snapshots — preserved even if the source order is deleted later
   orderNumberSnapshot?: string;
