@@ -20,6 +20,7 @@ const SubcontractingPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [activeSubTab, setActiveSubTab] = useState<string>('__all__');
   const [pendingDone, setPendingDone] = useState<{ stepIds: string[] } | null>(null);
   const [datePromptOpen, setDatePromptOpen] = useState(false);
   const today = new Date().toISOString().split('T')[0];
