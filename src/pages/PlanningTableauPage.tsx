@@ -524,7 +524,7 @@ const PlanningTableauPage: React.FC = () => {
 
   // Production register dialog
   const [prodDialog, setProdDialog] = useState<ProductionDialogState>({
-    open: false, step: null, order: null, operatorName: '', operationName: '', startTime: '', endTime: '', pauseTime: '00:00', pauseManual: false, totalDoneAlready: 0,
+    open: false, step: null, order: null, operatorName: '', operationName: '', workDate: todayISO(), startTime: '', endTime: '', pauseTime: '00:00', pauseManual: false, totalDoneAlready: 0,
   });
   const [prodDurationError, setProdDurationError] = useState('');
   const [completionDialog, setCompletionDialog] = useState<{
