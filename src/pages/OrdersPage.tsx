@@ -92,6 +92,7 @@ const OrdersPage: React.FC = () => {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -1165,6 +1166,11 @@ const OrdersPage: React.FC = () => {
       {planningOrder && (
         <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
       )}
+      <OrderUnifiedSheet
+        orderId={unifiedOrderId}
+        open={!!unifiedOrderId}
+        onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
+      />
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 
       {cancelTarget && (
