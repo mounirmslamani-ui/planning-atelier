@@ -1068,10 +1068,13 @@ const PlanningTableauPage: React.FC = () => {
     }
 
     const totalDone = prodDialog.totalDoneAlready + durationTodayMin;
+    const pauseMin = parseDurationHHMM(prodDialog.pauseTime) ?? 0;
     setCompletionDialog({
       open: true, stepId: prodDialog.step.id, orderId: prodDialog.order.id,
       operatorId: prodDialog.step.operatorId || '', operationId: prodDialog.step.operationId,
       totalEstimated: prodDialog.step.estimatedDuration, totalDone, durationToday: durationTodayMin,
+      workDate: prodDialog.workDate || todayISO(),
+      startTime: prodDialog.startTime, endTime: prodDialog.endTime, pauseMinutes: pauseMin,
     });
     setProdDialog(prev => ({ ...prev, open: false }));
   }, [prodDialog]);
@@ -1080,7 +1083,7 @@ const PlanningTableauPage: React.FC = () => {
 
   const handleCompletionAnswer = useCallback((finished: boolean) => {
     if (!completionDialog) return;
-    const { stepId, orderId, operatorId, operationId, durationToday, totalEstimated, totalDone } = completionDialog;
+    const { stepId, orderId, operatorId, operationId, durationToday, totalEstimated, totalDone, workDate, startTime, endTime, pauseMinutes } = completionDialog;
 
     // Debounce: prevent double registration for same step in same interaction
     const dedupeKey = `${stepId}-${durationToday}-${Date.now().toString().slice(0, -3)}`;
@@ -1093,6 +1096,7 @@ const PlanningTableauPage: React.FC = () => {
     const record: ProductionRecord = {
       id: crypto.randomUUID(), stepId, orderId, operatorId, operationId,
       actualDuration: durationToday, validatedAt: new Date().toISOString(),
+      workDate, startTime: startTime || undefined, endTime: endTime || undefined, pauseMinutes,
       workStatus: finished ? 'done' : 'continue',
     };
     addProductionRecord(record);
