@@ -1007,6 +1007,7 @@ const PlanningTableauPage: React.FC = () => {
       open: true, step, order,
       operatorName: operator?.name || '—',
       operationName: getOperationName(step.operationId),
+      workDate: todayISO(),
       startTime: '', endTime: '', pauseTime: '00:00', pauseManual: false, totalDoneAlready,
     });
     setProdDurationError('');
