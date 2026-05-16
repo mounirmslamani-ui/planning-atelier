@@ -24,6 +24,7 @@ import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
 import { getExportFilename } from '@/lib/excelExport';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
@@ -47,6 +48,7 @@ const OrderRegistryPage: React.FC = () => {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [history, setHistory] = useState<Order[][]>([]);
   const [redoStack, setRedoStack] = useState<Order[][]>([]);
@@ -494,7 +496,18 @@ const OrderRegistryPage: React.FC = () => {
                     const isEditing = editingId === o.id;
                     return (
                       <TableRow key={o.id} className={isCancelled ? 'opacity-60' : ''}>
-                        <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderNumber')}</TableCell>
+                        <TableCell className="w-px whitespace-nowrap">
+                          {editingId === o.id ? renderEditableCell(o, 'orderNumber') : (
+                            <button
+                              type="button"
+                              className="text-xs font-heading underline-offset-2 hover:underline text-primary"
+                              title="فتح بطاقة متابعة الطلبية"
+                              onClick={() => setUnifiedOrderId(o.id)}
+                            >
+                              {o.orderNumber}
+                            </button>
+                          )}
+                        </TableCell>
                         <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderDate', 'date')}</TableCell>
                         <TableCell className="w-px whitespace-nowrap">
                           {isEditing ? (
@@ -665,6 +678,12 @@ const OrderRegistryPage: React.FC = () => {
         variant={confirmState.variant}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+      />
+
+      <OrderUnifiedSheet
+        orderId={unifiedOrderId}
+        open={!!unifiedOrderId}
+        onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
       />
     </div>
   );
