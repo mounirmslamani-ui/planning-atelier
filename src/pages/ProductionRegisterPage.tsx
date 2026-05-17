@@ -439,7 +439,7 @@ const ProductionRegisterPage: React.FC = () => {
                       <TableCell className="text-center font-mono">{rec.startTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
-                      <TableCell className="font-medium">{info.orderNumber}</TableCell>
+                      <TableCell className="font-medium"><OrderNumberLink orderId={rec.orderId} orderNumber={info.orderNumber} /></TableCell>
                       <TableCell>{info.clientName}</TableCell>
                       <TableCell>{info.designation}</TableCell>
                       <TableCell className="text-center">{info.quantity ?? '—'}</TableCell>
