@@ -21,6 +21,7 @@ import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const DeliveryPage: React.FC = () => {
   const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder, addQCEntry } = usePlanning();
