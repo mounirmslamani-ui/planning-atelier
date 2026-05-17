@@ -13,6 +13,7 @@ import DatePromptDialog from '@/components/DatePromptDialog';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 const ToolingPurchasesPage: React.FC = () => {
