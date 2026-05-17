@@ -1464,7 +1464,7 @@ const PlanningTableauPage: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="font-heading text-xs">{order.orderNumber}</span>
+                          <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-xs" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{getClientName(order.clientId)}</span>
