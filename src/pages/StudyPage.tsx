@@ -14,6 +14,7 @@ import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const StudyPage: React.FC = () => {
   const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
