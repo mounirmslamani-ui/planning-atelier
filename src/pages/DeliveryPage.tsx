@@ -194,7 +194,7 @@ const DeliveryPage: React.FC = () => {
                   <TableCell className="font-heading text-sm">
                     {isEditing
                       ? <Input value={editDraft.orderNumber ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
-                      : order.orderNumber}
+                      : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing
