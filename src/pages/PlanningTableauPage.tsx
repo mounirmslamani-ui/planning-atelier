@@ -13,6 +13,7 @@ import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIc
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
@@ -1463,7 +1464,7 @@ const PlanningTableauPage: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="font-heading text-xs">{order.orderNumber}</span>
+                          <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-xs" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{getClientName(order.clientId)}</span>

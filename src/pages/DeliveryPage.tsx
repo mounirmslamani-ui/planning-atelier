@@ -21,6 +21,7 @@ import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const DeliveryPage: React.FC = () => {
   const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry, deleteOrder, updateOrder, addQCEntry } = usePlanning();
@@ -193,7 +194,7 @@ const DeliveryPage: React.FC = () => {
                   <TableCell className="font-heading text-sm">
                     {isEditing
                       ? <Input value={editDraft.orderNumber ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
-                      : order.orderNumber}
+                      : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing

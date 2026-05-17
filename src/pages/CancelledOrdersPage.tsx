@@ -13,6 +13,7 @@ import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { formatDateFR } from '@/lib/utils';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const CancelledOrdersPage: React.FC = () => {
   const { cancelledOrders, updateCancelledOrder, deleteCancelledOrder } = usePlanning();
@@ -99,7 +100,7 @@ const CancelledOrdersPage: React.FC = () => {
             )}
             {filtered.map(c => (
               <TableRow key={c.id}>
-                <TableCell className="font-mono font-semibold">{c.orderNumberSnapshot}</TableCell>
+                <TableCell className="font-mono font-semibold"><OrderNumberLink orderId={c.orderId} orderNumber={c.orderNumberSnapshot} /></TableCell>
                 <TableCell>{c.orderDateSnapshot ? formatDateFR(c.orderDateSnapshot) : '—'}</TableCell>
                 <TableCell>{c.clientNameSnapshot || '—'}</TableCell>
                 <TableCell className="max-w-[260px] truncate" title={c.designationSnapshot}>{c.designationSnapshot}</TableCell>

@@ -14,6 +14,7 @@ import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const StudyPage: React.FC = () => {
   const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
@@ -135,7 +136,7 @@ const StudyPage: React.FC = () => {
             ) : filteredRows.map((r) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
-                <TableCell className="text-sm font-medium">{r.order.orderNumber}</TableCell>
+                <TableCell className="text-sm font-medium"><OrderNumberLink orderId={r.order.id} orderNumber={r.order.orderNumber} /></TableCell>
                 <TableCell className="text-sm">{getClientName(r.order.clientId)}</TableCell>
                 <TableCell className="text-sm">{r.order.designation}</TableCell>
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>

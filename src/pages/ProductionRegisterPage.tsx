@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -438,7 +439,7 @@ const ProductionRegisterPage: React.FC = () => {
                       <TableCell className="text-center font-mono">{rec.startTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
-                      <TableCell className="font-medium">{info.orderNumber}</TableCell>
+                      <TableCell className="font-medium"><OrderNumberLink orderId={rec.orderId} orderNumber={info.orderNumber} /></TableCell>
                       <TableCell>{info.clientName}</TableCell>
                       <TableCell>{info.designation}</TableCell>
                       <TableCell className="text-center">{info.quantity ?? '—'}</TableCell>

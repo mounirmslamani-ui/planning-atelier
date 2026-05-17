@@ -19,6 +19,7 @@ import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import ReintegrateButton from '@/components/orders/ReintegrateButton';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -223,7 +224,7 @@ const DeliveredOrdersPage: React.FC = () => {
                   <TableCell className="font-heading text-sm">
                     {isEditing
                       ? <Input value={editDraft.orderNumber ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
-                      : order.orderNumber}
+                      : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing

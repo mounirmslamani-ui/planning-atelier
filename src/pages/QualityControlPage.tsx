@@ -22,6 +22,7 @@ import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'مطابق للمواصفات',
@@ -204,7 +205,7 @@ const QualityControlPage: React.FC = () => {
                   <TableCell className="font-heading text-sm">
                     {isEditing
                       ? <Input value={draft.orderNumber ?? ''} onChange={e => setDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
-                      : order.orderNumber}
+                      : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing
