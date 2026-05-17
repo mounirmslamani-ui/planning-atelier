@@ -140,7 +140,7 @@ const MaterialPurchasesPage: React.FC = () => {
             ) : filteredRows.map((r: any) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
-                <TableCell className="text-sm font-medium">{r.order.orderNumber}</TableCell>
+                <TableCell className="text-sm font-medium"><OrderNumberLink orderId={r.order.id} orderNumber={r.order.orderNumber} /></TableCell>
                 <TableCell className="text-sm">{getClientName(r.order.clientId)}</TableCell>
                 <TableCell className="text-sm">{r.order.designation}</TableCell>
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
