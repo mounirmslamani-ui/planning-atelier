@@ -13,6 +13,7 @@ import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { formatDateFR } from '@/lib/utils';
+import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const CancelledOrdersPage: React.FC = () => {
   const { cancelledOrders, updateCancelledOrder, deleteCancelledOrder } = usePlanning();
