@@ -31,6 +31,7 @@ const sidebarGroups = [
       { to: '/material-purchases', label: 'مشتريات المواد الأولية', icon: PackagePlus, dropTarget: false as DropTargetType },
       { to: '/tooling-purchases', label: 'مشتريات العدة', icon: Hammer, dropTarget: false as DropTargetType },
       { to: '/subcontracting', label: 'مناولة', icon: Factory, dropTarget: false as DropTargetType },
+      { to: '/production-register', label: 'سجل الأعمال المنجزة', icon: ClipboardCheck, dropTarget: 'prod' as DropTargetType },
       { to: '/quality-control', label: 'مراقبة الجودة', icon: SearchCheck, dropTarget: 'qc' as DropTargetType },
     ],
   },
