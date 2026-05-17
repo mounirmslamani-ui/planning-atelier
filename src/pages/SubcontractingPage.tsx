@@ -235,7 +235,7 @@ const SubcontractingPage: React.FC = () => {
               filteredRows.map((row, idx) => (
                 <TableRow key={row.order.id} className={row.done ? 'opacity-60' : ''}>
                   <TableCell className="text-center text-muted-foreground font-mono text-xs">{row.order.displayOrder ?? '—'}</TableCell>
-                  <TableCell className="text-sm font-medium">{row.order.orderNumber}</TableCell>
+                  <TableCell className="text-sm font-medium"><OrderNumberLink orderId={row.order.id} orderNumber={row.order.orderNumber} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.orderDate) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{getClientName(row.order.clientId)}</TableCell>
                   <TableCell className="text-sm">{row.order.designation}</TableCell>
