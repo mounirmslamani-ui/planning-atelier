@@ -1018,7 +1018,7 @@ const OrdersPage: React.FC = () => {
                                 </Button>
                               );
                             })()}
-                            {isRowEditing ? (
+                            {isRowEditing && (
                               <>
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
                                   <span className="text-normal text-sm font-bold">✓</span>
@@ -1027,10 +1027,6 @@ const OrdersPage: React.FC = () => {
                                   <span className="text-destructive text-sm font-bold">✕</span>
                                 </Button>
                               </>
-                            ) : (
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingRowId(o.id); setInlineEdits(prev => ({ ...prev, [o.id]: {} })); }} title="Éditer sur la ligne">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
                             )}
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
                               <Ban className="w-3.5 h-3.5 text-orange-500" />
