@@ -1590,7 +1590,7 @@ const PlanningTableauPage: React.FC = () => {
                             <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrder(order)} title="التعيينات">
                               <CalendarCheck className="w-7 h-7" />
                             </Button>
-                            {isEditing ? (
+                            {isEditing && (
                               <>
                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => saveInlineEdits(step.id)} title="حفظ">
                                   <span className="text-normal text-sm font-bold">✓</span>
@@ -1599,10 +1599,6 @@ const PlanningTableauPage: React.FC = () => {
                                   <span className="text-destructive text-sm font-bold">✕</span>
                                 </Button>
                               </>
-                            ) : (
-                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingRowId(step.id); setInlineEdits(prev => ({ ...prev, [step.id]: {} })); }} title="تعديل">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
                             )}
                           </div>
                         </TableCell>
