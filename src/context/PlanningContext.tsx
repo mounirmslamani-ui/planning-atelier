@@ -283,6 +283,34 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     load();
   }, []);
 
+  // ───────────────────── Periodic Data Refresh (every 60s) ─────────────────────
+  useEffect(() => {
+    if (loading) return;
+    const interval = window.setInterval(async () => {
+      try {
+        const data = await fetchAllData();
+        setEquipments(data.equipments);
+        setOperators(data.operators);
+        setSubcontractors(data.subcontractors);
+        setOperations(data.operations);
+        setClients(data.clients);
+        setOrders(data.orders);
+        setSteps(data.steps);
+        setHolidays(data.holidays);
+        setProductionRecords(data.productionRecords);
+        setQCEntries(data.qcEntries);
+        setDeliveryEntries(data.deliveryEntries);
+        setDeliveredOrders(data.deliveredOrders);
+        setCancelledOrders((data as any).cancelledOrders || []);
+      } catch (err) {
+        console.error('[PlanningContext] Periodic refresh failed:', err);
+      }
+    }, 60_000);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [loading]);
+
   useEffect(() => {
     const refreshDateKey = () => setCurrentDateKey(new Date().toISOString().split('T')[0]);
     const interval = window.setInterval(refreshDateKey, 60_000);
