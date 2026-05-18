@@ -286,12 +286,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const refreshDateKey = () => setCurrentDateKey(new Date().toISOString().split('T')[0]);
     const interval = window.setInterval(refreshDateKey, 60_000);
-    window.addEventListener('focus', refreshDateKey);
-    document.addEventListener('visibilitychange', refreshDateKey);
     return () => {
       window.clearInterval(interval);
-      window.removeEventListener('focus', refreshDateKey);
-      document.removeEventListener('visibilitychange', refreshDateKey);
     };
   }, []);
 
