@@ -273,7 +273,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCancelledOrders((data as any).cancelledOrders || []);
 
         // Re-sync all data to DB to fix date format issues and any automatic planning resync.
-        await syncAllDataToDB(data);
+        
       } catch (err) {
         console.error('[PlanningContext] Failed to load data:', err);
       } finally {
