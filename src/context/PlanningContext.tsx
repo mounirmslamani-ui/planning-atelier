@@ -303,8 +303,11 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setSteps(prev => prev.map(step => shiftedMap.get(step.id) ?? step));
 
     Promise.all(shifted.map(step => dbUpdateStep(step)))
-      .catch(err => console.error('[PlanningContext] Automatic planning resync failed:', err))
-      .finally(() => { autoResyncInFlight.current = false; });
+      .then(() => { autoResyncInFlight.current = false; })
+      .catch(err => {
+        console.error('[PlanningContext] Automatic planning resync failed:', err);
+        autoResyncInFlight.current = false;
+      });
   }, [loading, steps, productionRecords, holidays, absenceOperationId, absenceOrderId, currentDateKey]);
 
   // ───────────────────── CRUD with optimistic updates + DB sync ─────────────────────
