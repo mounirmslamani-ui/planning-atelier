@@ -64,33 +64,38 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = ({
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Filtrer « {label} »</p>
             {filterMode === 'select' ? (
-              (() => {
-                const selected = filterValue ? filterValue.split('|').filter(Boolean) : [];
-                const allSelected = filterOptions.length > 0 && selected.length === filterOptions.length;
-                const toggleAll = () => {
-                  onFilter(columnKey, allSelected ? '' : filterOptions.join('|'));
-                };
-                const toggleOne = (option: string) => {
-                  const set = new Set(selected);
-                  if (set.has(option)) set.delete(option); else set.add(option);
-                  const next = filterOptions.filter(o => set.has(o));
-                  onFilter(columnKey, next.length === 0 ? '' : next.join('|'));
-                };
-                return (
-                  <div className="max-h-60 overflow-auto space-y-1">
-                    <label className="flex items-center gap-2 text-xs cursor-pointer py-1 border-b">
-                      <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-3.5 w-3.5" />
-                      <span className="font-medium">Tout sélectionner</span>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                <label className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted px-1 py-0.5 rounded">
+                  <input
+                    type="checkbox"
+                    checked={filterOptions.every(o => filterValue.split('|').filter(Boolean).includes(o))}
+                    onChange={e => {
+                      onFilter(columnKey, e.target.checked ? filterOptions.join('|') : '');
+                    }}
+                  />
+                  <span className="font-medium">الكل</span>
+                </label>
+                <hr className="my-1" />
+                {filterOptions.map(option => {
+                  const selected = filterValue.split('|').filter(Boolean);
+                  const isChecked = selected.includes(option);
+                  return (
+                    <label key={option} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted px-1 py-0.5 rounded">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          const next = isChecked
+                            ? selected.filter(v => v !== option)
+                            : [...selected, option];
+                          onFilter(columnKey, next.join('|'));
+                        }}
+                      />
+                      <span>{option}</span>
                     </label>
-                    {filterOptions.map(option => (
-                      <label key={option} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
-                        <input type="checkbox" checked={selected.includes(option)} onChange={() => toggleOne(option)} className="h-3.5 w-3.5" />
-                        <span>{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                );
-              })()
+                  );
+                })}
+              </div>
             ) : (
               <Input
                 type={filterMode === 'date' ? 'date' : 'text'}
