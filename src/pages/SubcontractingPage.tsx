@@ -141,6 +141,28 @@ const SubcontractingPage: React.FC = () => {
 
   const totalActive = useMemo(() => subcontractingRows.filter(r => !r.done).length, [subcontractingRows]);
 
+  const allValuesByKey = useMemo(() => {
+    const get = (r: any, k: string) => {
+      switch (k) {
+        case 'displayOrder': return String(r.order.displayOrder ?? '');
+        case 'orderNumber': return r.order.orderNumber;
+        case 'orderDate': return r.order.orderDate;
+        case 'client': return getClientName(r.order.clientId);
+        case 'designation': return r.order.designation;
+        case 'quantity': return String(r.order.quantity);
+        case 'priority': return r.order.priority || '';
+        case 'subcontractor': return getSubcontractorName(r.subcontractorId);
+        case 'plannedDeadline': return r.order.plannedDeadline;
+        case 'subcontractingDeadline': return r.deadline;
+        default: return '';
+      }
+    };
+    const keys = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','subcontractor','plannedDeadline','subcontractingDeadline'];
+    const map: Record<string, string[]> = {};
+    keys.forEach(k => { map[k] = [...new Set(subcontractingRows.filter(r => !r.done).map((r: any) => get(r, k)).filter(Boolean))].sort(); });
+    return map;
+  }, [subcontractingRows, getClientName, getSubcontractorName]);
+
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
@@ -211,16 +233,16 @@ const SubcontractingPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16 text-center"><ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="أجل انتهاء المناولة" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead className="w-16 text-center"><ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} allValues={allValuesByKey.displayOrder} /></TableHead>
+              <TableHead><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} allValues={allValuesByKey.orderNumber} /></TableHead>
+              <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} allValues={allValuesByKey.orderDate} /></TableHead>
+              <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} allValues={allValuesByKey.client} /></TableHead>
+              <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
+              <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
+              <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+              <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractor} /></TableHead>
+              <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.plannedDeadline} /></TableHead>
+              <TableHead><ColumnHeader label="أجل انتهاء المناولة" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractingDeadline} /></TableHead>
               <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>
