@@ -410,8 +410,16 @@ const OrdersPage: React.FC = () => {
     for (const [key, val] of Object.entries(filters)) {
       if (!val) continue;
       if (key === 'planning') {
-        if (val === 'غير محددة') list = list.filter(o => !hasStepsMap.get(o.id));
-        else if (val === 'محددة') list = list.filter(o => hasStepsMap.get(o.id));
+        const vals = val.split('|').filter(Boolean);
+        list = list.filter(o => {
+          const status = hasStepsMap.get(o.id) ? 'محددة' : 'غير محددة';
+          return vals.includes(status);
+        });
+        continue;
+      }
+      if (key === 'globalStatus') {
+        const vals = val.split('|').filter(Boolean);
+        list = list.filter(o => vals.includes(getColValue(o, key as ColumnKey)));
         continue;
       }
       const lower = val.toLowerCase();
