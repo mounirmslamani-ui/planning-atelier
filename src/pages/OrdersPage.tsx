@@ -588,6 +588,21 @@ const OrdersPage: React.FC = () => {
   const isDragging = (index: number) => dragIndices?.includes(index) ?? false;
   const hasActiveFilters = sortKey !== null || Object.values(filters).some(v => v);
 
+  // Excel-style unique values per column for ColumnHeader checkbox lists.
+  const allValuesByKey = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    const keys: ColumnKey[] = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','globalStatus','remainingSteps','deliveryDeadline','clientRepresentative','instructions','drawingModel','atelierTime','study','material','tooling','observation'];
+    keys.forEach(k => {
+      const set = new Set<string>();
+      baseSorted.forEach(o => { const v = getColValue(o, k); if (v) set.add(v); });
+      map[k] = Array.from(set);
+    });
+    const planSet = new Set<string>();
+    baseSorted.forEach(o => planSet.add(hasStepsMap.get(o.id) ? 'محددة' : 'غير محددة'));
+    map['planning'] = Array.from(planSet);
+    return map;
+  }, [baseSorted, getColValue, hasStepsMap]);
+
   const unlockOrder = (o: Order) => updateOrder({ ...o, frozenOrder: false });
   const unlockAll = () => {
     const absence = orders.find(o => o.id === absenceOrderId);
