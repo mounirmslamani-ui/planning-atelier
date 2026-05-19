@@ -222,6 +222,16 @@ const PendingInvoicingPage: React.FC = () => {
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } =
     useTableSortFilter<Row>(buttonFilteredRows, accessors);
 
+  const allValuesByKey = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    (Object.keys(accessors) as (keyof typeof accessors)[]).forEach(k => {
+      map[k as string] = [...new Set(buttonFilteredRows.map(r => {
+        const v = accessors[k](r); return v == null ? '' : String(v);
+      }).filter(Boolean))].sort();
+    });
+    return map;
+  }, [buttonFilteredRows, accessors]);
+
   const isFilteredOrSorted = sortKey !== null || Object.values(filters).some(Boolean);
 
   // Group only when not filtered/sorted
@@ -586,34 +596,34 @@ const PendingInvoicingPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} />
+                <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} allValues={allValuesByKey.orderNumber} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" />
+                <ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} allValues={allValuesByKey.orderDate} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} filterMode="select" filterOptions={[...new Set(rows.map(r => r.clientName))].sort()} />
+                <ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} allValues={allValuesByKey.clientName} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} />
+                <ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} />
+                <ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} />
+                <ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="درجة الاستعجال" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1', 'P2', 'P3', 'P4']} />
+                <ColumnHeader label="درجة الاستعجال" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} filterMode="date" />
+                <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="تاريخ التسليم/تقدم الأشغال" columnKey="statusLabel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.statusLabel || ''} onFilter={handleFilter} filterMode="select" filterOptions={[...new Set(rows.map(r => r.statusLabel))].sort()} />
+                <ColumnHeader label="تاريخ التسليم/تقدم الأشغال" columnKey="statusLabel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.statusLabel || ''} onFilter={handleFilter} allValues={allValuesByKey.statusLabel} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="ثمن البيع" columnKey="priceStatus" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priceStatus || ''} onFilter={handleFilter} filterMode="select" filterOptions={PRICE_BUTTONS.map(p => p.key)} />
+                <ColumnHeader label="ثمن البيع" columnKey="priceStatus" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priceStatus || ''} onFilter={handleFilter} allValues={allValuesByKey.priceStatus} />
               </TableHead>
               {OPERATOR_COLUMNS.map(name => (
                 <TableHead key={name} className="text-xs font-semibold whitespace-nowrap text-center">{name}</TableHead>
