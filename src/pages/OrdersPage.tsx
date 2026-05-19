@@ -422,6 +422,11 @@ const OrdersPage: React.FC = () => {
         list = list.filter(o => vals.includes(getColValue(o, key as ColumnKey)));
         continue;
       }
+      if (val.includes('|')) {
+        const vals = val.split('|').filter(Boolean);
+        list = list.filter(o => vals.includes(getColValue(o, key as ColumnKey)));
+        continue;
+      }
       const lower = val.toLowerCase();
       list = list.filter(o => getColValue(o, key as ColumnKey).toLowerCase().includes(lower));
     }
