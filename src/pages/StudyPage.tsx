@@ -65,7 +65,7 @@ const StudyPage: React.FC = () => {
         if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
         if (key === 'quantity') return String(r.order.quantity).includes(val);
-        if (key === 'priority') return r.order.priority === val;
+        if (key === 'priority') { const vals = val.split('|').filter(Boolean); return vals.includes(r.order.priority as string); }
         return true;
       });
     });
