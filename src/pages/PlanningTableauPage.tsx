@@ -1203,11 +1203,11 @@ const PlanningTableauPage: React.FC = () => {
           case 'client': return getClientName(t.order.clientId).toLowerCase().includes(needle);
           case 'designation': return t.order.designation.toLowerCase().includes(needle);
           case 'quantity': return String(t.order.quantity).includes(needle);
-          case 'priority': return t.order.priority === value;
-          case 'globalStatus': return getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId) === value;
+          case 'priority': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.priority as string); }
+          case 'globalStatus': { const vals = value.split('|').filter(Boolean); return vals.includes(getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId)); }
           case 'machine': return getMachineName(t.step) === value;
-          case 'status': return getStepProgressStatus(t.step, productionRecords) === value;
-          case 'operation': return getOperationName(t.step.operationId) === value;
+          case 'status': { const vals = value.split('|').filter(Boolean); return vals.includes(getStepProgressStatus(t.step, productionRecords)); }
+          case 'operation': { const vals = value.split('|').filter(Boolean); return vals.includes(getOperationName(t.step.operationId)); }
           default: return true;
         }
       });

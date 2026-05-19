@@ -24,6 +24,14 @@ export function useTableSortFilter<T>(rows: T[], accessors: Accessors<T>) {
       if (!val) return;
       const acc = accessors[key];
       if (!acc) return;
+      if (val.includes('|')) {
+        const vals = val.split('|').filter(Boolean).map(s => s.toLowerCase());
+        out = out.filter(r => {
+          const v = acc(r);
+          return v != null && vals.includes(String(v).toLowerCase());
+        });
+        return;
+      }
       const needle = val.toLowerCase();
       out = out.filter(r => {
         const v = acc(r);

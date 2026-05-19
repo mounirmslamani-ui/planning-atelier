@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { cn } from '@/lib/utils';
 
 export type SortDirection = 'asc' | 'desc' | null;
@@ -64,15 +64,33 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = ({
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Filtrer « {label} »</p>
             {filterMode === 'select' ? (
-              <Select value={filterValue || '__all__'} onValueChange={value => onFilter(columnKey, value === '__all__' ? '' : value)}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue placeholder="Toutes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Toutes</SelectItem>
-                  {filterOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              (() => {
+                const selected = filterValue ? filterValue.split('|').filter(Boolean) : [];
+                const allSelected = filterOptions.length > 0 && selected.length === filterOptions.length;
+                const toggleAll = () => {
+                  onFilter(columnKey, allSelected ? '' : filterOptions.join('|'));
+                };
+                const toggleOne = (option: string) => {
+                  const set = new Set(selected);
+                  if (set.has(option)) set.delete(option); else set.add(option);
+                  const next = filterOptions.filter(o => set.has(o));
+                  onFilter(columnKey, next.length === 0 ? '' : next.join('|'));
+                };
+                return (
+                  <div className="max-h-60 overflow-auto space-y-1">
+                    <label className="flex items-center gap-2 text-xs cursor-pointer py-1 border-b">
+                      <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-3.5 w-3.5" />
+                      <span className="font-medium">Tout sélectionner</span>
+                    </label>
+                    {filterOptions.map(option => (
+                      <label key={option} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                        <input type="checkbox" checked={selected.includes(option)} onChange={() => toggleOne(option)} className="h-3.5 w-3.5" />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                );
+              })()
             ) : (
               <Input
                 type={filterMode === 'date' ? 'date' : 'text'}
