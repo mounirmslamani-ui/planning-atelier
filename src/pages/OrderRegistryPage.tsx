@@ -133,6 +133,16 @@ const OrderRegistryPage: React.FC = () => {
 
   const { processed: displayed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(baseList, accessors);
 
+  const allValuesByKey = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    (Object.keys(accessors) as (keyof typeof accessors)[]).forEach(k => {
+      map[k as string] = [...new Set(baseList.map(o => {
+        const v = accessors[k](o); return v == null ? '' : String(v);
+      }).filter(Boolean))].sort();
+    });
+    return map;
+  }, [baseList, accessors]);
+
   const pushHistory = useCallback(() => {
     setHistory(h => [...h.slice(-49), realOrders]);
     setRedoStack([]);
@@ -462,22 +472,22 @@ const OrderRegistryPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} filterMode="select" filterOptions={clients.map(c => c.name)} /></TableHead>
-                    <TableHead className="text-xs" style={{ width: 200, minWidth: 200, maxWidth: 200 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} filterMode="select" filterOptions={['P1','P2','P3','P4','undetermined']} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} allValues={allValuesByKey.orderNumber} /></TableHead>
+                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} allValues={allValuesByKey.orderDate} /></TableHead>
+                    <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="الزبون" columnKey="clientName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientName || ''} onFilter={handleFilter} allValues={allValuesByKey.clientName} /></TableHead>
+                    <TableHead className="text-xs" style={{ width: 200, minWidth: 200, maxWidth: 200 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} allValues={allValuesByKey.observation} /></TableHead>
                     <TableHead className="text-xs">عمليات</TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="الحالة" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} filterMode="select" filterOptions={['قيد الانتظار','قيد الإنجاز','في انتظار مراقبة الجودة','في انتظار التسليم','في انتظار الفوترة','مفوترة','ملغاة']} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="qcDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.qcDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="تاريخ الفوترة" columnKey="invoiceDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceDate || ''} onFilter={handleFilter} filterMode="date" /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="الحالة" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} allValues={allValuesByKey.status} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} allValues={allValuesByKey.drawingModel} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="qcDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.qcDate || ''} onFilter={handleFilter} allValues={allValuesByKey.qcDate} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDate} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="تاريخ الفوترة" columnKey="invoiceDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceDate || ''} onFilter={handleFilter} allValues={allValuesByKey.invoiceDate} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} allValues={allValuesByKey.invoiceNumber} /></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
