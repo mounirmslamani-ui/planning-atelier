@@ -941,7 +941,7 @@ const OrdersPage: React.FC = () => {
                 <Checkbox checked={selectedIds.size === displayOrders.length && displayOrders.length > 0} onCheckedChange={toggleSelectAll} />
               </TableHead>
               <TableHead className="w-20 text-center text-xs px-1">
-                <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} />
+                <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} allValues={allValuesByKey.displayOrder} />
               </TableHead>
               {columns.map((col, ci) => (
                 <React.Fragment key={col.key}>
@@ -954,8 +954,7 @@ const OrdersPage: React.FC = () => {
                       onSort={handleSort}
                       filterValue={filters[col.key] || ''}
                       onFilter={handleFilter}
-                      filterMode={col.key === 'globalStatus' ? 'select' : 'text'}
-                      filterOptions={col.key === 'globalStatus' ? ['قيد الانتظار', 'قيد الإنجاز', 'جاهزة'] : []}
+                      allValues={allValuesByKey[col.key] || []}
                     />
                   </TableHead>
                   {ci === operationsInsertAfter && (
@@ -968,8 +967,7 @@ const OrdersPage: React.FC = () => {
                         onSort={() => {}}
                         filterValue={filters.planning || ''}
                         onFilter={handleFilter}
-                        filterMode="select"
-                        filterOptions={['غير محددة', 'محددة']}
+                        allValues={allValuesByKey.planning}
                       />
                     </TableHead>
                   )}
