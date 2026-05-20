@@ -843,7 +843,7 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(draft);
       }
     });
-    setOrderDirty(false);
+    setTimeout(() => setOrderDirty(false), 1500);
   }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
