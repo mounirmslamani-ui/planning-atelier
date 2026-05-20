@@ -35,12 +35,18 @@ const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
  * Sort tasks by displayOrder (الترتيب) while keeping frozen (cadenas) tasks
  * in their original row indexes. Non-frozen tasks fill the remaining slots
  * in ascending displayOrder; tasks without a displayOrder go to the end.
+ * If `orders` is provided, a task is also considered frozen when its order
+ * has a manualSortOrder defined.
  */
-function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number } }>(tasks: T[]): T[] {
+function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number; id: string } }>(
+  tasks: T[],
+  orders?: Array<{ id: string; manualSortOrder?: number }>,
+): T[] {
   const frozenSlots = new Map<number, T>();
   const movable: T[] = [];
   tasks.forEach((t, idx) => {
-    if (t.step.frozen) frozenSlots.set(idx, t);
+    const hasManualSort = orders?.find(o => o.id === t.order.id)?.manualSortOrder !== undefined;
+    if (t.step.frozen || hasManualSort) frozenSlots.set(idx, t);
     else movable.push(t);
   });
   movable.sort((a, b) => {
