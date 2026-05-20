@@ -646,7 +646,7 @@ const PlanningTableauPage: React.FC = () => {
       const reorderedStep: ProductionStep = {
         ...step,
         order: idx + 1,
-        frozen: step.id === targetStepId ? true : step.frozen,
+        frozen: step.frozen,
       };
 
       return { order, step: reorderedStep };
@@ -735,7 +735,7 @@ const PlanningTableauPage: React.FC = () => {
       if (manualSortOrder === undefined) return order;
       return {
         ...order,
-        frozenOrder: order.id === dragged.order.id ? true : order.frozenOrder,
+        frozenOrder: true,
         manualSortOrder,
       };
     });
