@@ -34,29 +34,40 @@ const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 /**
  * Sort tasks by displayOrder (الترتيب) while keeping frozen (cadenas) tasks
  * in their original row indexes. Non-frozen tasks fill the remaining slots
- * in ascending displayOrder; tasks without a displayOrder go to the end.
- * If `orders` is provided, a task is also considered frozen when its order
- * has a manualSortOrder defined.
+ * sorted by manualSortOrder first, then by displayOrder.
  */
-function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number; id: string } }>(
-  tasks: T[],
-  orders?: Array<{ id: string; manualSortOrder?: number }>,
-): T[] {
+function sortByDisplayOrderKeepingFrozen<T extends {
+  step: { frozen?: boolean; orderId?: string };
+  order: { id: string; displayOrder?: number; manualSortOrder?: number }
+}>(tasks: T[]): T[] {
+  // Séparer les étapes gelées (cadenas) des étapes libres
   const frozenSlots = new Map<number, T>();
   const movable: T[] = [];
   tasks.forEach((t, idx) => {
-    const hasManualSort = orders?.find(o => o.id === t.order.id)?.manualSortOrder !== undefined;
-    if (t.step.frozen || hasManualSort) frozenSlots.set(idx, t);
+    if (t.step.frozen) frozenSlots.set(idx, t);
     else movable.push(t);
   });
+
+  // Trier les étapes libres : manualSortOrder en priorité, sinon displayOrder
   movable.sort((a, b) => {
+    const ma = a.order.manualSortOrder;
+    const mb = b.order.manualSortOrder;
     const da = a.order.displayOrder ?? 0;
     const db = b.order.displayOrder ?? 0;
+
+    // Si les deux ont un ordre manuel → respecter l'ordre manuel
+    if (ma !== undefined && mb !== undefined) return ma - mb;
+    // Si seulement l'un a un ordre manuel → il passe en premier
+    if (ma !== undefined) return -1;
+    if (mb !== undefined) return 1;
+    // Sinon tri par displayOrder (Cn)
     if (da === 0 && db === 0) return 0;
-    if (da === 0) return 1; // unranked at the end
+    if (da === 0) return 1;
     if (db === 0) return -1;
     return da - db;
   });
+
+  // Replacer les étapes gelées à leurs positions fixes
   const result: T[] = new Array(tasks.length);
   frozenSlots.forEach((t, idx) => { result[idx] = t; });
   let cursor = 0;
