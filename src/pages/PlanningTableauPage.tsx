@@ -39,12 +39,15 @@ const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 function sortByDisplayOrderKeepingFrozen<T extends {
   step: { frozen?: boolean; orderId?: string };
   order: { id: string; displayOrder?: number; manualSortOrder?: number }
-}>(tasks: T[]): T[] {
+}>(tasks: T[], ordersOverride?: Array<{ id: string; manualSortOrder?: number }>): T[] {
   // Séparer les étapes gelées (cadenas) des étapes libres
   const frozenSlots = new Map<number, T>();
   const movable: T[] = [];
   tasks.forEach((t, idx) => {
-    if (t.step.frozen) frozenSlots.set(idx, t);
+    const overrideOrder = ordersOverride?.find(o => o.id === t.order.id);
+    const manualPos = overrideOrder?.manualSortOrder ?? t.order.manualSortOrder;
+    const isFrozen = t.step.frozen || (manualPos !== undefined && !t.step.frozen);
+    if (isFrozen) frozenSlots.set(idx, t);
     else movable.push(t);
   });
 
