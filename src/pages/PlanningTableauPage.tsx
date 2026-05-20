@@ -623,7 +623,7 @@ const PlanningTableauPage: React.FC = () => {
     // Frozen (cadenas) steps keep their current row index; non-frozen are sorted
     // by displayOrder and fill the remaining slots.
     Object.values(result).forEach(group => {
-      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks);
+      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks, draftOrders);
     });
 
     return Object.values(result)
