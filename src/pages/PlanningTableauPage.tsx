@@ -1417,7 +1417,8 @@ const PlanningTableauPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-14 px-1 text-center text-xs">
+                    <TableHead className="w-10 px-1 text-center text-xs">Pn</TableHead>
+                    <TableHead className="w-14 px-1 text-center text-xs text-muted-foreground/70">
                       <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.displayOrder} />
                     </TableHead>
                     <TableHead className="w-[95px] text-xs">
