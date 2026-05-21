@@ -40,7 +40,7 @@ const decisionColors: Record<QCDecision, string> = {
 
 const QualityControlPage: React.FC = () => {
   const {
-    qcEntries, updateQCEntry, orders, clients,
+    qcEntries, updateQCEntry, orders, clients, deliveredOrders,
     addDeliveryEntry, deleteQCEntry, deleteOrder, updateOrder,
     addStep, steps, holidays, operations, operators,
     productionRecords, absenceOperationId,
