@@ -845,31 +845,18 @@ const PlanningTableauPage: React.FC = () => {
   }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
 
-  // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
+  // ─── Valider : sauvegarde uniquement les dates (startDate/endDate) recalculées + statuts ───
+  // L'ordre d'affichage (Pn) est déjà persisté à chaque drag & drop, indépendamment.
   const handleValidate = useCallback(() => {
-    // Commit every draft step that differs from the context steps
     const contextMap = new Map(steps.map(s => [s.id, s]));
-    const contextOrderMap = new Map(orders.map(order => [order.id, order]));
-
-    draftOrders.forEach(draftOrder => {
-      const originalOrder = contextOrderMap.get(draftOrder.id);
-      if (!originalOrder ||
-        draftOrder.frozenOrder !== originalOrder.frozenOrder ||
-        draftOrder.manualSortOrder !== originalOrder.manualSortOrder
-      ) {
-        updateOrder(draftOrder);
-      }
-    });
 
     draftSteps.forEach(draft => {
       const original = contextMap.get(draft.id);
       if (!original ||
-        draft.order !== original.order ||
         draft.startDate !== original.startDate ||
         draft.startTime !== original.startTime ||
         draft.endDate !== original.endDate ||
         draft.endTime !== original.endTime ||
-        draft.frozen !== original.frozen ||
         draft.studyStatus !== original.studyStatus ||
         draft.studyReady !== original.studyReady ||
         draft.studyDeadline !== original.studyDeadline ||
@@ -886,7 +873,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
     setOrderDirty(false);
-  }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
+  }, [draftSteps, steps, updateStep]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
