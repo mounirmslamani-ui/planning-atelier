@@ -37,40 +37,40 @@ const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
  * sorted by manualSortOrder first, then by displayOrder.
  */
 function sortByDisplayOrderKeepingFrozen<T extends {
-  step: { frozen?: boolean; orderId?: string };
+  step: { frozen?: boolean };
   order: { id: string; displayOrder?: number; manualSortOrder?: number }
-}>(tasks: T[], ordersOverride?: Array<{ id: string; manualSortOrder?: number }>): T[] {
-  // Séparer les étapes gelées (cadenas) des étapes libres
-  const frozenSlots = new Map<number, T>();
-  const movable: T[] = [];
-  tasks.forEach((t, idx) => {
-    const overrideOrder = ordersOverride?.find(o => o.id === t.order.id);
-    const manualPos = overrideOrder?.manualSortOrder ?? t.order.manualSortOrder;
-    const isFrozen = t.step.frozen || (manualPos !== undefined && !t.step.frozen);
-    if (isFrozen) frozenSlots.set(idx, t);
-    else movable.push(t);
+}>(tasks: T[]): T[] {
+  const frozen: T[] = [];
+  const free: T[] = [];
+  tasks.forEach(t => {
+    if (t.step.frozen) frozen.push(t);
+    else free.push(t);
   });
 
-  // Trier les étapes libres : manualSortOrder en priorité, sinon displayOrder
-  movable.sort((a, b) => {
+  free.sort((a, b) => {
     const ma = a.order.manualSortOrder;
     const mb = b.order.manualSortOrder;
     const da = a.order.displayOrder ?? 0;
     const db = b.order.displayOrder ?? 0;
-
-    // Si les deux ont un ordre manuel → respecter l'ordre manuel
     if (ma !== undefined && mb !== undefined) return ma - mb;
-    // Si seulement l'un a un ordre manuel → il passe en premier
-    if (ma !== undefined) return -1;
-    if (mb !== undefined) return 1;
-    // Sinon tri par displayOrder (Cn)
+    if (ma !== undefined && mb === undefined) return -1;
+    if (ma === undefined && mb !== undefined) return 1;
     if (da === 0 && db === 0) return 0;
     if (da === 0) return 1;
     if (db === 0) return -1;
     return da - db;
   });
 
-  // Replacer les étapes gelées à leurs positions fixes
+  const result: T[] = new Array(tasks.length);
+  tasks.forEach((t, idx) => {
+    if (t.step.frozen) result[idx] = t;
+  });
+  let cursor = 0;
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === undefined) result[i] = free[cursor++];
+  }
+  return result;
+}
   const result: T[] = new Array(tasks.length);
   frozenSlots.forEach((t, idx) => { result[idx] = t; });
   let cursor = 0;
@@ -508,12 +508,18 @@ const PlanningTableauPage: React.FC = () => {
     }
 
     if (!orderDirty) {
-      setDraftOrders(orders);
-      setDraftSteps(syncedDraftSteps);
-      setForcedPhaseAmontWarnings({});
-      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
-      setOrderDirty(false);
-    }
+  const mergedOrders = orders.map(o => {
+    const existing = draftOrders.find(d => d.id === o.id);
+    return existing?.manualSortOrder !== undefined
+      ? { ...o, manualSortOrder: existing.manualSortOrder }
+      : o;
+  });
+  setDraftOrders(mergedOrders);
+  setDraftSteps(syncedDraftSteps);
+  setForcedPhaseAmontWarnings({});
+  history.reset(createPlanningSnapshot(syncedDraftSteps, mergedOrders, {}, false));
+  setOrderDirty(false);
+}
   }, [steps, orders, orderDirty, history]);
 
   const handleUndo = useCallback(() => {
@@ -846,7 +852,7 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(draft);
       }
     });
-    setTimeout(() => setOrderDirty(false), 1500);
+setOrderDirty(false);
   }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
