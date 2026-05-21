@@ -1497,11 +1497,13 @@ const PlanningTableauPage: React.FC = () => {
                         className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
                       >
                         <TableCell className="text-center px-1">
+                          <span className="text-xs font-semibold">{index + 1}</span>
+                        </TableCell>
+                        <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
-                            {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
-                            {step.frozen && <YellowLockIcon className="h-5 w-5" />}
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {orderWarning ? <WarningTriangleIcon /> : order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
+                            {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />}
+                            <span className="text-xs text-muted-foreground/60">
+                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : '—'}
                             </span>
                           </div>
                         </TableCell>
