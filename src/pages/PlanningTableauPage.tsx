@@ -71,16 +71,7 @@ function sortByDisplayOrderKeepingFrozen<T extends {
   }
   return result;
 }
-  const result: T[] = new Array(tasks.length);
-  frozenSlots.forEach((t, idx) => { result[idx] = t; });
-  let cursor = 0;
-  for (let i = 0; i < result.length; i++) {
-    if (result[i] === undefined) {
-      result[i] = movable[cursor++];
-    }
-  }
-  return result;
-}
+
 
 function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
