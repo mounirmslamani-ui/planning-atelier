@@ -419,6 +419,8 @@ const PlanningTableauPage: React.FC = () => {
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
   const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
+  // Pn per step: position dans le planning propre à chaque opérateur (persisté en DB)
+  const [planningOrderMap, setPlanningOrderMap] = useState<Record<string, number>>({});
 
   // Column filters for the operator tables
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
