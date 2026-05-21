@@ -484,6 +484,7 @@ export type Database = {
           operation_id: string
           operator_id: string | null
           order_id: string
+          planning_order: number | null
           raw_material_needs: string[]
           special_tooling_needs: string[]
           start_date: string | null
@@ -516,6 +517,7 @@ export type Database = {
           operation_id: string
           operator_id?: string | null
           order_id: string
+          planning_order?: number | null
           raw_material_needs?: string[]
           special_tooling_needs?: string[]
           start_date?: string | null
@@ -548,6 +550,7 @@ export type Database = {
           operation_id?: string
           operator_id?: string | null
           order_id?: string
+          planning_order?: number | null
           raw_material_needs?: string[]
           special_tooling_needs?: string[]
           start_date?: string | null

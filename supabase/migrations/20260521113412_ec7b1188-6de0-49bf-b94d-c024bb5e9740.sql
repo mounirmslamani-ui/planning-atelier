@@ -1,0 +1,1 @@
+ALTER TABLE public.production_steps ADD COLUMN planning_order integer;
