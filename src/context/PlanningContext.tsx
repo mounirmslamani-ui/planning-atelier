@@ -254,6 +254,14 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
+        // Nettoyer les qcEntries des commandes déjà livrées
+        const deliveredOrderIds = new Set(data.deliveredOrders.map(d => d.orderId));
+        const staleQcEntries = data.qcEntries.filter(e => deliveredOrderIds.has(e.orderId));
+        if (staleQcEntries.length > 0) {
+          console.warn(`[Cleanup] Suppression de ${staleQcEntries.length} qcEntries obsolètes`);
+          staleQcEntries.forEach(e => dbDeleteQCEntry(e.id));
+          data.qcEntries = data.qcEntries.filter(e => !deliveredOrderIds.has(e.orderId));
+        }
         setQCEntries(data.qcEntries);
         // Dedupe delivery entries by orderId — keep most recent
         const dedupedDelivery = (() => {
