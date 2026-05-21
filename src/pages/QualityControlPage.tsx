@@ -126,7 +126,10 @@ const QualityControlPage: React.FC = () => {
     controlDate: (e: QualityControlEntry) => e.controlDate,
     decision: (e: QualityControlEntry) => e.decision ? decisionLabels[e.decision] : '',
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(qcEntries, accessors);
+  const activeQcEntries = qcEntries.filter(entry =>
+    !deliveredOrders.some(d => d.orderId === entry.orderId)
+  );
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(activeQcEntries, accessors);
 
   const allValuesByKey = React.useMemo(() => {
     const map: Record<string, string[]> = {};
