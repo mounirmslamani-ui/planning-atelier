@@ -629,11 +629,21 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Default order = الترتيب (displayOrder) from الطلبيات الجارية.
-    // Frozen (cadenas) steps keep their current row index; non-frozen are sorted
-    // by displayOrder and fill the remaining slots.
+    // Tri par planning_order (Pn) si défini, sinon par displayOrder (Cn).
     Object.values(result).forEach(group => {
-      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks);
+      group.tasks.sort((a, b) => {
+        const pa = planningOrderMap[a.step.id];
+        const pb = planningOrderMap[b.step.id];
+        if (pa != null && pb != null) return pa - pb;
+        if (pa != null) return -1;
+        if (pb != null) return 1;
+        const da = a.order.displayOrder ?? 0;
+        const db = b.order.displayOrder ?? 0;
+        if (da === 0 && db === 0) return 0;
+        if (da === 0) return 1;
+        if (db === 0) return -1;
+        return da - db;
+      });
     });
 
     return Object.values(result)
@@ -643,7 +653,35 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
+  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords, planningOrderMap]);
+
+  // ─── Recalcul automatique des Pn pour combler les trous quand une étape disparaît ───
+  useEffect(() => {
+    const updates: Record<string, number> = {};
+    operatorTasks.forEach(group => {
+      const taskIds = group.tasks.map(t => t.step.id);
+      const knownPns = taskIds
+        .map(id => planningOrderMap[id])
+        .filter((v): v is number => v != null)
+        .sort((a, b) => a - b);
+      // Détecte trou : si max != length OU des étapes ont un Pn mais pas séquentiel
+      const hasGap = knownPns.length > 0 && (
+        knownPns[knownPns.length - 1] !== knownPns.length ||
+        knownPns.some((v, i) => v !== i + 1)
+      );
+      if (!hasGap) return;
+      group.tasks.forEach((t, idx) => {
+        const desired = idx + 1;
+        if (planningOrderMap[t.step.id] !== desired) {
+          updates[t.step.id] = desired;
+        }
+      });
+    });
+    if (Object.keys(updates).length > 0) {
+      persistPlanningOrders(updates);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [operatorTasks]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((
