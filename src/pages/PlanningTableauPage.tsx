@@ -34,44 +34,33 @@ const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 /**
  * Sort tasks by displayOrder (الترتيب) while keeping frozen (cadenas) tasks
  * in their original row indexes. Non-frozen tasks fill the remaining slots
- * sorted by manualSortOrder first, then by displayOrder.
+ * in ascending displayOrder; tasks without a displayOrder go to the end.
  */
-function sortByDisplayOrderKeepingFrozen<T extends {
-  step: { frozen?: boolean };
-  order: { id: string; displayOrder?: number; manualSortOrder?: number }
-}>(tasks: T[]): T[] {
-  const frozen: T[] = [];
-  const free: T[] = [];
-  tasks.forEach(t => {
-    if (t.step.frozen) frozen.push(t);
-    else free.push(t);
+function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number } }>(tasks: T[]): T[] {
+  const frozenSlots = new Map<number, T>();
+  const movable: T[] = [];
+  tasks.forEach((t, idx) => {
+    if (t.step.frozen) frozenSlots.set(idx, t);
+    else movable.push(t);
   });
-
-  free.sort((a, b) => {
-    const ma = a.order.manualSortOrder;
-    const mb = b.order.manualSortOrder;
+  movable.sort((a, b) => {
     const da = a.order.displayOrder ?? 0;
     const db = b.order.displayOrder ?? 0;
-    if (ma !== undefined && mb !== undefined) return ma - mb;
-    if (ma !== undefined && mb === undefined) return -1;
-    if (ma === undefined && mb !== undefined) return 1;
     if (da === 0 && db === 0) return 0;
-    if (da === 0) return 1;
+    if (da === 0) return 1; // unranked at the end
     if (db === 0) return -1;
     return da - db;
   });
-
   const result: T[] = new Array(tasks.length);
-  tasks.forEach((t, idx) => {
-    if (t.step.frozen) result[idx] = t;
-  });
+  frozenSlots.forEach((t, idx) => { result[idx] = t; });
   let cursor = 0;
   for (let i = 0; i < result.length; i++) {
-    if (result[i] === undefined) result[i] = free[cursor++];
+    if (result[i] === undefined) {
+      result[i] = movable[cursor++];
+    }
   }
   return result;
 }
-
 
 function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
@@ -499,18 +488,12 @@ const PlanningTableauPage: React.FC = () => {
     }
 
     if (!orderDirty) {
-  const mergedOrders = orders.map(o => {
-    const existing = draftOrders.find(d => d.id === o.id);
-    return existing?.manualSortOrder !== undefined
-      ? { ...o, manualSortOrder: existing.manualSortOrder }
-      : o;
-  });
-  setDraftOrders(mergedOrders);
-  setDraftSteps(syncedDraftSteps);
-  setForcedPhaseAmontWarnings({});
-  history.reset(createPlanningSnapshot(syncedDraftSteps, mergedOrders, {}, false));
-  setOrderDirty(false);
-}
+      setDraftOrders(orders);
+      setDraftSteps(syncedDraftSteps);
+      setForcedPhaseAmontWarnings({});
+      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
+      setOrderDirty(false);
+    }
   }, [steps, orders, orderDirty, history]);
 
   const handleUndo = useCallback(() => {
@@ -620,7 +603,7 @@ const PlanningTableauPage: React.FC = () => {
     // Frozen (cadenas) steps keep their current row index; non-frozen are sorted
     // by displayOrder and fill the remaining slots.
     Object.values(result).forEach(group => {
-      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks, draftOrders);
+      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks);
     });
 
     return Object.values(result)
@@ -643,7 +626,7 @@ const PlanningTableauPage: React.FC = () => {
       const reorderedStep: ProductionStep = {
         ...step,
         order: idx + 1,
-        frozen: step.frozen,
+        frozen: step.id === targetStepId ? true : step.frozen,
       };
 
       return { order, step: reorderedStep };
@@ -732,7 +715,7 @@ const PlanningTableauPage: React.FC = () => {
       if (manualSortOrder === undefined) return order;
       return {
         ...order,
-        frozenOrder: true,
+        frozenOrder: order.id === dragged.order.id ? true : order.frozenOrder,
         manualSortOrder,
       };
     });
@@ -843,7 +826,7 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(draft);
       }
     });
-setOrderDirty(false);
+    setOrderDirty(false);
   }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
