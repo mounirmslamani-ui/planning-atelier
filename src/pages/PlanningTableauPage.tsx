@@ -777,24 +777,16 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    const manualPositions = new Map(items.map((item, index) => [item.order.id, index + 1]));
-    const nextDraftOrders = draftOrders.map(order => {
-      const manualSortOrder = manualPositions.get(order.id);
-      if (manualSortOrder === undefined) return order;
-      return {
-        ...order,
-        frozenOrder: order.id === dragged.order.id ? true : order.frozenOrder,
-        manualSortOrder,
-      };
-    });
+    // Recalcule et persiste immédiatement le planning_order (Pn) pour cet opérateur.
+    const updates: Record<string, number> = {};
+    items.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
 
-    setDraftOrders(nextDraftOrders);
-
-    applyReorder(items, dragged.step.id, nextDraftOrders);
+    applyReorder(items, dragged.step.id);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, applyReorder, draftOrders]);
+  }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
