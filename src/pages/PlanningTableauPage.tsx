@@ -823,27 +823,26 @@ const PlanningTableauPage: React.FC = () => {
     setPendingDrop(null);
   }, []);
 
-  // ─── Auto-sort ───
+  // ─── Auto-sort : réinitialise les Pn selon le Cn (displayOrder) ───
   const handleAutoSort = useCallback((operatorId: string) => {
     const group = operatorTasks.find(g => g.operator.id === operatorId);
     if (!group || group.tasks.length === 0) return;
 
-    // Sort by الترتيب (displayOrder) coming from الطلبيات الجارية.
-    // Frozen (cadenas) steps keep their current row index.
-    const sorted = sortByDisplayOrderKeepingFrozen(group.tasks);
-
-    // Clear manualSortOrder for non-frozen so the displayOrder sort takes effect
-    // on subsequent re-renders (frozen orders keep their manual position).
-    const nextDraftOrders = draftOrders.map(order => {
-      const isFrozenStep = sorted.some(t => t.order.id === order.id && t.step.frozen);
-      if (isFrozenStep) return order;
-      if (order.manualSortOrder === undefined) return order;
-      return { ...order, manualSortOrder: undefined };
+    const sorted = [...group.tasks].sort((a, b) => {
+      const da = a.order.displayOrder ?? 0;
+      const db = b.order.displayOrder ?? 0;
+      if (da === 0 && db === 0) return 0;
+      if (da === 0) return 1;
+      if (db === 0) return -1;
+      return da - db;
     });
-    setDraftOrders(nextDraftOrders);
 
-    applyReorder(sorted, undefined, nextDraftOrders);
-  }, [operatorTasks, applyReorder, draftOrders]);
+    const updates: Record<string, number> = {};
+    sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
+
+    applyReorder(sorted, undefined);
+  }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
 
   // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
