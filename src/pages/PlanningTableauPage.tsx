@@ -499,6 +499,33 @@ const PlanningTableauPage: React.FC = () => {
     }
   }, [steps, orders, orderDirty, history]);
 
+  // ─── Pn (planning_order) : chargement depuis la base à chaque changement de steps ───
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('production_steps')
+        .select('id, planning_order');
+      if (cancelled || error || !data) return;
+      const map: Record<string, number> = {};
+      data.forEach((row: { id: string; planning_order: number | null }) => {
+        if (row.planning_order != null) map[row.id] = row.planning_order;
+      });
+      setPlanningOrderMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [steps]);
+
+  /** Persist a batch of {stepId -> planning_order} updates to DB and local map. */
+  const persistPlanningOrders = useCallback(async (updates: Record<string, number>) => {
+    setPlanningOrderMap(prev => ({ ...prev, ...updates }));
+    await Promise.all(
+      Object.entries(updates).map(([id, planning_order]) =>
+        supabase.from('production_steps').update({ planning_order }).eq('id', id)
+      )
+    );
+  }, []);
+
   const handleUndo = useCallback(() => {
     const previous = history.undo();
     if (!previous) return;
