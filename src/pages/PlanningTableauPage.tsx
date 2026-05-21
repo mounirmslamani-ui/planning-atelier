@@ -24,6 +24,7 @@ import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
+import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 
@@ -31,36 +32,6 @@ const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد ال�
 
 const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
-/**
- * Sort tasks by displayOrder (الترتيب) while keeping frozen (cadenas) tasks
- * in their original row indexes. Non-frozen tasks fill the remaining slots
- * in ascending displayOrder; tasks without a displayOrder go to the end.
- */
-function sortByDisplayOrderKeepingFrozen<T extends { step: { frozen?: boolean }; order: { displayOrder?: number } }>(tasks: T[]): T[] {
-  const frozenSlots = new Map<number, T>();
-  const movable: T[] = [];
-  tasks.forEach((t, idx) => {
-    if (t.step.frozen) frozenSlots.set(idx, t);
-    else movable.push(t);
-  });
-  movable.sort((a, b) => {
-    const da = a.order.displayOrder ?? 0;
-    const db = b.order.displayOrder ?? 0;
-    if (da === 0 && db === 0) return 0;
-    if (da === 0) return 1; // unranked at the end
-    if (db === 0) return -1;
-    return da - db;
-  });
-  const result: T[] = new Array(tasks.length);
-  frozenSlots.forEach((t, idx) => { result[idx] = t; });
-  let cursor = 0;
-  for (let i = 0; i < result.length; i++) {
-    if (result[i] === undefined) {
-      result[i] = movable[cursor++];
-    }
-  }
-  return result;
-}
 
 function getDesignationBg(priority?: string): string {
   if (priority === 'P1') return 'bg-[hsl(0,72%,51%)]/10';
@@ -418,6 +389,8 @@ const PlanningTableauPage: React.FC = () => {
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
   const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
+  // Pn per step: position dans le planning propre à chaque opérateur (persisté en DB)
+  const [planningOrderMap, setPlanningOrderMap] = useState<Record<string, number>>({});
 
   // Column filters for the operator tables
   const [colFilters, setColFilters] = useState<Record<string, string>>({});
@@ -495,6 +468,33 @@ const PlanningTableauPage: React.FC = () => {
       setOrderDirty(false);
     }
   }, [steps, orders, orderDirty, history]);
+
+  // ─── Pn (planning_order) : chargement depuis la base à chaque changement de steps ───
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('production_steps')
+        .select('id, planning_order');
+      if (cancelled || error || !data) return;
+      const map: Record<string, number> = {};
+      data.forEach((row: { id: string; planning_order: number | null }) => {
+        if (row.planning_order != null) map[row.id] = row.planning_order;
+      });
+      setPlanningOrderMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [steps]);
+
+  /** Persist a batch of {stepId -> planning_order} updates to DB and local map. */
+  const persistPlanningOrders = useCallback(async (updates: Record<string, number>) => {
+    setPlanningOrderMap(prev => ({ ...prev, ...updates }));
+    await Promise.all(
+      Object.entries(updates).map(([id, planning_order]) =>
+        supabase.from('production_steps').update({ planning_order }).eq('id', id)
+      )
+    );
+  }, []);
 
   const handleUndo = useCallback(() => {
     const previous = history.undo();
@@ -599,11 +599,21 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
 
-    // Default order = الترتيب (displayOrder) from الطلبيات الجارية.
-    // Frozen (cadenas) steps keep their current row index; non-frozen are sorted
-    // by displayOrder and fill the remaining slots.
+    // Tri par planning_order (Pn) si défini, sinon par displayOrder (Cn).
     Object.values(result).forEach(group => {
-      group.tasks = sortByDisplayOrderKeepingFrozen(group.tasks);
+      group.tasks.sort((a, b) => {
+        const pa = planningOrderMap[a.step.id];
+        const pb = planningOrderMap[b.step.id];
+        if (pa != null && pb != null) return pa - pb;
+        if (pa != null) return -1;
+        if (pb != null) return 1;
+        const da = a.order.displayOrder ?? 0;
+        const db = b.order.displayOrder ?? 0;
+        if (da === 0 && db === 0) return 0;
+        if (da === 0) return 1;
+        if (db === 0) return -1;
+        return da - db;
+      });
     });
 
     return Object.values(result)
@@ -613,7 +623,35 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
+  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords, planningOrderMap]);
+
+  // ─── Recalcul automatique des Pn pour combler les trous quand une étape disparaît ───
+  useEffect(() => {
+    const updates: Record<string, number> = {};
+    operatorTasks.forEach(group => {
+      const taskIds = group.tasks.map(t => t.step.id);
+      const knownPns = taskIds
+        .map(id => planningOrderMap[id])
+        .filter((v): v is number => v != null)
+        .sort((a, b) => a - b);
+      // Détecte trou : si max != length OU des étapes ont un Pn mais pas séquentiel
+      const hasGap = knownPns.length > 0 && (
+        knownPns[knownPns.length - 1] !== knownPns.length ||
+        knownPns.some((v, i) => v !== i + 1)
+      );
+      if (!hasGap) return;
+      group.tasks.forEach((t, idx) => {
+        const desired = idx + 1;
+        if (planningOrderMap[t.step.id] !== desired) {
+          updates[t.step.id] = desired;
+        }
+      });
+    });
+    if (Object.keys(updates).length > 0) {
+      persistPlanningOrders(updates);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [operatorTasks]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((
@@ -709,24 +747,16 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    const manualPositions = new Map(items.map((item, index) => [item.order.id, index + 1]));
-    const nextDraftOrders = draftOrders.map(order => {
-      const manualSortOrder = manualPositions.get(order.id);
-      if (manualSortOrder === undefined) return order;
-      return {
-        ...order,
-        frozenOrder: order.id === dragged.order.id ? true : order.frozenOrder,
-        manualSortOrder,
-      };
-    });
+    // Recalcule et persiste immédiatement le planning_order (Pn) pour cet opérateur.
+    const updates: Record<string, number> = {};
+    items.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
 
-    setDraftOrders(nextDraftOrders);
-
-    applyReorder(items, dragged.step.id, nextDraftOrders);
+    applyReorder(items, dragged.step.id);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, applyReorder, draftOrders]);
+  }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -763,54 +793,40 @@ const PlanningTableauPage: React.FC = () => {
     setPendingDrop(null);
   }, []);
 
-  // ─── Auto-sort ───
+  // ─── Auto-sort : réinitialise les Pn selon le Cn (displayOrder) ───
   const handleAutoSort = useCallback((operatorId: string) => {
     const group = operatorTasks.find(g => g.operator.id === operatorId);
     if (!group || group.tasks.length === 0) return;
 
-    // Sort by الترتيب (displayOrder) coming from الطلبيات الجارية.
-    // Frozen (cadenas) steps keep their current row index.
-    const sorted = sortByDisplayOrderKeepingFrozen(group.tasks);
-
-    // Clear manualSortOrder for non-frozen so the displayOrder sort takes effect
-    // on subsequent re-renders (frozen orders keep their manual position).
-    const nextDraftOrders = draftOrders.map(order => {
-      const isFrozenStep = sorted.some(t => t.order.id === order.id && t.step.frozen);
-      if (isFrozenStep) return order;
-      if (order.manualSortOrder === undefined) return order;
-      return { ...order, manualSortOrder: undefined };
+    const sorted = [...group.tasks].sort((a, b) => {
+      const da = a.order.displayOrder ?? 0;
+      const db = b.order.displayOrder ?? 0;
+      if (da === 0 && db === 0) return 0;
+      if (da === 0) return 1;
+      if (db === 0) return -1;
+      return da - db;
     });
-    setDraftOrders(nextDraftOrders);
 
-    applyReorder(sorted, undefined, nextDraftOrders);
-  }, [operatorTasks, applyReorder, draftOrders]);
+    const updates: Record<string, number> = {};
+    sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
+
+    applyReorder(sorted, undefined);
+  }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
 
-  // ─── Validate: commit ALL draftSteps to DB via updateStep, then mark clean ───
+  // ─── Valider : sauvegarde uniquement les dates (startDate/endDate) recalculées + statuts ───
+  // L'ordre d'affichage (Pn) est déjà persisté à chaque drag & drop, indépendamment.
   const handleValidate = useCallback(() => {
-    // Commit every draft step that differs from the context steps
     const contextMap = new Map(steps.map(s => [s.id, s]));
-    const contextOrderMap = new Map(orders.map(order => [order.id, order]));
-
-    draftOrders.forEach(draftOrder => {
-      const originalOrder = contextOrderMap.get(draftOrder.id);
-      if (!originalOrder ||
-        draftOrder.frozenOrder !== originalOrder.frozenOrder ||
-        draftOrder.manualSortOrder !== originalOrder.manualSortOrder
-      ) {
-        updateOrder(draftOrder);
-      }
-    });
 
     draftSteps.forEach(draft => {
       const original = contextMap.get(draft.id);
       if (!original ||
-        draft.order !== original.order ||
         draft.startDate !== original.startDate ||
         draft.startTime !== original.startTime ||
         draft.endDate !== original.endDate ||
         draft.endTime !== original.endTime ||
-        draft.frozen !== original.frozen ||
         draft.studyStatus !== original.studyStatus ||
         draft.studyReady !== original.studyReady ||
         draft.studyDeadline !== original.studyDeadline ||
@@ -827,7 +843,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
     setOrderDirty(false);
-  }, [draftSteps, draftOrders, steps, orders, updateStep, updateOrder]);
+  }, [draftSteps, steps, updateStep]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
@@ -1371,7 +1387,8 @@ const PlanningTableauPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-14 px-1 text-center text-xs">
+                    <TableHead className="w-10 px-1 text-center text-xs">Pn</TableHead>
+                    <TableHead className="w-14 px-1 text-center text-xs text-muted-foreground/70">
                       <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.displayOrder} />
                     </TableHead>
                     <TableHead className="w-[95px] text-xs">
@@ -1450,11 +1467,13 @@ const PlanningTableauPage: React.FC = () => {
                         className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
                       >
                         <TableCell className="text-center px-1">
+                          <span className="text-xs font-semibold">{index + 1}</span>
+                        </TableCell>
+                        <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
-                            {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground cursor-grab" />}
-                            {step.frozen && <YellowLockIcon className="h-5 w-5" />}
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {orderWarning ? <WarningTriangleIcon /> : order.displayOrder && order.displayOrder > 0 ? order.displayOrder : <WarningTriangleIcon />}
+                            {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />}
+                            <span className="text-xs text-muted-foreground/60">
+                              {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : '—'}
                             </span>
                           </div>
                         </TableCell>
