@@ -859,14 +859,14 @@ const OrdersPage: React.FC = () => {
   const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(orders), [orders]);
 
   const categoryCounts = useMemo(() => {
-    const real = orders.filter(o => o.id !== absenceOrderId);
+    const real = displayOrders.filter(o => o.id !== absenceOrderId);
     return {
       F: real.filter(o => /^\d+\s*\/\s*F\d+/i.test(o.orderNumber || '')).length,
       P: real.filter(o => /^\d+\s*\/\s*P\d+/i.test(o.orderNumber || '')).length,
       S: real.filter(o => /^\d+\s*\/\s*S\d+/i.test(o.orderNumber || '')).length,
       N: real.filter(o => /^\d+\s*\/\s*\d+\b/.test(o.orderNumber || '') && !/^\d+\s*\/\s*[FPS]\d+/i.test(o.orderNumber || '')).length,
     };
-  }, [orders, absenceOrderId]);
+  }, [displayOrders, absenceOrderId]);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
