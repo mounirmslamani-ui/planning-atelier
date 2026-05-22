@@ -1413,17 +1413,17 @@ const PlanningTableauPage: React.FC = () => {
                     <TableHead className="w-[70px] text-xs text-center">
                       <ColumnHeader label="الأولوية" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.priority} />
                     </TableHead>
-                    <TableHead className="w-[105px] text-xs">
-                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
-                    </TableHead>
                     <TableHead className="w-[80px] text-xs">أجل التسليم</TableHead>
-                    <TableHead className="w-[105px] text-xs">
-                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.status} />
-                    </TableHead>
                     <TableHead className="w-[120px] text-xs">
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
                     </TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">ملاحظات</TableHead>
+                    <TableHead className="w-[105px] text-xs">
+                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
+                    </TableHead>
+                    <TableHead className="w-[105px] text-xs">
+                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.status} />
+                    </TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="دراسة">دراسة</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="مواد أولية">مواد</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="أداة">عدة</TableHead>
@@ -1524,16 +1524,8 @@ const PlanningTableauPage: React.FC = () => {
                         <TableCell className="py-1.5 px-2 text-center preserve-status-color">
                           <PriorityBadge priority={order.priority} />
                         </TableCell>
-                        <TableCell className="py-1.5 px-2 preserve-status-color">
-                          <span className="inline-flex items-center justify-center rounded-full border border-muted-foreground/30 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                            {getOrderGlobalStatus(order.id, draftSteps, productionRecords, absenceOperationId)}
-                          </span>
-                        </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <div className="flex items-center gap-1">
@@ -1589,6 +1581,14 @@ const PlanningTableauPage: React.FC = () => {
                               {order.observation || '—'}
                             </span>
                           )}
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 preserve-status-color">
+                          <span className="inline-flex items-center justify-center rounded-full border border-muted-foreground/30 bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
+                            {getOrderGlobalStatus(order.id, draftSteps, productionRecords, absenceOperationId)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>

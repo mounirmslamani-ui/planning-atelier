@@ -355,22 +355,6 @@ const ProductionRegisterPage: React.FC = () => {
             <Table className="text-xs">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-24">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        تاريخ الأشغال <SortIcon field="date" />
-                      </button>
-                      <FilterPopover
-                        items={availableMonths.map(k => ({ value: k, label: formatMonthLabel(k) }))}
-                        selected={filterMonths}
-                        onToggle={(v) => setFilterMonths(toggleSetItem(filterMonths, v))}
-                        onClear={() => setFilterMonths(new Set())}
-                      />
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-16 text-center">ساعة البداية</TableHead>
-                  <TableHead className="w-16 text-center">ساعة النهاية</TableHead>
-                  <TableHead className="w-16 text-center">الوقت المستقطع</TableHead>
                   <TableHead className="w-20">
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleSort('orderNumber')} className="flex items-center gap-1 hover:text-foreground transition-colors">
@@ -420,6 +404,22 @@ const ProductionRegisterPage: React.FC = () => {
                       />
                     </div>
                   </TableHead>
+                  <TableHead className="w-24">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                        تاريخ الأشغال <SortIcon field="date" />
+                      </button>
+                      <FilterPopover
+                        items={availableMonths.map(k => ({ value: k, label: formatMonthLabel(k) }))}
+                        selected={filterMonths}
+                        onToggle={(v) => setFilterMonths(toggleSetItem(filterMonths, v))}
+                        onClear={() => setFilterMonths(new Set())}
+                      />
+                    </div>
+                  </TableHead>
+                  <TableHead className="w-16 text-center">ساعة البداية</TableHead>
+                  <TableHead className="w-16 text-center">ساعة النهاية</TableHead>
+                  <TableHead className="w-16 text-center">الوقت المستقطع</TableHead>
                   <TableHead className="w-20 text-right">
                     <button onClick={() => toggleSort('duration')} className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors">
                       المدة الفعلية <SortIcon field="duration" />
@@ -433,17 +433,17 @@ const ProductionRegisterPage: React.FC = () => {
                   const info = getRecordInfo(rec);
                   return (
                     <TableRow key={rec.id}>
+                      <TableCell className="font-medium"><OrderNumberLink orderId={rec.orderId} orderNumber={info.orderNumber} /></TableCell>
+                      <TableCell>{info.clientName}</TableCell>
+                      <TableCell>{info.designation}</TableCell>
+                      <TableCell className="text-center">{info.quantity ?? '—'}</TableCell>
+                      <TableCell>{info.operationName}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {recordDisplayDate(rec).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </TableCell>
                       <TableCell className="text-center font-mono">{rec.startTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
-                      <TableCell className="font-medium"><OrderNumberLink orderId={rec.orderId} orderNumber={info.orderNumber} /></TableCell>
-                      <TableCell>{info.clientName}</TableCell>
-                      <TableCell>{info.designation}</TableCell>
-                      <TableCell className="text-center">{info.quantity ?? '—'}</TableCell>
-                      <TableCell>{info.operationName}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
