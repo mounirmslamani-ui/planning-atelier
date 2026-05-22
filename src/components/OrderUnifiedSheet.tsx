@@ -328,7 +328,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                           <th className="text-right p-2">المدة المقدرة</th>
                           <th className="text-right p-2">البداية</th>
                           <th className="text-right p-2">النهاية</th>
-                          <th className="text-right p-2">الحالة</th>
+                          <th className="text-right p-2">متابعة تقدم إنجاز الطلبية</th>
                         </tr>
                       </thead>
                       <tbody>

@@ -1414,11 +1414,11 @@ const PlanningTableauPage: React.FC = () => {
                       <ColumnHeader label="الأولوية" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.priority} />
                     </TableHead>
                     <TableHead className="w-[105px] text-xs">
-                      <ColumnHeader label="متابعة تقدّم الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
+                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
                     </TableHead>
                     <TableHead className="w-[80px] text-xs">أجل التسليم</TableHead>
                     <TableHead className="w-[105px] text-xs">
-                      <ColumnHeader label="متابعة تقدّم الطلبية" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.status} />
+                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['status'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.status} />
                     </TableHead>
                     <TableHead className="w-[120px] text-xs">
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
