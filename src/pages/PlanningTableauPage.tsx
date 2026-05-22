@@ -693,9 +693,10 @@ const PlanningTableauPage: React.FC = () => {
 
     const currentStepsById = new Map(draftSteps.map(step => [step.id, step]));
     finalSteps.forEach(finalStep => {
+      const enriched = { ...finalStep, planningOrder: planningOrderMap[finalStep.id] ?? finalStep.planningOrder };
       const currentStep = currentStepsById.get(finalStep.id);
-      if (!currentStep || JSON.stringify(currentStep) !== JSON.stringify(finalStep)) {
-        updateStep(finalStep);
+      if (!currentStep || JSON.stringify(currentStep) !== JSON.stringify(enriched)) {
+        updateStep(enriched);
       }
     });
 
