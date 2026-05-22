@@ -468,7 +468,7 @@ const OrderRegistryPage: React.FC = () => {
               <Button size="sm" variant="outline" onClick={handleRedo} disabled={redoStack.length === 0}>رجوع</Button>
             </div>
 
-            <div className="border rounded-lg overflow-x-auto">
+            <div className="border rounded-lg overflow-x-auto" dir="rtl">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
