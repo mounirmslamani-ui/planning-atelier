@@ -26,7 +26,7 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 
-const CATEGORIES: OrderCategory[] = ['تصنيع', 'خدمات', 'متنوع', 'سلاماني'];
+const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
 const PRIORITIES: OrderPriority[] = ['P1', 'P2', 'P3', 'P4', 'undetermined'];
 
@@ -86,10 +86,10 @@ const OrderRegistryPage: React.FC = () => {
     const m = (num || '').match(/^\d{2}\/([A-Za-z]?)\d+$/);
     if (!m) return null;
     const p = m[1].toUpperCase();
-    if (p === 'F') return 'تصنيع';
-    if (p === 'P') return 'خدمات';
-    if (p === 'S') return 'سلاماني';
-    if (p === '') return 'متنوع';
+    if (p === 'F') return 'fabrication';
+    if (p === 'P') return 'prestation';
+    if (p === 'S') return 'slamani';
+    if (p === '') return 'divers';
     return null;
   }, []);
 
