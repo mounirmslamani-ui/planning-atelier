@@ -54,8 +54,7 @@ const ProductionRegisterPage: React.FC = () => {
     };
   };
 
-  const operatorsWithRecords = operators.filter(op =>
-    productionRecords.some(r => r.operatorId === op.id)
+const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
   );
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
