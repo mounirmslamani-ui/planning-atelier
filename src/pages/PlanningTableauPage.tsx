@@ -822,29 +822,30 @@ const PlanningTableauPage: React.FC = () => {
     const contextMap = new Map(steps.map(s => [s.id, s]));
 
     draftSteps.forEach(draft => {
+      const enriched = { ...draft, planningOrder: planningOrderMap[draft.id] ?? draft.planningOrder };
       const original = contextMap.get(draft.id);
       if (!original ||
-        draft.startDate !== original.startDate ||
-        draft.startTime !== original.startTime ||
-        draft.endDate !== original.endDate ||
-        draft.endTime !== original.endTime ||
-        draft.studyStatus !== original.studyStatus ||
-        draft.studyReady !== original.studyReady ||
-        draft.studyDeadline !== original.studyDeadline ||
-        draft.materialStatus !== original.materialStatus ||
-        draft.materialAvailable !== original.materialAvailable ||
-        draft.materialDeadline !== original.materialDeadline ||
-        draft.toolingStatus !== original.toolingStatus ||
-        draft.toolingAvailable !== original.toolingAvailable ||
-        draft.toolingDeadline !== original.toolingDeadline ||
-        draft.operationId !== original.operationId ||
-        draft.estimatedDuration !== original.estimatedDuration
+        enriched.startDate !== original.startDate ||
+        enriched.startTime !== original.startTime ||
+        enriched.endDate !== original.endDate ||
+        enriched.endTime !== original.endTime ||
+        enriched.studyStatus !== original.studyStatus ||
+        enriched.studyReady !== original.studyReady ||
+        enriched.studyDeadline !== original.studyDeadline ||
+        enriched.materialStatus !== original.materialStatus ||
+        enriched.materialAvailable !== original.materialAvailable ||
+        enriched.materialDeadline !== original.materialDeadline ||
+        enriched.toolingStatus !== original.toolingStatus ||
+        enriched.toolingAvailable !== original.toolingAvailable ||
+        enriched.toolingDeadline !== original.toolingDeadline ||
+        enriched.operationId !== original.operationId ||
+        enriched.estimatedDuration !== original.estimatedDuration
       ) {
-        updateStep(draft);
+        updateStep(enriched);
       }
     });
     setOrderDirty(false);
-  }, [draftSteps, steps, updateStep]);
+  }, [draftSteps, steps, updateStep, planningOrderMap]);
 
   // ─── Toggle frozen (lock) on a step (local draft) ───
   const toggleStepFrozen = useCallback((stepId: string) => {
