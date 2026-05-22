@@ -426,7 +426,7 @@ const OrderRegistryPage: React.FC = () => {
 
   return (
    <div className="p-6 space-y-4">
-      <PageHeader title="سجل الطلبيات" description="Registre complet des commandes (4 catégories)" />
+      <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-muted-foreground">آخر الأرقام:</span>
