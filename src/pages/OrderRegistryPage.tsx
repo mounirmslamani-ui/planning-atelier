@@ -428,48 +428,37 @@ const OrderRegistryPage: React.FC = () => {
    <div className="p-6 space-y-4">
       <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
 
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-muted-foreground">آخر الأرقام:</span>
-        {(['lastF', 'lastP', 'lastS', 'lastNum'] as const).map(k =>
-          lastSeriesNumbers[k] ? (
-            <span key={k} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium ring-1 ring-inset ring-border">
-              {lastSeriesNumbers[k]}
-            </span>
-          ) : null,
-        )}
-      </div>
+
 
       <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }}>
-        <TabsList>
-          {CATEGORIES.map(c => (
-            <TabsTrigger key={c} value={c}>
-  {ORDER_CATEGORY_LABEL[c]}
-  <span className="mr-2 text-xs text-muted-foreground">
-    ({c === 'fabrication' ? lastSeriesNumbers.lastF
-      : c === 'prestation' ? lastSeriesNumbers.lastP
-      : c === 'slamani' ? lastSeriesNumbers.lastS
-      : lastSeriesNumbers.lastNum})
-  </span>
-</TabsTrigger>
-          ))}
-        </TabsList>
+<div className="flex flex-wrap items-center gap-2 mb-2">
+  <Input placeholder="بحث..." className="max-w-xs" value={search} onChange={e => setSearch(e.target.value)} />
+  <div className="flex-1" />
+  <Button size="sm" onClick={handleAdd}><Plus className="w-4 h-4 ml-1" />إضافة</Button>
+  <Button size="sm" variant="outline" onClick={() => setPasteOpen(true)}><ClipboardPaste className="w-4 h-4 ml-1" />Coller Excel</Button>
+  <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
+  <Button size="sm" variant="outline" onClick={handleUndo} disabled={history.length === 0}>إلغاء</Button>
+  <Button size="sm" variant="outline" onClick={handleRedo} disabled={redoStack.length === 0}>رجوع</Button>
+</div>
 
-        {CATEGORIES.map(c => (
-          <TabsContent key={c} value={c} className="mt-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                placeholder="بحث..."
-                className="max-w-xs"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <div className="flex-1" />
-              <Button size="sm" onClick={handleAdd}><Plus className="w-4 h-4 ml-1" />إضافة</Button>
-              <Button size="sm" variant="outline" onClick={() => setPasteOpen(true)}><ClipboardPaste className="w-4 h-4 ml-1" />Coller Excel</Button>
-              <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
-              <Button size="sm" variant="outline" onClick={handleUndo} disabled={history.length === 0}>إلغاء</Button>
-              <Button size="sm" variant="outline" onClick={handleRedo} disabled={redoStack.length === 0}>رجوع</Button>
-            </div>
+<div className="flex justify-end mb-2">
+  <TabsList>
+    {CATEGORIES.map(c => (
+      <TabsTrigger key={c} value={c}>
+        {ORDER_CATEGORY_LABEL[c]}
+        <span className="mr-2 text-xs text-muted-foreground">
+          ({c === 'fabrication' ? lastSeriesNumbers.lastF
+            : c === 'prestation' ? lastSeriesNumbers.lastP
+            : c === 'slamani' ? lastSeriesNumbers.lastS
+            : lastSeriesNumbers.lastNum})
+        </span>
+      </TabsTrigger>
+    ))}
+  </TabsList>
+</div>
+
+{CATEGORIES.map(c => (
+  <TabsContent key={c} value={c} className="mt-4 space-y-3">
 
             <div className="border rounded-lg overflow-x-auto" dir="rtl">
               <Table>
