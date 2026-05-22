@@ -514,7 +514,7 @@ const PendingInvoicingPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-          title="طلبيات في انتظارالإنجاز و الفوترة"
+          title="طلبيات في انتظار الإنجاز و الفوترة"
           description={`${totalRows} commande(s) en attente de facturation`}
           actions={
             <Button onClick={handleExportExcel} variant="outline" size="sm">
