@@ -626,7 +626,7 @@ const OrdersPage: React.FC = () => {
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
     { key: 'instructions', label: 'ملاحظات تعليمات', className: 'w-[180px]' },
     { key: 'observation', label: 'ملاحظات', className: 'w-[340px]' },
-    { key: 'globalStatus', label: ''متابعة تقدم إنجاز الطلبية'', className: 'w-[105px] min-w-[105px]' },
+    { key: 'globalStatus', label: 'متابعة تقدم إنجاز الطلبية', className: 'w-[105px] min-w-[105px]' },
     { key: 'remainingSteps', label: 'عدد المراحل المتبقية', className: 'w-[110px] min-w-[110px] text-center' },
     { key: 'study', label: 'دراسة', className: 'w-[35px]' },
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },

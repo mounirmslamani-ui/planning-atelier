@@ -286,7 +286,7 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                       <th className="text-right p-1">العامل</th>
                       <th className="text-right p-1">المدة المخصصة (سا)</th>
                       <th className="text-right p-1">المدة المستهلكة (سا)</th>
-                      <th className="text-right p-1">الحالة</th>
+                      <th className="text-right p-1">متابعة تقدم إنجاز الطلبية</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -366,7 +366,7 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
               <h3 className="font-bold mb-2 border-b pb-1">اللوجستيك (التسليم)</h3>
               <div className="text-sm space-y-1">
                 <div>
-                  <strong>الحالة:</strong>{' '}
+                  <strong>متابعة تقدم إنجاز الطلبية:</strong>{' '}
                   {result.delivered ? 'مسلمة' : result.deliveryEntry ? 'جاهزة للتسليم' : 'غير جاهزة'}
                 </div>
                 {result.delivered && (
@@ -380,7 +380,7 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
               <h3 className="font-bold mb-2 border-b pb-1">الفوترة</h3>
               <div className="text-sm space-y-1">
                 <div>
-                  <strong>الحالة:</strong>{' '}
+                  <strong>متابعة تقدم إنجاز الطلبية:</strong>{' '}
                   {result.delivered?.invoiceNumber ? 'مفوترة' : result.delivered ? 'في انتظار الفوترة' : '—'}
                 </div>
                 {result.delivered?.invoiceNumber && (

@@ -566,7 +566,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
                   <TableHead className="w-72">العامل</TableHead>
                   <TableHead className="w-56">احتياجات عدة خاصة</TableHead>
                   <TableHead className="w-56">احتياجات المواد الأولية والمكونات</TableHead>
-                  <TableHead className="w-24">الحالة</TableHead>
+                  <TableHead className="w-24">متابعة تقدم إنجاز الطلبية</TableHead>
                   <TableHead className="w-20">المدة الفعلية</TableHead>
                   <TableHead className="w-12 text-center text-xs">دراسة</TableHead>
                   <TableHead className="w-12 text-center text-xs">مواد أولية</TableHead>
