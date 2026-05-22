@@ -28,7 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 
-const OPERATOR_NAME_ORDER = ['محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة', 'عمر', 'ياسين', 'معاذ', 'يوسف'];
+const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
 const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
 
@@ -1342,7 +1342,7 @@ const PlanningTableauPage: React.FC = () => {
 
         {/* Operator tabs */}
         <div className="flex items-center gap-1 px-1 py-2 border-b overflow-x-auto">
-        <span className="text-xs font-medium text-muted-foreground mr-2 whitespace-nowrap">Opérateur :</span>
+        <span></span>
         {operatorTasks.map(group => {
           const isActive = (selectedTabOperatorId ?? operatorTasks[0]?.operator.id) === group.operator.id;
           return (
