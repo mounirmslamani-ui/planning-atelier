@@ -842,7 +842,7 @@ const OrdersPage: React.FC = () => {
         return (
           <Tooltip delayDuration={150}>
             <TooltipTrigger asChild>{content}</TooltipTrigger>
-            <TooltipContent side="top" className="text-xs !bg-white !text-black border border-border">
+            <TooltipContent side="top" className="text-xs !bg-white !text-black border border-border" style={{color: '#000000', backgroundColor: '#ffffff'}}>
               Modifié le {formatDateTimeFR(o.notesUpdatedAt)}
             </TooltipContent>
           </Tooltip>
