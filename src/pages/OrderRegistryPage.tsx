@@ -443,11 +443,14 @@ const OrderRegistryPage: React.FC = () => {
         <TabsList>
           {CATEGORIES.map(c => (
             <TabsTrigger key={c} value={c}>
-              {ORDER_CATEGORY_LABEL[c]}
-              <span className="mr-2 text-xs text-muted-foreground">
-                ({realOrders.filter(o => (o.category || 'fabrication') === c).length})
-              </span>
-            </TabsTrigger>
+  {ORDER_CATEGORY_LABEL[c]}
+  <span className="mr-2 text-xs text-muted-foreground">
+    ({c === 'fabrication' ? lastSeriesNumbers.lastF
+      : c === 'prestation' ? lastSeriesNumbers.lastP
+      : c === 'slamani' ? lastSeriesNumbers.lastS
+      : lastSeriesNumbers.lastNum})
+  </span>
+</TabsTrigger>
           ))}
         </TabsList>
 
