@@ -308,7 +308,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
 
           {/* Tabs */}
           <div className="flex-none flex items-end gap-0 pt-4 border-b border-border">
-            {operatorsWithRecords.map(op => {
+            {[...operatorsWithRecords].sort((a, b) => {
+  const ai = OPERATOR_NAME_ORDER.indexOf(a.name);
+  const bi = OPERATOR_NAME_ORDER.indexOf(b.name);
+  return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+}).map(op => {
               const isActive = op.id === validTab;
               const opRecords = productionRecords.filter(r => r.operatorId === op.id);
               const opTotal = opRecords.reduce((s, r) => s + r.actualDuration, 0) / 60;
