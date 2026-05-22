@@ -427,11 +427,6 @@ const PendingInvoicingPage: React.FC = () => {
             <Input type="number" value={draft.quantity ?? 0} onChange={e => setDraft(d => ({ ...d, quantity: Number(e.target.value) }))} className="h-8 w-20" />
           ) : order.quantity}
         </TableCell>
-        <TableCell className="text-sm whitespace-nowrap">
-          {isEditing ? (
-            <Input value={draft.clientRepresentative ?? ''} onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))} className="h-8 w-36" />
-          ) : (order.clientRepresentative || '—')}
-        </TableCell>
         <TableCell>
           {isEditing ? (
             <Select value={draft.priority ?? ''} onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}>
@@ -446,6 +441,11 @@ const PendingInvoicingPage: React.FC = () => {
           {isEditing ? (
             <Input type="date" value={draft.deliveryDeadline ?? ''} onChange={e => setDraft(d => ({ ...d, deliveryDeadline: e.target.value }))} className="h-8 w-36" />
           ) : (order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—')}
+        </TableCell>
+        <TableCell className="text-sm whitespace-nowrap">
+          {isEditing ? (
+            <Input value={draft.clientRepresentative ?? ''} onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))} className="h-8 w-36" />
+          ) : (order.clientRepresentative || '—')}
         </TableCell>
         <TableCell className="text-xs whitespace-nowrap">
           <span className="text-muted-foreground">{statusLabel}</span>
@@ -611,13 +611,13 @@ const PendingInvoicingPage: React.FC = () => {
                 <ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
-                <ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} />
-              </TableHead>
-              <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="درجة الاستعجال" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} />
+              </TableHead>
+              <TableHead className="text-xs font-semibold whitespace-nowrap">
+                <ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="تاريخ التسليم/تقدم الأشغال" columnKey="statusLabel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.statusLabel || ''} onFilter={handleFilter} allValues={allValuesByKey.statusLabel} />

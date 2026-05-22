@@ -478,12 +478,12 @@ const OrderRegistryPage: React.FC = () => {
                     <TableHead className="text-xs" style={{ width: 200, minWidth: 200, maxWidth: 200 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} allValues={allValuesByKey.drawingModel} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات تقنية" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} allValues={allValuesByKey.observation} /></TableHead>
                     <TableHead className="text-xs">عمليات</TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} allValues={allValuesByKey.status} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} /></TableHead>
-                    <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} allValues={allValuesByKey.drawingModel} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="qcDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.qcDate || ''} onFilter={handleFilter} allValues={allValuesByKey.qcDate} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDate} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ الفوترة" columnKey="invoiceDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceDate || ''} onFilter={handleFilter} allValues={allValuesByKey.invoiceDate} /></TableHead>
@@ -545,7 +545,9 @@ const OrderRegistryPage: React.FC = () => {
                             <PriorityBadge priority={o.priority} />
                           )}
                         </TableCell>
+                        <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'clientRepresentative')}</TableCell>
+                        <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
                         <TableCell>{renderEditableCell(o, 'observation')}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -607,8 +609,6 @@ const OrderRegistryPage: React.FC = () => {
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
                         <TableCell><span className="text-xs">{qcMap.get(o.id) ? formatDateFR(qcMap.get(o.id)!) : '—'}</span></TableCell>
                         <TableCell>
                           <Input

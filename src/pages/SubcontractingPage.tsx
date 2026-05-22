@@ -240,8 +240,8 @@ const SubcontractingPage: React.FC = () => {
               <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
               <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
               <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
-              <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractor} /></TableHead>
               <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.plannedDeadline} /></TableHead>
+              <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractor} /></TableHead>
               <TableHead><ColumnHeader label="أجل انتهاء المناولة" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractingDeadline} /></TableHead>
               <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
@@ -265,8 +265,8 @@ const SubcontractingPage: React.FC = () => {
                   <TableCell>
                     <PriorityBadge priority={row.order.priority} />
                   </TableCell>
-                  <TableCell className="text-sm font-medium">{getSubcontractorName(row.subcontractorId)}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.plannedDeadline) || '—'}</TableCell>
+                  <TableCell className="text-sm font-medium">{getSubcontractorName(row.subcontractorId)}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.deadline) || '—'}</TableCell>
                   <TableCell className="text-center">
                     <Checkbox
