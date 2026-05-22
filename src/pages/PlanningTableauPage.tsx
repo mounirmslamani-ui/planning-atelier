@@ -707,7 +707,7 @@ const PlanningTableauPage: React.FC = () => {
         updateOrder(nextOrder);
       }
     });
-  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, updateOrder]);
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, updateOrder, planningOrderMap]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
