@@ -276,6 +276,7 @@ export function mapStepFromDB(row: any): ProductionStep {
     subcontractingReceivedDate: row.subcontracting_received_date || undefined,
     specialToolingNeeds: row.special_tooling_needs || [],
     rawMaterialNeeds: row.raw_material_needs || [],
+    planningOrder: row.planning_order ?? undefined,
   };
 }
 
@@ -312,6 +313,7 @@ export function mapStepToDB(s: ProductionStep) {
     subcontracting_received_date: toISODateOrNull(s.subcontractingReceivedDate),
     special_tooling_needs: s.specialToolingNeeds || [],
     raw_material_needs: s.rawMaterialNeeds || [],
+    planning_order: s.planningOrder ?? null,
   };
 }
 

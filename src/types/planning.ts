@@ -157,6 +157,8 @@ export interface ProductionStep {
   subcontractingReceivedDate?: string;
   specialToolingNeeds?: string[];
   rawMaterialNeeds?: string[];
+  /** Pn — numéro d'ordre propre à chaque opérateur dans le planning */
+  planningOrder?: number;
 }
 
 export interface Holiday {
