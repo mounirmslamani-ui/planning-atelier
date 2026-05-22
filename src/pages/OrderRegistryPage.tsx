@@ -560,9 +560,7 @@ const OrderRegistryPage: React.FC = () => {
                               </>
                             ) : (
                               <>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(o)} title="Éditer">
-                                  <Pencil className="w-3.5 h-3.5" />
-                                </Button>
+
                                 {isCancelled ? (
                                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRestore(o.id)} title="Réintégrer">
                                     <RotateCcw className="w-3.5 h-3.5 text-green-600" />
