@@ -863,7 +863,7 @@ const OrdersPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader title="ترتيب إنجاز الطلبيات الحالية" description={
         <div className="flex items-center gap-3">
-          <span>{displayOrders.length} commande(s)</span>
+          <span>{displayOrders.length} طلبية</span>
           {lastSeriesNumbers.lastF && (
             <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
               {lastSeriesNumbers.lastF}
