@@ -19,8 +19,8 @@ const sidebarGroups = [
     title: 'قائمة الطلبيات',
     items: [
       { to: '/order-registry', label: 'سجل الطلبيات', icon: BookOpen, dropTarget: false as DropTargetType },
-      { to: '/orders', label: 'ترتيب الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
-      { to: '/pending-invoicing', label: 'طلبيات في انتظار الفوترة', icon: Receipt, dropTarget: false as DropTargetType },
+      { to: '/orders', label: 'تسيير الطلبيات الجارية', icon: ShoppingCart, dropTarget: false as DropTargetType },
+      { to: '/pending-invoicing', label: 'طلبيات في انتظار الإنجاز و الفوترة', icon: Receipt, dropTarget: false as DropTargetType },
     ],
   },
   {
