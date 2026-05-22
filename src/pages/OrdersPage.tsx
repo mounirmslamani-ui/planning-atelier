@@ -858,30 +858,44 @@ const OrdersPage: React.FC = () => {
   // Compute last order numbers for each series (F, P, S, divers).
   const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(orders), [orders]);
 
+  const categoryCounts = useMemo(() => {
+    const real = orders.filter(o => o.id !== absenceOrderId);
+    return {
+      F: real.filter(o => /^\d+\s*\/\s*F\d+/i.test(o.orderNumber || '')).length,
+      P: real.filter(o => /^\d+\s*\/\s*P\d+/i.test(o.orderNumber || '')).length,
+      S: real.filter(o => /^\d+\s*\/\s*S\d+/i.test(o.orderNumber || '')).length,
+      N: real.filter(o => /^\d+\s*\/\s*\d+\b/.test(o.orderNumber || '') && !/^\d+\s*\/\s*[FPS]\d+/i.test(o.orderNumber || '')).length,
+    };
+  }, [orders, absenceOrderId]);
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader title="ترتيب إنجاز الطلبيات الحالية" description={
-        <div className="flex items-center gap-3">
-          <span>{displayOrders.length} طلبية</span>
-          {lastSeriesNumbers.lastF && (
-            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
-              {lastSeriesNumbers.lastF}
+        <div className="flex items-center gap-3 flex-wrap text-xs">
+          <span className="font-medium">العدد الإجمالي للطلبيات: {displayOrders.length} طلبية</span>
+          {categoryCounts.F > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-background px-2 py-0.5 font-medium ring-1 ring-inset ring-border">
+              تصنيع: {categoryCounts.F} طلبية
+              {lastSeriesNumbers.lastF && <span className="text-muted-foreground">({lastSeriesNumbers.lastF})</span>}
             </span>
           )}
-          {lastSeriesNumbers.lastP && (
-            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
-              {lastSeriesNumbers.lastP}
+          {categoryCounts.P > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-background px-2 py-0.5 font-medium ring-1 ring-inset ring-border">
+              تعديل وتصليح: {categoryCounts.P} طلبية
+              {lastSeriesNumbers.lastP && <span className="text-muted-foreground">({lastSeriesNumbers.lastP})</span>}
             </span>
           )}
-          {lastSeriesNumbers.lastNum && (
-            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
-              {lastSeriesNumbers.lastNum}
+          {categoryCounts.N > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-background px-2 py-0.5 font-medium ring-1 ring-inset ring-border">
+              متنوع: {categoryCounts.N} طلبية
+              {lastSeriesNumbers.lastNum && <span className="text-muted-foreground">({lastSeriesNumbers.lastNum})</span>}
             </span>
           )}
-          {lastSeriesNumbers.lastS && (
-            <span className="inline-flex items-center rounded-md bg-background px-2 py-0.5 text-xs font-medium text-foreground ring-1 ring-inset ring-border">
-              {lastSeriesNumbers.lastS}
+          {categoryCounts.S > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-background px-2 py-0.5 font-medium ring-1 ring-inset ring-border">
+              سلاماني: {categoryCounts.S} طلبية
+              {lastSeriesNumbers.lastS && <span className="text-muted-foreground">({lastSeriesNumbers.lastS})</span>}
             </span>
           )}
         </div>
