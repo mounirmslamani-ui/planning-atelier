@@ -172,7 +172,8 @@ description={
   </div>
 
 <div className="flex justify-end mb-2">
-  <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none">
+<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)}>
+  <div className="flex justify-end mb-2">
     <TabsList>
       {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
         <TabsTrigger key={c} value={c}>
@@ -181,8 +182,8 @@ description={
         </TabsTrigger>
       ))}
     </TabsList>
-  </Tabs>
-</div>
+  </div>
+</Tabs>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
