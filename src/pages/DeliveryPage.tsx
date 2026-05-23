@@ -155,24 +155,24 @@ const DeliveryPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="طلبيات جاهزة للتسليم" description={`${deliveryEntries.length} commande(s) prête(s)`} actions={
+        <PageHeader title="طلبيات جاهزة للتسليم" description={`${deliveryEntries.length} عدد الطلبيات الجاهزة للتسليم`} actions={
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         } />
       </div>
 
-      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2">
-        <TabsList>
-          {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
-            <TabsTrigger key={c} value={c}>
-              {ORDER_CATEGORY_LABEL[c]}
-              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
+{/* AJOUT DE dir="rtl" ICI */}
+<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} dir="rtl" className="flex-none mb-2 w-full">
+  <TabsList className="justify-start">
+    {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+      <TabsTrigger key={c} value={c}>
+        {ORDER_CATEGORY_LABEL[c]}
+        <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
+      </TabsTrigger>
+    ))}
+  </TabsList>
+</Tabs>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
