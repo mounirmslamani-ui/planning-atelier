@@ -45,7 +45,6 @@ const DeliveryPage: React.FC = () => {
     deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === cat).length;
 
   const reintegrateOrder = (entry: DeliveryEntry, decision: 'reprise-retouche' | 'non-conforme') => {
-    // Recreate a QC entry marking it as "en attente de reprise"
     const qc: QualityControlEntry = {
       id: crypto.randomUUID(),
       orderId: entry.orderId,
@@ -55,12 +54,10 @@ const DeliveryPage: React.FC = () => {
       createdAt: new Date().toISOString(),
     };
     addQCEntry(qc);
-    // Bump priority to P1 (urgent rework)
     const order = orders.find(o => o.id === entry.orderId);
     if (order && order.priority !== 'P1') {
       updateOrder({ ...order, priority: 'P1' });
     }
-    // Remove from delivery list — this auto-unlocks the planning dialog
     deleteDeliveryEntry(entry.id);
     toast.success('تمت إعادة الطلبية إلى الإنتاج كأولوية عاجلة');
   };
@@ -153,37 +150,36 @@ const DeliveryPage: React.FC = () => {
   };
 
   return (
-<div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
-  <div className="flex-none bg-background pb-3">
-<PageHeader 
-  title="طلبيات جاهزة للتسليم" 
-description={
-  <span className="flex items-center gap-2">
-    <span className="font-bold text-lg">{deliveryEntries.length}</span>
-    <span>عدد الطلبيات الجاهزة للتسليم</span>
-  </span>
-}
-  actions={
-    <Button onClick={handleExportExcel} variant="outline" size="sm">
-      <Download className="w-4 h-4 ml-1" /> تصدير Excel
-    </Button>
-  }
-/>
-  </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader
+          title="طلبيات جاهزة للتسليم"
+          description={
+            <span className="flex items-center gap-2">
+              <span className="font-bold text-lg">{deliveryEntries.length}</span>
+              <span>عدد الطلبيات الجاهزة للتسليم</span>
+            </span>
+          }
+          actions={
+            <Button onClick={handleExportExcel} variant="outline" size="sm">
+              <Download className="w-4 h-4 ml-1" /> تصدير Excel
+            </Button>
+          }
+        />
+        <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)}>
+          <div className="flex justify-end mt-2">
+            <TabsList>
+              {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+                <TabsTrigger key={c} value={c}>
+                  {ORDER_CATEGORY_LABEL[c]}
+                  <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        </Tabs>
+      </div>
 
-<div className="flex justify-end mb-2">
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)}>
-  <div className="flex justify-end mb-2">
-    <TabsList>
-      {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
-        <TabsTrigger key={c} value={c}>
-          {ORDER_CATEGORY_LABEL[c]}
-          <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
-        </TabsTrigger>
-      ))}
-    </TabsList>
-  </div>
-</Tabs>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
