@@ -55,6 +55,9 @@ const ProductionRegisterPage: React.FC = () => {
   };
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
+
+  const operatorsWithRecords = operators.filter(op =>
+    productionRecords.some(r => r.operatorId === op.id)
   );
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -307,7 +310,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           </div>
 
           {/* Tabs */}
-          <div className="flex-none flex items-end gap-0 pt-4 border-b border-border">
+          <div dir="ltr" className="flex-none flex items-end gap-0 pt-4 border-b border-border">
             {[...operatorsWithRecords].sort((a, b) => {
   const ai = OPERATOR_NAME_ORDER.indexOf(a.name);
   const bi = OPERATOR_NAME_ORDER.indexOf(b.name);
