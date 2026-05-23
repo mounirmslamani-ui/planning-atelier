@@ -139,17 +139,18 @@ const DeliveredOrdersPage: React.FC = () => {
             </Button>
           }
         />
-        <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
-          <TabsList className="justify-end">
-            {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
-              <TabsTrigger key={c} value={c}>
-                {ORDER_CATEGORY_LABEL[c]}
-                <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
+<div className="flex justify-end mb-2">
+  <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none">
+    <TabsList>
+      {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+        <TabsTrigger key={c} value={c}>
+          {ORDER_CATEGORY_LABEL[c]}
+          <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  </Tabs>
+</div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
