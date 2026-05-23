@@ -53,7 +53,7 @@ const CancelledOrdersPage: React.FC = () => {
   const setF = (k: string, v: string) => setFilters(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="space-y-4 p-4" dir="rtl">
+    <div className="space-y-4 p-4">
       <PageHeader title="طلبيات ملغاة" />
       <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
 
