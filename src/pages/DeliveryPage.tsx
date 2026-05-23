@@ -153,14 +153,21 @@ const DeliveryPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
-      <div className="flex-none bg-background pb-3">
-        <PageHeader title="طلبيات جاهزة للتسليم" description={`${deliveryEntries.length} عدد الطلبيات الجاهزة للتسليم`} actions={
-          <Button onClick={handleExportExcel} variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-1" /> تصدير Excel
-          </Button>
-        } />
-      </div>
+<div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+  <div className="flex-none bg-background pb-3">
+    <PageHeader 
+      title="طلبيات جاهزة للتسليم" 
+      /* C'est ici que l'inversion se fait 👇 */
+      description={`عدد الطلبيات الجاهزة للتسليم : ${deliveryEntries.length}`} 
+      actions={
+        <Button onClick={handleExportExcel} variant="outline" size="sm">
+          {/* J'ai aussi changé mr-1 en ml-1 pour que l'icône soit bien placée en RTL 😉 */}
+          <Download className="w-4 h-4 ml-1" /> تصدير Excel
+        </Button>
+      } 
+    />
+  </div>
+</div>
 
 {/* AJOUT DE dir="rtl" ICI */}
 <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} dir="rtl" className="flex-none mb-2 w-full">
