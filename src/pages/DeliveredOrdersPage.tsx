@@ -149,6 +149,7 @@ const DeliveredOrdersPage: React.FC = () => {
             ))}
           </TabsList>
         </Tabs>
+      </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
