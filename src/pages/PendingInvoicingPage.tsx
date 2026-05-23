@@ -580,8 +580,8 @@ const PendingInvoicingPage: React.FC = () => {
         </div>
       </div>
 
-      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as 'fabrication' | 'prestation')} className="flex-none mb-2">
-        <TabsList>
+     <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as 'fabrication' | 'prestation')} dir="rtl" className="flex-none mb-2 w-full">
+  <TabsList className="justify-start">
           {(['fabrication','prestation'] as const).map(c => (
             <TabsTrigger key={c} value={c}>
               {ORDER_CATEGORY_LABEL[c]}
