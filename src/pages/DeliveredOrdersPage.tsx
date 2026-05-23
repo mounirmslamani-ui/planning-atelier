@@ -132,7 +132,7 @@ const DeliveredOrdersPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader
           title="طلبيات مسلمة"
-          description={`${deliveredOrders.length} commande(s) archivée(s)`}
+          description={`${deliveredOrders.length} طلبيات منتهية`}
           actions={
             <Button onClick={handleExportExcel} variant="outline" size="sm">
               <Download className="w-4 h-4 mr-1" /> تصدير Excel
