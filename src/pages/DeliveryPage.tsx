@@ -167,14 +167,12 @@ description={
     <Button onClick={handleExportExcel} variant="outline" size="sm">
       <Download className="w-4 h-4 ml-1" /> تصدير Excel
     </Button>
-  } 
+  }
 />
   </div>
-</div>
 
-{/* AJOUT DE dir="rtl" ICI */}
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} dir="rtl" className="flex-none mb-2 w-full">
-  <TabsList className="justify-start">
+<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
+  <TabsList className="justify-end">
     {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
       <TabsTrigger key={c} value={c}>
         {ORDER_CATEGORY_LABEL[c]}
