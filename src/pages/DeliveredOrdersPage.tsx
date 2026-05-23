@@ -139,9 +139,9 @@ const DeliveredOrdersPage: React.FC = () => {
             </Button>
           }
         />
-      </div>
-
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
+  />
+        <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
+          <div className="flex justify-end">
   <div className="flex justify-end">
     <TabsList>
       {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
