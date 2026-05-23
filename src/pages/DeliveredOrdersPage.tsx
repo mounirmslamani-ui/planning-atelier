@@ -139,7 +139,6 @@ const DeliveredOrdersPage: React.FC = () => {
             </Button>
           }
         />
-  />
         <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
           <TabsList className="justify-end">
             {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
