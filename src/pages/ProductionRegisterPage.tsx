@@ -310,7 +310,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           </div>
 
           {/* Tabs */}
-          <div dir="ltr" className="flex-none flex items-end gap-0 pt-4 border-b border-border">
+          <div dir="rtl" className="flex-none flex items-end gap-0 pt-4 border-b border-border">
             {[...operatorsWithRecords].sort((a, b) => {
   const ai = OPERATOR_NAME_ORDER.indexOf(a.name);
   const bi = OPERATOR_NAME_ORDER.indexOf(b.name);
