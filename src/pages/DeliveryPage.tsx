@@ -157,12 +157,12 @@ const DeliveryPage: React.FC = () => {
   <div className="flex-none bg-background pb-3">
 <PageHeader 
   title="طلبيات جاهزة للتسليم" 
-  description={
-    <span className="flex items-center gap-1 flex-row-reverse" dir="rtl">
-<span>{deliveryEntries.length}</span>
-<span>عدد الطلبيات الجاهزة للتسليم :</span>
-    </span>
-  }
+description={
+  <span className="flex items-center gap-2">
+    <span className="font-bold text-lg">{deliveryEntries.length}</span>
+    <span>عدد الطلبيات الجاهزة للتسليم</span>
+  </span>
+}
   actions={
     <Button onClick={handleExportExcel} variant="outline" size="sm">
       <Download className="w-4 h-4 ml-1" /> تصدير Excel
