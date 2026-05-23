@@ -158,7 +158,7 @@ const DeliveryPage: React.FC = () => {
 <PageHeader 
   title="طلبيات جاهزة للتسليم" 
   description={
-    <span className="flex items-center gap-1" dir="rtl">
+    <span className="flex items-center gap-1 flex-row-reverse" dir="rtl">
 <span>{deliveryEntries.length}</span>
 <span>عدد الطلبيات الجاهزة للتسليم :</span>
     </span>
