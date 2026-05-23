@@ -57,9 +57,8 @@ const CancelledOrdersPage: React.FC = () => {
       <PageHeader title="طلبيات ملغاة" />
       <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
 
-     {/* AJOUT DE dir="rtl" ICI */}
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} dir="rtl" className="flex-none mb-2 w-full">
-  <TabsList className="justify-start">
+<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
+  <TabsList className="justify-end">
     {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
       <TabsTrigger key={c} value={c}>
         {ORDER_CATEGORY_LABEL[c]}
