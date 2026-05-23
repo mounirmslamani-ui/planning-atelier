@@ -447,9 +447,9 @@ const OrderRegistryPage: React.FC = () => {
       <TabsTrigger key={c} value={c}>
         {ORDER_CATEGORY_LABEL[c]}
         <span className="mr-2 text-xs font-medium">
-          ({c === 'fabrication ' ? lastSeriesNumbers.lastF
-            : c === 'prestation ' ? lastSeriesNumbers.lastP
-            : c === 'slamani ' ? lastSeriesNumbers.lastS
+          ({c === 'fabrication' ? lastSeriesNumbers.lastF
+            : c === 'prestation' ? lastSeriesNumbers.lastP
+            : c === 'slamani' ? lastSeriesNumbers.lastS
             : lastSeriesNumbers.lastNum})
         </span>
       </TabsTrigger>
