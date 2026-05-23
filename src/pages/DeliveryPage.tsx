@@ -167,7 +167,7 @@ const DeliveryPage: React.FC = () => {
           }
         />
         <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)}>
-         <div className="flex justify-end mt-2" style={{direction: 'ltr'}}>
+         <div className="flex justify-end mt-2">
             <TabsList>
               {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
                 <TabsTrigger key={c} value={c}>
