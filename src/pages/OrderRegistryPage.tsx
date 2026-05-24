@@ -426,7 +426,7 @@ const OrderRegistryPage: React.FC = () => {
 <div className="flex flex-wrap items-center gap-2 mb-2">
   <Input placeholder="بحث..." className="max-w-xs" value={search} onChange={e => setSearch(e.target.value)} />
   <div className="flex-1" />
-  <Button size="sm" onClick={handleAdd}><Plus className="w-4 h-4 ml-1" />إضافة</Button>
+  <Button size="sm" onClick={handleAdd}><Plus className="w-4 h-4 ml-1" />إضافة طلبية</Button>
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
 </div>
 
