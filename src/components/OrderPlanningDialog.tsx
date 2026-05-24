@@ -17,6 +17,7 @@ import { getStepProgressStatus } from '@/lib/stepProgress';
 import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
+import { isLinkedToOperation } from '@/lib/operationLinks';
 
 interface OperationRow {
   id: string;
@@ -238,15 +239,13 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
     const op = operations.find(o => o.id === operationId);
     if (!op) return [];
-    const opName = op.name.trim().toLowerCase();
-    const matches = (a: string) => (a || '').trim().toLowerCase() === opName;
     if (type === 'operator') {
       return operators
-        .filter(o => matches(o.mainFunction) || (o.secondaryFunctions || []).some(matches))
+        .filter(o => isLinkedToOperation(o.mainFunction, op, operations) || (o.secondaryFunctions || []).some(fn => isLinkedToOperation(fn, op, operations)))
         .map(o => ({ value: o.id, label: o.name }));
     }
     return subcontractors
-      .filter(s => matches(s.mainActivity) || (s.secondaryActivities || []).some(matches))
+      .filter(s => isLinkedToOperation(s.mainActivity, op, operations) || (s.secondaryActivities || []).some(act => isLinkedToOperation(act, op, operations)))
       .map(s => ({ value: s.id, label: s.companyName }));
   };
 
