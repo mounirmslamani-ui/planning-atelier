@@ -1285,7 +1285,7 @@ const PlanningTableauPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
-        title="جدول البرمجة"
+        title="جدول البرمجة      "
         actions={
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1">
