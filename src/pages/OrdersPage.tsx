@@ -866,7 +866,7 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="ترتيب إنجاز الطلبيات الحالية" description={
+        <PageHeader title="تسيير الطلبيات الحالية" description={
         <div className="flex items-center gap-3 flex-wrap text-xs">
           <span className="font-medium">العدد الإجمالي للطلبيات: {displayOrders.length} طلبية</span>
           {categoryCounts.F > 0 && (
