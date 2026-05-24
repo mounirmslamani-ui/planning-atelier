@@ -901,16 +901,13 @@ const OrdersPage: React.FC = () => {
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
             </Button>
           )}
-          <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
+ <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
             ✓ Valider
           </Button>
-<div className="flex flex-wrap items-center gap-2 mb-2" dir="rtl">
-  <div className="flex-1" />
-  <Button onClick={handleExportExcel} variant="outline" size="sm">
-    <Download className="w-4 h-4 mr-1" /> تصدير Excel
-  </Button>
-  <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
-</div>
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
+          </Button>
+          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
 
         {hasActiveFilters && (
           <div className="mb-3 flex items-center gap-2">
