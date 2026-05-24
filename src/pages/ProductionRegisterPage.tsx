@@ -12,6 +12,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { getOperationLabel } from '@/lib/operationLinks';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -340,7 +341,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="text-sm">
                 <span className="font-heading font-bold">{activeOperator?.name}</span>
-                <span className="text-muted-foreground ml-2 text-xs">({activeOperator?.mainFunction})</span>
+                <span className="text-muted-foreground ml-2 text-xs">({getOperationLabel(activeOperator?.mainFunction, operations, 'operator')})</span>
               </div>
               <div className="flex items-center gap-2">
                 {hasActiveFilters && (
