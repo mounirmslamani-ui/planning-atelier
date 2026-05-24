@@ -901,15 +901,6 @@ const OrdersPage: React.FC = () => {
         </div>
       } actions={
         <div className="flex gap-2 items-center">
-          <Button onClick={undo} variant="outline" size="icon" disabled={!canUndo} title="تراجع (Ctrl+Z)">
-            <Undo2 className="w-4 h-4" />
-          </Button>
-          <Button onClick={redo} variant="outline" size="icon" disabled={!canRedo} title="إعادة (Ctrl+Y)">
-            <Redo2 className="w-4 h-4" />
-          </Button>
-          <Button onClick={handleAutoSort} variant="outline" size="sm" title="Trier par priorité puis disponibilité">
-            Trier auto
-          </Button>
           {selectedIds.size > 0 && (
             <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
@@ -918,19 +909,8 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
             ✓ Valider
           </Button>
-          {hasFrozenOrders && (
-            <Button onClick={unlockAll} variant="outline" size="sm">
-              <Unlock className="w-4 h-4 mr-1" /> Libérer tout
-            </Button>
-          )}
-          <Button onClick={() => setPasteDialogOpen(true)} variant="outline" size="sm">
-            <ClipboardPaste className="w-4 h-4 mr-1" /> Coller depuis Excel
-          </Button>
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
-          </Button>
-          <Button onClick={() => setPrintDialogOpen(true)} variant="outline" size="sm" title="طباعة بطاقة متابعة انجاز طلبية">
-            <Printer className="w-4 h-4 mr-1" /> طباعة بطاقة متابعة انجاز طلبية
           </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         </div>
