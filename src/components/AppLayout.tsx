@@ -84,7 +84,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         type="button"
         aria-label={isSidebarOpen ? 'Masquer le menu' : 'Afficher le menu'}
         onClick={() => setIsSidebarOpen(open => !open)}
-        className={`fixed left-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground shadow-sm transition-transform hover:bg-accent hover:text-accent-foreground ${isSidebarOpen ? 'translate-x-60' : 'translate-x-0'}`}
+        className={`fixed right-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground shadow-sm transition-transform hover:bg-accent hover:text-accent-foreground ${isSidebarOpen ? '-translate-x-60' : 'translate-x-0'}`}
       >
         <PanelLeftOpen className="h-5 w-5" />
       </button>
