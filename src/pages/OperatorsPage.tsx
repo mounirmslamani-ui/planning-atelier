@@ -14,7 +14,7 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { getOperationLabel, resolveOperationId } from '@/lib/operationLinks';
 
 const OperatorsPage: React.FC = () => {
-  const { operators, addOperator, updateOperator, deleteOperator, operations, equipments } = usePlanning();
+  const { operators, addOperator, updateOperator, deleteOperator, operations, equipments, absenceOperationId } = usePlanning();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Operator | null>(null);
@@ -26,7 +26,7 @@ const OperatorsPage: React.FC = () => {
   const [secondaryEquipments, setSecondaryEquipments] = useState<string[]>([]);
   const [newSecEquip, setNewSecEquip] = useState('');
 
-  const operatorOps = operations.filter(o => o.category === 'operator' && o.name !== 'Absence');
+  const operatorOps = operations.filter(o => o.category === 'operator' && o.id !== absenceOperationId);
 
   const openNew = () => {
     setEditing(null);
@@ -126,7 +126,7 @@ const OperatorsPage: React.FC = () => {
               <TableRow key={op.id}>
                 <TableCell className="font-medium">{op.name}</TableCell>
                 <TableCell>
-                  {op.mainFunction === 'Absence' ? (
+                  {resolveOperationId(op.mainFunction, operations, 'operator') === absenceOperationId ? (
                     <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-destructive/10 text-destructive">
                       ⚠ Non définie
                     </span>
