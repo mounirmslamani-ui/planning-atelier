@@ -904,7 +904,8 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
             ✓ Valider
           </Button>
-<div className="flex flex-wrap items-center justify-end gap-2 mb-2">
+<div className="flex flex-wrap items-center gap-2 mb-2" dir="rtl">
+  <div className="flex-1" />
   <Button onClick={handleExportExcel} variant="outline" size="sm">
     <Download className="w-4 h-4 mr-1" /> تصدير Excel
   </Button>
