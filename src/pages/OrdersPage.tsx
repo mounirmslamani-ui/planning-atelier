@@ -894,7 +894,7 @@ const OrdersPage: React.FC = () => {
             </span>
           )}
         </div>
-      } actions={
+     } actions={
         <div className="flex gap-2 items-center">
           {selectedIds.size > 0 && (
             <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
@@ -904,12 +904,15 @@ const OrdersPage: React.FC = () => {
           <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
             ✓ Valider
           </Button>
+        </div>
+        } />
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <div className="flex-1" />
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
-         <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
+          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
         </div>
-        } />
 
         {hasActiveFilters && (
           <div className="mb-3 flex items-center gap-2">
