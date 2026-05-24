@@ -15,6 +15,7 @@ import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { exportTableToExcel } from '@/lib/excelExport';
+import { getOperationLabel, resolveOperationId } from '@/lib/operationLinks';
 
 const SubcontractorsPage: React.FC = () => {
   const { subcontractors, addSubcontractor, updateSubcontractor, deleteSubcontractor, operations } = usePlanning();
@@ -33,7 +34,7 @@ const SubcontractorsPage: React.FC = () => {
   const openNew = () => {
     setEditing(null);
     setCompanyName('');
-    setMainActivity(operations[0]?.name || '');
+    setMainActivity(operations.find(o => o.category === 'subcontractor')?.id || '');
     setSecondaryActivities([]);
     setRepresentatives([]);
     setPhones([]); setAddresses([]); setEmails([]);
@@ -43,8 +44,8 @@ const SubcontractorsPage: React.FC = () => {
   const openEdit = (s: Subcontractor) => {
     setEditing(s);
     setCompanyName(s.companyName);
-    setMainActivity(s.mainActivity);
-    setSecondaryActivities([...s.secondaryActivities]);
+    setMainActivity(resolveOperationId(s.mainActivity, operations, 'subcontractor') || operations.find(o => o.category === 'subcontractor')?.id || '');
+    setSecondaryActivities(s.secondaryActivities.map(act => resolveOperationId(act, operations, 'subcontractor')).filter(Boolean));
     setRepresentatives(s.representatives || []);
     setPhones(s.phones || []); setAddresses(s.addresses || []); setEmails(s.emails || []);
     setDialogOpen(true);
@@ -81,8 +82,8 @@ const SubcontractorsPage: React.FC = () => {
 
   const accessors = {
     companyName: (s: Subcontractor) => s.companyName,
-    mainActivity: (s: Subcontractor) => s.mainActivity,
-    secondaryActivities: (s: Subcontractor) => s.secondaryActivities.join(', '),
+    mainActivity: (s: Subcontractor) => getOperationLabel(s.mainActivity, operations, 'subcontractor'),
+    secondaryActivities: (s: Subcontractor) => s.secondaryActivities.map(act => getOperationLabel(act, operations, 'subcontractor')).join(', '),
     phones: (s: Subcontractor) => (s.phones || []).join(' '),
     emails: (s: Subcontractor) => (s.emails || []).join(' '),
     addresses: (s: Subcontractor) => (s.addresses || []).join(' '),
@@ -93,8 +94,8 @@ const SubcontractorsPage: React.FC = () => {
   const handleExportExcel = () => {
     exportTableToExcel('المناولون', processed.map(s => ({
       'اسم المناول': s.companyName,
-      'المناولة الأساسية': s.mainActivity,
-      'مناولات أخرى': s.secondaryActivities.join(', '),
+      'المناولة الأساسية': getOperationLabel(s.mainActivity, operations, 'subcontractor'),
+      'مناولات أخرى': s.secondaryActivities.map(act => getOperationLabel(act, operations, 'subcontractor')).join(', '),
       'الهاتف': (s.phones || []).join(' / '),
       'العنوان الإلكتروني': (s.emails || []).join(' / '),
       'العنوان': (s.addresses || []).join(' / '),
@@ -141,14 +142,14 @@ const SubcontractorsPage: React.FC = () => {
                 <TableCell className="font-medium">{s.companyName}</TableCell>
                 <TableCell>
                   <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                    {s.mainActivity}
+                    {getOperationLabel(s.mainActivity, operations, 'subcontractor')}
                   </span>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {s.secondaryActivities.map(act => (
                       <span key={act} className="inline-block px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
-                        {act}
+                        {getOperationLabel(act, operations, 'subcontractor')}
                       </span>
                     ))}
                   </div>
@@ -207,7 +208,7 @@ const SubcontractorsPage: React.FC = () => {
                 onChange={e => setMainActivity(e.target.value)}
               >
                 {operations.filter(o => o.category === 'subcontractor').map(o => (
-                  <option key={o.id} value={o.name}>{o.name}</option>
+                  <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
               </select>
             </div>
@@ -216,7 +217,7 @@ const SubcontractorsPage: React.FC = () => {
               <div className="flex flex-wrap gap-1 mb-2">
                 {secondaryActivities.map(act => (
                   <span key={act} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
-                    {act}
+                    {getOperationLabel(act, operations, 'subcontractor')}
                     <button onClick={() => removeSecondary(act)}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
@@ -228,8 +229,8 @@ const SubcontractorsPage: React.FC = () => {
                   onChange={e => setNewSecondary(e.target.value)}
                 >
                   <option value="">Sélectionner...</option>
-                  {operations.filter(o => o.category === 'subcontractor' && o.name !== mainActivity && !secondaryActivities.includes(o.name)).map(o => (
-                    <option key={o.id} value={o.name}>{o.name}</option>
+                  {operations.filter(o => o.category === 'subcontractor' && o.id !== mainActivity && !secondaryActivities.includes(o.id)).map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
                   ))}
                 </select>
                 <Button variant="outline" size="sm" onClick={addSecondary} disabled={!newSecondary}>
