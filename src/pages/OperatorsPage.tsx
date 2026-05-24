@@ -11,6 +11,7 @@ import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import type { Operator } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import { getOperationLabel, resolveOperationId } from '@/lib/operationLinks';
 
 const OperatorsPage: React.FC = () => {
   const { operators, addOperator, updateOperator, deleteOperator, operations, equipments } = usePlanning();
@@ -30,7 +31,7 @@ const OperatorsPage: React.FC = () => {
   const openNew = () => {
     setEditing(null);
     setName('');
-    setMainFunction(operatorOps[0]?.name || '');
+    setMainFunction(operatorOps[0]?.id || '');
     setSecondaryFunctions([]);
     setMainEquipment('');
     setSecondaryEquipments([]);
@@ -40,8 +41,8 @@ const OperatorsPage: React.FC = () => {
   const openEdit = (op: Operator) => {
     setEditing(op);
     setName(op.name);
-    setMainFunction(op.mainFunction === 'Absence' ? (operatorOps[0]?.name || '') : op.mainFunction);
-    setSecondaryFunctions([...op.secondaryFunctions]);
+    setMainFunction(resolveOperationId(op.mainFunction, operations, 'operator') || operatorOps[0]?.id || '');
+    setSecondaryFunctions(op.secondaryFunctions.map(fn => resolveOperationId(fn, operations, 'operator')).filter(Boolean));
     setMainEquipment(op.mainEquipment || '');
     setSecondaryEquipments([...(op.secondaryEquipments || [])]);
     setDialogOpen(true);
@@ -87,8 +88,8 @@ const OperatorsPage: React.FC = () => {
 
   const accessors = {
     name: (o: Operator) => o.name,
-    mainFunction: (o: Operator) => o.mainFunction === 'Absence' ? '' : o.mainFunction,
-    secondaryFunctions: (o: Operator) => o.secondaryFunctions.join(', '),
+    mainFunction: (o: Operator) => getOperationLabel(o.mainFunction, operations, 'operator'),
+    secondaryFunctions: (o: Operator) => o.secondaryFunctions.map(fn => getOperationLabel(fn, operations, 'operator')).join(', '),
     mainEquipment: (o: Operator) => o.mainEquipment ? getEquipName(o.mainEquipment) : '',
     secondaryEquipments: (o: Operator) => (o.secondaryEquipments || []).map(getEquipName).join(', '),
   };
@@ -131,7 +132,7 @@ const OperatorsPage: React.FC = () => {
                     </span>
                   ) : (
                     <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                      {op.mainFunction}
+                      {getOperationLabel(op.mainFunction, operations, 'operator')}
                     </span>
                   )}
                 </TableCell>
@@ -139,7 +140,7 @@ const OperatorsPage: React.FC = () => {
                   <div className="flex flex-wrap gap-1">
                     {op.secondaryFunctions.map(fn => (
                       <span key={fn} className="inline-block px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
-                        {fn}
+                        {getOperationLabel(fn, operations, 'operator')}
                       </span>
                     ))}
                   </div>
@@ -200,8 +201,8 @@ const OperatorsPage: React.FC = () => {
                 value={mainFunction} 
                 onChange={e => setMainFunction(e.target.value)}
               >
-                {operatorOps.map(o => (
-                  <option key={o.id} value={o.name}>{o.name}</option>
+                  {operatorOps.map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
               </select>
             </div>
@@ -210,7 +211,7 @@ const OperatorsPage: React.FC = () => {
               <div className="flex flex-wrap gap-1 mb-2">
                 {secondaryFunctions.map(fn => (
                   <span key={fn} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
-                    {fn}
+                    {getOperationLabel(fn, operations, 'operator')}
                     <button onClick={() => removeSecondary(fn)}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
@@ -222,8 +223,8 @@ const OperatorsPage: React.FC = () => {
                   onChange={e => setNewSecondary(e.target.value)}
                 >
                   <option value="">Sélectionner...</option>
-                  {operatorOps.filter(o => o.name !== mainFunction && !secondaryFunctions.includes(o.name)).map(o => (
-                    <option key={o.id} value={o.name}>{o.name}</option>
+                  {operatorOps.filter(o => o.id !== mainFunction && !secondaryFunctions.includes(o.id)).map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
                   ))}
                 </select>
                 <Button variant="outline" size="sm" onClick={addSecondary} disabled={!newSecondary}>
