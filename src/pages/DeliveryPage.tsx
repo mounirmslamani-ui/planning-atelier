@@ -166,20 +166,19 @@ const DeliveryPage: React.FC = () => {
             </Button>
           }
         />
-{/* 1. Ajout de className="w-full" sur Tabs */}
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="w-full">
-  {/* 2. Ajout de w-full sur votre div */}
-  <div className="flex w-full justify-end mt-2">
-    <TabsList>
-      {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
-        <TabsTrigger key={c} value={c}>
-          {ORDER_CATEGORY_LABEL[c]}
-          <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
-        </TabsTrigger>
-      ))}
-    </TabsList>
-  </div>
-</Tabs>
+        <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="w-full">
+          <div className="flex w-full justify-end mt-2">
+            <TabsList className="justify-end">
+              {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+                <TabsTrigger key={c} value={c}>
+                  {ORDER_CATEGORY_LABEL[c]}
+                  <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        </Tabs>
+      </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <Table>
           <TableHeader>
