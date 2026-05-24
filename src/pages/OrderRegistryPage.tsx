@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, ClipboardPaste, Download, Ban, RotateCcw, Trash2, Save, X } from 'lucide-react';
+import { Plus, Pencil, Download, Ban, RotateCcw, Trash2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { formatDateFR } from '@/lib/utils';
@@ -15,7 +15,6 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
-import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import type { Order, OrderCategory, OrderPriority } from '@/types/planning';
 import { ORDER_CATEGORY_LABEL, ORDER_CATEGORY_PREFIX } from '@/types/planning';
@@ -45,7 +44,6 @@ const OrderRegistryPage: React.FC = () => {
 
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
   const [search, setSearch] = useState('');
-  const [pasteOpen, setPasteOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
@@ -334,13 +332,7 @@ const OrderRegistryPage: React.FC = () => {
 
   const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(realOrders), [realOrders]);
 
-  const handleExcelImport = (rows: Omit<Order, 'id'>[]) => {
-    rows.forEach((r, i) => {
-      const code = r.orderNumber || generateOrderCode(activeCat, realOrders, new Date().getFullYear());
-      addOrder({ id: crypto.randomUUID(), ...r, orderNumber: code, category: activeCat } as Order);
-    });
-    toast.success(`${rows.length} commande(s) importée(s)`);
-  };
+
 
   const handleExportExcel = useCallback(() => {
     const rows = displayed.map(o => {
@@ -435,8 +427,7 @@ const OrderRegistryPage: React.FC = () => {
   <Input placeholder="بحث..." className="max-w-xs" value={search} onChange={e => setSearch(e.target.value)} />
   <div className="flex-1" />
   <Button size="sm" onClick={handleAdd}><Plus className="w-4 h-4 ml-1" />إضافة</Button>
-  <Button size="sm" variant="outline" onClick={() => setPasteOpen(true)}><ClipboardPaste className="w-4 h-4 ml-1" />Coller Excel</Button>
-  <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
+    <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
   <Button size="sm" variant="outline" onClick={handleUndo} disabled={history.length === 0}>إلغاء</Button>
   <Button size="sm" variant="outline" onClick={handleRedo} disabled={redoStack.length === 0}>رجوع</Button>
 </div>
@@ -650,16 +641,6 @@ const OrderRegistryPage: React.FC = () => {
           </TabsContent>
         ))}
       </Tabs>
-
-      <ExcelPasteDialog
-        open={pasteOpen}
-        onOpenChange={setPasteOpen}
-        onImport={handleExcelImport}
-        clients={clients}
-        nextDisplayOrder={realOrders.length + 1}
-        existingOrderNumbers={realOrders.map(o => o.orderNumber)}
-      />
-
       <CancelOrderDialog
         open={!!cancelTarget}
         onClose={() => setCancelTarget(null)}
