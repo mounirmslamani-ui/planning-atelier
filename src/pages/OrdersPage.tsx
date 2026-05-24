@@ -18,7 +18,7 @@ import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
-import ExcelPasteDialog from '@/components/orders/ExcelPasteDialog';
+
 import PrintTrackingSheetDialog from '@/components/PrintTrackingSheetDialog';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
@@ -88,7 +88,7 @@ const OrdersPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
-  const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
+ 
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -525,11 +525,6 @@ const OrdersPage: React.FC = () => {
     setDialogOpen(false);
   };
   const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
-
-  const handleExcelImport = (imported: Omit<Order, 'id'>[]) => {
-    imported.forEach((o) => addOrder({ id: crypto.randomUUID(), ...o } as Order));
-    setOrderValidated(false);
-  };
 
   // Inline edit helpers
   const getInlineValue = (o: Order, field: keyof Order) => {
@@ -1166,8 +1161,7 @@ const OrdersPage: React.FC = () => {
       </Dialog>
 
       {/* Excel Paste Dialog */}
-      <ExcelPasteDialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen} onImport={handleExcelImport} clients={clients} nextDisplayOrder={baseSorted.length + 1} existingOrderNumbers={orders.filter(o => o.id !== absenceOrderId).map(o => o.orderNumber)} />
-
+      
       {/* Print tracking sheet */}
       <PrintTrackingSheetDialog
         open={printDialogOpen}
