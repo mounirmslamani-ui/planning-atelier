@@ -428,8 +428,6 @@ const OrderRegistryPage: React.FC = () => {
   <div className="flex-1" />
   <Button size="sm" onClick={handleAdd}><Plus className="w-4 h-4 ml-1" />إضافة</Button>
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
-  <Button size="sm" variant="outline" onClick={handleUndo} disabled={history.length === 0}>إلغاء</Button>
-  <Button size="sm" variant="outline" onClick={handleRedo} disabled={redoStack.length === 0}>رجوع</Button>
 </div>
 
 <div className="flex justify-end mb-2">
