@@ -35,36 +35,14 @@ const OperationsPage: React.FC = () => {
     setDialogOpen(true);
   };
 
-const handleSave = () => {
-  if (editing) {
-    const oldName = editing.name;
-    updateOperation({ ...editing, name, category });
-    // Si le nom a changé, mettre à jour tous les opérateurs qui l'utilisaient
-    if (oldName !== name) {
-      operators
-        .filter(o => o.mainFunction === oldName || (o.secondaryFunctions || []).includes(oldName))
-        .forEach(o => {
-          updateOperator({
-            ...o,
-            mainFunction: o.mainFunction === oldName ? name : o.mainFunction,
-            secondaryFunctions: (o.secondaryFunctions || []).map(f => f === oldName ? name : f),
-          });
-        });
-      subcontractors
-        .filter(s => s.mainActivity === oldName || (s.secondaryActivities || []).includes(oldName))
-        .forEach(s => {
-          updateSubcontractor({
-            ...s,
-            mainActivity: s.mainActivity === oldName ? name : s.mainActivity,
-            secondaryActivities: (s.secondaryActivities || []).map(f => f === oldName ? name : f),
-          });
-        });
+  const handleSave = () => {
+    if (editing) {
+      updateOperation({ ...editing, name, category });
+    } else {
+      addOperation({ id: crypto.randomUUID(), name, category });
     }
-  } else {
-    addOperation({ id: crypto.randomUUID(), name, category });
-  }
-  setDialogOpen(false);
-};
+    setDialogOpen(false);
+  };
 
   const renderTable = (title: string, items: Operation[], cat: OperationCategory) => (
     <div className="space-y-3">
