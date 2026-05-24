@@ -57,15 +57,17 @@ const CancelledOrdersPage: React.FC = () => {
       <PageHeader title="طلبيات ملغاة" />
       <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
 
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="flex-none mb-2 w-full">
-  <TabsList className="justify-end">
-    {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
-      <TabsTrigger key={c} value={c}>
-        {ORDER_CATEGORY_LABEL[c]}
-        <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
-      </TabsTrigger>
-    ))}
-  </TabsList>
+<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="w-full">
+  <div className="flex w-full justify-end mt-2">
+    <TabsList className="justify-end">
+      {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+        <TabsTrigger key={c} value={c}>
+          {ORDER_CATEGORY_LABEL[c]}
+          <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  </div>
 </Tabs>
 
       <div className="border rounded-md overflow-x-auto">
