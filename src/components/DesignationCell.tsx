@@ -22,14 +22,6 @@ const isDriveLink = (url: string) => {
   }
 };
 
-const isEmbeddedFrame = () => {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-};
-
 const buildRelayUrl = (url: string) => `/open-external.html?to=${encodeURIComponent(url)}`;
 
 /**
@@ -124,9 +116,7 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   }
 
   // Avec lien : on rend un vrai <a> pour bénéficier d'une vraie navigation utilisateur
-  const embedded = isEmbeddedFrame();
-  const href = embedded ? buildRelayUrl(folderLink) : folderLink;
-  const target = embedded ? '_top' : '_blank';
+  const href = buildRelayUrl(folderLink);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -134,8 +124,8 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
         <a
           ref={anchorRef}
           href={href}
-          target={target}
-          rel={embedded ? undefined : 'noopener noreferrer'}
+          target="_blank"
+          rel="noopener noreferrer"
           referrerPolicy="no-referrer"
           onContextMenu={handleContextMenu}
           onPointerDown={e => e.stopPropagation()}
