@@ -421,7 +421,7 @@ const PendingInvoicingPage: React.FC = () => {
         <TableCell className="text-sm max-w-48">
           {isEditing ? (
             <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-          ) : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+          ) : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
         </TableCell>
         <TableCell className="text-sm text-center">
           {isEditing ? (
