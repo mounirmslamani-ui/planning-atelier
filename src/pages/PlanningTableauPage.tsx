@@ -1517,9 +1517,7 @@ const PlanningTableauPage: React.FC = () => {
                           <span className="text-xs">{getClientName(order.clientId)}</span>
                         </TableCell>
                         <TableCell className={`py-1.5 px-2 w-[180px] min-w-[180px] max-w-[180px] align-top ${designBg}`}>
-                          <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white font-medium' : ''}`}>
-                            {order.designation}
-                          </span>
+                          <DesignationCell orderId={order.id} designation={order.designation} className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white font-medium' : ''}`} />
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           <span className="text-xs">{order.quantity}</span>
