@@ -69,7 +69,8 @@ const handleClick = (e: React.MouseEvent) => {
 
   const linkedCls = folderLink ? 'cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid' : '';
 
-  return (
+return (
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <span
           onContextMenu={handleContextMenu}
