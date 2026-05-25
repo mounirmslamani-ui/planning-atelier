@@ -236,6 +236,7 @@ export function mapOrderToDB(o: Order) {
     notes_updated_at: o.notesUpdatedAt || null,
     category: o.category || 'fabrication',
     reintegrated_at: o.reintegratedAt || null,
+    folder_link: o.folderLink || null,
   };
 }
 
