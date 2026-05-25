@@ -261,7 +261,7 @@ const SubcontractingPage: React.FC = () => {
                   <TableCell className="text-sm font-medium"><OrderNumberLink orderId={row.order.id} orderNumber={row.order.orderNumber} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.orderDate) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{getClientName(row.order.clientId)}</TableCell>
-                  <TableCell className="text-sm">{row.order.designation}</TableCell>
+                  <TableCell className="text-sm"><DesignationCell orderId={row.order.id} designation={row.order.designation} /></TableCell>
                   <TableCell className="text-center text-sm">{row.order.quantity}</TableCell>
                   <TableCell>
                     <PriorityBadge priority={row.order.priority} />
