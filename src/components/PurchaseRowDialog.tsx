@@ -99,7 +99,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
                   <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(o.orderDate)}</TableCell>
                   <TableCell className="text-sm font-medium">{o.clientName}</TableCell>
-                  <TableCell className="text-sm">{o.designation}</TableCell>
+                  <TableCell className="text-sm"><DesignationCell orderId={o.id} designation={o.designation} /></TableCell>
                   <TableCell className="text-center text-sm">{o.quantity}</TableCell>
                   <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(o.plannedDeadline)}</TableCell>
