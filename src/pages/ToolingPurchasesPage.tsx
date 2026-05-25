@@ -6,6 +6,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import type { ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
