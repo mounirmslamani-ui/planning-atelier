@@ -62,11 +62,11 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   const linkedCls = folderLink ? 'cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid' : '';
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <span
           onContextMenu={handleContextMenu}
           onClick={handleClick}
+          onPointerDown={e => e.stopPropagation()}
           className={[className, linkedCls].filter(Boolean).join(' ')}
           title={folderLink ? `Ouvrir : ${folderLink}` : 'Clic droit pour ajouter un lien Google Drive'}
         >
