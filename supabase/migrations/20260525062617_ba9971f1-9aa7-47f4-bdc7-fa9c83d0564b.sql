@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN folder_link text;
