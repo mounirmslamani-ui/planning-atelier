@@ -908,6 +908,8 @@ const OrdersPage: React.FC = () => {
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
+        </div>
+      } />
 
         {hasActiveFilters && (
           <div className="mb-3 flex items-center gap-2">
