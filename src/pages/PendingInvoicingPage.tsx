@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import { Download, Pencil, Trash2, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { getOrderGlobalStatus } from '@/lib/stepProgress';
