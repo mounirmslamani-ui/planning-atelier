@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { usePlanning } from '@/context/PlanningContext';
@@ -16,7 +16,8 @@ interface DesignationCellProps {
  * with right-click opening a popover to add/edit/remove the folder URL.
  *
  * Implémentation : on rend un vrai <a target="_blank" rel="noopener noreferrer">
- * et on déclenche son clic programmatiquement. Cela évite l'erreur COOP /
+ * sans PopoverTrigger pour que le clic gauche ouvre uniquement le lien.
+ * Le popover est ouvert manuellement au clic droit. Cela évite l'erreur COOP /
  * ERR_BLOCKED_BY_RESPONSE / 403 que Drive renvoie quand on l'ouvre via
  * window.open() depuis l'iframe de prévisualisation.
  */
@@ -65,7 +66,7 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   if (!folderLink) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverAnchor asChild>
           <span
             onContextMenu={handleContextMenu}
             onPointerDown={e => e.stopPropagation()}
@@ -74,7 +75,7 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
           >
             {designation}
           </span>
-        </PopoverTrigger>
+        </PopoverAnchor>
         <PopoverContent className="w-80" onClick={e => e.stopPropagation()} onContextMenu={e => e.preventDefault()}>
           <div className="space-y-2">
             <label className="text-xs font-medium">Lien dossier Google Drive</label>
@@ -100,7 +101,7 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   // Avec lien : on rend un vrai <a> pour bénéficier d'une vraie navigation utilisateur
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverAnchor asChild>
         <a
           ref={anchorRef}
           href={folderLink}
@@ -114,7 +115,7 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
         >
           {designation}
         </a>
-      </PopoverTrigger>
+      </PopoverAnchor>
       <PopoverContent className="w-80" onClick={e => e.stopPropagation()} onContextMenu={e => e.preventDefault()}>
         <div className="space-y-2">
           <label className="text-xs font-medium">Lien dossier Google Drive</label>
