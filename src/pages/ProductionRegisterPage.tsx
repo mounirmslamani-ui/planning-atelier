@@ -13,6 +13,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
+import DesignationCell from '@/components/DesignationCell';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
