@@ -228,7 +228,7 @@ const DeliveryPage: React.FC = () => {
                   <TableCell className="text-sm max-w-48">
                     {isEditing
                       ? <Input value={editDraft.designation ?? ''} onChange={e => setEditDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-                      : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+                      : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing
