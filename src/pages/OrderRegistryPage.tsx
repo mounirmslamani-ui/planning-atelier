@@ -24,6 +24,7 @@ import { getExportFilename } from '@/lib/excelExport';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
+import DesignationCell from '@/components/DesignationCell';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
