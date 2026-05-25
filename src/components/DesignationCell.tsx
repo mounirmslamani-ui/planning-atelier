@@ -35,19 +35,6 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
     setOpen(true);
   };
 
-const handleClick = (e: React.MouseEvent) => {
-    if (!folderLink) return;
-    e.stopPropagation();
-    
-    // Ouvre une véritable nouvelle fenêtre indépendante du système d'iframe de Lovable
-    const newWindow = window.open(folderLink, '_blank', 'noreferrer,noopener,width=1200,height=800');
-    
-    // Si la fenêtre est bloquée par un anti-pop-up ou l'environnement de dev, on utilise un repli
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-      window.location.assign(folderLink); // Pire des cas : ouvre dans l'onglet actuel de l'aperçu complet
-    }
-  };
-
   const handleSave = () => {
     const trimmed = value.trim();
     if (trimmed && !/^https?:\/\//i.test(trimmed)) {
@@ -68,18 +55,32 @@ const handleClick = (e: React.MouseEvent) => {
 
   const linkedCls = folderLink ? 'cursor-pointer underline decoration-dotted underline-offset-2 hover:decoration-solid' : '';
 
-return (
+  return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <span
-          onContextMenu={handleContextMenu}
-          onClick={handleClick}
-          onPointerDown={e => e.stopPropagation()}
-          className={[className, linkedCls].filter(Boolean).join(' ')}
-          title={folderLink ? `Ouvrir : ${folderLink}` : 'Clic droit pour ajouter un lien Google Drive'}
-        >
-          {designation}
-        </span>
+        {folderLink ? (
+          <a
+            href={folderLink}
+            target="_blank"
+            rel="noreferrer noopener"
+            onClick={e => e.stopPropagation()}
+            onContextMenu={handleContextMenu}
+            onPointerDown={e => e.stopPropagation()}
+            className={[className, linkedCls].filter(Boolean).join(' ')}
+            title={`Ouvrir : ${folderLink}`}
+          >
+            {designation}
+          </a>
+        ) : (
+          <span
+            onContextMenu={handleContextMenu}
+            onPointerDown={e => e.stopPropagation()}
+            className={className}
+            title="Clic droit pour ajouter un lien Google Drive"
+          >
+            {designation}
+          </span>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-80" onClick={e => e.stopPropagation()} onContextMenu={e => e.preventDefault()}>
         <div className="space-y-2">
