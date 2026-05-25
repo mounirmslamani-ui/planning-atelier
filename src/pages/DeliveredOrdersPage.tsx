@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
