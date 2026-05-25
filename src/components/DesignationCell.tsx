@@ -11,6 +11,27 @@ interface DesignationCellProps {
   className?: string;
 }
 
+const DRIVE_LINK_HOSTS = new Set(['drive.google.com', 'docs.google.com']);
+
+const isDriveLink = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return DRIVE_LINK_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const isEmbeddedFrame = () => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+};
+
+const buildRelayUrl = (url: string) => `/open-external.html?to=${encodeURIComponent(url)}`;
+
 /**
  * Renders the order designation as a clickable Google Drive link (when set),
  * with right-click opening a popover to add/edit/remove the folder URL.
@@ -45,6 +66,10 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
     const trimmed = value.trim();
     if (trimmed && !/^https?:\/\//i.test(trimmed)) {
       toast.error('Le lien doit commencer par http:// ou https://');
+      return;
+    }
+    if (trimmed && !isDriveLink(trimmed)) {
+      toast.error('Le lien doit être un lien Google Drive valide');
       return;
     }
     updateOrder({ ...order, folderLink: trimmed || undefined });
@@ -99,14 +124,19 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   }
 
   // Avec lien : on rend un vrai <a> pour bénéficier d'une vraie navigation utilisateur
+  const embedded = isEmbeddedFrame();
+  const href = embedded ? buildRelayUrl(folderLink) : folderLink;
+  const target = embedded ? '_top' : '_blank';
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
         <a
           ref={anchorRef}
-          href={folderLink}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={href}
+          target={target}
+          rel={embedded ? undefined : 'noopener noreferrer'}
+          referrerPolicy="no-referrer"
           onContextMenu={handleContextMenu}
           onPointerDown={e => e.stopPropagation()}
           onClick={e => e.stopPropagation()}
