@@ -512,7 +512,7 @@ const OrderRegistryPage: React.FC = () => {
                             <span className="text-xs">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
                           )}
                         </TableCell>
-                        <TableCell style={{ width: 200, minWidth: 200, maxWidth: 200 }} className="truncate">{renderEditableCell(o, 'designation')}</TableCell>
+                        <TableCell style={{ width: 200, minWidth: 200, maxWidth: 200 }} className="truncate">{editingId === o.id ? renderEditableCell(o, 'designation') : <DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-xs" />}</TableCell>
                         <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
                         <TableCell>
                           {isEditing ? (
