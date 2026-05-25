@@ -39,14 +39,13 @@ const handleClick = (e: React.MouseEvent) => {
     if (!folderLink) return;
     e.stopPropagation();
     
-    // Force l'ouverture dans un vrai onglet en dehors de la sandbox Lovable
-    const link = document.createElement('a');
-    link.href = folderLink;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Ouvre une véritable nouvelle fenêtre indépendante du système d'iframe de Lovable
+    const newWindow = window.open(folderLink, '_blank', 'noreferrer,noopener,width=1200,height=800');
+    
+    // Si la fenêtre est bloquée par un anti-pop-up ou l'environnement de dev, on utilise un repli
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      window.location.assign(folderLink); // Pire des cas : ouvre dans l'onglet actuel de l'aperçu complet
+    }
   };
 
   const handleSave = () => {
