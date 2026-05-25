@@ -154,7 +154,7 @@ const ToolingPurchasesPage: React.FC = () => {
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
                 <TableCell className="text-sm font-medium"><OrderNumberLink orderId={r.order.id} orderNumber={r.order.orderNumber} /></TableCell>
                 <TableCell className="text-sm">{getClientName(r.order.clientId)}</TableCell>
-                <TableCell className="text-sm">{r.order.designation}</TableCell>
+                <TableCell className="text-sm"><DesignationCell orderId={r.order.id} designation={r.order.designation} /></TableCell>
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
