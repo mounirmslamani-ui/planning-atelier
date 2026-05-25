@@ -761,7 +761,7 @@ const OrdersPage: React.FC = () => {
       );
       case 'orderDate': return <span className="text-xs">{formatDateFR(o.orderDate)}</span>;
       case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
-      case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
+      case 'designation': return <DesignationCell orderId={o.id} designation={o.designation} className="text-xs whitespace-normal break-words block" />;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
       case 'globalStatus': {
