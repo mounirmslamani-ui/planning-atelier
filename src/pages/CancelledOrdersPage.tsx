@@ -13,6 +13,7 @@ import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { formatDateFR } from '@/lib/utils';
+import DesignationCell from '@/components/DesignationCell';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const CancelledOrdersPage: React.FC = () => {
