@@ -293,6 +293,7 @@ export type Database = {
           designation: string
           display_order: number | null
           drawing_model: string | null
+          folder_link: string | null
           frozen_order: boolean
           id: string
           instructions: string | null
@@ -323,6 +324,7 @@ export type Database = {
           designation: string
           display_order?: number | null
           drawing_model?: string | null
+          folder_link?: string | null
           frozen_order?: boolean
           id?: string
           instructions?: string | null
@@ -353,6 +355,7 @@ export type Database = {
           designation?: string
           display_order?: number | null
           drawing_model?: string | null
+          folder_link?: string | null
           frozen_order?: boolean
           id?: string
           instructions?: string | null

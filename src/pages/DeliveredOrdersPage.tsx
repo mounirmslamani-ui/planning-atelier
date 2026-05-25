@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -245,7 +246,7 @@ const DeliveredOrdersPage: React.FC = () => {
                   <TableCell className="text-sm max-w-48">
                     {isEditing
                       ? <Input value={editDraft.designation ?? ''} onChange={e => setEditDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-                      : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+                      : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing

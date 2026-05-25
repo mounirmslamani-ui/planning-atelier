@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 interface PurchaseRowDialogProps {
@@ -98,7 +99,7 @@ const PurchaseRowDialog: React.FC<PurchaseRowDialogProps> = ({ open, onOpenChang
                   <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(o.orderDate)}</TableCell>
                   <TableCell className="text-sm font-medium">{o.clientName}</TableCell>
-                  <TableCell className="text-sm">{o.designation}</TableCell>
+                  <TableCell className="text-sm"><DesignationCell orderId={o.id} designation={o.designation} /></TableCell>
                   <TableCell className="text-center text-sm">{o.quantity}</TableCell>
                   <TableCell><PriorityBadge priority={o.priority} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(o.plannedDeadline)}</TableCell>

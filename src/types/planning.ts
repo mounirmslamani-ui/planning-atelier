@@ -118,6 +118,7 @@ export interface Order {
   instructions?: string;
   drawingModel?: string;
   notesUpdatedAt?: string; // ISO timestamp of last observation change
+  folderLink?: string; // Google Drive folder URL
   category?: OrderCategory;
   /** ISO timestamp set when the order was reintegrated from QC/Delivery/Delivered. Persistent — survives observation edits. */
   reintegratedAt?: string;

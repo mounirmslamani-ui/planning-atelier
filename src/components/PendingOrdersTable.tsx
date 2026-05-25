@@ -4,6 +4,7 @@ import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import type { Order } from '@/types/planning';
 
 type ColumnKey = 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline';
@@ -91,7 +92,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{idx + 1}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(order.orderDate) || '—'}</TableCell>
                 <TableCell className="text-sm font-medium">{getClientName(order.clientId)}</TableCell>
-                <TableCell className="text-sm">{order.designation}</TableCell>
+                <TableCell className="text-sm"><DesignationCell orderId={order.id} designation={order.designation} /></TableCell>
                 <TableCell className="text-center text-sm">{order.quantity}</TableCell>
                 <TableCell>
                   <PriorityBadge priority={order.priority} />

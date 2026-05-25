@@ -5,6 +5,7 @@ import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 interface SubcontractorTableDialogProps {
@@ -129,7 +130,7 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
                   <TableCell className="text-sm font-mono"><OrderNumberLink orderId={r.orderId} orderNumber={r.orderNumber} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(r.orderDate) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{r.clientName}</TableCell>
-                  <TableCell className="text-sm">{r.designation}</TableCell>
+                  <TableCell className="text-sm"><DesignationCell orderId={r.orderId} designation={r.designation} /></TableCell>
                   <TableCell className="text-center text-sm">{r.quantity}</TableCell>
                   <TableCell><PriorityBadge priority={r.priority} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(r.plannedDeadline) || '—'}</TableCell>

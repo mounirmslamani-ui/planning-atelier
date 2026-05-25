@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import { Download, Pencil, Trash2, Check, X } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { getOrderGlobalStatus } from '@/lib/stepProgress';
@@ -420,7 +421,7 @@ const PendingInvoicingPage: React.FC = () => {
         <TableCell className="text-sm max-w-48">
           {isEditing ? (
             <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-          ) : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+          ) : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
         </TableCell>
         <TableCell className="text-sm text-center">
           {isEditing ? (

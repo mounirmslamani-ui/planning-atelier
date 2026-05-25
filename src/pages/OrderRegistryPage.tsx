@@ -24,6 +24,7 @@ import { getExportFilename } from '@/lib/excelExport';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
+import DesignationCell from '@/components/DesignationCell';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
@@ -425,7 +426,7 @@ const OrderRegistryPage: React.FC = () => {
       <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }}>
 <div className="flex flex-wrap items-center gap-2 mb-2">
    <div className="flex-1" />
-  <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
+  <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
 </div>
 
@@ -511,7 +512,7 @@ const OrderRegistryPage: React.FC = () => {
                             <span className="text-xs">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
                           )}
                         </TableCell>
-                        <TableCell style={{ width: 200, minWidth: 200, maxWidth: 200 }} className="truncate">{renderEditableCell(o, 'designation')}</TableCell>
+                        <TableCell style={{ width: 200, minWidth: 200, maxWidth: 200 }} className="truncate">{editingId === o.id ? renderEditableCell(o, 'designation') : <DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-xs" />}</TableCell>
                         <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
                         <TableCell>
                           {isEditing ? (

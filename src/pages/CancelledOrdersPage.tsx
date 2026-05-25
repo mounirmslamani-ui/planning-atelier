@@ -13,6 +13,7 @@ import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { formatDateFR } from '@/lib/utils';
+import DesignationCell from '@/components/DesignationCell';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const CancelledOrdersPage: React.FC = () => {
@@ -105,7 +106,7 @@ const CancelledOrdersPage: React.FC = () => {
                 <TableCell className="font-mono font-semibold"><OrderNumberLink orderId={c.orderId} orderNumber={c.orderNumberSnapshot} /></TableCell>
                 <TableCell>{c.orderDateSnapshot ? formatDateFR(c.orderDateSnapshot) : '—'}</TableCell>
                 <TableCell>{c.clientNameSnapshot || '—'}</TableCell>
-                <TableCell className="max-w-[260px] truncate" title={c.designationSnapshot}>{c.designationSnapshot}</TableCell>
+                <TableCell className="max-w-[260px] truncate" title={c.designationSnapshot}><DesignationCell orderId={c.orderId} designation={c.designationSnapshot} /></TableCell>
                 <TableCell className="text-center">{c.quantitySnapshot}</TableCell>
                 <TableCell>{formatDateFR(c.cancelDate)}</TableCell>
                 <TableCell><span className="inline-block rounded-full border border-orange-400/40 bg-orange-50 dark:bg-orange-900/20 text-orange-600 px-2 py-0.5 text-xs">{c.reason}</span></TableCell>

@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { QCDecision, QualityControlEntry, Order } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePromptDialog from '@/components/DatePromptDialog';
@@ -235,7 +236,7 @@ const QualityControlPage: React.FC = () => {
                   <TableCell className="text-sm max-w-48">
                     {isEditing
                       ? <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-                      : <span className="truncate block" title={order.designation}>{order.designation}</span>}
+                      : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing

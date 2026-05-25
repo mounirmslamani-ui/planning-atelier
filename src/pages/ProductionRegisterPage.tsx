@@ -13,6 +13,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
+import DesignationCell from '@/components/DesignationCell';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -442,7 +443,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                     <TableRow key={rec.id}>
                       <TableCell className="font-medium"><OrderNumberLink orderId={rec.orderId} orderNumber={info.orderNumber} /></TableCell>
                       <TableCell>{info.clientName}</TableCell>
-                      <TableCell>{info.designation}</TableCell>
+                      <TableCell><DesignationCell orderId={rec.orderId} designation={info.designation} /></TableCell>
                       <TableCell className="text-center">{info.quantity ?? '—'}</TableCell>
                       <TableCell>{info.operationName}</TableCell>
                       <TableCell className="whitespace-nowrap">

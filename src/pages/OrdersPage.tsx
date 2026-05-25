@@ -35,6 +35,7 @@ import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
+import DesignationCell from '@/components/DesignationCell';
 
 const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; description: string; color: string; border: string }> = {
   'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
@@ -760,7 +761,7 @@ const OrdersPage: React.FC = () => {
       );
       case 'orderDate': return <span className="text-xs">{formatDateFR(o.orderDate)}</span>;
       case 'client': return <span className="text-xs">{getClientName(o.clientId)}</span>;
-      case 'designation': return <span className="text-xs whitespace-normal break-words block">{o.designation}</span>;
+      case 'designation': return <DesignationCell orderId={o.id} designation={o.designation} className="text-xs whitespace-normal break-words block" />;
       case 'quantity': return <span className="text-xs">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
       case 'globalStatus': {
@@ -908,6 +909,8 @@ const OrdersPage: React.FC = () => {
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
           <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
+        </div>
+      } />
 
         {hasActiveFilters && (
           <div className="mb-3 flex items-center gap-2">
