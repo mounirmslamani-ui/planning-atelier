@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
+import DesignationCell from '@/components/DesignationCell';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 interface PurchaseRowDialogProps {
