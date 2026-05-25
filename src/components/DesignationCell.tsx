@@ -35,10 +35,18 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
     setOpen(true);
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+const handleClick = (e: React.MouseEvent) => {
     if (!folderLink) return;
     e.stopPropagation();
-    window.open(folderLink, '_blank', 'noopener,noreferrer');
+    
+    // Force l'ouverture dans un vrai onglet en dehors de la sandbox Lovable
+    const link = document.createElement('a');
+    link.href = folderLink;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleSave = () => {
