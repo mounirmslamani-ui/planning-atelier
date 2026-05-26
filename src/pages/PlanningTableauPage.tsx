@@ -777,38 +777,8 @@ const PlanningTableauPage: React.FC = () => {
     setOrderDirty(false);
   }, [draftSteps, steps, updateStep, planningOrderMap]);
 
-  // ─── Toggle frozen (lock) on a step (local draft) ───
-  const toggleStepFrozen = useCallback((stepId: string) => {
-    setDraftSteps(prev => {
-      const target = prev.find(s => s.id === stepId);
-      if (!target) return prev;
-      const unlocked = prev.map(s => s.id === stepId ? { ...s, frozen: false } : s);
-      const nextDraftSteps = !target.frozen
-        ? prev.map(s => s.id === stepId ? { ...s, frozen: true } : s)
-        : (() => {
-          const operatorSteps = unlocked
-            .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
-            .map(step => ({ step, order: draftOrders.find(o => o.id === step.orderId) }))
-            .filter((item): item is TaskItem => !!item.order)
-            .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
-            .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
-          const byId = new Map(operatorSteps.map(s => [s.id, s]));
-          return unlocked.map(s => byId.get(s.id) ?? s);
-        })();
+  // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
-      const nextDraftOrders = draftOrders.map(order => order.id === target.orderId
-        ? {
-          ...order,
-          frozenOrder: !target.frozen,
-          manualSortOrder: target.frozen ? undefined : (order.manualSortOrder ?? target.order),
-        }
-        : order);
-      setDraftOrders(nextDraftOrders);
-      commitPlanningHistory(nextDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
-      return nextDraftSteps;
-    });
-    setOrderDirty(true);
-  }, [draftOrders, absenceOperationId, absenceOrderId, forcedPhaseAmontWarnings, commitPlanningHistory]);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
