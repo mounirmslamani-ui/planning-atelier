@@ -712,7 +712,7 @@ const PlanningTableauPage: React.FC = () => {
     items.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
     persistPlanningOrders(updates);
 
-    applyReorder(items, dragged.step.id);
+    applyReorder(items, dragged.step.id, undefined, undefined, updates);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
