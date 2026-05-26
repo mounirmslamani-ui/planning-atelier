@@ -1,92 +1,69 @@
-# Refonte : بطاقة متابعة إنجاز الطلبية (Fiche Unique de Suivi)
 
 ## Objectif
-Centraliser toute la saisie et le suivi d'une commande dans **un seul document à 4 onglets**, ouvert depuis le tableau de planning ou le registre. Les anciennes fenêtres isolées disparaissent au profit d'un CRUD strict par ID. Aucune donnée Supabase n'est supprimée, aucune règle métier acquise n'est modifiée.
 
-## Garde-fous (non-régression stricte)
-- Terme **خابور** conservé partout dans l'UI.
-- Dialogue arabe de forçage des ressources au vert à la clôture d'étape inchangé.
-- Calcul automatique des 30 min de pause (12:00–12:30) inchangé.
-- Schéma Supabase préservé : on **ajoute uniquement** ce qui manque, on ne renomme ni ne supprime aucune colonne ou table existante.
-- Hooks, libs et flux déjà fiabilisés (`orderFlow.ts`, `preparationFilter.ts`, `useReintegrateOrder`, compteurs `lastSeriesNumbers`, validations CRUD du dialog de planning, calcul temps réel) sont **réutilisés tels quels** dans la nouvelle fiche.
+Dans **تسيير الطلبيات الجارية** (`OrdersPage.tsx`) et **جدول البرمجة** (`PlanningTableauPage.tsx`), ne conserver **que l'ordre manuel** (glisser-déposer + dialogue "Déplacer la sélection"). Supprimer :
+- toute logique d'ordonnancement automatique (tri par priorité/deadlines, insertion auto au top, recalcul de Pn pour suivre Cn, etc.) ;
+- la notion de **verrouillage (cadenas)** : `frozenOrder` côté commande et `frozen` côté étape ne sont plus créés ni affichés ;
+- les boutons et états visuels associés (icônes 🔒, "Trier auto", "ouvrir tous les verrous", indicateurs ⚠ de "position forcée", `WarningTriangleIcon` lié à un ordre non figé).
 
-## 1. Nettoyage de l'ancienne architecture (UI uniquement)
-- Les anciennes pop-ups indépendantes (définition ressources, ajout/modif étapes, saisie production, validation QC) ne sont plus accessibles depuis les tableaux globaux.
-- `OrdersPage` → titre renommé **ترتيب إنجاز الطلبيات الحالية**. Lecture seule + Drag & Drop d'ordre conservé. Le clic sur une ligne ouvre la Fiche Unique.
-- `OrderRegistryPage` → reste un registre lecture. Le clic sur une ligne ouvre la Fiche Unique.
-- Les pages dédiées (Production Register, Quality Control, Delivery, Material/Tooling/Study) restent accessibles via la sidebar pour les vues transversales, mais leurs dialogs internes sont remplacés par un bouton « فتح البطاقة » qui ouvre la Fiche Unique sur l'onglet pertinent.
+## Comportement final
 
-## 2. Fiche Unique : `OrderTrackingSheet` (4 onglets)
-Nouveau composant `src/components/OrderTrackingSheet.tsx` (extension du fichier existant) basé sur `Dialog` + `Tabs`, large (≥1100px), RTL. En-tête persistant : N° commande, client, désignation, quantité, statut global, badge priorité, bouton **🖨 طباعة البطاقة**.
+### OrdersPage (تسيير الطلبيات الجارية)
+- L'ordre des lignes est strictement celui du `displayOrder` stocké en base.
+- L'ordre ne change **que** sur :
+  - drag & drop manuel,
+  - dialogue "Déplacer la sélection (Cn)".
+- À chaque réorganisation manuelle, `displayOrder` est ré-attribué 1..N et persisté. Aucun champ `frozenOrder` n'est plus écrit.
+- Les nouvelles commandes prennent `displayOrder = N+1` (comportement déjà en place).
+- L'effet d'auto-réindexation qui comble les trous (`useEffect` qui réécrit 1..N quand une commande sort du flux) **est conservé** : ce n'est pas un tri automatique, c'est une simple renumérotation séquentielle indispensable pour garder Cn ∈ 1..N. Si tu préfères qu'on le retire aussi, dis-le.
+- Suppression : `autoSortOrders`, `handleAutoSort`, bouton "Trier auto", colonne/icône cadenas, `unlockOrder`, `unlockAll`, `hasFrozenOrders`, `WarningTriangleIcon` "non figé" sur la cellule de tri.
 
-Bandeau de compteurs en haut : derniers numéros (aa/Fxxx, aa/Pxxx, aa/Sxxx, aa/xxx) via `lastSeriesNumbers.ts`.
+### PlanningTableauPage (جدول البرمجة)
+- L'ordre par opérateur est strictement le `planning_order` (Pn) stocké en base.
+- Pn ne change **que** sur drag & drop manuel d'une ligne.
+- Suppression : 
+  - `insertNewStepsAtPriorityTop` (insertion auto par priorité des nouvelles étapes) → remplacé par : nouvelles étapes ajoutées à la **fin** de la liste de l'opérateur, sans réordonner les existantes ;
+  - `handleAutoSort` + bouton "Trier auto" par opérateur ;
+  - effet d'auto-recalcul des Pn pour combler les trous (`useEffect` après `operatorTasks`) → on garde un compactage 1..N **uniquement** quand une étape disparaît (terminée), pour éviter des trous de numérotation, mais sans réordonner ;
+  - toute la notion `step.frozen` : bouton cadenas dans la colonne "عمليات", `toggleStepFrozen`, écriture de `frozen: true` lors d'un D&D ou d'une fin d'étape, indicateurs ⚠ "position forcée" (`isManualOrderViolation`, `orderWarning`, `studyWarning`, `materialWarning`, `toolingWarning`, `phaseWarning`, `forcedPhaseAmontWarnings`, `pendingDrop` chaîné), styles `bg-primary/5` liés à `step.frozen` ;
+  - écriture de `frozenOrder` / `manualSortOrder` sur les commandes depuis `applyReorder` et `toggleStepFrozen`.
+- Le dialogue chaîné de pré-requis (étude/matière/outillage/phase amont) avant un drop **est supprimé** puisqu'il servait uniquement à autoriser un "forçage" verrouillé. Le D&D devient inconditionnel.
 
-### Onglet 1 — معلومات الطلب والزبون
-- Édition inline : numéro, catégorie, date de réception, délai promis, client + représentant, désignation, quantité, observation.
-- `UPDATE` strict par `order.id`.
-
-### Onglet 2 — تحضير الطلبية والموارد
-- Vue par étape avec sous-cartes Matière / Outillage / Étude (statuts + dates), **indépendantes étape par étape** (déjà le cas dans `production_steps`).
-- Réutilise les composants de `OrderPlanningDialog` pour les ressources.
-- Le filtre `buildOutOfPreparationFlowSet` continue d'exclure rétroactivement les commandes conformes/prêtes/livrées/facturées des pages Achats & Étude.
-
-### Onglet 3 — مراحل الإنجاز والتوقيت
-- Réutilise `OrderPlanningDialog` (déjà durci : UPDATE par ID, `step_order` normalisé, validation anti-doublon, confirmation « Voulez-vous enregistrer ces X étapes ? »).
-- Verrou d'ordre : on conserve `step_order` existant comme `step_index` immuable côté UI (pas de réindexation lors d'un UPDATE simple).
-- **Passage de relais** : bouton « إنهاء يدوياً » sur une étape en cours à 0h restantes → marque l'étape `Terminée` sans bloquer ; permet d'ajouter une nouvelle étape pour un autre opérateur sur la même opération (déjà résolu, on l'expose dans l'onglet).
-- Section **سجل الأشغال المنجزة** (filtrée sur la commande) avec les 4 champs HH:mm (début, fin, pause défaut 00:30 si chevauche midi, durée calculée) + champ `تاريخ الأشغال`. Colonnes optimisées, horodatage système masqué (déjà en place dans `ProductionRegisterPage`, on réutilise les helpers).
-
-### Onglet 4 — مراقبة الجودة والتسليم
-- Liste des contrôles QC successifs (historique conservé).
-- Action **Conforme** → crée l'entrée delivery + retire automatiquement la commande de `ترتيب إنجاز الطلبيات الحالية` (déjà géré par `hasCurrentPostProductionFlow`).
-- Action **Non conforme** → enregistre la décision sans casser l'historique.
-- Bouton **إعادة إدماج** (réintégration n-ième) : utilise `useReintegrateOrder` existant, qui préserve les enregistrements précédents et tague `reintegratedAt` pour ouvrir un nouveau cycle.
-- Bloc livraison + facturation (numéro de facture) lisible/éditable.
-
-## 3. Version imprimable A4
-- Bouton **🖨** dans l'en-tête de la fiche.
-- Nouveau composant `PrintTrackingSheet` rendu dans un portail caché + classes `print:*` Tailwind et `@media print` global dans `index.css`.
-- Format A4 portrait : en-tête (client, n°, qté, désignation, dates), tableau séquentiel des étapes (n°, opération, opérateur/équipement, durée estimée, durée réelle, statut), encadré signature « مراقبة الجودة ».
-- Onglets, boutons et chrome web masqués à l'impression.
-
-## 4. Base de données
-Aucune migration destructive. Une seule migration additive si nécessaire :
-- Ajout d'un index `idx_production_steps_order_step_order` sur `(order_id, step_order)` pour stabiliser l'affichage séquentiel (les colonnes existent déjà).
-- Aucun renommage, aucune suppression.
+### Hors périmètre — non modifié
+- **Gantt** (`GanttChart.tsx`) : conserve sa propre logique `frozen` interne (lecture seule, pas demandé par l'utilisateur).
+- **Scheduler** (`lib/scheduler.ts`) : `existing.step.frozen` reste lu (sera toujours `false` désormais, donc équivalent à supprimer la condition, mais on n'y touche pas pour éviter des effets de bord).
+- Pages **Study / MaterialPurchases / ToolingPurchases / Subcontracting** : continuent à afficher `displayOrder` en lecture seule — inchangé.
+- Type `Order.frozenOrder` et `Order.manualSortOrder`, type `ProductionStep.frozen` : **conservés** dans le type pour rester compatibles avec les données existantes en base, mais **plus jamais écrits ni lus** par l'UI des deux pages concernées. (Migration de nettoyage en DB non incluse — peut être faite plus tard.)
 
 ## Détails techniques
 
-### Fichiers créés
-- `src/components/tracking-sheet/OrderTrackingSheetV2.tsx` (conteneur + tabs)
-- `src/components/tracking-sheet/TabInfo.tsx`
-- `src/components/tracking-sheet/TabResources.tsx`
-- `src/components/tracking-sheet/TabSteps.tsx`
-- `src/components/tracking-sheet/TabQuality.tsx`
-- `src/components/tracking-sheet/PrintTrackingSheet.tsx`
-- `src/components/tracking-sheet/SeriesCountersBanner.tsx`
+### `src/pages/OrdersPage.tsx`
+- Retirer : `autoSortOrders`, `handleAutoSort`, bouton "Trier auto" (s'il existe), `unlockOrder`, `unlockAll`, `hasFrozenOrders`.
+- Dans `handleDrop` et `applyMoveSelection` : retirer `frozenOrder: ... ? true : o.frozenOrder` de la map de réindexation.
+- Dans la cellule "الترتيب" : supprimer le `Lock`/`WarningTriangleIcon` conditionnels, ne garder que `GripVertical` + numéro.
+- Dans la cellule "عمليات" : supprimer le bouton `Unlock` conditionnel sur `o.frozenOrder`.
+- Conserver l'effet de renumérotation 1..N (sanitization).
+- Imports à nettoyer : `Lock`, `Unlock`, `WarningTriangleIcon` (si plus utilisé ailleurs dans le fichier — vérifier).
 
-### Fichiers modifiés
-- `src/pages/OrdersPage.tsx` — titre AR mis à jour, clic ligne → ouvre la fiche ; D&D priorité conservé.
-- `src/pages/OrderRegistryPage.tsx` — clic ligne → ouvre la fiche.
-- `src/pages/PlanningTableauPage.tsx` — bouton « فتح البطاقة » sur chaque ligne.
-- `src/pages/QualityControlPage.tsx`, `DeliveryPage.tsx`, `MaterialPurchasesPage.tsx`, `ToolingPurchasesPage.tsx`, `StudyPage.tsx`, `ProductionRegisterPage.tsx` — bouton « فتح البطاقة » qui ouvre la fiche sur le bon onglet.
-- `src/index.css` — règles `@media print` (masque sidebar, boutons, onglets ; force A4).
+### `src/pages/PlanningTableauPage.tsx`
+- Remplacer `insertNewStepsAtPriorityTop` par une fonction qui se contente d'ajouter les nouvelles étapes (sans Pn) en fin de liste de l'opérateur.
+- Dans `operatorTasks` : tri **uniquement** par `planningOrderMap[step.id]` ; les étapes sans Pn vont à la fin dans l'ordre d'insertion.
+- Effet d'auto-compactage : conserver une version simplifiée qui renumérote 1..N par opérateur si des trous apparaissent (suppression d'une étape), sans jamais ré-ordonner.
+- Supprimer `handleAutoSort` + le bouton "Trier auto" dans l'entête de chaque tableau opérateur.
+- Supprimer `toggleStepFrozen`, le bouton cadenas, `YellowLockIcon` dans la colonne "عمليات".
+- Dans `applyReorder` : retirer l'écriture de `frozen: true`, retirer la mise à jour de `frozenOrder` / `manualSortOrder` sur les commandes.
+- Dans `handleCompletionAnswer` (finished=true) : retirer `frozen: true`, conserver simplement le retrait via `isStepFinished`.
+- Supprimer `forcedPhaseAmontWarnings`, `pendingDrop`, `handlePendingConfirm`, `handlePendingCancel`, `ConfirmDialog` chaîné associé, et toutes les variables `orderWarning/studyWarning/materialWarning/toolingWarning/phaseWarning` qui dépendaient de `step.frozen`. Le rendu affiche directement les pills/emojis sans le mode "forcé".
+- `isManualOrderViolation` : devient inutile → supprimer.
+- Le snapshot d'undo/redo n'a plus besoin de `forcedPhaseAmontWarnings` → simplifier `PlanningDraftSnapshot`.
 
-### Données et règles préservées
-- Toutes les fonctions de `src/lib/supabase-data.ts` restent inchangées.
-- `useReintegrateOrder`, `useCancelOrder`, `buildOutOfActiveProductionSet`, `buildOutOfPreparationFlowSet`, `lastSeriesNumbers` réutilisés sans modification.
-- Validation CRUD stricte des étapes (validation anti-doublon, normalisation `step_order`, dialogue de confirmation) restée dans `OrderPlanningDialog` et intégrée dans l'onglet 3.
+### Vérifications de non-régression (avant suppression)
+1. `frozen` sur step : seul Gantt et Scheduler le lisent en dehors des deux pages → OK, on n'y touche pas.
+2. `frozenOrder` sur order : seul OrdersPage et PlanningTableauPage l'écrivent/lisent → suppression sans impact externe.
+3. `manualSortOrder` : seul PlanningTableauPage l'écrit, personne ne le lit ailleurs → OK.
+4. `displayOrder` : lu par StudyPage / MaterialPurchasesPage / ToolingPurchasesPage / Subcontracting / Gantt / OrdersPage → la sanitization 1..N est conservée, donc inchangé pour eux.
+5. `planning_order` (DB) : continue à être écrit par D&D, lu par PlanningTableauPage → inchangé.
 
-## Hors périmètre
-- Aucune modification du moteur de planification ou du Gantt.
-- Aucun changement aux pages Operators / Operations / Clients / Subcontractors / Equipment / Holidays / Absences.
-- Pas de nouvelle authentification.
+## Question
 
-## Critères d'acceptation
-1. Cliquer une commande dans `ترتيب إنجاز الطلبيات الحالية` ou dans `سجل الطلبيات` ouvre la Fiche Unique avec les 4 onglets.
-2. Les compteurs aa/Fxxx, aa/Pxxx, aa/Sxxx, aa/xxx s'affichent à jour en haut.
-3. Modifier une étape met à jour la ligne existante (pas de doublon, pas d'inversion).
-4. Marquer Conforme retire la commande de la vue active et la bascule dans « جاهزة للتسليم ».
-5. Le bouton réintégration relance un cycle sans effacer les contrôles précédents.
-6. L'impression produit une fiche A4 propre, sans onglets ni boutons.
-7. Aucune donnée existante n'est supprimée ou corrompue.
+Veux-tu également supprimer l'effet de **renumérotation automatique 1..N** (sanitization) ? Si oui, les Cn et Pn pourraient devenir non contigus (1, 2, 5, 8…) après suppression d'une commande/étape. Par défaut je le **conserve** car il ne change pas l'ordre relatif, il évite juste les trous.
