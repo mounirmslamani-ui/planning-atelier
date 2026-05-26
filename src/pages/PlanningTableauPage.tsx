@@ -106,15 +106,8 @@ function phaseAmontLabel(status: PhaseAmontStatus): string {
 const isBlockingResourceStatus = (status: ResourceStatus | undefined): boolean =>
   status === 'non-disponible' || status === 'partiel';
 
-function isManualOrderViolation(tasks: TaskItem[], index: number): boolean {
-  const currentCn = tasks[index]?.order.displayOrder || 0;
-  if (currentCn <= 0) return true;
-  return tasks.some((task, taskIndex) => {
-    const cn = task.order.displayOrder || 0;
-    if (cn <= 0 || taskIndex === index) return false;
-    return (taskIndex < index && cn > currentCn) || (taskIndex > index && cn < currentCn);
-  });
-}
+// isManualOrderViolation removed — manual ordering is the only mode now.
+
 
 /** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
 function getStepFlowPosition(
