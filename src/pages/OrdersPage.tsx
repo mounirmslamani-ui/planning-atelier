@@ -332,19 +332,8 @@ const OrdersPage: React.FC = () => {
     ]);
   }, [orders, absenceOrderId, outOfActiveProductionIds, setOrders]);
 
-  // Auto-sort and apply when clicking "Trier auto"
-  const handleAutoSort = useCallback(() => {
-    const visible = orders.filter(o =>
-      o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id)
-    );
-    const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
-    ).map(o => ({ ...o, displayOrder: undefined }));
-    const sorted = autoSortOrders(visible).map((o, i) => ({ ...o, displayOrder: i + 1 }));
-    const absence = orders.find(o => o.id === absenceOrderId);
-    setOrders([...(absence ? [absence] : []), ...sorted, ...outOfFlow]);
-    setOrderValidated(false);
-  }, [orders, absenceOrderId, outOfActiveProductionIds, autoSortOrders, setOrders]);
+  // handleAutoSort removed — ordering is strictly manual.
+
 
   // Validate: persist order to DB
   const handleValidateOrder = useCallback(() => {
