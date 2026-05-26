@@ -959,11 +959,6 @@ const OrdersPage: React.FC = () => {
                     <TableCell className="text-center px-1">
                       <div className="flex items-center justify-center gap-0.5">
                         {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
-                        {o.frozenOrder ? (
-                          <Lock className="w-3 h-3 text-primary" />
-                        ) : (
-                          <WarningTriangleIcon aria-label="طلبية غير مرتبة" />
-                        )}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
                     </TableCell>
@@ -971,11 +966,7 @@ const OrdersPage: React.FC = () => {
                       const actionsCell = (
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            {o.frozenOrder && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
-                                <Unlock className="w-3.5 h-3.5 text-primary" />
-                              </Button>
-                            )}
+
                             {(() => {
                               const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
                               return (
