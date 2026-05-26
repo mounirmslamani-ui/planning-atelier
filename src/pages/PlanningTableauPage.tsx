@@ -742,25 +742,8 @@ const PlanningTableauPage: React.FC = () => {
   }, []);
 
   // ─── Auto-sort : réinitialise les Pn selon le Cn (displayOrder) ───
-  const handleAutoSort = useCallback((operatorId: string) => {
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
-    if (!group || group.tasks.length === 0) return;
+  // handleAutoSort removed — manual ordering only.
 
-    const sorted = [...group.tasks].sort((a, b) => {
-      const da = a.order.displayOrder ?? 0;
-      const db = b.order.displayOrder ?? 0;
-      if (da === 0 && db === 0) return 0;
-      if (da === 0) return 1;
-      if (db === 0) return -1;
-      return da - db;
-    });
-
-    const updates: Record<string, number> = {};
-    sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
-    persistPlanningOrders(updates);
-
-    applyReorder(sorted, undefined);
-  }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
 
   // ─── Valider : sauvegarde uniquement les dates (startDate/endDate) recalculées + statuts ───
