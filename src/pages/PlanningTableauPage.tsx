@@ -1021,8 +1021,9 @@ const PlanningTableauPage: React.FC = () => {
     addProductionRecord(record);
 
     if (finished) {
-      // Remove from local draftSteps immediately so it disappears from Planning Tableau
-      setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: true } : s));
+      // Finished steps are filtered out by isStepFinished in operatorTasks.
+
+
 
       const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
       const recordsAfterInsert = [...productionRecords, record];
