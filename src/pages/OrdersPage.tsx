@@ -451,12 +451,11 @@ const OrdersPage: React.FC = () => {
     const remaining = baseSorted.filter(o => !selectedIds.has(o.id));
     const insertAt = Math.min(Math.max(0, target - 1), remaining.length);
     const newList = [...remaining.slice(0, insertAt), ...selectedItems, ...remaining.slice(insertAt)];
-    const selectedIdSet = new Set(selectedItems.map(s => s.id));
     const reindexed = newList.map((o, i) => ({
       ...o,
       displayOrder: i + 1,
-      frozenOrder: selectedIdSet.has(o.id) ? true : o.frozenOrder,
     }));
+
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...reindexed]);
     setOrderValidated(false);
