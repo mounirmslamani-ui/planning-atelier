@@ -423,7 +423,9 @@ const PlanningTableauPage: React.FC = () => {
     }
   }, [steps, orders, orderDirty, history]);
 
-  // ─── Pn (planning_order) : chargement depuis la base à chaque changement de steps ───
+  // ─── Pn (planning_order) : chargement additif depuis la base ───
+  // IMPORTANT : on ne remplace JAMAIS la map locale (elle est autoritative après un D&D).
+  // On se contente d'ajouter les Pn manquants pour les nouvelles étapes apparues.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -431,11 +433,17 @@ const PlanningTableauPage: React.FC = () => {
         .from('production_steps')
         .select('id, planning_order');
       if (cancelled || error || !data) return;
-      const map: Record<string, number> = {};
-      data.forEach((row: { id: string; planning_order: number | null }) => {
-        if (row.planning_order != null) map[row.id] = row.planning_order;
+      setPlanningOrderMap(prev => {
+        const next = { ...prev };
+        let changed = false;
+        data.forEach((row: { id: string; planning_order: number | null }) => {
+          if (row.planning_order != null && next[row.id] == null) {
+            next[row.id] = row.planning_order;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
       });
-      setPlanningOrderMap(map);
     })();
     return () => { cancelled = true; };
   }, [steps]);
