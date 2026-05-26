@@ -1542,45 +1542,38 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          {studyWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
+                          <ResourceStatusPill
                             value={studyStatus}
                             onChange={(next) => handleStatusChange(step.id, 'study', next)}
                             deadline={step.studyDeadline}
-                          />}
+                          />
                         </TableCell>
                         {/* Matière */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          {materialWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
+                          <ResourceStatusPill
                             value={matStatus}
                             onChange={(next) => handleStatusChange(step.id, 'material', next)}
                             deadline={step.materialDeadline}
                             receivedDate={order.materialReceivedDate}
-                          />}
+                          />
                         </TableCell>
                         {/* Outillage */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          {toolingWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
+                          <ResourceStatusPill
                             value={toolStatus}
                             onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
                             deadline={step.toolingDeadline}
-                          />}
+                          />
                         </TableCell>
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{phaseWarning ? <WarningTriangleIcon /> : amontEmoji}</span></TooltipTrigger>
-                            <TooltipContent>
-                              {phaseWarning
-                                ? '⚠️ Phase amont non terminée mais position forcée'
-                                : phaseAmontLabel(amontStatus)}
-                            </TooltipContent>
+                            <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
+                            <TooltipContent>{phaseAmontLabel(amontStatus)}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'فتح' : 'قفل'}>
-                              {step.frozen ? <YellowLockIcon className="h-5 w-5" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
-                            </Button>
                             <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrder(order)} title="التعيينات">
                               <CalendarCheck className="w-7 h-7" />
                             </Button>
@@ -1596,6 +1589,7 @@ const PlanningTableauPage: React.FC = () => {
                             )}
                           </div>
                         </TableCell>
+
                       </TableRow>
                     );
                   })}
