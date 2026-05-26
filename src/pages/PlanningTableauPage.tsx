@@ -618,7 +618,6 @@ const PlanningTableauPage: React.FC = () => {
       const reorderedStep: ProductionStep = {
         ...step,
         order: idx + 1,
-        frozen: step.id === targetStepId ? true : step.frozen,
       };
 
       return { order, step: reorderedStep };
@@ -653,15 +652,9 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(enriched);
       }
     });
+    // frozenOrder / manualSortOrder writes removed — manual ordering only.
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, planningOrderMap]);
 
-    const currentOrdersById = new Map(draftOrders.map(order => [order.id, order]));
-    nextDraftOrders.forEach(nextOrder => {
-      const currentOrder = currentOrdersById.get(nextOrder.id);
-      if (!currentOrder || currentOrder.frozenOrder !== nextOrder.frozenOrder || currentOrder.manualSortOrder !== nextOrder.manualSortOrder) {
-        updateOrder(nextOrder);
-      }
-    });
-  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, updateOrder, planningOrderMap]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
