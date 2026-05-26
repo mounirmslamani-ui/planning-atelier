@@ -232,70 +232,30 @@ interface TaskItem {
 type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
- * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
- * at the TOP of their priority group.
- * Steps whose parent order has a valid displayOrder keep their relative Cn order.
+ * Append new steps (whose parent order is not yet ordered) to the END of each
+ * operator's list, without reordering existing steps.
+ * Steps with a known planning_order keep their relative position; new steps
+ * just receive a stable sequential `step.order` so React keys are stable.
  */
-function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Order[]): ProductionStep[] {
-  const orderMap = new Map(allOrders.map(o => [o.id, o]));
-
-  // "ordered" = parent order has a displayOrder > 0
-  const ordered = allSteps.filter(s => {
-    const o = orderMap.get(s.orderId);
-    return o && o.displayOrder && o.displayOrder > 0;
-  });
-  const unordered = allSteps.filter(s => {
-    const o = orderMap.get(s.orderId);
-    return !o || !o.displayOrder || o.displayOrder <= 0;
-  });
-
-  if (unordered.length === 0) return allSteps;
-
-  // Group ordered steps by operatorId, sorted by their parent order's displayOrder (Cn)
+function appendUnorderedStepsAtEnd(allSteps: ProductionStep[]): ProductionStep[] {
+  // Group by operator and reassign step.order sequentially per operator,
+  // preserving the input order (which already reflects DB / planning_order order).
   const byOperator = new Map<string, ProductionStep[]>();
-  ordered.forEach(s => {
+  allSteps.forEach(s => {
     const key = s.operatorId || '__none__';
     if (!byOperator.has(key)) byOperator.set(key, []);
     byOperator.get(key)!.push(s);
   });
-  byOperator.forEach(arr => arr.sort((a, b) => {
-    const oa = orderMap.get(a.orderId);
-    const ob = orderMap.get(b.orderId);
-    return (oa?.displayOrder || 0) - (ob?.displayOrder || 0);
-  }));
 
-  // For each unordered step, insert at the top of its priority group
-  unordered.forEach(newStep => {
-    const key = newStep.operatorId || '__none__';
-    if (!byOperator.has(key)) byOperator.set(key, []);
-    const group = byOperator.get(key)!;
-    const newOrder = orderMap.get(newStep.orderId);
-    const newPriority = priorityRank[newOrder?.priority || 'P4'] ?? 3;
-
-    // Find the first step with same or lower priority
-    let insertIdx = 0;
-    for (let i = 0; i < group.length; i++) {
-      const existingOrder = orderMap.get(group[i].orderId);
-      const existingPriority = priorityRank[existingOrder?.priority || 'P4'] ?? 3;
-      if (existingPriority >= newPriority) {
-        insertIdx = i;
-        break;
-      }
-      insertIdx = i + 1;
-    }
-    group.splice(insertIdx, 0, newStep);
-  });
-
-  // Reassign step.order sequentially per operator
   const result: ProductionStep[] = [];
   byOperator.forEach(group => {
     group.forEach((s, idx) => {
       result.push({ ...s, order: idx + 1 });
     });
   });
-
   return result;
 }
+
 
 function createPlanningSnapshot(
   nextDraftSteps: ProductionStep[],
