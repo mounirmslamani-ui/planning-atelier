@@ -403,7 +403,7 @@ const PlanningTableauPage: React.FC = () => {
 
   // Sync from context whenever steps change, including Undo/Redo restores.
   useEffect(() => {
-    const syncedDraftSteps = insertNewStepsAtPriorityTop(steps, orders);
+    const syncedDraftSteps = appendUnorderedStepsAtEnd(steps);
     if (!draftInitialized.current) {
       setDraftOrders(orders);
       setDraftSteps(syncedDraftSteps);
