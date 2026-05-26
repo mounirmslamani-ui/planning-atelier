@@ -570,14 +570,8 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [baseSorted, getColValue, hasStepsMap]);
 
-  const unlockOrder = (o: Order) => updateOrder({ ...o, frozenOrder: false });
-  const unlockAll = () => {
-    const absence = orders.find(o => o.id === absenceOrderId);
-    const real = orders.filter(o => o.id !== absenceOrderId).map(o => ({ ...o, frozenOrder: false }));
-    setOrders([...(absence ? [absence] : []), ...real]);
-  };
+  // Lock / unlock removed — manual ordering only.
 
-  const hasFrozenOrders = orders.some(o => o.id !== absenceOrderId && o.frozenOrder);
 
   const columns: { key: ColumnKey; label: string; className?: string }[] = [
     { key: 'orderNumber', label: 'رقم الطلبية', className: 'w-[90px]' },
