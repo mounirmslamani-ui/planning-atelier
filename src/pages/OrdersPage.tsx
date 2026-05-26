@@ -11,7 +11,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, Lock, Unlock, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
@@ -254,30 +254,8 @@ const OrdersPage: React.FC = () => {
     }
   }, [applyStatusToOrderAndSteps]);
 
-  const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
-    return [...orderList].sort((a, b) => {
-      // Primary: priority rank
-      const pa = priorityRank[a.priority] ?? 5;
-      const pb = priorityRank[b.priority] ?? 5;
-      if (pa !== pb) return pa - pb;
+  // Auto-sort logic removed — ordering is strictly manual (drag & drop / Déplacer).
 
-      // Secondary: latest availability date among study/material/tooling deadlines
-      const getLatestAvailDate = (o: Order): string => {
-        const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
-        let latest = '';
-        orderSteps.forEach(s => {
-          if (s.studyDeadline && s.studyDeadline !== 'warning' && s.studyDeadline !== 'pending' && s.studyDeadline > latest) latest = s.studyDeadline;
-          if (s.materialDeadline && s.materialDeadline !== 'warning' && s.materialDeadline !== 'pending' && s.materialDeadline > latest) latest = s.materialDeadline;
-          if (s.toolingDeadline && s.toolingDeadline !== 'warning' && s.toolingDeadline !== 'pending' && s.toolingDeadline > latest) latest = s.toolingDeadline;
-        });
-        return latest || '0000-00-00'; // no deadline = available now = sort first
-      };
-
-      const da = getLatestAvailDate(a);
-      const db = getLatestAvailDate(b);
-      return da.localeCompare(db);
-    });
-  }, [steps, absenceOperationId]);
 
   // Sort by displayOrder ascending (playlist style). Orders leave active
   // production as soon as the CURRENT cycle is conforming / ready / delivered /
@@ -354,19 +332,8 @@ const OrdersPage: React.FC = () => {
     ]);
   }, [orders, absenceOrderId, outOfActiveProductionIds, setOrders]);
 
-  // Auto-sort and apply when clicking "Trier auto"
-  const handleAutoSort = useCallback(() => {
-    const visible = orders.filter(o =>
-      o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id)
-    );
-    const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
-    ).map(o => ({ ...o, displayOrder: undefined }));
-    const sorted = autoSortOrders(visible).map((o, i) => ({ ...o, displayOrder: i + 1 }));
-    const absence = orders.find(o => o.id === absenceOrderId);
-    setOrders([...(absence ? [absence] : []), ...sorted, ...outOfFlow]);
-    setOrderValidated(false);
-  }, [orders, absenceOrderId, outOfActiveProductionIds, autoSortOrders, setOrders]);
+  // handleAutoSort removed — ordering is strictly manual.
+
 
   // Validate: persist order to DB
   const handleValidateOrder = useCallback(() => {
@@ -484,12 +451,11 @@ const OrdersPage: React.FC = () => {
     const remaining = baseSorted.filter(o => !selectedIds.has(o.id));
     const insertAt = Math.min(Math.max(0, target - 1), remaining.length);
     const newList = [...remaining.slice(0, insertAt), ...selectedItems, ...remaining.slice(insertAt)];
-    const selectedIdSet = new Set(selectedItems.map(s => s.id));
     const reindexed = newList.map((o, i) => ({
       ...o,
       displayOrder: i + 1,
-      frozenOrder: selectedIdSet.has(o.id) ? true : o.frozenOrder,
     }));
+
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...reindexed]);
     setOrderValidated(false);
@@ -574,13 +540,13 @@ const OrdersPage: React.FC = () => {
     let insertAt = dropIndex - dragIndices.filter(i => i < dropIndex).length;
     if (insertAt < 0) insertAt = 0;
     remaining.splice(insertAt, 0, ...draggedItems);
-    // Reindex all orders 1, 2, 3, ... and freeze dragged items
+    // Reindex all orders 1, 2, 3, ... — no lock applied.
     const absence = orders.find(o => o.id === absenceOrderId);
     const reindexed = remaining.map((o, i) => ({
       ...o,
       displayOrder: i + 1,
-      frozenOrder: draggedItems.some(d => d.id === o.id) ? true : o.frozenOrder,
     }));
+
     setOrders([...(absence ? [absence] : []), ...reindexed]);
     setDragIndices(null); setDragOverIndex(null);
     setOrderValidated(false);
@@ -604,14 +570,8 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [baseSorted, getColValue, hasStepsMap]);
 
-  const unlockOrder = (o: Order) => updateOrder({ ...o, frozenOrder: false });
-  const unlockAll = () => {
-    const absence = orders.find(o => o.id === absenceOrderId);
-    const real = orders.filter(o => o.id !== absenceOrderId).map(o => ({ ...o, frozenOrder: false }));
-    setOrders([...(absence ? [absence] : []), ...real]);
-  };
+  // Lock / unlock removed — manual ordering only.
 
-  const hasFrozenOrders = orders.some(o => o.id !== absenceOrderId && o.frozenOrder);
 
   const columns: { key: ColumnKey; label: string; className?: string }[] = [
     { key: 'orderNumber', label: 'رقم الطلبية', className: 'w-[90px]' },
@@ -999,11 +959,6 @@ const OrdersPage: React.FC = () => {
                     <TableCell className="text-center px-1">
                       <div className="flex items-center justify-center gap-0.5">
                         {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
-                        {o.frozenOrder ? (
-                          <Lock className="w-3 h-3 text-primary" />
-                        ) : (
-                          <WarningTriangleIcon aria-label="طلبية غير مرتبة" />
-                        )}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
                     </TableCell>
@@ -1011,11 +966,7 @@ const OrdersPage: React.FC = () => {
                       const actionsCell = (
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            {o.frozenOrder && (
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => unlockOrder(o)} title="فتح">
-                                <Unlock className="w-3.5 h-3.5 text-primary" />
-                              </Button>
-                            )}
+
                             {(() => {
                               const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
                               return (

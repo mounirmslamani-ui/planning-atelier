@@ -106,15 +106,8 @@ function phaseAmontLabel(status: PhaseAmontStatus): string {
 const isBlockingResourceStatus = (status: ResourceStatus | undefined): boolean =>
   status === 'non-disponible' || status === 'partiel';
 
-function isManualOrderViolation(tasks: TaskItem[], index: number): boolean {
-  const currentCn = tasks[index]?.order.displayOrder || 0;
-  if (currentCn <= 0) return true;
-  return tasks.some((task, taskIndex) => {
-    const cn = task.order.displayOrder || 0;
-    if (cn <= 0 || taskIndex === index) return false;
-    return (taskIndex < index && cn > currentCn) || (taskIndex > index && cn < currentCn);
-  });
-}
+// isManualOrderViolation removed — manual ordering is the only mode now.
+
 
 /** Determine if a step is the first, last, or only operator (non-subcontractor) step for its order */
 function getStepFlowPosition(
@@ -239,70 +232,30 @@ interface TaskItem {
 type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
- * Insert new steps (whose parent order has no displayOrder / displayOrder === 0)
- * at the TOP of their priority group.
- * Steps whose parent order has a valid displayOrder keep their relative Cn order.
+ * Append new steps (whose parent order is not yet ordered) to the END of each
+ * operator's list, without reordering existing steps.
+ * Steps with a known planning_order keep their relative position; new steps
+ * just receive a stable sequential `step.order` so React keys are stable.
  */
-function insertNewStepsAtPriorityTop(allSteps: ProductionStep[], allOrders: Order[]): ProductionStep[] {
-  const orderMap = new Map(allOrders.map(o => [o.id, o]));
-
-  // "ordered" = parent order has a displayOrder > 0
-  const ordered = allSteps.filter(s => {
-    const o = orderMap.get(s.orderId);
-    return o && o.displayOrder && o.displayOrder > 0;
-  });
-  const unordered = allSteps.filter(s => {
-    const o = orderMap.get(s.orderId);
-    return !o || !o.displayOrder || o.displayOrder <= 0;
-  });
-
-  if (unordered.length === 0) return allSteps;
-
-  // Group ordered steps by operatorId, sorted by their parent order's displayOrder (Cn)
+function appendUnorderedStepsAtEnd(allSteps: ProductionStep[]): ProductionStep[] {
+  // Group by operator and reassign step.order sequentially per operator,
+  // preserving the input order (which already reflects DB / planning_order order).
   const byOperator = new Map<string, ProductionStep[]>();
-  ordered.forEach(s => {
+  allSteps.forEach(s => {
     const key = s.operatorId || '__none__';
     if (!byOperator.has(key)) byOperator.set(key, []);
     byOperator.get(key)!.push(s);
   });
-  byOperator.forEach(arr => arr.sort((a, b) => {
-    const oa = orderMap.get(a.orderId);
-    const ob = orderMap.get(b.orderId);
-    return (oa?.displayOrder || 0) - (ob?.displayOrder || 0);
-  }));
 
-  // For each unordered step, insert at the top of its priority group
-  unordered.forEach(newStep => {
-    const key = newStep.operatorId || '__none__';
-    if (!byOperator.has(key)) byOperator.set(key, []);
-    const group = byOperator.get(key)!;
-    const newOrder = orderMap.get(newStep.orderId);
-    const newPriority = priorityRank[newOrder?.priority || 'P4'] ?? 3;
-
-    // Find the first step with same or lower priority
-    let insertIdx = 0;
-    for (let i = 0; i < group.length; i++) {
-      const existingOrder = orderMap.get(group[i].orderId);
-      const existingPriority = priorityRank[existingOrder?.priority || 'P4'] ?? 3;
-      if (existingPriority >= newPriority) {
-        insertIdx = i;
-        break;
-      }
-      insertIdx = i + 1;
-    }
-    group.splice(insertIdx, 0, newStep);
-  });
-
-  // Reassign step.order sequentially per operator
   const result: ProductionStep[] = [];
   byOperator.forEach(group => {
     group.forEach((s, idx) => {
       result.push({ ...s, order: idx + 1 });
     });
   });
-
   return result;
 }
+
 
 function createPlanningSnapshot(
   nextDraftSteps: ProductionStep[],
@@ -408,7 +361,7 @@ const PlanningTableauPage: React.FC = () => {
   const [orderDirty, setOrderDirty] = useState(false);
 
   const history = useHistoryStack<PlanningDraftSnapshot>({
-    initialPresent: createPlanningSnapshot(insertNewStepsAtPriorityTop(steps, orders), orders, {}, false),
+    initialPresent: createPlanningSnapshot(appendUnorderedStepsAtEnd(steps), orders, {}, false),
     limit: PLANNING_HISTORY_LIMIT,
     isEqual: areSnapshotsEqual,
   });
@@ -450,7 +403,7 @@ const PlanningTableauPage: React.FC = () => {
 
   // Sync from context whenever steps change, including Undo/Redo restores.
   useEffect(() => {
-    const syncedDraftSteps = insertNewStepsAtPriorityTop(steps, orders);
+    const syncedDraftSteps = appendUnorderedStepsAtEnd(steps);
     if (!draftInitialized.current) {
       setDraftOrders(orders);
       setDraftSteps(syncedDraftSteps);
@@ -665,7 +618,6 @@ const PlanningTableauPage: React.FC = () => {
       const reorderedStep: ProductionStep = {
         ...step,
         order: idx + 1,
-        frozen: step.id === targetStepId ? true : step.frozen,
       };
 
       return { order, step: reorderedStep };
@@ -700,15 +652,9 @@ const PlanningTableauPage: React.FC = () => {
         updateStep(enriched);
       }
     });
+    // frozenOrder / manualSortOrder writes removed — manual ordering only.
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, planningOrderMap]);
 
-    const currentOrdersById = new Map(draftOrders.map(order => [order.id, order]));
-    nextDraftOrders.forEach(nextOrder => {
-      const currentOrder = currentOrdersById.get(nextOrder.id);
-      if (!currentOrder || currentOrder.frozenOrder !== nextOrder.frozenOrder || currentOrder.manualSortOrder !== nextOrder.manualSortOrder) {
-        updateOrder(nextOrder);
-      }
-    });
-  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, updateOrder, planningOrderMap]);
 
   // ─── Drag & drop handlers with refs for reliable state ───
   const handleDragStart = useCallback((e: React.DragEvent, operatorId: string, index: number, step: ProductionStep, order: Order) => {
@@ -796,25 +742,8 @@ const PlanningTableauPage: React.FC = () => {
   }, []);
 
   // ─── Auto-sort : réinitialise les Pn selon le Cn (displayOrder) ───
-  const handleAutoSort = useCallback((operatorId: string) => {
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
-    if (!group || group.tasks.length === 0) return;
+  // handleAutoSort removed — manual ordering only.
 
-    const sorted = [...group.tasks].sort((a, b) => {
-      const da = a.order.displayOrder ?? 0;
-      const db = b.order.displayOrder ?? 0;
-      if (da === 0 && db === 0) return 0;
-      if (da === 0) return 1;
-      if (db === 0) return -1;
-      return da - db;
-    });
-
-    const updates: Record<string, number> = {};
-    sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
-    persistPlanningOrders(updates);
-
-    applyReorder(sorted, undefined);
-  }, [operatorTasks, applyReorder, persistPlanningOrders]);
 
 
   // ─── Valider : sauvegarde uniquement les dates (startDate/endDate) recalculées + statuts ───
@@ -848,38 +777,8 @@ const PlanningTableauPage: React.FC = () => {
     setOrderDirty(false);
   }, [draftSteps, steps, updateStep, planningOrderMap]);
 
-  // ─── Toggle frozen (lock) on a step (local draft) ───
-  const toggleStepFrozen = useCallback((stepId: string) => {
-    setDraftSteps(prev => {
-      const target = prev.find(s => s.id === stepId);
-      if (!target) return prev;
-      const unlocked = prev.map(s => s.id === stepId ? { ...s, frozen: false } : s);
-      const nextDraftSteps = !target.frozen
-        ? prev.map(s => s.id === stepId ? { ...s, frozen: true } : s)
-        : (() => {
-          const operatorSteps = unlocked
-            .filter(s => s.operatorId === target.operatorId && s.operationId !== absenceOperationId && s.orderId !== absenceOrderId)
-            .map(step => ({ step, order: draftOrders.find(o => o.id === step.orderId) }))
-            .filter((item): item is TaskItem => !!item.order)
-            .sort((a, b) => (a.order.displayOrder || 0) - (b.order.displayOrder || 0))
-            .map(({ step }, idx) => ({ ...step, order: idx + 1 }));
-          const byId = new Map(operatorSteps.map(s => [s.id, s]));
-          return unlocked.map(s => byId.get(s.id) ?? s);
-        })();
+  // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
-      const nextDraftOrders = draftOrders.map(order => order.id === target.orderId
-        ? {
-          ...order,
-          frozenOrder: !target.frozen,
-          manualSortOrder: target.frozen ? undefined : (order.manualSortOrder ?? target.order),
-        }
-        : order);
-      setDraftOrders(nextDraftOrders);
-      commitPlanningHistory(nextDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
-      return nextDraftSteps;
-    });
-    setOrderDirty(true);
-  }, [draftOrders, absenceOperationId, absenceOrderId, forcedPhaseAmontWarnings, commitPlanningHistory]);
 
   // ─── Inline edit helpers ───
   const getStepInlineValue = (step: ProductionStep, field: string) => {
@@ -1122,8 +1021,9 @@ const PlanningTableauPage: React.FC = () => {
     addProductionRecord(record);
 
     if (finished) {
-      // Remove from local draftSteps immediately so it disappears from Planning Tableau
-      setDraftSteps(prev => prev.map(s => s.id === stepId ? { ...s, frozen: true } : s));
+      // Finished steps are filtered out by isStepFinished in operatorTasks.
+
+
 
       const allKnownSteps = [...draftSteps, ...steps].filter((s, index, arr) => arr.findIndex(item => item.id === s.id) === index);
       const recordsAfterInsert = [...productionRecords, record];
@@ -1378,13 +1278,11 @@ const PlanningTableauPage: React.FC = () => {
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleAutoSort(group.operator.id)}>
-                  <ArrowUpDown className="w-3.5 h-3.5 mr-1" /> Trier auto
-                </Button>
                 <span className="text-sm font-medium text-accent">
                   {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
                 </span>
               </div>
+
             </div>
             <div className="overflow-x-auto">
               <Table>
@@ -1448,12 +1346,7 @@ const PlanningTableauPage: React.FC = () => {
                     const toolStatus: ResourceStatus = order.toolingStatus ?? step.toolingStatus
                       ?? (order.toolingAvailable || step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
-                    const orderWarning = step.frozen && isManualOrderViolation(group.tasks, index);
-                    const studyWarning = step.frozen && studyStatus !== 'disponible' && studyStatus !== 'non-applicable';
-                    const materialWarning = step.frozen && isBlockingResourceStatus(matStatus);
-                    const toolingWarning = step.frozen && isBlockingResourceStatus(toolStatus);
-                    const phaseWarning = step.frozen && amontStatus !== 'green' && amontStatus !== 'na';
-                    const amontEmoji = phaseWarning ? null : phaseAmontEmoji(amontStatus);
+                    const amontEmoji = phaseAmontEmoji(amontStatus);
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
@@ -1467,8 +1360,9 @@ const PlanningTableauPage: React.FC = () => {
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
+                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''}`}
                       >
+
                         <TableCell className="text-center px-1">
                           <span className="text-xs font-semibold">{index + 1}</span>
                         </TableCell>
@@ -1593,45 +1487,38 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         {/* Étude */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          {studyWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
+                          <ResourceStatusPill
                             value={studyStatus}
                             onChange={(next) => handleStatusChange(step.id, 'study', next)}
                             deadline={step.studyDeadline}
-                          />}
+                          />
                         </TableCell>
                         {/* Matière */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          {materialWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
+                          <ResourceStatusPill
                             value={matStatus}
                             onChange={(next) => handleStatusChange(step.id, 'material', next)}
                             deadline={step.materialDeadline}
                             receivedDate={order.materialReceivedDate}
-                          />}
+                          />
                         </TableCell>
                         {/* Outillage */}
                         <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
-                          {toolingWarning ? <WarningTriangleIcon /> : <ResourceStatusPill
+                          <ResourceStatusPill
                             value={toolStatus}
                             onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
                             deadline={step.toolingDeadline}
-                          />}
+                          />
                         </TableCell>
                         {/* Phase amont */}
                         <TableCell className="py-1.5 px-1 text-center">
                           <TooltipProvider><Tooltip>
-                            <TooltipTrigger><span className="text-sm">{phaseWarning ? <WarningTriangleIcon /> : amontEmoji}</span></TooltipTrigger>
-                            <TooltipContent>
-                              {phaseWarning
-                                ? '⚠️ Phase amont non terminée mais position forcée'
-                                : phaseAmontLabel(amontStatus)}
-                            </TooltipContent>
+                            <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
+                            <TooltipContent>{phaseAmontLabel(amontStatus)}</TooltipContent>
                           </Tooltip></TooltipProvider>
                         </TableCell>
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleStepFrozen(step.id)} title={step.frozen ? 'فتح' : 'قفل'}>
-                              {step.frozen ? <YellowLockIcon className="h-5 w-5" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}
-                            </Button>
                             <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrder(order)} title="التعيينات">
                               <CalendarCheck className="w-7 h-7" />
                             </Button>
@@ -1647,6 +1534,7 @@ const PlanningTableauPage: React.FC = () => {
                             )}
                           </div>
                         </TableCell>
+
                       </TableRow>
                     );
                   })}
