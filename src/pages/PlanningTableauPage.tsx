@@ -621,6 +621,7 @@ const PlanningTableauPage: React.FC = () => {
     targetStepId?: string,
     nextDraftOrdersOverride?: Order[],
     nextForcedWarningsOverride?: Record<string, boolean>,
+    nextPlanningOrdersOverride?: Record<string, number>,
   ) => {
     const reorderedTasks = tasks.map(({ step, order }, idx) => {
       const reorderedStep: ProductionStep = {
@@ -638,6 +639,9 @@ const PlanningTableauPage: React.FC = () => {
     const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
     const nextDraftOrders = nextDraftOrdersOverride ?? draftOrders;
     const nextForcedWarnings = nextForcedWarningsOverride ?? forcedPhaseAmontWarnings;
+    // IMPORTANT: merge fresh Pn updates over the (possibly stale) closure map,
+    // sinon updateStep réécrit l'ancien planning_order en base et la position bouge au retour.
+    const effectivePlanningMap = { ...planningOrderMap, ...(nextPlanningOrdersOverride ?? {}) };
 
     setOrderDirty(true);
 
@@ -654,7 +658,7 @@ const PlanningTableauPage: React.FC = () => {
 
     const currentStepsById = new Map(draftSteps.map(step => [step.id, step]));
     finalSteps.forEach(finalStep => {
-      const enriched = { ...finalStep, planningOrder: planningOrderMap[finalStep.id] ?? finalStep.planningOrder };
+      const enriched = { ...finalStep, planningOrder: effectivePlanningMap[finalStep.id] ?? finalStep.planningOrder };
       const currentStep = currentStepsById.get(finalStep.id);
       if (!currentStep || JSON.stringify(currentStep) !== JSON.stringify(enriched)) {
         updateStep(enriched);
