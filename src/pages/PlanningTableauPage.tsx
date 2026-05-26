@@ -1401,12 +1401,7 @@ const PlanningTableauPage: React.FC = () => {
                     const toolStatus: ResourceStatus = order.toolingStatus ?? step.toolingStatus
                       ?? (order.toolingAvailable || step.toolingAvailable ? 'disponible' : 'non-disponible');
                     const amontStatus = phaseAmontStatus(step, draftSteps, productionRecords);
-                    const orderWarning = step.frozen && isManualOrderViolation(group.tasks, index);
-                    const studyWarning = step.frozen && studyStatus !== 'disponible' && studyStatus !== 'non-applicable';
-                    const materialWarning = step.frozen && isBlockingResourceStatus(matStatus);
-                    const toolingWarning = step.frozen && isBlockingResourceStatus(toolStatus);
-                    const phaseWarning = step.frozen && amontStatus !== 'green' && amontStatus !== 'na';
-                    const amontEmoji = phaseWarning ? null : phaseAmontEmoji(amontStatus);
+                    const amontEmoji = phaseAmontEmoji(amontStatus);
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
@@ -1420,8 +1415,9 @@ const PlanningTableauPage: React.FC = () => {
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${!blocked && step.frozen ? 'bg-primary/5' : ''}`}
+                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''}`}
                       >
+
                         <TableCell className="text-center px-1">
                           <span className="text-xs font-semibold">{index + 1}</span>
                         </TableCell>
