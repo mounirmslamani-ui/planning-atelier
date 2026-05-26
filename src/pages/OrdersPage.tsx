@@ -540,13 +540,13 @@ const OrdersPage: React.FC = () => {
     let insertAt = dropIndex - dragIndices.filter(i => i < dropIndex).length;
     if (insertAt < 0) insertAt = 0;
     remaining.splice(insertAt, 0, ...draggedItems);
-    // Reindex all orders 1, 2, 3, ... and freeze dragged items
+    // Reindex all orders 1, 2, 3, ... — no lock applied.
     const absence = orders.find(o => o.id === absenceOrderId);
     const reindexed = remaining.map((o, i) => ({
       ...o,
       displayOrder: i + 1,
-      frozenOrder: draggedItems.some(d => d.id === o.id) ? true : o.frozenOrder,
     }));
+
     setOrders([...(absence ? [absence] : []), ...reindexed]);
     setDragIndices(null); setDragOverIndex(null);
     setOrderValidated(false);
