@@ -254,30 +254,8 @@ const OrdersPage: React.FC = () => {
     }
   }, [applyStatusToOrderAndSteps]);
 
-  const autoSortOrders = useCallback((orderList: Order[]): Order[] => {
-    return [...orderList].sort((a, b) => {
-      // Primary: priority rank
-      const pa = priorityRank[a.priority] ?? 5;
-      const pb = priorityRank[b.priority] ?? 5;
-      if (pa !== pb) return pa - pb;
+  // Auto-sort logic removed — ordering is strictly manual (drag & drop / Déplacer).
 
-      // Secondary: latest availability date among study/material/tooling deadlines
-      const getLatestAvailDate = (o: Order): string => {
-        const orderSteps = steps.filter(s => s.orderId === o.id && s.operationId !== absenceOperationId);
-        let latest = '';
-        orderSteps.forEach(s => {
-          if (s.studyDeadline && s.studyDeadline !== 'warning' && s.studyDeadline !== 'pending' && s.studyDeadline > latest) latest = s.studyDeadline;
-          if (s.materialDeadline && s.materialDeadline !== 'warning' && s.materialDeadline !== 'pending' && s.materialDeadline > latest) latest = s.materialDeadline;
-          if (s.toolingDeadline && s.toolingDeadline !== 'warning' && s.toolingDeadline !== 'pending' && s.toolingDeadline > latest) latest = s.toolingDeadline;
-        });
-        return latest || '0000-00-00'; // no deadline = available now = sort first
-      };
-
-      const da = getLatestAvailDate(a);
-      const db = getLatestAvailDate(b);
-      return da.localeCompare(db);
-    });
-  }, [steps, absenceOperationId]);
 
   // Sort by displayOrder ascending (playlist style). Orders leave active
   // production as soon as the CURRENT cycle is conforming / ready / delivered /
