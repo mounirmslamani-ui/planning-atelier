@@ -1352,11 +1352,19 @@ const PlanningTableauPage: React.FC = () => {
           .filter(group => group.operator.id === (selectedTabOperatorId ?? operatorTasks[0]?.operator.id))
           .map(group => {
           const filteredTasks = filterTasks(group.tasks);
+          const groupSelectedCount = filteredTasks.filter(t => selectedStepIds.has(t.step.id)).length;
+          const allFilteredSelected = filteredTasks.length > 0 && filteredTasks.every(t => selectedStepIds.has(t.step.id));
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-3">
+                {groupSelectedCount > 0 && (
+                  <Button size="sm" variant="secondary" onClick={() => openMovePnDialog(group.operator.id)}>
+                    <MoveVertical className="w-4 h-4 mr-1" />
+                    Déplacer ({groupSelectedCount})
+                  </Button>
+                )}
                 <span className="text-sm font-medium text-accent">
                   {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
                 </span>
@@ -1367,7 +1375,14 @@ const PlanningTableauPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8 px-1 text-center">
+                      <Checkbox
+                        checked={allFilteredSelected}
+                        onCheckedChange={() => toggleSelectAllSteps(filteredTasks)}
+                      />
+                    </TableHead>
                     <TableHead className="w-10 px-1 text-center text-xs">Pn</TableHead>
+
                     <TableHead className="w-14 px-1 text-center text-xs text-muted-foreground/70">
                       <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.displayOrder} />
                     </TableHead>
