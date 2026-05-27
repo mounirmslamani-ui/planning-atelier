@@ -68,8 +68,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
   return (
-    <div className="rounded-lg border bg-card overflow-auto">
-  <table className="w-full caption-bottom text-sm">
+<div className="rounded-lg border bg-card overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>
