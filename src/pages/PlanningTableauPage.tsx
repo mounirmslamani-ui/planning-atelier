@@ -764,6 +764,65 @@ const PlanningTableauPage: React.FC = () => {
   // ─── Auto-sort : réinitialise les Pn selon le Cn (displayOrder) ───
   // handleAutoSort removed — manual ordering only.
 
+  // ─── Sélection multiple + déplacement par Pn ───
+  const toggleSelectStep = useCallback((stepId: string) => {
+    setSelectedStepIds(prev => {
+      const next = new Set(prev);
+      if (next.has(stepId)) next.delete(stepId); else next.add(stepId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllSteps = useCallback((tasks: TaskItem[]) => {
+    const allSelected = tasks.length > 0 && tasks.every(t => selectedStepIds.has(t.step.id));
+    setSelectedStepIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) tasks.forEach(t => next.delete(t.step.id));
+      else tasks.forEach(t => next.add(t.step.id));
+      return next;
+    });
+  }, [selectedStepIds]);
+
+  const openMovePnDialog = useCallback((operatorId: string, extraStepId?: string) => {
+    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    if (!group) return;
+    const ids = new Set(selectedStepIds);
+    if (extraStepId) ids.add(extraStepId);
+    if (ids.size === 0) return;
+    if (extraStepId && !selectedStepIds.has(extraStepId)) setSelectedStepIds(ids);
+    const selectedTasks = group.tasks.filter(t => ids.has(t.step.id));
+    const minPn = Math.min(...selectedTasks.map(t => planningOrderMap[t.step.id] ?? 9999));
+    setMoveTargetPn(String(minPn === 9999 ? 1 : minPn));
+    setMoveDialogOperatorId(operatorId);
+    setMovePnDialogOpen(true);
+  }, [operatorTasks, selectedStepIds, planningOrderMap]);
+
+  const applyMovePnSelection = useCallback(() => {
+    const target = parseInt(moveTargetPn, 10);
+    if (!target || target < 1) return;
+    const group = operatorTasks.find(g => g.operator.id === moveDialogOperatorId);
+    if (!group) { setMovePnDialogOpen(false); return; }
+
+    const selectedItems = group.tasks.filter(t => selectedStepIds.has(t.step.id));
+    if (selectedItems.length === 0) { setMovePnDialogOpen(false); return; }
+    const remaining = group.tasks.filter(t => !selectedStepIds.has(t.step.id));
+    const insertAt = Math.min(Math.max(0, target - 1), remaining.length);
+    const newList = [
+      ...remaining.slice(0, insertAt),
+      ...selectedItems,
+      ...remaining.slice(insertAt),
+    ];
+
+    // Réassigner les Pn (planning_order) séquentiellement à partir de 1 — PAS les Cn/displayOrder
+    const updates: Record<string, number> = {};
+    newList.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
+    applyReorder(newList, undefined, undefined, undefined, updates);
+
+    setMovePnDialogOpen(false);
+    setSelectedStepIds(new Set());
+  }, [moveTargetPn, moveDialogOperatorId, operatorTasks, selectedStepIds, persistPlanningOrders, applyReorder]);
+
 
 
   // ─── Valider : sauvegarde uniquement les dates (startDate/endDate) recalculées + statuts ───
