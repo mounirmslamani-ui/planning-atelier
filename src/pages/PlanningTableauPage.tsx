@@ -515,6 +515,12 @@ const PlanningTableauPage: React.FC = () => {
   // Selected operator tab (null = first available operator shown)
   const [selectedTabOperatorId, setSelectedTabOperatorId] = useState<string | null>(null);
 
+  // Sélection multiple + déplacement par Pn (identique à OrdersPage Cn, mais sur planning_order)
+  const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
+  const [movePnDialogOpen, setMovePnDialogOpen] = useState(false);
+  const [moveTargetPn, setMoveTargetPn] = useState('');
+  const [moveDialogOperatorId, setMoveDialogOperatorId] = useState('');
+
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
   const getClientName = useCallback((clientId: string) => {
