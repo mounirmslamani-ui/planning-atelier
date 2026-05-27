@@ -868,7 +868,15 @@ const OrdersPage: React.FC = () => {
         </div>
       } />
 
-        {hasActiveFilters && (
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div className="flex-1" />
+        <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
+        <Button onClick={handleExportExcel} variant="outline" size="sm">
+          <Download className="w-4 h-4 ml-1" /> تصدير Excel
+        </Button>
+      </div>
+
+      {hasActiveFilters && (
           <div className="mb-3 flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Tri/filtre actif — le glisser-déposer est désactivé.</span>
             <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setSortKey(null); setSortDir(null); setFilters({}); }}>
