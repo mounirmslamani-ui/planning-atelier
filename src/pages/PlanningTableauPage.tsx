@@ -1853,6 +1853,34 @@ const PlanningTableauPage: React.FC = () => {
           }}
         />
       )}
+      {/* Déplacement par Pn — sélection multiple */}
+      <Dialog open={movePnDialogOpen} onOpenChange={setMovePnDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Déplacer la sélection (Pn)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {selectedStepIds.size} tâche(s) sélectionnée(s). Saisissez la nouvelle position (Pn) à laquelle placer la première tâche. Les suivantes prendront Pn+1, Pn+2, … et le reste sera décalé automatiquement.
+            </p>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Position cible (Pn)</label>
+              <Input
+                type="number"
+                min={1}
+                value={moveTargetPn}
+                onChange={e => setMoveTargetPn(e.target.value)}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') applyMovePnSelection(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMovePnDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={applyMovePnSelection}>Déplacer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
