@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut, X } from 'lucide-react';
+import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut, X, MoveVertical } from 'lucide-react';
 import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIcons';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderPlanningDialog from '@/components/OrderPlanningDialog';
@@ -513,6 +515,12 @@ const PlanningTableauPage: React.FC = () => {
   // Selected operator tab (null = first available operator shown)
   const [selectedTabOperatorId, setSelectedTabOperatorId] = useState<string | null>(null);
 
+  // Sélection multiple + déplacement par Pn (identique à OrdersPage Cn, mais sur planning_order)
+  const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
+  const [movePnDialogOpen, setMovePnDialogOpen] = useState(false);
+  const [moveTargetPn, setMoveTargetPn] = useState('');
+  const [moveDialogOperatorId, setMoveDialogOperatorId] = useState('');
+
   const workingDays = useMemo(() => getWorkingDays(numDays, holidays), [numDays, holidays]);
 
   const getClientName = useCallback((clientId: string) => {
@@ -755,6 +763,65 @@ const PlanningTableauPage: React.FC = () => {
 
   // ─── Auto-sort : réinitialise les Pn selon le Cn (displayOrder) ───
   // handleAutoSort removed — manual ordering only.
+
+  // ─── Sélection multiple + déplacement par Pn ───
+  const toggleSelectStep = useCallback((stepId: string) => {
+    setSelectedStepIds(prev => {
+      const next = new Set(prev);
+      if (next.has(stepId)) next.delete(stepId); else next.add(stepId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAllSteps = useCallback((tasks: TaskItem[]) => {
+    const allSelected = tasks.length > 0 && tasks.every(t => selectedStepIds.has(t.step.id));
+    setSelectedStepIds(prev => {
+      const next = new Set(prev);
+      if (allSelected) tasks.forEach(t => next.delete(t.step.id));
+      else tasks.forEach(t => next.add(t.step.id));
+      return next;
+    });
+  }, [selectedStepIds]);
+
+  const openMovePnDialog = useCallback((operatorId: string, extraStepId?: string) => {
+    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    if (!group) return;
+    const ids = new Set(selectedStepIds);
+    if (extraStepId) ids.add(extraStepId);
+    if (ids.size === 0) return;
+    if (extraStepId && !selectedStepIds.has(extraStepId)) setSelectedStepIds(ids);
+    const selectedTasks = group.tasks.filter(t => ids.has(t.step.id));
+    const minPn = Math.min(...selectedTasks.map(t => planningOrderMap[t.step.id] ?? 9999));
+    setMoveTargetPn(String(minPn === 9999 ? 1 : minPn));
+    setMoveDialogOperatorId(operatorId);
+    setMovePnDialogOpen(true);
+  }, [operatorTasks, selectedStepIds, planningOrderMap]);
+
+  const applyMovePnSelection = useCallback(() => {
+    const target = parseInt(moveTargetPn, 10);
+    if (!target || target < 1) return;
+    const group = operatorTasks.find(g => g.operator.id === moveDialogOperatorId);
+    if (!group) { setMovePnDialogOpen(false); return; }
+
+    const selectedItems = group.tasks.filter(t => selectedStepIds.has(t.step.id));
+    if (selectedItems.length === 0) { setMovePnDialogOpen(false); return; }
+    const remaining = group.tasks.filter(t => !selectedStepIds.has(t.step.id));
+    const insertAt = Math.min(Math.max(0, target - 1), remaining.length);
+    const newList = [
+      ...remaining.slice(0, insertAt),
+      ...selectedItems,
+      ...remaining.slice(insertAt),
+    ];
+
+    // Réassigner les Pn (planning_order) séquentiellement à partir de 1 — PAS les Cn/displayOrder
+    const updates: Record<string, number> = {};
+    newList.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
+    applyReorder(newList, undefined, undefined, undefined, updates);
+
+    setMovePnDialogOpen(false);
+    setSelectedStepIds(new Set());
+  }, [moveTargetPn, moveDialogOperatorId, operatorTasks, selectedStepIds, persistPlanningOrders, applyReorder]);
 
 
 
@@ -1285,11 +1352,19 @@ const PlanningTableauPage: React.FC = () => {
           .filter(group => group.operator.id === (selectedTabOperatorId ?? operatorTasks[0]?.operator.id))
           .map(group => {
           const filteredTasks = filterTasks(group.tasks);
+          const groupSelectedCount = filteredTasks.filter(t => selectedStepIds.has(t.step.id)).length;
+          const allFilteredSelected = filteredTasks.length > 0 && filteredTasks.every(t => selectedStepIds.has(t.step.id));
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-3">
+                {groupSelectedCount > 0 && (
+                  <Button size="sm" variant="secondary" onClick={() => openMovePnDialog(group.operator.id)}>
+                    <MoveVertical className="w-4 h-4 mr-1" />
+                    Déplacer ({groupSelectedCount})
+                  </Button>
+                )}
                 <span className="text-sm font-medium text-accent">
                   {formatMinutesToHM(group.tasks.reduce((sum, t) => sum + t.step.estimatedDuration, 0))}
                 </span>
@@ -1300,7 +1375,14 @@ const PlanningTableauPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8 px-1 text-center">
+                      <Checkbox
+                        checked={allFilteredSelected}
+                        onCheckedChange={() => toggleSelectAllSteps(filteredTasks)}
+                      />
+                    </TableHead>
                     <TableHead className="w-10 px-1 text-center text-xs">Pn</TableHead>
+
                     <TableHead className="w-14 px-1 text-center text-xs text-muted-foreground/70">
                       <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.displayOrder} />
                     </TableHead>
@@ -1362,22 +1444,31 @@ const PlanningTableauPage: React.FC = () => {
 
                     const dragIsOver = dragOverState?.operatorId === group.operator.id && dragOverState?.index === index;
                     const dragIsThis = isDragging && dragRef.current?.operatorId === group.operator.id && dragRef.current?.index === index;
+                    const isSelected = selectedStepIds.has(step.id);
 
                     return (
+                      <ContextMenu key={step.id}>
+                        <ContextMenuTrigger asChild>
                       <TableRow
-                        key={step.id}
                         draggable={!isEditing && !hasActiveFilters}
                         onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverState(null)}
                         onDrop={e => handleDrop(e, group.operator.id, index)}
                         onDragEnd={handleDragEnd}
-                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''}`}
+                        className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
                       >
 
+                        <TableCell className="text-center px-1" onClick={e => e.stopPropagation()}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelectStep(step.id)}
+                          />
+                        </TableCell>
                         <TableCell className="text-center px-1">
                           <span className="text-xs font-semibold">{index + 1}</span>
                         </TableCell>
+
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
                             {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />}
@@ -1548,6 +1639,16 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
 
                       </TableRow>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => openMovePnDialog(group.operator.id, step.id)}>
+                            <MoveVertical className="w-4 h-4 mr-2" />
+                            Déplacer la sélection {selectedStepIds.size > 0
+                              ? `(${selectedStepIds.has(step.id) ? selectedStepIds.size : selectedStepIds.size + 1})`
+                              : '(1)'}
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     );
                   })}
                 </TableBody>
@@ -1752,6 +1853,34 @@ const PlanningTableauPage: React.FC = () => {
           }}
         />
       )}
+      {/* Déplacement par Pn — sélection multiple */}
+      <Dialog open={movePnDialogOpen} onOpenChange={setMovePnDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Déplacer la sélection (Pn)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {selectedStepIds.size} tâche(s) sélectionnée(s). Saisissez la nouvelle position (Pn) à laquelle placer la première tâche. Les suivantes prendront Pn+1, Pn+2, … et le reste sera décalé automatiquement.
+            </p>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Position cible (Pn)</label>
+              <Input
+                type="number"
+                min={1}
+                value={moveTargetPn}
+                onChange={e => setMoveTargetPn(e.target.value)}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') applyMovePnSelection(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMovePnDialogOpen(false)}>إلغاء</Button>
+            <Button onClick={applyMovePnSelection}>Déplacer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
