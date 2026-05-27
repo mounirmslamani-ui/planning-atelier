@@ -512,6 +512,7 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   return (
+          <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
           title="طلبيات في انتظار الإنجاز و الفوترة"
@@ -685,6 +686,7 @@ const PendingInvoicingPage: React.FC = () => {
         confirmLabel="Oui, réintégrer"
         cancelLabel="Annuler"
       />
+      </div>
     </div>
   );
 };
