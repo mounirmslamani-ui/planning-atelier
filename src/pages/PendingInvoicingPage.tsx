@@ -517,7 +517,7 @@ const PendingInvoicingPage: React.FC = () => {
           title="طلبيات في انتظار الإنجاز و الفوترة"
           description={`${totalRows} commande(s) en attente de facturation`}
         />
-        <div className="flex items-center gap-2 mb-2 justify-end" dir="rtl">
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
