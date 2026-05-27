@@ -868,7 +868,7 @@ const OrdersPage: React.FC = () => {
         </div>
       } />
 
-<div className="flex items-center justify-end gap-2 mb-2">
+<div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
         <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
         <Button onClick={handleExportExcel} variant="outline" size="sm">
           <Download className="w-4 h-4 ml-1" /> تصدير Excel
