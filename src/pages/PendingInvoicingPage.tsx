@@ -408,7 +408,7 @@ const PendingInvoicingPage: React.FC = () => {
             <Input type="date" value={draft.orderDate ?? ''} onChange={e => setDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
           ) : formatDateFR(order.orderDate)}
         </TableCell>
-        <TableCell className="text-sm whitespace-nowrap">
+        <TableCell className="text-xs whitespace-nowrap">
           {isEditing ? (
             <Select value={draft.clientId ?? ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
               <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
@@ -421,7 +421,7 @@ const PendingInvoicingPage: React.FC = () => {
               <TableCell className="text-sm" style={{ minWidth: 200 }}>
           {isEditing ? (
             <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-          ) : <DesignationCell orderId={order.id} designation={order.designation} className="text-xs whitespace-normal break-words block" />}
+          ) : <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />}
         </TableCell>
         <TableCell className="text-sm text-center">
           {isEditing ? (
