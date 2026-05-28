@@ -11,7 +11,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
