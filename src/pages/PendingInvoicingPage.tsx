@@ -403,12 +403,12 @@ const PendingInvoicingPage: React.FC = () => {
             <Input value={draft.orderNumber ?? ''} onChange={e => setDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
           ) : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
         </TableCell>
-        <TableCell className="text-sm whitespace-nowrap">
+        <TableCell className="text-xs whitespace-nowrap">
           {isEditing ? (
             <Input type="date" value={draft.orderDate ?? ''} onChange={e => setDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
           ) : formatDateFR(order.orderDate)}
         </TableCell>
-        <TableCell className="text-xs whitespace-nowrap">
+        <TableCell className="text-sm whitespace-nowrap">
           {isEditing ? (
             <Select value={draft.clientId ?? ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
               <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
