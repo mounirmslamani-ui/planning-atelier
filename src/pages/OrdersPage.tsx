@@ -1011,85 +1011,8 @@ const OrdersPage: React.FC = () => {
         </table>
       </div>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} une commande</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">رقم الطلبية</label>
-              <Input value={form.orderNumber} onChange={e => { setOrderNumberError(''); updateForm('orderNumber', e.target.value); }} />
-            </div>
-            {orderNumberError && (
-              <div className="col-span-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-                {orderNumberError}
-              </div>
-            )}
-            <div>
-              <label className="text-sm font-medium mb-1 block">Date de commande</label>
-              <Input type="date" value={form.orderDate} onChange={e => updateForm('orderDate', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">الزبون</label>
-              <Select value={form.clientId} onValueChange={val => updateForm('clientId', val)}>
-                <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
-                <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">الأولوية</label>
-              <Select value={form.priority || 'undetermined'} onValueChange={val => updateForm('priority', val)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {form.priority === 'undetermined' ? (
-                      <span className="flex items-center gap-2">
-                        <WarningTriangleIcon className="w-[30px] h-[30px]" />
-                        <span>À déterminer plus tard</span>
-                      </span>
-                    ) : form.priority ? (
-                      <span className={priorityConfig[form.priority]?.color}>{priorityConfig[form.priority]?.label}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Choisir une priorité</span>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(priorityConfig).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>
-                      <div className="flex items-center gap-2">
-                        {k === 'undetermined' && <WarningTriangleIcon className="w-[30px] h-[30px]" />}
-                        <span className={v.color}>{v.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">التعيين</label>
-              <Input value={form.designation} onChange={e => updateForm('designation', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">الكمية</label>
-              <Input type="number" min={1} value={form.quantity} onChange={e => updateForm('quantity', parseInt(e.target.value) || 1)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Délai livraison souhaité</label>
-              <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">ملاحظات</label>
-              <Input value={form.observation || ''} onChange={e => updateForm('observation', e.target.value)} placeholder="Note d'information..." />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSave} disabled={!form.orderNumber || !form.designation}>حفظ</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Excel Paste Dialog */}
       
