@@ -418,10 +418,10 @@ const PendingInvoicingPage: React.FC = () => {
             </Select>
           ) : clientName}
         </TableCell>
-        <TableCell className="text-sm max-w-48">
+       <TableCell className="text-sm">
           {isEditing ? (
             <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-          ) : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
+          ) : <DesignationCell orderId={order.id} designation={order.designation} className="text-xs whitespace-normal break-words block"
         </TableCell>
         <TableCell className="text-sm text-center">
           {isEditing ? (
