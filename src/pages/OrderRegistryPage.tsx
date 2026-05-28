@@ -508,7 +508,11 @@ const OrderRegistryPage: React.FC = () => {
                           )}
                         </TableCell>
                       <TableCell style={{ minWidth: 200 }} className="">{editingId === o.id ? renderEditableCell(o, 'designation') : <DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-sm whitespace-normal break-words block" />}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
+                       <TableCell>
+  {editingId === o.id
+    ? <Input type="number" className="h-7 text-sm" value={(draft.quantity ?? o.quantity ?? '') as any} onChange={e => setDraft(d => ({ ...d, quantity: parseInt(e.target.value) || 0 }))} />
+    : <span className="text-sm">{o.quantity ?? '—'}</span>}
+</TableCell>
                         <TableCell>
                           {isEditing ? (
                             <Select value={(draft.priority ?? o.priority) || 'undetermined'} onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}>
