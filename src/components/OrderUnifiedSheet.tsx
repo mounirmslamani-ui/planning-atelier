@@ -131,17 +131,21 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <DialogTitle className="text-lg font-bold">
-                  بطاقة متابعة إنجاز الطلبية — {order.orderNumber}
+                  {createMode
+                    ? `إنشاء طلبية جديدة${merged.orderNumber ? ` — ${merged.orderNumber}` : ''}`
+                    : `بطاقة متابعة إنجاز الطلبية — ${order.orderNumber}`}
                 </DialogTitle>
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  <span>الزبون: <span className="text-foreground font-semibold">{clientName}</span></span>
-                  <span>التعيين: <span className="text-foreground">{order.designation}</span></span>
-                  <span>الكمية: <span className="text-foreground font-bold">{order.quantity}</span></span>
-                  <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
-                    {status}
-                  </span>
-                </div>
+                {!createMode && (
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span>الزبون: <span className="text-foreground font-semibold">{clientName}</span></span>
+                    <span>التعيين: <span className="text-foreground">{order.designation}</span></span>
+                    <span>الكمية: <span className="text-foreground font-bold">{order.quantity}</span></span>
+                    <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
+                      {status}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {canReintegrate && (
@@ -155,37 +159,26 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                     إعادة إدماج
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
-                  <Printer className="w-4 h-4 ms-1" />
-                  طباعة البطاقة
-                </Button>
+                {!createMode && (
+                  <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
+                    <Printer className="w-4 h-4 ms-1" />
+                    طباعة البطاقة
+                  </Button>
+                )}
               </div>
-            </div>
-
-            {/* Compteurs séries */}
-            <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-              {[
-                { k: 'lastF', label: 'Fabrication (aa/Fxxx)' },
-                { k: 'lastP', label: 'Prestation (aa/Pxxx)' },
-                { k: 'lastS', label: 'SLAMANI (aa/Sxxx)' },
-                { k: 'lastNum', label: 'Divers (aa/xxx)' },
-              ].map(({ k, label }) => (
-                <div key={k} className="rounded-md border bg-muted/30 px-2.5 py-1.5">
-                  <div className="text-[10px] text-muted-foreground">{label}</div>
-                  <div className="font-mono font-bold text-sm">{(lastSeries as any)[k] || '—'}</div>
-                </div>
-              ))}
             </div>
           </DialogHeader>
 
           {/* TABS */}
           <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="mx-6 mt-3 grid grid-cols-4">
-              <TabsTrigger value="info">{TAB_TITLES.info}</TabsTrigger>
-              <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
-              <TabsTrigger value="steps">{TAB_TITLES.steps}</TabsTrigger>
-              <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
-            </TabsList>
+            {!createMode && (
+              <TabsList className="mx-6 mt-3 grid grid-cols-4">
+                <TabsTrigger value="info">{TAB_TITLES.info}</TabsTrigger>
+                <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
+                <TabsTrigger value="steps">{TAB_TITLES.steps}</TabsTrigger>
+                <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
+              </TabsList>
+            )}
 
             <div className="flex-1 overflow-auto px-6 py-4">
               {/* TAB 1 — INFO */}
