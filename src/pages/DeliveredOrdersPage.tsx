@@ -243,10 +243,10 @@ const DeliveredOrdersPage: React.FC = () => {
                       </Select>
                     ) : getClientName(order.clientId)}
                   </TableCell>
-                  <TableCell className="text-sm max-w-48">
+                 <TableCell className="text-sm" style={{ minWidth: 200 }}>
                     {isEditing
                       ? <Input value={editDraft.designation ?? ''} onChange={e => setEditDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-                      : <DesignationCell orderId={order.id} designation={order.designation} className="truncate block" />}
+                     : <DesignationCell orderId={order.id} designation={order.designation} className="text-xs whitespace-normal break-words block" />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing
