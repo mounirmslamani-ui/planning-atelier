@@ -659,6 +659,15 @@ const OrderRegistryPage: React.FC = () => {
         open={!!unifiedOrderId}
         onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
       />
+
+      <OrderUnifiedSheet
+        orderId={null}
+        open={!!createDraft}
+        onOpenChange={(open) => { if (!open) setCreateDraft(null); }}
+        createMode
+        initialDraft={createDraft || undefined}
+        onCreated={() => setCreateDraft(null)}
+      />
     </div>
   );
 };
