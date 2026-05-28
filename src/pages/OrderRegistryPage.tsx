@@ -48,6 +48,7 @@ const OrderRegistryPage: React.FC = () => {
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
+  const [createDraft, setCreateDraft] = useState<Partial<Order> | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [history, setHistory] = useState<Order[][]>([]);
   const [redoStack, setRedoStack] = useState<Order[][]>([]);
