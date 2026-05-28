@@ -846,7 +846,6 @@ const OrdersPage: React.FC = () => {
       } />
 
 <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
-        <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
         <Button onClick={handleExportExcel} variant="outline" size="sm">
           <Download className="w-4 h-4 ml-1" /> تصدير Excel
         </Button>
@@ -861,7 +860,7 @@ const OrdersPage: React.FC = () => {
           </div>
         )}
 
-        {orderNumberError && !dialogOpen && (
+        {orderNumberError && (
           <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
             {orderNumberError}
           </div>
