@@ -192,7 +192,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                     />
                   </div>
                   <div>
-                    <Label>تاريخ الاستلام</Label>
+                    <Label>تاريخ إستلام الطلبية</Label>
                     <Input
                       type="date"
                       value={merged.orderDate || ''}
