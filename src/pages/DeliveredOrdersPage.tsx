@@ -233,7 +233,7 @@ const DeliveredOrdersPage: React.FC = () => {
                       ? <Input type="date" value={editDraft.orderDate ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
                       : formatDateFR(order.orderDate)}
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-xs">
                     {isEditing ? (
                       <Select value={editDraft.clientId ?? ''} onValueChange={v => setEditDraft(d => ({ ...d, clientId: v }))}>
                         <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
@@ -246,7 +246,7 @@ const DeliveredOrdersPage: React.FC = () => {
                  <TableCell className="text-sm" style={{ minWidth: 200 }}>
                     {isEditing
                       ? <Input value={editDraft.designation ?? ''} onChange={e => setEditDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-                     : <DesignationCell orderId={order.id} designation={order.designation} className="text-xs whitespace-normal break-words block" />}
+                     : <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isEditing
