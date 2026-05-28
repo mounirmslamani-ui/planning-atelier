@@ -228,12 +228,12 @@ const DeliveredOrdersPage: React.FC = () => {
                       ? <Input value={editDraft.orderNumber ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
                       : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-xs">
                     {isEditing
                       ? <Input type="date" value={editDraft.orderDate ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
                       : formatDateFR(order.orderDate)}
                   </TableCell>
-                  <TableCell className="text-xs">
+                  <TableCell className="text-sm">
                     {isEditing ? (
                       <Select value={editDraft.clientId ?? ''} onValueChange={v => setEditDraft(d => ({ ...d, clientId: v }))}>
                         <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
