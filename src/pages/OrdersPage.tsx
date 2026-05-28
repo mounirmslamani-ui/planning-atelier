@@ -461,15 +461,6 @@ const OrdersPage: React.FC = () => {
     setSelectedIds(new Set());
   };
 
-  const emptyOrder = (): Omit<Order, 'id'> => ({
-    orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
-    designation: '', quantity: 1, priority: 'undetermined', plannedDeadline: '',
-    materialAvailable: false, toolingAvailable: false, studyReady: false,
-    materialStatus: 'non-disponible', toolingStatus: 'non-disponible', studyStatus: 'non-disponible',
-    displayOrder: baseSorted.length + 1,
-  });
-  const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
-
   const normalizeOrderNumber = (value: string) => value.trim().toLowerCase();
   const duplicateOrderError = 'Erreur : Ce numéro de commande existe déjà. Veuillez utiliser un identifiant unique.';
   const isDuplicateOrderNumber = useCallback((value: string, currentId?: string) => {
@@ -478,18 +469,6 @@ const OrdersPage: React.FC = () => {
     return orders.some(o => o.id !== absenceOrderId && o.id !== currentId && normalizeOrderNumber(o.orderNumber) === normalized);
   }, [orders, absenceOrderId]);
 
-  const openNew = () => { setOrderNumberError(''); setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
-  const openEdit = (o: Order) => { setOrderNumberError(''); setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
-  const handleSave = () => {
-    if (isDuplicateOrderNumber(form.orderNumber, editing?.id)) {
-      setOrderNumberError(duplicateOrderError);
-      return;
-    }
-    const data: Order = { id: editing?.id || crypto.randomUUID(), ...form };
-    if (editing) updateOrder(data); else addOrder(data);
-    setDialogOpen(false);
-  };
-  const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
 
   // Inline edit helpers
   const getInlineValue = (o: Order, field: keyof Order) => {
