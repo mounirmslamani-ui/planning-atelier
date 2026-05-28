@@ -151,11 +151,10 @@ const OrderRegistryPage: React.FC = () => {
   const handleAdd = () => {
     const code = generateOrderCode(activeCat, realOrders);
     const today = new Date().toISOString().split('T')[0];
-    const newOrder: Order = {
-      id: crypto.randomUUID(),
+    setCreateDraft({
       orderNumber: code,
       orderDate: today,
-      clientId: clients[0]?.id || '',
+      clientId: '',
       designation: '',
       quantity: 1,
       priority: 'undetermined',
@@ -167,12 +166,7 @@ const OrderRegistryPage: React.FC = () => {
       toolingStatus: 'non-disponible',
       studyStatus: 'non-disponible',
       category: activeCat,
-    };
-    pushHistory();
-    addOrder(newOrder);
-    setEditingId(newOrder.id);
-    setDraft({});
-    toast.success(`Commande ${code} créée`);
+    });
   };
 
   const startEdit = (o: Order) => {
