@@ -37,15 +37,15 @@ const TAB_TITLES = {
   qc: 'مراقبة الجودة والتسليم',
 } as const;
 
-const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info' }) => {
+const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft, onCreated }) => {
   const {
     orders, clients, steps, operators, subcontractors, operations,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
-    updateOrder, addQCEntry, updateDeliveredOrder, addDeliveredOrder,
+    updateOrder, addOrder, addQCEntry, updateDeliveredOrder, addDeliveredOrder,
     absenceOperationId,
   } = usePlanning();
 
-  const order = useMemo(() => orders.find(o => o.id === orderId) || null, [orders, orderId]);
+  const existingOrder = useMemo(() => orders.find(o => o.id === orderId) || null, [orders, orderId]);
 
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
@@ -55,24 +55,64 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
   const reintegration = useReintegrateOrder();
 
   React.useEffect(() => {
-    if (open) { setTab(initialTab); setDraft({}); }
-  }, [open, initialTab, orderId]);
+    if (open) {
+      setTab(initialTab);
+      setDraft(createMode && initialDraft ? { ...initialDraft } : {});
+    }
+  }, [open, initialTab, orderId, createMode, initialDraft]);
 
-  const lastSeries = useMemo(() => computeLastSeriesNumbers(orders), [orders]);
+  // Synthesize the "order" we work with: existing one, or a draft skeleton in create mode.
+  const order: Order | null = useMemo(() => {
+    if (existingOrder) return existingOrder;
+    if (!createMode) return null;
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      id: 'new',
+      orderNumber: '',
+      orderDate: today,
+      clientId: '',
+      designation: '',
+      quantity: 1,
+      priority: 'undetermined',
+      plannedDeadline: today,
+      materialAvailable: false,
+      toolingAvailable: false,
+      studyReady: false,
+      materialStatus: 'non-disponible',
+      toolingStatus: 'non-disponible',
+      studyStatus: 'non-disponible',
+      ...initialDraft,
+    } as Order;
+  }, [existingOrder, createMode, initialDraft]);
 
   if (!order) return null;
 
-  const clientName = clients.find(c => c.id === order.clientId)?.name || '—';
-  const status = getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
-  const orderSteps = getOrderProductionSteps(order.id, steps, absenceOperationId);
-  const orderQc = qcEntries.filter(q => q.orderId === order.id);
-  const orderDelivery = deliveryEntries.filter(d => d.orderId === order.id);
-  const orderDelivered = deliveredOrders.find(d => d.orderId === order.id);
-  const canReintegrate = !!(orderQc.length || orderDelivery.length || orderDelivered);
+  const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
+  const status = createMode
+    ? 'قيد الانتظار' as const
+    : getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
+  const orderSteps = createMode ? [] : getOrderProductionSteps(order.id, steps, absenceOperationId);
+  const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
+  const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
+  const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
+  const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered);
 
   const merged: Order = { ...order, ...draft };
 
   const saveInfo = () => {
+    if (createMode) {
+      if (!merged.orderNumber || !merged.orderNumber.trim()) {
+        toast.error('رقم الطلبية مطلوب');
+        return;
+      }
+      const newOrder: Order = { ...merged, id: crypto.randomUUID() };
+      addOrder(newOrder);
+      onCreated?.(newOrder);
+      setDraft({});
+      onOpenChange(false);
+      toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
+      return;
+    }
     if (Object.keys(draft).length === 0) { onOpenChange(false); return; }
     updateOrder({ ...order, ...draft });
     setDraft({});
