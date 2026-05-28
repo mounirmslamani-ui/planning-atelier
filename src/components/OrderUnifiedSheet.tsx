@@ -25,6 +25,9 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialTab?: 'info' | 'resources' | 'steps' | 'qc';
+  createMode?: boolean;
+  initialDraft?: Partial<Order>;
+  onCreated?: (order: Order) => void;
 }
 
 const TAB_TITLES = {
