@@ -689,7 +689,7 @@ const OrdersPage: React.FC = () => {
       case 'orderNumber': return (
         <button
           type="button"
-          className="font-heading text-xs underline-offset-2 hover:underline text-primary"
+          className="font-heading text-sm underline-offset-2 hover:underline text-primary"
           title="فتح بطاقة متابعة الطلبية"
           onClick={(e) => { e.stopPropagation(); setUnifiedOrderId(o.id); }}
         >
