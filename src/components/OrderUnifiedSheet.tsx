@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Printer, RotateCcw, Settings2, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
-import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
+
 import { getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
 import { getOrderProductionSteps, getStepProgressStatus } from '@/lib/stepProgress';
 import { formatDateFR } from '@/lib/utils';
