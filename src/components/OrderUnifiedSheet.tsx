@@ -257,13 +257,20 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                   </div>
                   <div>
                     <Label>مخطط / نموذج</Label>
-                    <Input
+                    <Select
                       value={merged.drawingModel || ''}
-                      onChange={e => setDraft(d => ({ ...d, drawingModel: e.target.value }))}
-                    />
+                      onValueChange={v => setDraft(d => ({ ...d, drawingModel: v }))}
+                    >
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="مخطط">مخطط</SelectItem>
+                        <SelectItem value="نموذج">نموذج</SelectItem>
+                        <SelectItem value="مخطط+نموذج">مخطط+نموذج</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="md:col-span-2">
-                    <Label>تعليمات</Label>
+                    <Label>ملاحظات/تعليمات تقنية</Label>
                     <Textarea
                       rows={2}
                       value={merged.instructions || ''}
