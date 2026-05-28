@@ -1508,16 +1508,16 @@ const PlanningTableauPage: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-xs" />
+                          <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-sm" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{getClientName(order.clientId)}</span>
+                          <span className="text-sm">{getClientName(order.clientId)}</span>
                         </TableCell>
                         <TableCell className={`py-1.5 px-2 w-[180px] min-w-[180px] max-w-[180px] align-top ${designBg}`}>
-                          <DesignationCell orderId={order.id} designation={order.designation} className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white font-medium' : ''}`} />
+                          <DesignationCell orderId={order.id} designation={order.designation} className={`text-sm whitespace-normal break-words block ${blocked ? 'text-white font-medium' : ''}`} />
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
-                          <span className="text-xs">{order.quantity}</span>
+                          <span className="text-sm">{order.quantity}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center preserve-status-color">
                           <PriorityBadge priority={order.priority} />
