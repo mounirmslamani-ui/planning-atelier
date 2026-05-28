@@ -486,7 +486,7 @@ const OrderRegistryPage: React.FC = () => {
                           {editingId === o.id ? renderEditableCell(o, 'orderNumber') : (
                             <button
                               type="button"
-                              className="text-xs font-heading underline-offset-2 hover:underline text-primary"
+                              className="text-sm font-heading underline-offset-2 hover:underline text-primary"
                               title="فتح بطاقة متابعة الطلبية"
                               onClick={() => setUnifiedOrderId(o.id)}
                             >
@@ -498,16 +498,16 @@ const OrderRegistryPage: React.FC = () => {
                         <TableCell className="w-px whitespace-nowrap">
                           {isEditing ? (
                             <Select value={(draft.clientId ?? o.clientId) || ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
-                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 {clients.map(cl => <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           ) : (
-                            <span className="text-xs">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
+                            <span className="text-sm">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
                           )}
                         </TableCell>
-                      <TableCell style={{ minWidth: 200 }} className="">{editingId === o.id ? renderEditableCell(o, 'designation') : <DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-xs whitespace-normal break-words block" />}</TableCell>
+                      <TableCell style={{ minWidth: 200 }} className="">{editingId === o.id ? renderEditableCell(o, 'designation') : <DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-sm whitespace-normal break-words block" />}</TableCell>
                         <TableCell>{renderEditableCell(o, 'quantity', 'number')}</TableCell>
                         <TableCell>
                           {isEditing ? (
