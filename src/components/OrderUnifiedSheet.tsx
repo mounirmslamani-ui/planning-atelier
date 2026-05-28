@@ -288,8 +288,8 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2 border-t">
-                  <Button variant="outline" onClick={() => { setDraft({}); onOpenChange(false); }}>إغلاق</Button>
-                  <Button onClick={saveInfo} disabled={Object.keys(draft).length === 0}>حفظ</Button>
+                  <Button variant="outline" onClick={() => { setDraft({}); onOpenChange(false); }}>إلغاء</Button>
+                  <Button onClick={saveInfo} disabled={!createMode && Object.keys(draft).length === 0}>حفظ</Button>
                 </div>
               </TabsContent>
 
