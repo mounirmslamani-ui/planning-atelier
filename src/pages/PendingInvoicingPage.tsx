@@ -686,8 +686,8 @@ const PendingInvoicingPage: React.FC = () => {
         confirmLabel="Oui, réintégrer"
         cancelLabel="Annuler"
       />
-      </div>
     </div>
+
   );
 };
 

@@ -11,7 +11,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, GripVertical, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
@@ -82,12 +82,10 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, addOrder, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
+  const { orders, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
   const cancelOrder = useCancelOrder();
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Order | null>(null);
   const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
  
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
@@ -463,15 +461,6 @@ const OrdersPage: React.FC = () => {
     setSelectedIds(new Set());
   };
 
-  const emptyOrder = (): Omit<Order, 'id'> => ({
-    orderNumber: '', orderDate: new Date().toISOString().split('T')[0], clientId: clients[0]?.id || '',
-    designation: '', quantity: 1, priority: 'undetermined', plannedDeadline: '',
-    materialAvailable: false, toolingAvailable: false, studyReady: false,
-    materialStatus: 'non-disponible', toolingStatus: 'non-disponible', studyStatus: 'non-disponible',
-    displayOrder: baseSorted.length + 1,
-  });
-  const [form, setForm] = useState<Omit<Order, 'id'>>(emptyOrder());
-
   const normalizeOrderNumber = (value: string) => value.trim().toLowerCase();
   const duplicateOrderError = 'Erreur : Ce numéro de commande existe déjà. Veuillez utiliser un identifiant unique.';
   const isDuplicateOrderNumber = useCallback((value: string, currentId?: string) => {
@@ -480,18 +469,6 @@ const OrdersPage: React.FC = () => {
     return orders.some(o => o.id !== absenceOrderId && o.id !== currentId && normalizeOrderNumber(o.orderNumber) === normalized);
   }, [orders, absenceOrderId]);
 
-  const openNew = () => { setOrderNumberError(''); setEditing(null); setForm(emptyOrder()); setDialogOpen(true); };
-  const openEdit = (o: Order) => { setOrderNumberError(''); setEditing(o); const { id, ...rest } = o; setForm(rest); setDialogOpen(true); };
-  const handleSave = () => {
-    if (isDuplicateOrderNumber(form.orderNumber, editing?.id)) {
-      setOrderNumberError(duplicateOrderError);
-      return;
-    }
-    const data: Order = { id: editing?.id || crypto.randomUUID(), ...form };
-    if (editing) updateOrder(data); else addOrder(data);
-    setDialogOpen(false);
-  };
-  const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
 
   // Inline edit helpers
   const getInlineValue = (o: Order, field: keyof Order) => {
@@ -869,7 +846,6 @@ const OrdersPage: React.FC = () => {
       } />
 
 <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
-        <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
         <Button onClick={handleExportExcel} variant="outline" size="sm">
           <Download className="w-4 h-4 ml-1" /> تصدير Excel
         </Button>
@@ -884,7 +860,7 @@ const OrdersPage: React.FC = () => {
           </div>
         )}
 
-        {orderNumberError && !dialogOpen && (
+        {orderNumberError && (
           <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
             {orderNumberError}
           </div>
@@ -1035,85 +1011,8 @@ const OrdersPage: React.FC = () => {
         </table>
       </div>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} une commande</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">رقم الطلبية</label>
-              <Input value={form.orderNumber} onChange={e => { setOrderNumberError(''); updateForm('orderNumber', e.target.value); }} />
-            </div>
-            {orderNumberError && (
-              <div className="col-span-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-                {orderNumberError}
-              </div>
-            )}
-            <div>
-              <label className="text-sm font-medium mb-1 block">Date de commande</label>
-              <Input type="date" value={form.orderDate} onChange={e => updateForm('orderDate', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">الزبون</label>
-              <Select value={form.clientId} onValueChange={val => updateForm('clientId', val)}>
-                <SelectTrigger><SelectValue placeholder="Choisir un client" /></SelectTrigger>
-                <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">الأولوية</label>
-              <Select value={form.priority || 'undetermined'} onValueChange={val => updateForm('priority', val)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {form.priority === 'undetermined' ? (
-                      <span className="flex items-center gap-2">
-                        <WarningTriangleIcon className="w-[30px] h-[30px]" />
-                        <span>À déterminer plus tard</span>
-                      </span>
-                    ) : form.priority ? (
-                      <span className={priorityConfig[form.priority]?.color}>{priorityConfig[form.priority]?.label}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Choisir une priorité</span>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(priorityConfig).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>
-                      <div className="flex items-center gap-2">
-                        {k === 'undetermined' && <WarningTriangleIcon className="w-[30px] h-[30px]" />}
-                        <span className={v.color}>{v.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">التعيين</label>
-              <Input value={form.designation} onChange={e => updateForm('designation', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">الكمية</label>
-              <Input type="number" min={1} value={form.quantity} onChange={e => updateForm('quantity', parseInt(e.target.value) || 1)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Délai livraison souhaité</label>
-              <Input type="date" value={form.deliveryDeadline || ''} onChange={e => updateForm('deliveryDeadline', e.target.value)} />
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-medium mb-1 block">ملاحظات</label>
-              <Input value={form.observation || ''} onChange={e => updateForm('observation', e.target.value)} placeholder="Note d'information..." />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSave} disabled={!form.orderNumber || !form.designation}>حفظ</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Excel Paste Dialog */}
       

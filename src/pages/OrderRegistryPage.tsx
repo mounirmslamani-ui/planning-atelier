@@ -48,6 +48,7 @@ const OrderRegistryPage: React.FC = () => {
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
+  const [createDraft, setCreateDraft] = useState<Partial<Order> | null>(null);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [history, setHistory] = useState<Order[][]>([]);
   const [redoStack, setRedoStack] = useState<Order[][]>([]);
@@ -150,11 +151,10 @@ const OrderRegistryPage: React.FC = () => {
   const handleAdd = () => {
     const code = generateOrderCode(activeCat, realOrders);
     const today = new Date().toISOString().split('T')[0];
-    const newOrder: Order = {
-      id: crypto.randomUUID(),
+    setCreateDraft({
       orderNumber: code,
       orderDate: today,
-      clientId: clients[0]?.id || '',
+      clientId: '',
       designation: '',
       quantity: 1,
       priority: 'undetermined',
@@ -166,12 +166,7 @@ const OrderRegistryPage: React.FC = () => {
       toolingStatus: 'non-disponible',
       studyStatus: 'non-disponible',
       category: activeCat,
-    };
-    pushHistory();
-    addOrder(newOrder);
-    setEditingId(newOrder.id);
-    setDraft({});
-    toast.success(`Commande ${code} créée`);
+    });
   };
 
   const startEdit = (o: Order) => {
@@ -663,6 +658,15 @@ const OrderRegistryPage: React.FC = () => {
         orderId={unifiedOrderId}
         open={!!unifiedOrderId}
         onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
+      />
+
+      <OrderUnifiedSheet
+        orderId={null}
+        open={!!createDraft}
+        onOpenChange={(open) => { if (!open) setCreateDraft(null); }}
+        createMode
+        initialDraft={createDraft || undefined}
+        onCreated={() => setCreateDraft(null)}
       />
     </div>
   );
