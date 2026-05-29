@@ -444,7 +444,7 @@ const OrderRegistryPage: React.FC = () => {
 {CATEGORIES.map(c => (
   <TabsContent key={c} value={c} className="mt-4 space-y-3">
 
-            <div className="border rounded-lg overflow-x-auto" dir="rtl">
+            <div className="border rounded-lg overflow-auto" dir="rtl">
               <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow className="bg-muted/50">

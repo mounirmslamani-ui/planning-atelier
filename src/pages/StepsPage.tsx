@@ -109,7 +109,7 @@ const StepsPage: React.FC = () => {
       <PageHeader title="التعيينات" description="Assignation des opérateurs et durées estimatives" actions={
         <Button onClick={openNew} size="sm" disabled={realOrders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
-      <div className="bg-card rounded-lg border overflow-x-auto">
+      <div className="bg-card rounded-lg border overflow-auto">
         <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
