@@ -89,7 +89,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <PanelLeftOpen className="h-5 w-5" />
       </button>
       <AppSidebar isOpen={isSidebarOpen} onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
-     className="min-w-0 flex-1 overflow-hidden h-screen"
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden h-screen">
         {children}
       </main>
     </div>
