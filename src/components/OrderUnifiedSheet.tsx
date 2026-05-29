@@ -165,7 +165,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
           {status}
         </span>
       </div>
-     <span className="w-full text-foreground font-bold text-lg-right block">التعيين: {order.designation}</span>
+     <span className="w-full text-foreground-right block">التعيين: {order.designation}</span>
     </div>
   )}
 </div>
