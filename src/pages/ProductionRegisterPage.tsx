@@ -360,7 +360,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-            <Table className="text-xs">
+            <table className="w-full caption-bottom text-xs">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">
