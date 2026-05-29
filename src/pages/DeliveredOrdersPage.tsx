@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ColumnHeader from '@/components/orders/ColumnHeader';
@@ -155,7 +155,7 @@ const DeliveredOrdersPage: React.FC = () => {
         </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-        <Table>
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
@@ -348,7 +348,7 @@ const DeliveredOrdersPage: React.FC = () => {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       <ConfirmDialog

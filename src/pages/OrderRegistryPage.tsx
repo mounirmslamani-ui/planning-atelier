@@ -4,7 +4,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil, Download, Ban, RotateCcw, Trash2, Save, X } from 'lucide-react';
@@ -445,7 +445,7 @@ const OrderRegistryPage: React.FC = () => {
   <TabsContent key={c} value={c} className="mt-4 space-y-3">
 
             <div className="border rounded-lg overflow-x-auto" dir="rtl">
-              <Table>
+              <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="text-xs w-px whitespace-nowrap"><ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderNumber || ''} onFilter={handleFilter} allValues={allValuesByKey.orderNumber} /></TableHead>
@@ -633,7 +633,7 @@ const OrderRegistryPage: React.FC = () => {
                     );
                   })}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </TabsContent>
         ))}

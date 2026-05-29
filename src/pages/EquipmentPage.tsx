@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Equipment, EquipmentType, EquipmentState } from '@/types/planning';
@@ -85,7 +85,7 @@ const EquipmentPage: React.FC = () => {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-        <Table>
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead>التعيين</TableHead>
@@ -126,7 +126,7 @@ const EquipmentPage: React.FC = () => {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

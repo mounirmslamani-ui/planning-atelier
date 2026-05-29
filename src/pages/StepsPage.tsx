@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import type { ProductionStep, Holiday } from '@/types/planning';
@@ -110,7 +110,7 @@ const StepsPage: React.FC = () => {
         <Button onClick={openNew} size="sm" disabled={realOrders.length === 0}><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
       } />
       <div className="bg-card rounded-lg border overflow-x-auto">
-        <Table>
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
@@ -145,7 +145,7 @@ const StepsPage: React.FC = () => {
               <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Aucune étape. Ajoutez d'abord une commande.</TableCell></TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
