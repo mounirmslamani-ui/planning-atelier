@@ -413,7 +413,7 @@ const OrderRegistryPage: React.FC = () => {
   };
 
   return (
-   <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+   <div className="flex flex-col overflow-hidden p-6" style={{ height: '100vh' }}>
       <div className="flex-none bg-background pb-3">
         <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
       </div>
