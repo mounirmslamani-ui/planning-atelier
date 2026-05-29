@@ -1371,7 +1371,7 @@ const PlanningTableauPage: React.FC = () => {
               </div>
 
             </div>
-            <div className="overflow-x-auto">
+            <div>
               <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow>
