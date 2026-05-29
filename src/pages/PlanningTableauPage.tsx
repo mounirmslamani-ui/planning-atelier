@@ -1355,7 +1355,7 @@ const PlanningTableauPage: React.FC = () => {
           const groupSelectedCount = filteredTasks.filter(t => selectedStepIds.has(t.step.id)).length;
           const allFilteredSelected = filteredTasks.length > 0 && filteredTasks.every(t => selectedStepIds.has(t.step.id));
           return (
-          <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
+          <div key={group.operator.id} className="bg-card rounded-lg border">
             <div className="bg-muted py-2 px-4 flex items-center justify-between">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-3">
