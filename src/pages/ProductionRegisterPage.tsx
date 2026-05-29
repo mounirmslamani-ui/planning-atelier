@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -360,7 +360,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-            <Table className="text-xs">
+            <table className="w-full caption-bottom text-xs">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">
@@ -473,7 +473,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   );
                 })}
               </TableBody>
-            </Table>
+            </table>
           </div>
         </>
       )}

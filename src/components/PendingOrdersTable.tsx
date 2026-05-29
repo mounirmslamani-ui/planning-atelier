@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
@@ -69,7 +69,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
 
   return (
 <div className="rounded-lg border bg-card overflow-auto">
-      <Table>
+      <table className="w-full caption-bottom text-sm">
         <TableHeader>
           <TableRow>
             <TableHead className="w-12 text-center">#</TableHead>
@@ -102,7 +102,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
             ))
           )}
         </TableBody>
-      </Table>
+      </table>
     </div>
   );
 };

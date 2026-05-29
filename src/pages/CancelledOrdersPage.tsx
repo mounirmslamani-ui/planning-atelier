@@ -3,7 +3,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil, Trash2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
@@ -54,25 +54,27 @@ const CancelledOrdersPage: React.FC = () => {
   const setF = (k: string, v: string) => setFilters(p => ({ ...p, [k]: v }));
 
   return (
-    <div className="space-y-4 p-4">
-      <PageHeader title="طلبيات ملغاة" />
-      <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="طلبيات ملغاة" />
+        <p className="text-sm text-muted-foreground">عدد الطلبيات الملغاة: {cancelledOrders.length}</p>
 
-<Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="w-full">
-  <div className="flex w-full justify-end mt-2">
-    <TabsList className="justify-end">
-      {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
-        <TabsTrigger key={c} value={c}>
-          {ORDER_CATEGORY_LABEL[c]}
-          <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
-        </TabsTrigger>
-      ))}
-    </TabsList>
-  </div>
-</Tabs>
+        <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="w-full">
+          <div className="flex w-full justify-end mt-2">
+            <TabsList className="justify-end">
+              {(['fabrication','prestation','divers','slamani'] as OrderCategory[]).map(c => (
+                <TabsTrigger key={c} value={c}>
+                  {ORDER_CATEGORY_LABEL[c]}
+                  <span className="ml-2 text-xs text-muted-foreground">({catCount(c)})</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        </Tabs>
+      </div>
 
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow className="bg-muted/40">
               <TableHead className="text-right">رقم الطلبية</TableHead>
@@ -130,8 +132,9 @@ const CancelledOrdersPage: React.FC = () => {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </table>
       </div>
+
 
       {editing && (
         <CancelOrderDialog
