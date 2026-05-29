@@ -128,47 +128,47 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
         >
           {/* HEADER */}
           <DialogHeader className="px-6 pt-5 pb-3 border-b bg-card">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                    <DialogTitle className="text-2xl font-bold">
-                  {createMode
-                    ? `إنشاء طلبية جديدة${merged.orderNumber ? ` — ${merged.orderNumber}` : ''}`
-                    : `بطاقة متابعة إنجاز الطلبية — ${order.orderNumber}`}
-                </DialogTitle>
-                {!createMode && (
-                 <div className="mt-1 w-full flex flex-col gap-y-1 text-base text-muted-foreground">
-  <div className="flex flex-wrap items-center gap-x-4">
-    <span>الزبون: <span className="text-foreground font-bold text-lg">{clientName}</span></span>
-    <span>الكمية: <span className="text-foreground font-bold text-lg">{order.quantity}</span></span>
-    <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
-      {status}
-    </span>
+<div className="flex flex-col gap-1">
+  <div className="flex items-start justify-between gap-4">
+    <DialogTitle className="text-2xl font-bold">
+      {createMode
+        ? `إنشاء طلبية جديدة${merged.orderNumber ? ` — ${merged.orderNumber}` : ''}`
+        : `بطاقة متابعة إنجاز الطلبية — ${order.orderNumber}`}
+    </DialogTitle>
+    <div className="flex items-center gap-2 flex-shrink-0">
+      {canReintegrate && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-amber-700 border-amber-300 hover:bg-amber-50"
+          onClick={() => reintegration.requestReintegrate(order.id)}
+        >
+          <RotateCcw className="w-4 h-4 ms-1" />
+          إعادة إدماج
+        </Button>
+      )}
+      {!createMode && (
+        <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
+          <Printer className="w-4 h-4 ms-1" />
+          طباعة البطاقة
+        </Button>
+      )}
+    </div>
   </div>
- <span className="w-full text-foreground">التعيين: {order.designation}</span>
+  {!createMode && (
+    <div className="w-full flex flex-col gap-y-1 text-base text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4">
+        <span>الزبون: <span className="text-foreground font-bold text-lg">{clientName}</span></span>
+        <span>الكمية: <span className="text-foreground font-bold text-lg">{order.quantity}</span></span>
+        <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
+        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
+          {status}
+        </span>
+      </div>
+      <span className="w-full text-foreground">التعيين: {order.designation}</span>
+    </div>
+  )}
 </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {canReintegrate && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-amber-700 border-amber-300 hover:bg-amber-50"
-                    onClick={() => reintegration.requestReintegrate(order.id)}
-                  >
-                    <RotateCcw className="w-4 h-4 ms-1" />
-                    إعادة إدماج
-                  </Button>
-                )}
-                {!createMode && (
-                  <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
-                    <Printer className="w-4 h-4 ms-1" />
-                    طباعة البطاقة
-                  </Button>
-                )}
-              </div>
-            </div>
           </DialogHeader>
 
           {/* TABS */}
