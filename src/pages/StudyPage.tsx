@@ -136,7 +136,7 @@ const StudyPage: React.FC = () => {
         } />
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-        <Table>
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead className="w-16 text-center"><ColumnHeader label="ترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} allValues={allValuesByKey.displayOrder} /></TableHead>
@@ -167,7 +167,7 @@ const StudyPage: React.FC = () => {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       <ConfirmDialog

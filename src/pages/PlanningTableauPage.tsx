@@ -4,7 +4,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
@@ -1372,7 +1372,7 @@ const PlanningTableauPage: React.FC = () => {
 
             </div>
             <div className="overflow-x-auto">
-              <Table>
+              <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8 px-1 text-center">
@@ -1652,7 +1652,7 @@ const PlanningTableauPage: React.FC = () => {
                     );
                   })}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </div>
           );
