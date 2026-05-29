@@ -540,7 +540,7 @@ const OrderPlanningDialog: React.FC<Props> = ({ order, open, onOpenChange }) => 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="!max-w-none w-screen h-screen sm:rounded-none p-4 overflow-y-auto">
+       <DialogContent className="w-[794px] h-[1123px] max-w-[95vw] max-h-[95vh] sm:rounded-lg p-4 overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">تحديد المراحل وتوزيعها</DialogTitle>
             <p className="text-sm text-muted-foreground">
