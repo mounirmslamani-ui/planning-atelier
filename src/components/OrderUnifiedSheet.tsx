@@ -130,16 +130,16 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
           <DialogHeader className="px-6 pt-5 pb-3 border-b bg-card">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <DialogTitle className="text-lg font-bold">
+                    <DialogTitle className="text-2xl font-bold">
                   {createMode
                     ? `إنشاء طلبية جديدة${merged.orderNumber ? ` — ${merged.orderNumber}` : ''}`
                     : `بطاقة متابعة إنجاز الطلبية — ${order.orderNumber}`}
                 </DialogTitle>
                 {!createMode && (
-                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span>الزبون: <span className="text-foreground font-semibold">{clientName}</span></span>
-                    <span>التعيين: <span className="text-foreground">{order.designation}</span></span>
-                    <span>الكمية: <span className="text-foreground font-bold">{order.quantity}</span></span>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-muted-foreground">
+                    <span>الزبون: <span className="text-foreground font-bold text-lg">{clientName}</span></span>
+                    <span>التعيين: <span className="text-foreground font-bold text-lg">{order.designation}</span></span>
+                    <span>الكمية: <span className="text-foreground font-bold text-lg">{order.quantity}</span></span>
                     <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
                       {status}
