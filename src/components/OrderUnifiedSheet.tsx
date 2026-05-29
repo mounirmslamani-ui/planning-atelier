@@ -136,15 +136,17 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                     : `بطاقة متابعة إنجاز الطلبية — ${order.orderNumber}`}
                 </DialogTitle>
                 {!createMode && (
-                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-base text-muted-foreground">
-                    <span>الزبون: <span className="text-foreground font-bold text-lg">{clientName}</span></span>
-                    <span>التعيين: <span className="text-foreground font-bold text-lg">{order.designation}</span></span>
-                    <span>الكمية: <span className="text-foreground font-bold text-lg">{order.quantity}</span></span>
-                    <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
-                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
-                      {status}
-                    </span>
-                  </div>
+                 <div className="mt-1 flex flex-col gap-y-1 text-base text-muted-foreground">
+  <div className="flex flex-wrap items-center gap-x-4">
+    <span>الزبون: <span className="text-foreground font-bold text-lg">{clientName}</span></span>
+    <span>الكمية: <span className="text-foreground font-bold text-lg">{order.quantity}</span></span>
+    <PriorityBadge priority={(order.priority || 'undetermined') as OrderPriority} />
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${REGISTRY_STATUS_CLASS[status]}`}>
+      {status}
+    </span>
+  </div>
+  <span className="text-foreground">التعيين: {order.designation}</span>
+</div>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
