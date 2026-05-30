@@ -119,7 +119,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
         type="button"
         aria-label={isOpen ? 'Masquer le menu' : 'Afficher le menu'}
         onClick={onToggle}
-        className="absolute left-full top-3 z-[100] flex h-9 w-9 items-center justify-center rounded-r-md border border-l-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+        className="absolute left-full bottom-6 z-[100] flex h-9 w-9 items-center justify-center rounded-r-md border border-l-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
       >
         {isOpen ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
       </button>
