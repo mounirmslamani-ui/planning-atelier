@@ -49,7 +49,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
 
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
-  const [planningOpen, setPlanningOpen] = useState(false);
+  const [printOpen2, setPrintOpen2] = useState(false); void printOpen2;
   const [printOpen, setPrintOpen] = useState(false);
 
   const reintegration = useReintegrateOrder();
