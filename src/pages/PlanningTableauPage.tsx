@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
-import OrderPlanningDialog from '@/components/OrderPlanningDialog';
+import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
