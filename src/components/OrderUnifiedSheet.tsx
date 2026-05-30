@@ -85,6 +85,8 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
     } as Order;
   }, [existingOrder, createMode, initialDraft]);
 
+  const editor = usePlanningEditor(order, open && !createMode);
+
   if (!order) return null;
 
   const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
