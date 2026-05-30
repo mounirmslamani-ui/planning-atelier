@@ -341,7 +341,7 @@ const PlanningTableauPage: React.FC = () => {
     return saved ? parseInt(saved, 10) || 5 : 5;
   });
   const [numDaysInput, setNumDaysInput] = useState(String(numDays));
-  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
+  const [planningOrderId, setPlanningOrderId] = useState<string | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
   const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
