@@ -5,7 +5,7 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud, FileText, Ban, BookOpen,
+  DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
@@ -58,11 +58,12 @@ const sidebarGroups = [
 
 interface AppSidebarProps {
   isOpen?: boolean;
+  onToggle?: () => void;
   onProdDrop?: (stepId: string) => void;
   onQcDrop?: (stepId: string) => void;
 }
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQcDrop }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onProdDrop, onQcDrop }) => {
   const location = useLocation();
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -113,7 +114,15 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onProdDrop, onQ
   };
 
   return (
-    <aside className={`h-screen flex-shrink-0 overflow-hidden bg-sidebar transition-[width] duration-200 ease-out ${isOpen ? 'w-60 border-r border-sidebar-border' : 'w-0 border-r-0'}`}>
+    <aside className={`relative h-screen flex-shrink-0 overflow-hidden bg-sidebar transition-[width] duration-200 ease-out ${isOpen ? 'w-60 border-r border-sidebar-border' : 'w-0 border-r-0'}`}>
+      <button
+        type="button"
+        aria-label={isOpen ? 'Masquer le menu' : 'Afficher le menu'}
+        onClick={onToggle}
+        className="absolute -right-9 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-r-md border border-l-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+      >
+        {isOpen ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+      </button>
       <div className="flex h-full w-60 flex-col">
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-8 h-8 text-sidebar-primary" />
