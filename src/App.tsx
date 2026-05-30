@@ -41,8 +41,7 @@ const App = () => (
         <BrowserRouter>
           <OrderSheetProvider>
             <AppLayout>
-             <div className="flex-1 min-h-0 h-full flex flex-col">
-  <Routes>
+              <Routes>
                 <Route path="/" element={<Navigate to="/orders" replace />} />
                 <Route path="/planning-gantt" element={<Index />} />
                 <Route path="/operators" element={<OperatorsPage />} />
@@ -67,8 +66,7 @@ const App = () => (
                 <Route path="/absences" element={<AbsencesPage />} />
                 <Route path="/planning-tableau" element={<PlanningTableauPage />} />
                 <Route path="*" element={<NotFound />} />
-               </Routes>
-</div>
+              </Routes>
             </AppLayout>
           </OrderSheetProvider>
         </BrowserRouter>

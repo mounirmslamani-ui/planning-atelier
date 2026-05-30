@@ -413,19 +413,19 @@ const OrderRegistryPage: React.FC = () => {
   };
 
   return (
-   <div className="flex flex-col overflow-hidden p-6" style={{ height: '100vh', boxSizing: 'border-box' }}>
-      <div className="flex-none bg-background pb-3">
-        <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
-      </div>
+   <div className="p-6 space-y-4">
+      <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
 
-      <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
-<div className="flex flex-wrap items-center gap-2 mb-2 flex-none">
+
+
+      <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }}>
+<div className="flex flex-wrap items-center gap-2 mb-2">
    <div className="flex-1" />
   <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
 </div>
 
-<div className="flex justify-end mb-2 flex-none">
+<div className="flex justify-end mb-2">
   <TabsList>
     {CATEGORIES.map(c => (
       <TabsTrigger key={c} value={c}>
@@ -442,8 +442,9 @@ const OrderRegistryPage: React.FC = () => {
 </div>
 
 {CATEGORIES.map(c => (
-  <TabsContent key={c} value={c} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, marginTop: '1rem' }}
-            <div className="overflow-auto rounded-lg border bg-card" style={{ flex: 1, minHeight: 0 }} dir="rtl">
+  <TabsContent key={c} value={c} className="mt-4 space-y-3">
+
+            <div className="border rounded-lg overflow-auto" dir="rtl">
               <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow className="bg-muted/50">

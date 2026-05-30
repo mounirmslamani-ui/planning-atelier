@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { usePlanning } from '@/context/PlanningContext';
@@ -136,7 +136,7 @@ const StudyPage: React.FC = () => {
         } />
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-        <table className="w-full caption-bottom text-sm">
+        <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-16 text-center"><ColumnHeader label="ترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} allValues={allValuesByKey.displayOrder} /></TableHead>
@@ -167,7 +167,7 @@ const StudyPage: React.FC = () => {
               </TableRow>
             ))}
           </TableBody>
-        </table>
+        </Table>
       </div>
 
       <ConfirmDialog
