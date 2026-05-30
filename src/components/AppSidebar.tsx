@@ -115,14 +115,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
 
   return (
     <aside className={`relative h-screen flex-shrink-0 bg-sidebar transition-[width] duration-200 ease-out ${isOpen ? 'w-60 border-r border-sidebar-border' : 'w-0 border-r-0'}`}>
-      <button
-        type="button"
-        aria-label={isOpen ? 'Masquer le menu' : 'Afficher le menu'}
-        onClick={onToggle}
-        className="absolute -right-9 top-3 z-50 flex h-9 w-9 items-center justify-center rounded-r-md border border-l-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-      >
-        {isOpen ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-      </button>
       <div className="flex h-full w-60 flex-col overflow-hidden">
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-8 h-8 text-sidebar-primary" />
