@@ -39,7 +39,7 @@ const TAB_TITLES = {
 
 const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft, onCreated }) => {
   const {
-    orders, clients, steps, operators, subcontractors, operations,
+    orders, clients, steps,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
     updateOrder, addOrder, addQCEntry, updateDeliveredOrder, addDeliveredOrder,
     absenceOperationId,
