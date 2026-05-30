@@ -645,7 +645,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
           <Plus className="w-4 h-4 mr-1" /> إضافة عملية
         </Button>
         <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
-          <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'إعادة التخطيط' : 'تخطيط'}
+          <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'تأكيد' : 'تأكيد'}
         </Button>
       </div>
     </div>
