@@ -78,7 +78,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full">
      <AppSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(open => !open)} onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
       <main className="min-w-0 flex-1 overflow-auto h-screen">
         {children}
