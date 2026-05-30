@@ -6,19 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer, RotateCcw, Settings2, FileText } from 'lucide-react';
+import { Printer, RotateCcw, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
 
 import { getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
-import { getOrderProductionSteps, getStepProgressStatus } from '@/lib/stepProgress';
+import { getOrderProductionSteps } from '@/lib/stepProgress';
 import { formatDateFR } from '@/lib/utils';
 import PriorityBadge from '@/components/orders/PriorityBadge';
-import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import type { Order, OrderPriority } from '@/types/planning';
+import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 
 interface Props {
   orderId: string | null;
