@@ -79,7 +79,16 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex h-screen w-full">
-     <AppSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(open => !open)} onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
+      <AppSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(open => !open)} onProdDrop={handleProdDrop} onQcDrop={handleQcDrop} />
+      <button
+        type="button"
+        aria-label={isSidebarOpen ? 'Masquer le menu' : 'Afficher le menu'}
+        onClick={() => setIsSidebarOpen(open => !open)}
+        className="absolute top-3 z-50 flex h-9 w-9 items-center justify-center rounded-r-md border border-l-0 border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+        style={{ left: isSidebarOpen ? '240px' : '0px' }}
+      >
+        {isSidebarOpen ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+      </button>
       <main className="min-w-0 flex-1 overflow-auto h-screen">
         {children}
       </main>
