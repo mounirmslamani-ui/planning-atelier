@@ -1031,13 +1031,11 @@ const OrdersPage: React.FC = () => {
       {printingOrder && (
         <OrderTrackingSheet order={printingOrder} onClose={() => setPrintingOrder(null)} />
       )}
-      {planningOrder && (
-        <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
-      )}
       <OrderUnifiedSheet
         orderId={unifiedOrderId}
         open={!!unifiedOrderId}
         onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
+        initialTab={unifiedInitialTab}
       />
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 
