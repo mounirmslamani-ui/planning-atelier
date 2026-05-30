@@ -1622,7 +1622,7 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrder(order)} title="التعيينات">
+                            <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrderId(order.id)} title="التعيينات">
                               <CalendarCheck className="w-7 h-7" />
                             </Button>
                             {isEditing && (
