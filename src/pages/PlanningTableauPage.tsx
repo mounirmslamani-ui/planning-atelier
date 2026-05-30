@@ -1659,9 +1659,12 @@ const PlanningTableauPage: React.FC = () => {
         })}
       </div>
 
-      {planningOrder && (
-        <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
-      )}
+      <OrderUnifiedSheet
+        orderId={planningOrderId}
+        open={!!planningOrderId}
+        onOpenChange={(open) => { if (!open) setPlanningOrderId(null); }}
+        initialTab="steps"
+      />
 
       {/* Chained prerequisite check dialogs */}
       <ConfirmDialog
