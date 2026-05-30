@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
-import OrderPlanningDialog from '@/components/OrderPlanningDialog';
+import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
@@ -341,7 +341,7 @@ const PlanningTableauPage: React.FC = () => {
     return saved ? parseInt(saved, 10) || 5 : 5;
   });
   const [numDaysInput, setNumDaysInput] = useState(String(numDays));
-  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
+  const [planningOrderId, setPlanningOrderId] = useState<string | null>(null);
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
   const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
@@ -1622,7 +1622,7 @@ const PlanningTableauPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="px-1">
                           <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrder(order)} title="التعيينات">
+                            <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrderId(order.id)} title="التعيينات">
                               <CalendarCheck className="w-7 h-7" />
                             </Button>
                             {isEditing && (
@@ -1659,9 +1659,12 @@ const PlanningTableauPage: React.FC = () => {
         })}
       </div>
 
-      {planningOrder && (
-        <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
-      )}
+      <OrderUnifiedSheet
+        orderId={planningOrderId}
+        open={!!planningOrderId}
+        onOpenChange={(open) => { if (!open) setPlanningOrderId(null); }}
+        initialTab="steps"
+      />
 
       {/* Chained prerequisite check dialogs */}
       <ConfirmDialog

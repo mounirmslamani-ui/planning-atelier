@@ -17,7 +17,7 @@ import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority } from '@/types/planning';
-import OrderPlanningDialog from '@/components/OrderPlanningDialog';
+
 
 import PrintTrackingSheetDialog from '@/components/PrintTrackingSheetDialog';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
@@ -86,12 +86,16 @@ const OrdersPage: React.FC = () => {
   const cancelOrder = useCancelOrder();
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
-  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
- 
+  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
+  const [unifiedInitialTab, setUnifiedInitialTab] = useState<'info' | 'resources' | 'steps' | 'qc'>('info');
+  const openUnified = (orderId: string, tab: 'info' | 'resources' | 'steps' | 'qc' = 'info') => {
+    setUnifiedInitialTab(tab);
+    setUnifiedOrderId(orderId);
+  };
+
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -953,7 +957,7 @@ const OrdersPage: React.FC = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-12 w-12 min-w-12"
-                                  onClick={() => setPlanningOrder(o)}
+                                  onClick={() => openUnified(o.id, "steps")}
                                   title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
                                 >
                                   {hasSteps ? (
@@ -996,7 +1000,7 @@ const OrdersPage: React.FC = () => {
                     Déplacer la sélection {selectedIds.size > 0 ? `(${selectedIds.has(o.id) ? selectedIds.size : selectedIds.size + 1})` : '(1)'}
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem onClick={() => setPlanningOrder(o)}>
+                  <ContextMenuItem onClick={() => openUnified(o.id, "steps")}>
                     <ListPlus className="w-4 h-4 mr-2" />
                     Étape suivante
                   </ContextMenuItem>
@@ -1027,13 +1031,11 @@ const OrdersPage: React.FC = () => {
       {printingOrder && (
         <OrderTrackingSheet order={printingOrder} onClose={() => setPrintingOrder(null)} />
       )}
-      {planningOrder && (
-        <OrderPlanningDialog order={planningOrder} open={!!planningOrder} onOpenChange={(open) => { if (!open) setPlanningOrder(null); }} />
-      )}
       <OrderUnifiedSheet
         orderId={unifiedOrderId}
         open={!!unifiedOrderId}
         onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
+        initialTab={unifiedInitialTab}
       />
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 

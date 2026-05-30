@@ -6,19 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer, RotateCcw, Settings2, FileText } from 'lucide-react';
+import { Printer, RotateCcw, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
 
 import { getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
-import { getOrderProductionSteps, getStepProgressStatus } from '@/lib/stepProgress';
+
 import { formatDateFR } from '@/lib/utils';
 import PriorityBadge from '@/components/orders/PriorityBadge';
-import OrderPlanningDialog from '@/components/OrderPlanningDialog';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import type { Order, OrderPriority } from '@/types/planning';
+import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 
 interface Props {
   orderId: string | null;
@@ -39,7 +39,7 @@ const TAB_TITLES = {
 
 const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft, onCreated }) => {
   const {
-    orders, clients, steps, operators, subcontractors, operations,
+    orders, clients, steps,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
     updateOrder, addOrder, addQCEntry, updateDeliveredOrder, addDeliveredOrder,
     absenceOperationId,
@@ -49,7 +49,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
 
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
-  const [planningOpen, setPlanningOpen] = useState(false);
+  
   const [printOpen, setPrintOpen] = useState(false);
 
   const reintegration = useReintegrateOrder();
@@ -85,13 +85,14 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
     } as Order;
   }, [existingOrder, createMode, initialDraft]);
 
+  const editor = usePlanningEditor(order, open && !createMode);
+
   if (!order) return null;
 
   const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
   const status = createMode
     ? 'قيد الانتظار' as const
     : getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
-  const orderSteps = createMode ? [] : getOrderProductionSteps(order.id, steps, absenceOperationId);
   const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
   const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
   const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
@@ -298,115 +299,19 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                 </div>
               </TabsContent>
 
-              {/* TAB 2 — RESOURCES */}
-              <TabsContent value="resources" className="mt-0 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold">حالة الموارد لكل مرحلة</h3>
-                  <Button size="sm" onClick={() => setPlanningOpen(true)}>
-                    <Settings2 className="w-4 h-4 ms-1" />
-                    تحرير الموارد والمراحل
-                  </Button>
-                </div>
-                {orderSteps.length === 0 ? (
-                  <p className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                    لا توجد مراحل معرفة بعد. استخدم زر «تحرير الموارد والمراحل» لإضافتها.
-                  </p>
-                ) : (
-                  <div className="border rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/40">
-                        <tr>
-                          <th className="text-right p-2 w-8">#</th>
-                          <th className="text-right p-2">العملية</th>
-                          <th className="text-right p-2">المادة الأولية</th>
-                          <th className="text-right p-2">العدة / خابور</th>
-                          <th className="text-right p-2">الدراسة</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orderSteps.map((s, i) => {
-                          const op = operations.find(o => o.id === s.operationId)?.name || '';
-                          const tag = (st?: string) => {
-                            const color = st === 'disponible' ? 'bg-green-500/15 text-green-700 border-green-500/30'
-                              : st === 'partiel' ? 'bg-yellow-500/15 text-yellow-700 border-yellow-500/30'
-                              : st === 'non-applicable' ? 'bg-muted text-muted-foreground border-muted-foreground/30'
-                              : 'bg-red-500/15 text-red-700 border-red-500/30';
-                            return <span className={`inline-block rounded-full border px-2 py-0.5 text-xs ${color}`}>{st || 'non-disponible'}</span>;
-                          };
-                          return (
-                            <tr key={s.id} className="border-t">
-                              <td className="p-2">{i + 1}</td>
-                              <td className="p-2 font-medium">{op}</td>
-                              <td className="p-2">{tag(s.materialStatus)}</td>
-                              <td className="p-2">{tag(s.toolingStatus)}</td>
-                              <td className="p-2">{tag(s.studyStatus)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+              {/* TAB 2 — RESOURCES (editable in place) */}
+              <TabsContent value="resources" className="mt-0 space-y-3">
+                <ResourcesEditorTable editor={editor} />
                 <p className="text-xs text-muted-foreground">
                   ⓘ كل مرحلة لها مواردها المستقلة. لا تأثير من مرحلة على أخرى.
                 </p>
               </TabsContent>
 
-              {/* TAB 3 — STEPS */}
-              <TabsContent value="steps" className="mt-0 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold">مراحل الإنجاز ({orderSteps.length})</h3>
-                  <Button size="sm" onClick={() => setPlanningOpen(true)}>
-                    <Settings2 className="w-4 h-4 ms-1" />
-                    تحرير المراحل والتخطيط
-                  </Button>
-                </div>
-                {orderSteps.length === 0 ? (
-                  <p className="text-sm text-muted-foreground p-4 text-center border rounded-md">
-                    لا توجد مراحل بعد.
-                  </p>
-                ) : (
-                  <div className="border rounded-md overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/40">
-                        <tr>
-                          <th className="text-right p-2 w-10">#</th>
-                          <th className="text-right p-2">العملية</th>
-                          <th className="text-right p-2">العامل / المناول</th>
-                          <th className="text-right p-2">المدة المقدرة</th>
-                          <th className="text-right p-2">البداية</th>
-                          <th className="text-right p-2">النهاية</th>
-                          <th className="text-right p-2">متابعة تقدم إنجاز الطلبية</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orderSteps.map((s, i) => {
-                          const op = operations.find(o => o.id === s.operationId)?.name || '';
-                          const worker = s.subcontractorId
-                            ? subcontractors.find(sc => sc.id === s.subcontractorId)?.companyName
-                            : operators.find(o => o.id === s.operatorId)?.name;
-                          const st = getStepProgressStatus(s, productionRecords);
-                          const stCls = st === 'Terminée' ? 'text-green-700' : st === 'En cours' ? 'text-blue-700' : 'text-muted-foreground';
-                          const stLabel = st === 'Terminée' ? 'منتهية' : st === 'En cours' ? 'قيد الإنجاز' : 'لم تبدأ';
-                          const h = Math.floor(s.estimatedDuration / 60);
-                          const m = s.estimatedDuration % 60;
-                          return (
-                            <tr key={s.id} className="border-t">
-                              <td className="p-2">{i + 1}</td>
-                              <td className="p-2 font-medium">{op}</td>
-                              <td className="p-2">{worker || '—'}</td>
-                              <td className="p-2 font-mono">{h}h{String(m).padStart(2, '0')}</td>
-                              <td className="p-2 text-xs">{s.startDate ? formatDateFR(s.startDate) : '—'} {s.startTime}</td>
-                              <td className="p-2 text-xs">{s.endDate ? formatDateFR(s.endDate) : '—'} {s.endTime}</td>
-                              <td className={`p-2 font-bold ${stCls}`}>{stLabel}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+              {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
+              <TabsContent value="steps" className="mt-0 space-y-3">
+                <StepsEditorTable editor={editor} />
               </TabsContent>
+
 
               {/* TAB 4 — QC + DELIVERY */}
               <TabsContent value="qc" className="mt-0 space-y-4">
@@ -500,14 +405,9 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
         </DialogContent>
       </Dialog>
 
-      {/* Nested existing planning dialog — preserves all complex CRUD logic */}
-      {planningOpen && (
-        <OrderPlanningDialog
-          order={order}
-          open={planningOpen}
-          onOpenChange={setPlanningOpen}
-        />
-      )}
+      {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
+      <PlanningEditorDialogs editor={editor} order={order} />
+
 
       {/* Print sheet (A4) */}
       {printOpen && (
