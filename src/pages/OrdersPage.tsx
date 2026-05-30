@@ -957,7 +957,7 @@ const OrdersPage: React.FC = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-12 w-12 min-w-12"
-                                  onClick={() => setPlanningOrder(o)}
+                                  onClick={() => openUnified(o.id, "steps")}
                                   title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
                                 >
                                   {hasSteps ? (
@@ -1000,7 +1000,7 @@ const OrdersPage: React.FC = () => {
                     Déplacer la sélection {selectedIds.size > 0 ? `(${selectedIds.has(o.id) ? selectedIds.size : selectedIds.size + 1})` : '(1)'}
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem onClick={() => setPlanningOrder(o)}>
+                  <ContextMenuItem onClick={() => openUnified(o.id, "steps")}>
                     <ListPlus className="w-4 h-4 mr-2" />
                     Étape suivante
                   </ContextMenuItem>
