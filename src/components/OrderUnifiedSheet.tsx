@@ -93,7 +93,6 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
   const status = createMode
     ? 'قيد الانتظار' as const
     : getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
-  const orderSteps = createMode ? [] : getOrderProductionSteps(order.id, steps, absenceOperationId);
   const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
   const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
   const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
