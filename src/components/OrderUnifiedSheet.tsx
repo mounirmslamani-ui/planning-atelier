@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
 
 import { getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
-import { getOrderProductionSteps } from '@/lib/stepProgress';
+
 import { formatDateFR } from '@/lib/utils';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
