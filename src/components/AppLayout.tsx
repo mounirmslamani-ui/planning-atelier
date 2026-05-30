@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 import AppSidebar from './AppSidebar';
 import { usePlanning } from '@/context/PlanningContext';
 import { buildOrderQualityControlErrorMessage, getOrderQualityControlCheck } from '@/lib/stepProgress';
