@@ -406,14 +406,9 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
         </DialogContent>
       </Dialog>
 
-      {/* Nested existing planning dialog — preserves all complex CRUD logic */}
-      {planningOpen && (
-        <OrderPlanningDialog
-          order={order}
-          open={planningOpen}
-          onOpenChange={setPlanningOpen}
-        />
-      )}
+      {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
+      <PlanningEditorDialogs editor={editor} order={order} />
+
 
       {/* Print sheet (A4) */}
       {printOpen && (
