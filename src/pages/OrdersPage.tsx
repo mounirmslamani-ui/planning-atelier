@@ -86,12 +86,16 @@ const OrdersPage: React.FC = () => {
   const cancelOrder = useCancelOrder();
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
-  const [planningOrder, setPlanningOrder] = useState<Order | null>(null);
- 
+  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
+  const [unifiedInitialTab, setUnifiedInitialTab] = useState<'info' | 'resources' | 'steps' | 'qc'>('info');
+  const openUnified = (orderId: string, tab: 'info' | 'resources' | 'steps' | 'qc' = 'info') => {
+    setUnifiedInitialTab(tab);
+    setUnifiedOrderId(orderId);
+  };
+
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
