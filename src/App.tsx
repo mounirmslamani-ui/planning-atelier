@@ -72,7 +72,8 @@ const App = () => (
             </AppLayout>
           </OrderSheetProvider>
         </BrowserRouter>
-      </PlanningProvider>
+        </PlanningProvider>
+      </AuthGate>
     </TooltipProvider>
   </QueryClientProvider>
 );
