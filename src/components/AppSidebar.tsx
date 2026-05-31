@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import OrderReportDialog from './OrderReportDialog';
 
