@@ -38,8 +38,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <PlanningProvider>
-        <BrowserRouter>
+      <AuthGate>
+        <PlanningProvider>
+          <BrowserRouter>
           <OrderSheetProvider>
             <AppLayout>
               <Routes>
