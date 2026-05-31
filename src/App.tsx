@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PlanningProvider } from "@/context/PlanningContext";
 import { OrderSheetProvider } from "@/context/OrderSheetContext";
+import AuthGate from "@/components/AuthGate";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import OperatorsPage from "./pages/OperatorsPage";
@@ -37,8 +38,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <PlanningProvider>
-        <BrowserRouter>
+      <AuthGate>
+        <PlanningProvider>
+          <BrowserRouter>
           <OrderSheetProvider>
             <AppLayout>
               <Routes>
@@ -70,7 +72,8 @@ const App = () => (
             </AppLayout>
           </OrderSheetProvider>
         </BrowserRouter>
-      </PlanningProvider>
+        </PlanningProvider>
+      </AuthGate>
     </TooltipProvider>
   </QueryClientProvider>
 );

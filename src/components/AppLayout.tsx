@@ -5,7 +5,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { buildOrderQualityControlErrorMessage, getOrderQualityControlCheck } from '@/lib/stepProgress';
 import { fetchAllData } from '@/lib/supabase-data';
 import { hasCurrentPostProductionFlow } from '@/lib/orderFlow';
-import { PanelLeftOpen } from 'lucide-react';
+
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, deliveryEntries, deliveredOrders, cancelledOrders } = usePlanning();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

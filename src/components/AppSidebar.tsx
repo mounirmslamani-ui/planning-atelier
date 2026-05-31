@@ -5,10 +5,11 @@ import {
   Factory, LayoutDashboard, ClipboardCheck,
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
-  DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose,
+  DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import OrderReportDialog from './OrderReportDialog';
 
@@ -185,6 +186,15 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
         >
           <DownloadCloud className="w-4 h-4" />
           {exporting ? '...جاري التحميل' : 'حفظ شامل'}
+        </button>
+        <button
+          type="button"
+          onClick={async () => { await supabase.auth.signOut(); }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold border border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          title="تسجيل الخروج"
+        >
+          <LogOut className="w-4 h-4" />
+          خروج
         </button>
         <p className="text-xs text-sidebar-foreground/50 font-heading text-center">v1.0 — الورشة</p>
       </div>
