@@ -1154,13 +1154,6 @@ const PlanningTableauPage: React.FC = () => {
     ? `${formatDateFR(workingDays[0])} → ${formatDateFR(workingDays[workingDays.length - 1])}`
     : '';
 
-  const legendItems = [
-    { emoji: '🟢', label: 'Disponible / Fait' },
-    { emoji: '🟠', label: 'Partiel / En cours' },
-    { emoji: '🔴', label: 'Non disponible / Pas fait' },
-    { emoji: '/', label: 'Pas besoin' },
-    { emoji: '⚠️', label: 'Attention (forcé)' },
-  ];
 
   // Column filter/sort handlers
   const handleColSort = useCallback((key: string, dir: SortDirection) => {
@@ -1295,13 +1288,7 @@ const PlanningTableauPage: React.FC = () => {
               </Button>
             </div>
             <span className="text-xs text-muted-foreground">{periodLabel}</span>
-            <div className="flex items-center gap-2 border-l pl-3 ml-2">
-              {legendItems.map(l => (
-                <span key={l.emoji} className="text-xs text-muted-foreground flex items-center gap-0.5">
-                  <span className="text-sm">{l.emoji}</span>{l.label}
-                </span>
-              ))}
-            </div>
+
             {hasActiveFilters && (
               <Button variant="outline" size="sm" onClick={clearPlanningFilters}>
                 <X className="w-4 h-4 mr-1" /> Effacer tous les filtres
