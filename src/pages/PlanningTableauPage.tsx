@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import DesignationCell from '@/components/DesignationCell';
+import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
