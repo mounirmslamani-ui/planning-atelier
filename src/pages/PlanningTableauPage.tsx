@@ -1969,7 +1969,59 @@ const PlanningTableauPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Relais Dialog — بداية دوام / تبديل الطلبية / نهاية دوام */}
+      {relaisDialog && (() => {
+        const group = operatorTasks.find(g => g.operator.id === relaisDialog.operatorId);
+        const operatorOpenSteps = (group?.tasks || []).map(t => ({ step: t.step, order: t.order }));
+        const operatorName = group?.operator.name || '';
+
+        let currentStep: ProductionStep | null = null;
+        let currentOrder: Order | null = null;
+        if (relaisDialog.mode !== 'debut_poste') {
+          currentStep = operatorOpenSteps[0]?.step || null;
+          currentOrder = operatorOpenSteps[0]?.order || null;
+        }
+        const currentStepTotalDoneAlready = currentStep
+          ? productionRecords.filter(r => r.stepId === currentStep!.id).reduce((s, r) => s + (r.actualDuration || 0), 0)
+          : 0;
+
+        let nextStep: ProductionStep | null = null;
+        let nextOrder: Order | null = null;
+        if (relaisDialog.mode === 'debut_poste') {
+          nextStep = operatorOpenSteps[0]?.step || null;
+          nextOrder = operatorOpenSteps[0]?.order || null;
+        } else if (relaisDialog.mode === 'relais') {
+          // next after current; if none, first
+          nextStep = operatorOpenSteps[1]?.step || operatorOpenSteps[0]?.step || null;
+          nextOrder = operatorOpenSteps[1]?.order || operatorOpenSteps[0]?.order || null;
+        }
+        const nextStepTotalDoneAlready = nextStep
+          ? productionRecords.filter(r => r.stepId === nextStep!.id).reduce((s, r) => s + (r.actualDuration || 0), 0)
+          : 0;
+
+        return (
+          <RelaisDialog
+            open={relaisDialog.open}
+            mode={relaisDialog.mode}
+            operatorId={relaisDialog.operatorId}
+            operatorName={operatorName}
+            currentStep={currentStep}
+            currentOrder={currentOrder}
+            currentStepTotalDoneAlready={currentStepTotalDoneAlready}
+            nextStep={nextStep}
+            nextOrder={nextOrder}
+            nextStepTotalDoneAlready={nextStepTotalDoneAlready}
+            onConfirm={handleRelaisConfirm}
+            onCancel={() => setRelaisDialog(null)}
+            operations={operations}
+            productionRecords={productionRecords}
+            operatorOpenSteps={operatorOpenSteps}
+          />
+        );
+      })()}
     </div>
+
   );
 };
 
