@@ -276,11 +276,6 @@ const RelaisDialog: React.FC<Props> = ({
     };
     setLeftPayload(payload);
     setLeftConfirmed(true);
-    if (mode === 'fin_poste') {
-      onConfirm({ finishedRecord: payload, nextRecord: null });
-    } else if (rightConfirmed && rightPayload) {
-      onConfirm({ finishedRecord: payload, nextRecord: rightPayload });
-    }
   };
 
   const handleRightConfirm = () => {
@@ -295,11 +290,22 @@ const RelaisDialog: React.FC<Props> = ({
     };
     setRightPayload(payload);
     setRightConfirmed(true);
-    if (mode === 'debut_poste') {
-      onConfirm({ finishedRecord: null, nextRecord: payload });
-    } else if (leftConfirmed && leftPayload) {
-      onConfirm({ finishedRecord: leftPayload, nextRecord: payload });
-    }
+  };
+
+  const handleLeftUndo = () => { setLeftConfirmed(false); setLeftPayload(null); };
+  const handleRightUndo = () => { setRightConfirmed(false); setRightPayload(null); };
+
+  const canConfirm =
+    mode === 'debut_poste' ? rightConfirmed :
+    mode === 'fin_poste' ? leftConfirmed :
+    leftConfirmed && rightConfirmed;
+
+  const handleFinalConfirm = () => {
+    if (!canConfirm) return;
+    onConfirm({
+      finishedRecord: mode === 'debut_poste' ? null : leftPayload,
+      nextRecord: mode === 'fin_poste' ? null : rightPayload,
+    });
   };
 
   const showLeft = mode !== 'debut_poste';
@@ -309,7 +315,7 @@ const RelaisDialog: React.FC<Props> = ({
     <Dialog open={open} onOpenChange={o => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-5xl" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-xl">التسجيل في سجل الأشغال المنجزة</DialogTitle>
+          <DialogTitle className="text-xl">تبديل الطلبية</DialogTitle>
           <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 pt-1">
             <span>العامل: <span className="font-semibold text-foreground">{operatorName}</span></span>
             <span>التاريخ: <span className="font-semibold text-foreground">{formatDateFR(todayDate)}</span></span>
@@ -383,15 +389,20 @@ const RelaisDialog: React.FC<Props> = ({
                     </div>
                   )}
 
-                  <div className="pt-3">
+                  <div className="pt-3 flex gap-2">
                     <Button
                       type="button"
                       onClick={handleLeftConfirm}
                       disabled={leftConfirmed || durationError}
-                      className="w-full"
+                      className="flex-1"
                     >
                       انهاء
                     </Button>
+                    {leftConfirmed && (
+                      <Button type="button" variant="outline" onClick={handleLeftUndo}>
+                        إلغاء
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -399,6 +410,7 @@ const RelaisDialog: React.FC<Props> = ({
               )}
             </div>
           )}
+
 
           {/* RIGHT BLOCK — الطلبية التالية */}
           {showRight && (
@@ -453,15 +465,20 @@ const RelaisDialog: React.FC<Props> = ({
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(nextRemaining)} />
                   </div>
 
-                  <div className="pt-3">
+                  <div className="pt-3 flex gap-2">
                     <Button
                       type="button"
                       onClick={handleRightConfirm}
                       disabled={rightConfirmed}
-                      className="w-full"
+                      className="flex-1"
                     >
                       بدء
                     </Button>
+                    {rightConfirmed && (
+                      <Button type="button" variant="outline" onClick={handleRightUndo}>
+                        إلغاء
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -471,9 +488,11 @@ const RelaisDialog: React.FC<Props> = ({
           )}
         </div>
 
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center gap-2 pt-2">
           <Button variant="outline" onClick={onCancel}>إلغاء</Button>
+          <Button onClick={handleFinalConfirm} disabled={!canConfirm}>تأكيد</Button>
         </div>
+
       </DialogContent>
     </Dialog>
   );
