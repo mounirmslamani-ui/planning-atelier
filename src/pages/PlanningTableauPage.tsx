@@ -1450,7 +1450,7 @@ if (nextRecord) {
                     disabled={!hasOpenStep}
                     onClick={() => setRelaisDialog({ open: true, mode: 'relais', operatorId })}
                   >
-                    تبديل الطلبية
+                    تبديل الشغل
                   </Button>
                 )}
                 {hasRecordToday && (
