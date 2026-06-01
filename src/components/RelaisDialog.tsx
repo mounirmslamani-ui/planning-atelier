@@ -389,15 +389,20 @@ const RelaisDialog: React.FC<Props> = ({
                     </div>
                   )}
 
-                  <div className="pt-3">
+                  <div className="pt-3 flex gap-2">
                     <Button
                       type="button"
                       onClick={handleLeftConfirm}
                       disabled={leftConfirmed || durationError}
-                      className="w-full"
+                      className="flex-1"
                     >
                       انهاء
                     </Button>
+                    {leftConfirmed && (
+                      <Button type="button" variant="outline" onClick={handleLeftUndo}>
+                        إلغاء
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -405,6 +410,7 @@ const RelaisDialog: React.FC<Props> = ({
               )}
             </div>
           )}
+
 
           {/* RIGHT BLOCK — الطلبية التالية */}
           {showRight && (
