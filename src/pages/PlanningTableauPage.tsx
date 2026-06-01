@@ -2017,6 +2017,7 @@ const PlanningTableauPage: React.FC = () => {
             operations={operations}
             productionRecords={productionRecords}
             operatorOpenSteps={operatorOpenSteps}
+            initialStartTimeOverride={pendingRelaisStart && pendingRelaisStart.operatorId === relaisDialog.operatorId ? pendingRelaisStart.startTime : undefined}
           />
         );
       })()}
