@@ -1415,11 +1415,34 @@ const PlanningTableauPage: React.FC = () => {
           const filteredTasks = filterTasks(group.tasks);
           const groupSelectedCount = filteredTasks.filter(t => selectedStepIds.has(t.step.id)).length;
           const allFilteredSelected = filteredTasks.length > 0 && filteredTasks.every(t => selectedStepIds.has(t.step.id));
+          const operatorId = group.operator.id;
+          const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO());
+          const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
-            <div className="bg-muted py-2 px-4 flex items-center justify-between">
+            <div className="bg-muted py-2 px-4 flex items-center justify-between gap-3">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                {!hasRecordToday && (
+                  <Button size="sm" variant="outline" onClick={() => setRelaisDialog({ open: true, mode: 'debut_poste', operatorId })}>
+                    بداية دوام
+                  </Button>
+                )}
+                {hasRecordToday && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!hasOpenStep}
+                    onClick={() => setRelaisDialog({ open: true, mode: 'relais', operatorId })}
+                  >
+                    تبديل الطلبية
+                  </Button>
+                )}
+                {hasRecordToday && (
+                  <Button size="sm" variant="outline" onClick={() => setRelaisDialog({ open: true, mode: 'fin_poste', operatorId })}>
+                    نهاية دوام
+                  </Button>
+                )}
                 {groupSelectedCount > 0 && (
                   <Button size="sm" variant="secondary" onClick={() => openMovePnDialog(group.operator.id)}>
                     <MoveVertical className="w-4 h-4 mr-1" />
@@ -1432,6 +1455,7 @@ const PlanningTableauPage: React.FC = () => {
               </div>
 
             </div>
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
