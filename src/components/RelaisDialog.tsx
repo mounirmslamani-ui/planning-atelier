@@ -315,7 +315,7 @@ const RelaisDialog: React.FC<Props> = ({
     <Dialog open={open} onOpenChange={o => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-5xl" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-xl">تبديل الطلبية</DialogTitle>
+          <DialogTitle className="text-xl">تبديل الشغل</DialogTitle>
           <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 pt-1">
             <span>العامل: <span className="font-semibold text-foreground">{operatorName}</span></span>
             <span>التاريخ: <span className="font-semibold text-foreground">{formatDateFR(todayDate)}</span></span>
