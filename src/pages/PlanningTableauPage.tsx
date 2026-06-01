@@ -1138,6 +1138,73 @@ const PlanningTableauPage: React.FC = () => {
     setCompletionDialog(null);
   }, [completionDialog, addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep, holidays]);
 
+  // ───────── Relais (debut_poste / relais / fin_poste) confirm handler ─────────
+  const handleRelaisConfirm = useCallback((result: RelaisResult) => {
+    const { finishedRecord, nextRecord } = result;
+
+    if (finishedRecord) {
+      const record: ProductionRecord = {
+        id: crypto.randomUUID(),
+        stepId: finishedRecord.stepId,
+        orderId: finishedRecord.orderId,
+        operatorId: finishedRecord.operatorId,
+        operationId: finishedRecord.operationId,
+        actualDuration: finishedRecord.actualDuration,
+        validatedAt: new Date().toISOString(),
+        workDate: finishedRecord.workDate,
+        startTime: finishedRecord.startTime,
+        endTime: finishedRecord.endTime,
+        pauseMinutes: finishedRecord.pauseMinutes,
+        workStatus: finishedRecord.workStatus,
+      };
+      addProductionRecord(record);
+
+      if (finishedRecord.workStatus === 'done') {
+        const allKnownSteps = [...draftSteps, ...steps].filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i);
+        const recordsAfterInsert = [...productionRecords, record];
+        if (
+          areAllOrderStepsFinished(finishedRecord.orderId, allKnownSteps, recordsAfterInsert, absenceOperationId)
+          && finishedRecord.orderId !== absenceOrderId
+          && !qcEntries.some(q => q.orderId === finishedRecord.orderId)
+        ) {
+          addQCEntry({
+            id: crypto.randomUUID(),
+            orderId: finishedRecord.orderId,
+            controlDate: new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } else {
+        // 'continue' — adjust remaining estimated duration for the step
+        const step = draftSteps.find(s => s.id === finishedRecord.stepId);
+        if (step) {
+          const totalDone = productionRecords
+            .filter(r => r.stepId === finishedRecord.stepId)
+            .reduce((sum, r) => sum + (r.actualDuration || 0), 0) + finishedRecord.actualDuration;
+          const remaining = Math.max(0, step.estimatedDuration - totalDone);
+          updateStep({ ...step, estimatedDuration: remaining });
+        }
+      }
+    }
+
+    if (nextRecord) {
+      setPendingRelaisStart({
+        stepId: nextRecord.stepId,
+        operatorId: nextRecord.operatorId,
+        startTime: nextRecord.startTime,
+        workDate: nextRecord.workDate,
+      });
+      const step = draftSteps.find(s => s.id === nextRecord.stepId);
+      if (step) {
+        updateStep({ ...step, startTime: nextRecord.startTime });
+      }
+    }
+
+    setRelaisDialog(null);
+  }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
+
+
+
   // Export to Excel
   const handleExport = useCallback(() => {
     exportSheetsToExcel('Planning', operatorTasks.map(group => ({
