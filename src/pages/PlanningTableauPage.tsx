@@ -508,6 +508,12 @@ const PlanningTableauPage: React.FC = () => {
     pauseMinutes: number;
   } | null>(null);
 
+  // Relais (debut_poste / relais / fin_poste) dialog state
+  const [relaisDialog, setRelaisDialog] = useState<{ open: boolean; mode: RelaisMode; operatorId: string } | null>(null);
+  const [pendingRelaisStart, setPendingRelaisStart] = useState<{ stepId: string; operatorId: string; startTime: string; workDate: string } | null>(null);
+
+
+
   // Drag & drop state - use REFS to avoid stale closure issues
   const dragRef = useRef<{ operatorId: string; index: number } | null>(null);
   const [dragOverState, setDragOverState] = useState<{ operatorId: string; index: number } | null>(null);
