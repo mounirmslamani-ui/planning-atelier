@@ -465,15 +465,20 @@ const RelaisDialog: React.FC<Props> = ({
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(nextRemaining)} />
                   </div>
 
-                  <div className="pt-3">
+                  <div className="pt-3 flex gap-2">
                     <Button
                       type="button"
                       onClick={handleRightConfirm}
                       disabled={rightConfirmed}
-                      className="w-full"
+                      className="flex-1"
                     >
                       بدء
                     </Button>
+                    {rightConfirmed && (
+                      <Button type="button" variant="outline" onClick={handleRightUndo}>
+                        إلغاء
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -483,9 +488,11 @@ const RelaisDialog: React.FC<Props> = ({
           )}
         </div>
 
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center gap-2 pt-2">
           <Button variant="outline" onClick={onCancel}>إلغاء</Button>
+          <Button onClick={handleFinalConfirm} disabled={!canConfirm}>تأكيد</Button>
         </div>
+
       </DialogContent>
     </Dialog>
   );
