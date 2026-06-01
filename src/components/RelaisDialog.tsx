@@ -54,6 +54,8 @@ interface Props {
   productionRecords: ProductionRecord[];
   /** All non-finished steps for this operator, sorted by planningOrder asc, used for the right-block navigator */
   operatorOpenSteps: { step: ProductionStep; order: Order }[];
+  /** Optional override of the left-block ساعة البداية initial value (e.g. from a previous relais) */
+  initialStartTimeOverride?: string;
 }
 
 // ───────── Utility functions ─────────
