@@ -190,11 +190,13 @@ const RelaisDialog: React.FC<Props> = ({
 
   // Left block (finished order)
   const initialStart = useMemo(() => {
+    if (initialStartTimeOverride) return initialStartTimeOverride;
     const recsToday = productionRecords
       .filter(r => r.operatorId === operatorId && r.workDate === todayISO() && r.endTime)
       .sort((a, b) => (b.endTime || '').localeCompare(a.endTime || ''));
     return recsToday[0]?.endTime || '08:00';
-  }, [productionRecords, operatorId]);
+  }, [productionRecords, operatorId, initialStartTimeOverride]);
+
 
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:00');
