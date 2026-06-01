@@ -1187,18 +1187,33 @@ const PlanningTableauPage: React.FC = () => {
       }
     }
 
-    if (nextRecord) {
-      setPendingRelaisStart({
-        stepId: nextRecord.stepId,
-        operatorId: nextRecord.operatorId,
-        startTime: nextRecord.startTime,
-        workDate: nextRecord.workDate,
-      });
-      const step = draftSteps.find(s => s.id === nextRecord.stepId);
-      if (step) {
-        updateStep({ ...step, startTime: nextRecord.startTime });
-      }
-    }
+if (nextRecord) {
+  setPendingRelaisStart({
+    stepId: nextRecord.stepId,
+    operatorId: nextRecord.operatorId,
+    startTime: nextRecord.startTime,
+    workDate: nextRecord.workDate,
+  });
+  const step = draftSteps.find(s => s.id === nextRecord.stepId);
+  if (step) {
+    updateStep({ ...step, startTime: nextRecord.startTime });
+  }
+  const startRecord: ProductionRecord = {
+    id: crypto.randomUUID(),
+    stepId: nextRecord.stepId,
+    orderId: nextRecord.orderId,
+    operatorId: nextRecord.operatorId,
+    operationId: nextRecord.operationId,
+    actualDuration: 0,
+    validatedAt: new Date().toISOString(),
+    workDate: nextRecord.workDate,
+    startTime: nextRecord.startTime,
+    endTime: undefined,
+    pauseMinutes: 0,
+    workStatus: 'continue',
+  };
+  addProductionRecord(startRecord);
+}
 
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
