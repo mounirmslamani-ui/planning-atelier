@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import DesignationCell from '@/components/DesignationCell';
+import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
@@ -506,6 +507,12 @@ const PlanningTableauPage: React.FC = () => {
     endTime: string;
     pauseMinutes: number;
   } | null>(null);
+
+  // Relais (debut_poste / relais / fin_poste) dialog state
+  const [relaisDialog, setRelaisDialog] = useState<{ open: boolean; mode: RelaisMode; operatorId: string } | null>(null);
+  const [pendingRelaisStart, setPendingRelaisStart] = useState<{ stepId: string; operatorId: string; startTime: string; workDate: string } | null>(null);
+
+
 
   // Drag & drop state - use REFS to avoid stale closure issues
   const dragRef = useRef<{ operatorId: string; index: number } | null>(null);
@@ -1131,6 +1138,73 @@ const PlanningTableauPage: React.FC = () => {
     setCompletionDialog(null);
   }, [completionDialog, addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep, holidays]);
 
+  // ───────── Relais (debut_poste / relais / fin_poste) confirm handler ─────────
+  const handleRelaisConfirm = useCallback((result: RelaisResult) => {
+    const { finishedRecord, nextRecord } = result;
+
+    if (finishedRecord) {
+      const record: ProductionRecord = {
+        id: crypto.randomUUID(),
+        stepId: finishedRecord.stepId,
+        orderId: finishedRecord.orderId,
+        operatorId: finishedRecord.operatorId,
+        operationId: finishedRecord.operationId,
+        actualDuration: finishedRecord.actualDuration,
+        validatedAt: new Date().toISOString(),
+        workDate: finishedRecord.workDate,
+        startTime: finishedRecord.startTime,
+        endTime: finishedRecord.endTime,
+        pauseMinutes: finishedRecord.pauseMinutes,
+        workStatus: finishedRecord.workStatus,
+      };
+      addProductionRecord(record);
+
+      if (finishedRecord.workStatus === 'done') {
+        const allKnownSteps = [...draftSteps, ...steps].filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i);
+        const recordsAfterInsert = [...productionRecords, record];
+        if (
+          areAllOrderStepsFinished(finishedRecord.orderId, allKnownSteps, recordsAfterInsert, absenceOperationId)
+          && finishedRecord.orderId !== absenceOrderId
+          && !qcEntries.some(q => q.orderId === finishedRecord.orderId)
+        ) {
+          addQCEntry({
+            id: crypto.randomUUID(),
+            orderId: finishedRecord.orderId,
+            controlDate: new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } else {
+        // 'continue' — adjust remaining estimated duration for the step
+        const step = draftSteps.find(s => s.id === finishedRecord.stepId);
+        if (step) {
+          const totalDone = productionRecords
+            .filter(r => r.stepId === finishedRecord.stepId)
+            .reduce((sum, r) => sum + (r.actualDuration || 0), 0) + finishedRecord.actualDuration;
+          const remaining = Math.max(0, step.estimatedDuration - totalDone);
+          updateStep({ ...step, estimatedDuration: remaining });
+        }
+      }
+    }
+
+    if (nextRecord) {
+      setPendingRelaisStart({
+        stepId: nextRecord.stepId,
+        operatorId: nextRecord.operatorId,
+        startTime: nextRecord.startTime,
+        workDate: nextRecord.workDate,
+      });
+      const step = draftSteps.find(s => s.id === nextRecord.stepId);
+      if (step) {
+        updateStep({ ...step, startTime: nextRecord.startTime });
+      }
+    }
+
+    setRelaisDialog(null);
+  }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
+
+
+
   // Export to Excel
   const handleExport = useCallback(() => {
     exportSheetsToExcel('Planning', operatorTasks.map(group => ({
@@ -1341,11 +1415,34 @@ const PlanningTableauPage: React.FC = () => {
           const filteredTasks = filterTasks(group.tasks);
           const groupSelectedCount = filteredTasks.filter(t => selectedStepIds.has(t.step.id)).length;
           const allFilteredSelected = filteredTasks.length > 0 && filteredTasks.every(t => selectedStepIds.has(t.step.id));
+          const operatorId = group.operator.id;
+          const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO());
+          const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
-            <div className="bg-muted py-2 px-4 flex items-center justify-between">
+            <div className="bg-muted py-2 px-4 flex items-center justify-between gap-3">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                {!hasRecordToday && (
+                  <Button size="sm" variant="outline" onClick={() => setRelaisDialog({ open: true, mode: 'debut_poste', operatorId })}>
+                    بداية دوام
+                  </Button>
+                )}
+                {hasRecordToday && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!hasOpenStep}
+                    onClick={() => setRelaisDialog({ open: true, mode: 'relais', operatorId })}
+                  >
+                    تبديل الطلبية
+                  </Button>
+                )}
+                {hasRecordToday && (
+                  <Button size="sm" variant="outline" onClick={() => setRelaisDialog({ open: true, mode: 'fin_poste', operatorId })}>
+                    نهاية دوام
+                  </Button>
+                )}
                 {groupSelectedCount > 0 && (
                   <Button size="sm" variant="secondary" onClick={() => openMovePnDialog(group.operator.id)}>
                     <MoveVertical className="w-4 h-4 mr-1" />
@@ -1358,6 +1455,7 @@ const PlanningTableauPage: React.FC = () => {
               </div>
 
             </div>
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -1871,7 +1969,60 @@ const PlanningTableauPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Relais Dialog — بداية دوام / تبديل الطلبية / نهاية دوام */}
+      {relaisDialog && (() => {
+        const group = operatorTasks.find(g => g.operator.id === relaisDialog.operatorId);
+        const operatorOpenSteps = (group?.tasks || []).map(t => ({ step: t.step, order: t.order }));
+        const operatorName = group?.operator.name || '';
+
+        let currentStep: ProductionStep | null = null;
+        let currentOrder: Order | null = null;
+        if (relaisDialog.mode !== 'debut_poste') {
+          currentStep = operatorOpenSteps[0]?.step || null;
+          currentOrder = operatorOpenSteps[0]?.order || null;
+        }
+        const currentStepTotalDoneAlready = currentStep
+          ? productionRecords.filter(r => r.stepId === currentStep!.id).reduce((s, r) => s + (r.actualDuration || 0), 0)
+          : 0;
+
+        let nextStep: ProductionStep | null = null;
+        let nextOrder: Order | null = null;
+        if (relaisDialog.mode === 'debut_poste') {
+          nextStep = operatorOpenSteps[0]?.step || null;
+          nextOrder = operatorOpenSteps[0]?.order || null;
+        } else if (relaisDialog.mode === 'relais') {
+          // next after current; if none, first
+          nextStep = operatorOpenSteps[1]?.step || operatorOpenSteps[0]?.step || null;
+          nextOrder = operatorOpenSteps[1]?.order || operatorOpenSteps[0]?.order || null;
+        }
+        const nextStepTotalDoneAlready = nextStep
+          ? productionRecords.filter(r => r.stepId === nextStep!.id).reduce((s, r) => s + (r.actualDuration || 0), 0)
+          : 0;
+
+        return (
+          <RelaisDialog
+            open={relaisDialog.open}
+            mode={relaisDialog.mode}
+            operatorId={relaisDialog.operatorId}
+            operatorName={operatorName}
+            currentStep={currentStep}
+            currentOrder={currentOrder}
+            currentStepTotalDoneAlready={currentStepTotalDoneAlready}
+            nextStep={nextStep}
+            nextOrder={nextOrder}
+            nextStepTotalDoneAlready={nextStepTotalDoneAlready}
+            onConfirm={handleRelaisConfirm}
+            onCancel={() => setRelaisDialog(null)}
+            operations={operations}
+            productionRecords={productionRecords}
+            operatorOpenSteps={operatorOpenSteps}
+            initialStartTimeOverride={pendingRelaisStart && pendingRelaisStart.operatorId === relaisDialog.operatorId ? pendingRelaisStart.startTime : undefined}
+          />
+        );
+      })()}
     </div>
+
   );
 };
 
