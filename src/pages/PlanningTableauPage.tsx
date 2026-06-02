@@ -360,8 +360,9 @@ const PlanningTableauPage: React.FC = () => {
     setNumDaysInput(String(numDays));
   }, [numDays]);
 
-  // Validation state
-  const [orderDirty, setOrderDirty] = useState(false);
+  // Validation state removed — every reorder is persisted instantly to DB.
+  const orderDirty = false;
+  const setOrderDirty = (_: boolean) => {};
 
   const history = useHistoryStack<PlanningDraftSnapshot>({
     initialPresent: createPlanningSnapshot(appendUnorderedStepsAtEnd(steps), orders, {}, false),
