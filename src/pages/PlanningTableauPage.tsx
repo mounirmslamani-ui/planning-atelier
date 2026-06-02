@@ -1561,6 +1561,11 @@ if (nextRecord) {
                         <TableCell className="text-center px-1">
                           <div className="flex items-center justify-center gap-0.5">
                             {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />}
+                            {cnViolations.has(index) && (
+                              <span title="عدم احترام الترتيب العام (Cn)">
+                                <WarningTriangleIcon className="w-3.5 h-3.5" />
+                              </span>
+                            )}
                             <span className="text-xs text-muted-foreground/60">
                               {order.displayOrder && order.displayOrder > 0 ? order.displayOrder : '—'}
                             </span>
