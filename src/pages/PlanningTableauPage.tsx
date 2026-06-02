@@ -1409,6 +1409,16 @@ if (nextRecord) {
           const filteredTasks = filterTasks(group.tasks);
           const groupSelectedCount = filteredTasks.filter(t => selectedStepIds.has(t.step.id)).length;
           const allFilteredSelected = filteredTasks.length > 0 && filteredTasks.every(t => selectedStepIds.has(t.step.id));
+          // Cn ordering violation: a row violates if a previous row has a larger Cn
+          const cnViolations = new Set<number>();
+          {
+            let prevMax = -Infinity;
+            filteredTasks.forEach((t, i) => {
+              const cn = t.order.displayOrder ?? Infinity;
+              if (cn < prevMax) cnViolations.add(i);
+              if (cn > prevMax) prevMax = cn;
+            });
+          }
           const operatorId = group.operator.id;
           const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO());
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
