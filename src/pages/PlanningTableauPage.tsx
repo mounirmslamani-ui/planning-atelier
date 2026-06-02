@@ -824,36 +824,22 @@ const PlanningTableauPage: React.FC = () => {
 
 
 
-  // ─── Valider : sauvegarde uniquement les dates (startDate/endDate) recalculées + statuts ───
-  // L'ordre d'affichage (Pn) est déjà persisté à chaque drag & drop, indépendamment.
-  const handleValidate = useCallback(() => {
-    const contextMap = new Map(steps.map(s => [s.id, s]));
-
-    draftSteps.forEach(draft => {
-      const enriched = { ...draft, planningOrder: planningOrderMap[draft.id] ?? draft.planningOrder };
-      const original = contextMap.get(draft.id);
-      if (!original ||
-        enriched.startDate !== original.startDate ||
-        enriched.startTime !== original.startTime ||
-        enriched.endDate !== original.endDate ||
-        enriched.endTime !== original.endTime ||
-        enriched.studyStatus !== original.studyStatus ||
-        enriched.studyReady !== original.studyReady ||
-        enriched.studyDeadline !== original.studyDeadline ||
-        enriched.materialStatus !== original.materialStatus ||
-        enriched.materialAvailable !== original.materialAvailable ||
-        enriched.materialDeadline !== original.materialDeadline ||
-        enriched.toolingStatus !== original.toolingStatus ||
-        enriched.toolingAvailable !== original.toolingAvailable ||
-        enriched.toolingDeadline !== original.toolingDeadline ||
-        enriched.operationId !== original.operationId ||
-        enriched.estimatedDuration !== original.estimatedDuration
-      ) {
-        updateStep(enriched);
-      }
+  // ─── ترتيب آلي : réordonne les tâches de l'opérateur sélectionné par ordre croissant des Cn ───
+  const handleAutoSortByCn = useCallback(() => {
+    const operatorId = selectedTabOperatorId ?? operatorTasks[0]?.operator.id;
+    if (!operatorId) return;
+    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    if (!group || group.tasks.length === 0) return;
+    const sorted = [...group.tasks].sort((a, b) => {
+      const da = a.order.displayOrder ?? 9999;
+      const db = b.order.displayOrder ?? 9999;
+      return da - db;
     });
-    setOrderDirty(false);
-  }, [draftSteps, steps, updateStep, planningOrderMap]);
+    const updates: Record<string, number> = {};
+    sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
+    persistPlanningOrders(updates);
+    applyReorder(sorted, undefined, undefined, undefined, updates);
+  }, [selectedTabOperatorId, operatorTasks, persistPlanningOrders, applyReorder]);
 
   // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
