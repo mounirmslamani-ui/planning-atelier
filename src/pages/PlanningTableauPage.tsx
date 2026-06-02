@@ -405,27 +405,18 @@ const PlanningTableauPage: React.FC = () => {
     history.commit(createPlanningSnapshot(nextDraftSteps, nextDraftOrders, nextForcedWarnings, nextOrderDirty));
   }, [history]);
 
-  // Sync from context whenever steps change, including Undo/Redo restores.
+  // Sync from context whenever steps change. Since every edit is persisted
+  // instantly, the context is the source of truth — always re-sync the draft.
   useEffect(() => {
     const syncedDraftSteps = appendUnorderedStepsAtEnd(steps);
+    setDraftOrders(orders);
+    setDraftSteps(syncedDraftSteps);
     if (!draftInitialized.current) {
-      setDraftOrders(orders);
-      setDraftSteps(syncedDraftSteps);
       setForcedPhaseAmontWarnings({});
-      setOrderDirty(false);
       history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
       draftInitialized.current = true;
-      return;
     }
-
-    if (!orderDirty) {
-      setDraftOrders(orders);
-      setDraftSteps(syncedDraftSteps);
-      setForcedPhaseAmontWarnings({});
-      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
-      setOrderDirty(false);
-    }
-  }, [steps, orders, orderDirty, history]);
+  }, [steps, orders, history]);
 
   // ─── Pn (planning_order) : chargement additif depuis la base ───
   // IMPORTANT : on ne remplace JAMAIS la map locale (elle est autoritative après un D&D).
