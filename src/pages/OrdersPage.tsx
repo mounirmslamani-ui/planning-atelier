@@ -298,7 +298,8 @@ const OrdersPage: React.FC = () => {
   }, [orders, absenceOrderId, outOfActiveProductionIds]);
 
   // Track if order has been validated (saved to DB)
-  const [orderValidated, setOrderValidated] = useState(true);
+  // orderValidated state removed — setOrders persists instantly.
+  const setOrderValidated = (_: boolean) => {};
 
   // ──────────────── Sanitization & Auto-reindex ────────────────
   // Keeps displayOrder strictly continuous (1..N) over the VISIBLE active list
@@ -337,19 +338,7 @@ const OrdersPage: React.FC = () => {
   // handleAutoSort removed — ordering is strictly manual.
 
 
-  // Validate: persist order to DB
-  const handleValidateOrder = useCallback(() => {
-    const visible = orders
-      .filter(o => o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id))
-      .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999))
-      .map((o, i) => ({ ...o, displayOrder: i + 1 }));
-    const outOfFlow = orders.filter(o =>
-      o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
-    ).map(o => ({ ...o, displayOrder: undefined }));
-    const absence = orders.find(o => o.id === absenceOrderId);
-    setOrders([...(absence ? [absence] : []), ...visible, ...outOfFlow]);
-    setOrderValidated(true);
-  }, [orders, absenceOrderId, outOfActiveProductionIds, setOrders]);
+  // Validate button removed — setOrders persists instantly via setOrdersWrapped.
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
@@ -843,9 +832,6 @@ const OrdersPage: React.FC = () => {
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
             </Button>
           )}
- <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
-            ✓ Valider
-          </Button>
         </div>
       } />
 
