@@ -831,9 +831,6 @@ const OrdersPage: React.FC = () => {
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
             </Button>
           )}
- <Button onClick={handleValidateOrder} size="sm" disabled={orderValidated} className={!orderValidated ? 'animate-pulse bg-primary' : ''} title="Valider l'ordre et le figer en base">
-            ✓ Valider
-          </Button>
         </div>
       } />
 
