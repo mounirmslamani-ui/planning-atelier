@@ -205,11 +205,12 @@ const SubcontractingPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="مناولة" description="Suivi des opérations sous-traitées planifiées" actions={
+        <PageHeader title="مناولة" description="Suivi des opérations sous-traitées planifiées" />
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
-        } />
+        </div>
       </div>
       <div className="flex-none mb-3 flex flex-wrap gap-1 border-b border-border">
         <button
