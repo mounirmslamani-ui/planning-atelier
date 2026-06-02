@@ -1361,9 +1361,6 @@ if (nextRecord) {
                 <X className="w-4 h-4 mr-1" /> Effacer tous les filtres
               </Button>
             )}
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-1" /> تصدير Excel
-            </Button>
             <Button
               onClick={handleAutoSortByCn}
               variant="outline"
@@ -1374,6 +1371,12 @@ if (nextRecord) {
           </div>
           }
         />
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
+          <Button onClick={handleExport} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
+          </Button>
+        </div>
+
 
         {/* Operator tabs */}
         <div className="flex items-center gap-1 px-1 py-2 border-b overflow-x-auto">
