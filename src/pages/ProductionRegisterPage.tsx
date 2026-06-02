@@ -297,6 +297,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader title="سجل الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
+          </Button>
+        </div>
       </div>
 
       {operatorsWithRecords.length === 0 ? (
@@ -305,11 +310,6 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         </p>
       ) : (
         <>
-          <div className="flex-none flex justify-end pt-2 pb-3">
-            <Button onClick={handleExportExcel} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> تصدير Excel
-            </Button>
-          </div>
 
           {/* Tabs */}
           <div dir="rtl" className="flex-none flex items-end gap-0 pt-4 border-b border-border">

@@ -94,11 +94,11 @@ const ClientsPage: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader title="الزبائن" description="قائمة الزبائن" actions={
-          <>
-            <Button onClick={handleExportExcel} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> تصدير Excel</Button>
-            <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
-          </>
+          <Button onClick={openNew} size="sm"><Plus className="w-4 h-4 mr-1" /> Ajouter</Button>
         } />
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
+          <Button onClick={handleExportExcel} variant="outline" size="sm"><Download className="w-4 h-4 mr-1" /> تصدير Excel</Button>
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <table className="w-full caption-bottom text-sm">

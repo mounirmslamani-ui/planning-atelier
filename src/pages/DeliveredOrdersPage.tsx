@@ -134,12 +134,12 @@ const DeliveredOrdersPage: React.FC = () => {
         <PageHeader
           title="طلبيات مسلمة"
           description={`${deliveredOrders.length} طلبيات منتهية`}
-          actions={
-            <Button onClick={handleExportExcel} variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-1" /> تصدير Excel
-            </Button>
-          }
         />
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
+          <Button onClick={handleExportExcel} variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-1" /> تصدير Excel
+          </Button>
+        </div>
           <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as OrderCategory)} className="w-full">
             <div className="flex justify-end mb-2">
               <TabsList className="justify-end">
