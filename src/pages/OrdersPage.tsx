@@ -298,7 +298,8 @@ const OrdersPage: React.FC = () => {
   }, [orders, absenceOrderId, outOfActiveProductionIds]);
 
   // Track if order has been validated (saved to DB)
-  const [orderValidated, setOrderValidated] = useState(true);
+  // orderValidated state removed — setOrders persists instantly.
+  const setOrderValidated = (_: boolean) => {};
 
   // ──────────────── Sanitization & Auto-reindex ────────────────
   // Keeps displayOrder strictly continuous (1..N) over the VISIBLE active list
