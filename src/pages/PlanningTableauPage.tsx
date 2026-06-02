@@ -1365,10 +1365,11 @@ if (nextRecord) {
               <Download className="w-4 h-4 mr-1" /> تصدير Excel
             </Button>
             <Button
-              onClick={handleValidate}
-              className={`transition-all ${orderDirty ? 'animate-pulse bg-accent text-accent-foreground hover:bg-accent/90' : 'bg-primary text-primary-foreground'}`}
+              onClick={handleAutoSortByCn}
+              variant="outline"
+              title="إعادة ترتيب التعيينات حسب ترتيب الطلبيات (Cn)"
             >
-              <Check className="w-4 h-4 mr-1" /> Valider
+              <ArrowUpDown className="w-4 h-4 mr-1" /> ترتيب آلي
             </Button>
           </div>
           }
