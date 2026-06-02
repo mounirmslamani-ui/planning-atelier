@@ -177,11 +177,12 @@ const QualityControlPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
-        <PageHeader title="مراقبة الجودة" description={`${qcEntries.length} commande(s) en contrôle`} actions={
+        <PageHeader title="مراقبة الجودة" description={`${qcEntries.length} commande(s) en contrôle`} />
+        <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
           <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
-        } />
+        </div>
         {testDiagnostic && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm text-foreground">
             {testDiagnostic}
