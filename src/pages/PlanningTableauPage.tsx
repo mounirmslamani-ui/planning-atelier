@@ -861,11 +861,11 @@ const PlanningTableauPage: React.FC = () => {
       if (changes.operationId !== undefined) updated.operationId = changes.operationId;
       if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
       // Status updates (Étude/Matière/Outillage) are now handled directly by ResourceStatusPill
-      // Save to draft only (not DB)
       const nextDraftSteps = draftSteps.map(s => s.id === stepId ? updated : s);
       setDraftSteps(nextDraftSteps);
-      commitPlanningHistory(nextDraftSteps, draftOrders, forcedPhaseAmontWarnings, true);
-      setOrderDirty(true);
+      commitPlanningHistory(nextDraftSteps, draftOrders, forcedPhaseAmontWarnings, false);
+      // Persist instantly to DB
+      updateStep(updated);
     }
     setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
     setEditingRowId(null);
