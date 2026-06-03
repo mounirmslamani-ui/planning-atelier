@@ -10,10 +10,11 @@ import { formatDateFR } from '@/lib/utils';
 
 interface Props {
   value: ResourceStatus | undefined;
-  onChange: (next: ResourceStatus) => void;
+  onChange?: (next: ResourceStatus) => void;
   deadline?: string;
   receivedDate?: string;
   size?: 'sm' | 'md';
+  readOnly?: boolean;
 }
 
 const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
@@ -25,7 +26,7 @@ const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
 
 const ORDER: ResourceStatus[] = ['disponible', 'partiel', 'non-disponible', 'non-applicable'];
 
-const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receivedDate, size = 'sm' }) => {
+const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receivedDate, size = 'sm', readOnly = false }) => {
   const [open, setOpen] = React.useState(false);
   const current = value ?? 'non-disponible';
   const meta = STATUS_META[current];
@@ -35,6 +36,18 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receiv
     : deadline && deadline !== 'warning' && deadline !== 'pending'
       ? ` — Prévu : ${formatDateFR(deadline)}`
       : '';
+
+  // Mode lecture seule : affichage simple sans dropdown
+  if (readOnly) {
+    return (
+      <span
+        className={`${cls} select-none`}
+        title={meta.label + dateInfo}
+      >
+        {meta.emoji}
+      </span>
+    );
+  }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -53,7 +66,7 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receiv
             key={s}
             onSelect={(event) => {
               event.preventDefault();
-              if (current !== s) onChange(s);
+              if (current !== s && onChange) onChange(s);
               setOpen(false);
             }}
             className={current === s ? 'bg-accent' : ''}
