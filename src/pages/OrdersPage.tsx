@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { useConfirm } from '@/hooks/use-confirm';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
@@ -10,13 +8,9 @@ import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Trash2, GripVertical, CalendarCheck, Undo2, Redo2, MoveVertical, ListPlus, Download, Printer, Ban } from 'lucide-react';
-import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
-import { useCancelOrder } from '@/hooks/useCancelOrder';
-import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
+import { GripVertical, MoveVertical, ListPlus, Download } from 'lucide-react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
-import type { Order, OrderPriority } from '@/types/planning';
+import type { Order, OrderPriority, ResourceStatus } from '@/types/planning';
 
 
 import PrintTrackingSheetDialog from '@/components/PrintTrackingSheetDialog';
@@ -24,26 +18,15 @@ import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
-import ResourceStatusPill from '@/components/ResourceStatusPill';
-import DatePromptDialog from '@/components/DatePromptDialog';
-import type { ResourceStatus } from '@/types/planning';
+import DesignationCell from '@/components/DesignationCell';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
 import { buildOutOfActiveProductionSet } from '@/lib/orderFlow';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
-import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
-import DesignationCell from '@/components/DesignationCell';
 
-const priorityConfig: Record<OrderPriority | 'undetermined', { label: string; description: string; color: string; border: string }> = {
-  'P1': { label: 'P1 - مستعجل-أولوية قصوى', description: 'Commandes urgentes, très important pour facturation.', color: 'text-urgent', border: 'border-urgent/30' },
-  'P2': { label: 'P2 - مستعجل نسبيا - أولوية متوسطة', description: 'Urgence modérée, livraison 1-3 semaines.', color: 'text-urgent-moderate', border: 'border-urgent-moderate/30' },
-  'P3': { label: 'P3 - غير مستعجل - أقل أولوية', description: 'Commandes pas urgentes, délai ouvert.', color: 'text-priority-p3', border: 'border-priority-p3/30' },
-  'P4': { label: 'P4 - قيد التعليق', description: 'Attente validation technique ou autre.', color: 'text-priority-p4', border: 'border-priority-p4/30' },
-  'undetermined': { label: 'À déterminer plus tard', description: 'Priorité non définie, sera déterminée ultérieurement.', color: 'text-yellow-600', border: 'border-yellow-400/30' },
-};
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
 type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'remainingSteps' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
@@ -64,6 +47,25 @@ function GlobalStatusBadge({ status }: { status: OrderGlobalStatus }) {
   return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{globalStatusLabel[status]}</span>;
 }
 
+const STATUS_EMOJI: Record<ResourceStatus, string> = {
+  'disponible': '🟢',
+  'partiel': '🟠',
+  'non-disponible': '🔴',
+  'non-applicable': '⚪',
+};
+const STATUS_LABEL: Record<ResourceStatus, string> = {
+  'disponible': 'Disponible',
+  'partiel': 'Disponible partiellement',
+  'non-disponible': 'Non disponible',
+  'non-applicable': 'Non applicable',
+};
+
+function ReadOnlyStatusPill({ value, receivedDate }: { value: ResourceStatus | undefined; receivedDate?: string }) {
+  const current = value ?? 'non-disponible';
+  const title = STATUS_LABEL[current] + (receivedDate ? ` — Reçu : ${formatDateFR(receivedDate)}` : '');
+  return <span className="text-sm select-none" title={title}>{STATUS_EMOJI[current]}</span>;
+}
+
 function computeAtelierTime(
   orderId: string,
   steps: { orderId: string; operationId: string; estimatedDuration: number; subcontractorId?: string }[],
@@ -82,10 +84,7 @@ function formatMinutesToHM(minutes: number): string {
 }
 
 const OrdersPage: React.FC = () => {
-  const { orders, updateOrder, deleteOrder, clients, setOrders, steps, updateStep, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
-  const cancelOrder = useCancelOrder();
-  const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
-  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const { orders, clients, setOrders, steps, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [unifiedInitialTab, setUnifiedInitialTab] = useState<'info' | 'resources' | 'steps' | 'qc'>('info');
   const openUnified = (orderId: string, tab: 'info' | 'resources' | 'steps' | 'qc' = 'info') => {
@@ -99,13 +98,8 @@ const OrdersPage: React.FC = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [orderNumberError, setOrderNumberError] = useState('');
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  // Inline editing
-  const [editingRowId, setEditingRowId] = useState<string | null>(null);
-  const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Order>>>({});
 
   // Undo/Redo (page-level)
   const [history, setHistory] = useState<{ orders: Order[] }[]>([]);
@@ -171,8 +165,6 @@ const OrdersPage: React.FC = () => {
   const orderStatusMap = useMemo(() => {
     const map = new Map<string, { study: ResourceStatus; material: ResourceStatus; tooling: ResourceStatus }>();
     orders.filter(o => o.id !== absenceOrderId).forEach(o => {
-      // Synthesize from per-step statuses when steps exist; otherwise fall back
-      // to the order-level value (rétroactivité : commandes anciennes sans détail par étape).
       const synth = computeOrderStatusFromSteps(o, steps, absenceOperationId);
       map.set(o.id, synth ?? {
         study: o.studyStatus ?? 'non-disponible',
@@ -201,76 +193,14 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
-  // Date prompt for red/orange transitions
-  const [statusDatePrompt, setStatusDatePrompt] = useState<{ orderId: string; field: 'study' | 'material' | 'tooling'; status: ResourceStatus; label: string } | null>(null);
-  const [pendingMaterialStatus, setPendingMaterialStatus] = useState<{ orderId: string; status: ResourceStatus } | null>(null);
-  const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
-  const [materialDatePromptOpen, setMaterialDatePromptOpen] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
-
-  const applyStatusToOrderAndSteps = useCallback(async (orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
-    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
-    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    const isAvail = status === 'disponible';
-
-    const orderSteps = steps.filter(s => s.orderId === orderId && s.operationId !== absenceOperationId);
-    const updatedSteps = orderSteps.map(s => ({
-        ...s,
-        [statusKey]: status,
-        [boolKey]: isAvail,
-        [deadlineKey]: deadline || undefined,
-      } as any));
-
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return false;
-    const updatedOrder = {
-      ...order,
-      [statusKey]: status,
-      [boolKey]: isAvail,
-      ...(field === 'material' ? { materialReceivedDate: isAvail ? receivedDate : undefined } : {}),
-    } as any;
-
-    const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
-    if (saved.some(ok => !ok)) return false;
-
-    updatedSteps.forEach(updateStep);
-    updateOrder(updatedOrder);
-    return true;
-  }, [steps, orders, absenceOperationId, updateStep, updateOrder]);
-
-  const handleStatusChange = useCallback((orderId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
-    if (status === 'non-disponible' || status === 'partiel') {
-      const labels = {
-        study: 'Date prévue pour fin Étude',
-        material: 'Date prévue pour disponibilité Matière',
-        tooling: 'Date prévue pour disponibilité Outillage',
-      };
-      setStatusDatePrompt({ orderId, field, status, label: labels[field] });
-    } else if (field === 'material' && status === 'disponible') {
-      setPendingMaterialStatus({ orderId, status });
-      setMaterialDatePromptOpen(false);
-      setMaterialConfirmOpen(true);
-    } else {
-      applyStatusToOrderAndSteps(orderId, field, status);
-    }
-  }, [applyStatusToOrderAndSteps]);
-
-  // Auto-sort logic removed — ordering is strictly manual (drag & drop / Déplacer).
-
-
-  // Sort by displayOrder ascending (playlist style). Orders leave active
-  // production as soon as the CURRENT cycle is conforming / ready / delivered /
-  // invoiced / cancelled. Older delivered rows preserved before a reintegration
-  // do not hide a genuinely reopened cycle.
+  // Sort by displayOrder ascending (playlist style).
   const outOfActiveProductionIds = useMemo(() => buildOutOfActiveProductionSet(orders, {
     qcEntries,
     deliveryEntries,
     deliveredOrders,
     cancelledOrders,
   }), [orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
-  // QC orders awaiting validation: still visible in الطلبيات الحالية with a "pending QC" indicator.
-  // They only leave this list once QC decision moves them to delivery (deliveredOrderIds).
+
   const pendingQcOrderIds = useMemo(() => {
     const ids = new Set<string>();
     qcEntries.forEach(entry => {
@@ -280,8 +210,7 @@ const OrdersPage: React.FC = () => {
     });
     return ids;
   }, [qcEntries]);
-  // Reintegrated orders coming back from delivery (rework / non-conforme).
-  // Highlighted as urgent retouches.
+
   const reworkOrderIds = useMemo(() => {
     const ids = new Set<string>();
     qcEntries.forEach(entry => {
@@ -297,24 +226,13 @@ const OrdersPage: React.FC = () => {
     return [...real].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
   }, [orders, absenceOrderId, outOfActiveProductionIds]);
 
-  // Track if order has been validated (saved to DB)
-  // orderValidated state removed — setOrders persists instantly.
-  const setOrderValidated = (_: boolean) => {};
-
-  // ──────────────── Sanitization & Auto-reindex ────────────────
-  // Keeps displayOrder strictly continuous (1..N) over the VISIBLE active list
-  // (excludes absence + delivered orders only). QC-pending orders STAY in the
-  // active list so the workshop dashboard reflects everything physically present.
-  // Locked orders (frozenOrder) keep their relative position but slide up to
-  // close gaps — the lock pins the slot, not the absolute number.
+  // Auto-reindex visible orders (1..N).
   useEffect(() => {
     const visible = orders
       .filter(o => o.id !== absenceOrderId && !outOfActiveProductionIds.has(o.id))
       .sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
     if (visible.length === 0) return;
 
-    // Out-of-flow = delivered only. They get displayOrder = undefined so they
-    // no longer occupy a slot in the active sequence.
     const outOfFlow = orders.filter(o =>
       o.id !== absenceOrderId && outOfActiveProductionIds.has(o.id)
     );
@@ -334,11 +252,6 @@ const OrdersPage: React.FC = () => {
       ...clearedOutOfFlow,
     ]);
   }, [orders, absenceOrderId, outOfActiveProductionIds, setOrders]);
-
-  // handleAutoSort removed — ordering is strictly manual.
-
-
-  // Validate button removed — setOrders persists instantly via setOrdersWrapped.
 
   const getColValue = useCallback((o: Order, key: ColumnKey): string => {
     switch (key) {
@@ -419,7 +332,7 @@ const OrdersPage: React.FC = () => {
     else setSelectedIds(new Set(displayOrders.map(o => o.id)));
   };
 
-  // ---- Bulk move by Cn (saves only on Valider) ----
+  // ---- Bulk move by Cn ----
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [moveTargetCn, setMoveTargetCn] = useState<string>('');
 
@@ -449,44 +362,8 @@ const OrdersPage: React.FC = () => {
 
     const absence = orders.find(o => o.id === absenceOrderId);
     setOrders([...(absence ? [absence] : []), ...reindexed]);
-    setOrderValidated(false);
     setMoveDialogOpen(false);
     setSelectedIds(new Set());
-  };
-
-  const normalizeOrderNumber = (value: string) => value.trim().toLowerCase();
-  const duplicateOrderError = 'Erreur : Ce numéro de commande existe déjà. Veuillez utiliser un identifiant unique.';
-  const isDuplicateOrderNumber = useCallback((value: string, currentId?: string) => {
-    const normalized = normalizeOrderNumber(value);
-    if (!normalized) return false;
-    return orders.some(o => o.id !== absenceOrderId && o.id !== currentId && normalizeOrderNumber(o.orderNumber) === normalized);
-  }, [orders, absenceOrderId]);
-
-
-  // Inline edit helpers
-  const getInlineValue = (o: Order, field: keyof Order) => {
-    return inlineEdits[o.id]?.[field] ?? o[field];
-  };
-  const setInlineValue = (id: string, field: keyof Order, value: any) => {
-    setInlineEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-  };
-  const saveInlineEdits = (id: string) => {
-    const changes = inlineEdits[id];
-    const order = orders.find(o => o.id === id);
-    if (order && changes && Object.keys(changes).length > 0) {
-      const nextOrderNumber = typeof changes.orderNumber === 'string' ? changes.orderNumber : order.orderNumber;
-      if (isDuplicateOrderNumber(nextOrderNumber, id)) {
-        setOrderNumberError(duplicateOrderError);
-        return;
-      }
-      updateOrder({ ...order, ...changes });
-    }
-    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
-    setEditingRowId(null);
-  };
-  const cancelInlineEdits = (id: string) => {
-    setInlineEdits(prev => { const n = { ...prev }; delete n[id]; return n; });
-    setEditingRowId(null);
   };
 
   // Drag & drop — playlist-style reordering
@@ -510,7 +387,6 @@ const OrdersPage: React.FC = () => {
     let insertAt = dropIndex - dragIndices.filter(i => i < dropIndex).length;
     if (insertAt < 0) insertAt = 0;
     remaining.splice(insertAt, 0, ...draggedItems);
-    // Reindex all orders 1, 2, 3, ... — no lock applied.
     const absence = orders.find(o => o.id === absenceOrderId);
     const reindexed = remaining.map((o, i) => ({
       ...o,
@@ -519,7 +395,6 @@ const OrdersPage: React.FC = () => {
 
     setOrders([...(absence ? [absence] : []), ...reindexed]);
     setDragIndices(null); setDragOverIndex(null);
-    setOrderValidated(false);
   };
   const handleDragEnd = () => { setDragIndices(null); setDragOverIndex(null); };
   const isDragging = (index: number) => dragIndices?.includes(index) ?? false;
@@ -540,9 +415,6 @@ const OrdersPage: React.FC = () => {
     return map;
   }, [baseSorted, getColValue, hasStepsMap]);
 
-  // Lock / unlock removed — manual ordering only.
-
-
   const columns: { key: ColumnKey; label: string; className?: string }[] = [
     { key: 'orderNumber', label: 'رقم الطلبية', className: 'w-[90px]' },
     { key: 'orderDate', label: 'التاريخ', className: 'w-[80px]' },
@@ -562,8 +434,6 @@ const OrdersPage: React.FC = () => {
     { key: 'material', label: 'مواد أولية', className: 'w-[35px]' },
     { key: 'tooling', label: 'عدة', className: 'w-[35px]' },
   ];
-  // Index after which to insert the "عمليات" (actions) column header/cells
-  const operationsInsertAfter = columns.findIndex(c => c.key === 'observation');
 
   const handleExportExcel = useCallback(() => {
     const rows = displayOrders.map((o, index) => {
@@ -600,84 +470,7 @@ const OrdersPage: React.FC = () => {
     XLSX.writeFile(wb, getExportFilename('الطلبيات الجارية'));
   }, [displayOrders, orderStatusMap, atelierTimeMap, getClientName, steps, productionRecords, absenceOperationId]);
 
-  const renderCell = (o: Order, col: ColumnKey, index: number) => {
-    const isEditing = editingRowId === o.id;
-    const editableFields: ColumnKey[] = ['orderNumber', 'designation', 'quantity', 'priority', 'observation', 'deliveryDeadline', 'client', 'clientRepresentative', 'instructions', 'drawingModel'];
-    if (isEditing && editableFields.includes(col)) {
-      if (col === 'client') {
-        return (
-          <Select
-            value={(getInlineValue(o, 'clientId') as string) || o.clientId}
-            onValueChange={val => setInlineValue(o.id, 'clientId', val)}
-          >
-            <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {clients.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
-      }
-      if (col === 'priority') {
-        return (
-          <select
-            className="w-full rounded-md border border-input bg-background px-1 py-1 text-xs"
-            value={(getInlineValue(o, 'priority') as string) || o.priority}
-            onChange={e => setInlineValue(o.id, 'priority', e.target.value)}
-            onClick={e => e.stopPropagation()}
-          >
-            {Object.entries(priorityConfig).map(([k]) => <option key={k} value={k}>{k}</option>)}
-          </select>
-        );
-      }
-      if (col === 'quantity') {
-        return (
-          <Input type="number" min={1} className="h-7 w-16 text-xs"
-            value={getInlineValue(o, 'quantity') as number}
-            onChange={e => setInlineValue(o.id, 'quantity', parseInt(e.target.value) || 1)}
-            onClick={e => e.stopPropagation()} />
-        );
-      }
-      if (col === 'observation') {
-        return (
-          <Input className="h-7 text-xs min-w-[100px]"
-            value={(getInlineValue(o, 'observation') as string) || ''}
-            onChange={e => setInlineValue(o.id, 'observation', e.target.value)}
-            onClick={e => e.stopPropagation()}
-            placeholder="Note..." />
-        );
-      }
-      if (col === 'deliveryDeadline') {
-        return (
-          <Input type="date" className="h-7 text-xs"
-            value={(getInlineValue(o, 'deliveryDeadline') as string) || o.deliveryDeadline || o.plannedDeadline}
-            onChange={e => setInlineValue(o.id, 'deliveryDeadline', e.target.value)}
-            onClick={e => e.stopPropagation()} />
-        );
-      }
-      if (col === 'orderNumber' || col === 'designation') {
-        return (
-          <Input className="h-7 text-xs"
-            value={(getInlineValue(o, col) as string) || ''}
-            onChange={e => setInlineValue(o.id, col, e.target.value)}
-            onClick={e => e.stopPropagation()} />
-        );
-      }
-      if (col === 'clientRepresentative' || col === 'instructions' || col === 'drawingModel') {
-        const fieldKey = col as 'clientRepresentative' | 'instructions' | 'drawingModel';
-        return (
-          <Input className="h-7 text-xs"
-            value={(getInlineValue(o, fieldKey) as string) || ''}
-            onChange={e => setInlineValue(o.id, fieldKey, e.target.value)}
-            onClick={e => e.stopPropagation()} />
-        );
-      }
-    }
-
-    // Read-only display
+  const renderCell = (o: Order, col: ColumnKey) => {
     switch (col) {
       case 'orderNumber': return (
         <button
@@ -697,7 +490,6 @@ const OrdersPage: React.FC = () => {
       case 'globalStatus': {
         const isRework = reworkOrderIds.has(o.id);
         const pendingQc = pendingQcOrderIds.has(o.id);
-        // Rework takes precedence: returned from delivery for retouches/non-conforme.
         if (isRework) {
           return (
             <div className="flex flex-col items-center gap-1">
@@ -712,8 +504,6 @@ const OrdersPage: React.FC = () => {
             </div>
           );
         }
-        // When pending QC, the production is physically done — show ONLY the
-        // QC indicator (mutually exclusive with En attente / En cours).
         if (pendingQc) {
           return (
             <div className="flex flex-col items-center gap-1">
@@ -752,15 +542,15 @@ const OrdersPage: React.FC = () => {
       }
       case 'study': {
         const s = orderStatusMap.get(o.id);
-        return <ResourceStatusPill value={s?.study} onChange={(next) => handleStatusChange(o.id, 'study', next)} />;
+        return <ReadOnlyStatusPill value={s?.study} />;
       }
       case 'material': {
         const s = orderStatusMap.get(o.id);
-        return <ResourceStatusPill value={s?.material} onChange={(next) => handleStatusChange(o.id, 'material', next)} receivedDate={o.materialReceivedDate} />;
+        return <ReadOnlyStatusPill value={s?.material} receivedDate={o.materialReceivedDate} />;
       }
       case 'tooling': {
         const s = orderStatusMap.get(o.id);
-        return <ResourceStatusPill value={s?.tooling} onChange={(next) => handleStatusChange(o.id, 'tooling', next)} />;
+        return <ReadOnlyStatusPill value={s?.tooling} />;
       }
       case 'observation': {
         const content = <span className="text-xs text-muted-foreground whitespace-normal break-words block cursor-help">{o.observation || '—'}</span>;
@@ -781,7 +571,6 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  // Compute last order numbers for each series (F, P, S, divers).
   const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(orders), [orders]);
 
   const categoryCounts = useMemo(() => {
@@ -835,7 +624,7 @@ const OrdersPage: React.FC = () => {
         </div>
       } />
 
-<div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
+      <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
         <Button onClick={handleExportExcel} variant="outline" size="sm">
           <Download className="w-4 h-4 ml-1" /> تصدير Excel
         </Button>
@@ -847,12 +636,6 @@ const OrdersPage: React.FC = () => {
             <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setSortKey(null); setSortDir(null); setFilters({}); }}>
               Réinitialiser
             </Button>
-          </div>
-        )}
-
-        {orderNumberError && (
-          <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-            {orderNumberError}
           </div>
         )}
       </div>
@@ -867,117 +650,57 @@ const OrdersPage: React.FC = () => {
               <TableHead className="w-20 text-center text-xs px-1">
                 <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.displayOrder || ''} onFilter={handleFilter} allValues={allValuesByKey.displayOrder} />
               </TableHead>
-              {columns.map((col, ci) => (
-                <React.Fragment key={col.key}>
-                  <TableHead className={col.className}>
-                    <ColumnHeader
-                      label={col.label}
-                      columnKey={col.key}
-                      sortKey={sortKey}
-                      sortDir={sortDir}
-                      onSort={handleSort}
-                      filterValue={filters[col.key] || ''}
-                      onFilter={handleFilter}
-                      allValues={allValuesByKey[col.key] || []}
-                    />
-                  </TableHead>
-                  {ci === operationsInsertAfter && (
-                    <TableHead className="w-32 text-xs px-1">
-                      <ColumnHeader
-                        label="عمليات"
-                        columnKey="planning"
-                        sortKey={null}
-                        sortDir={null}
-                        onSort={() => {}}
-                        filterValue={filters.planning || ''}
-                        onFilter={handleFilter}
-                        allValues={allValuesByKey.planning}
-                      />
-                    </TableHead>
-                  )}
-                </React.Fragment>
+              {columns.map(col => (
+                <TableHead key={col.key} className={col.className}>
+                  <ColumnHeader
+                    label={col.label}
+                    columnKey={col.key}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    filterValue={filters[col.key] || ''}
+                    onFilter={handleFilter}
+                    allValues={allValuesByKey[col.key] || []}
+                  />
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayOrders.map((o, index) => {
-              const isRowEditing = editingRowId === o.id;
               const blocked = isOrderBlocked(o.id, steps, orders);
               return (
               <ContextMenu key={o.id}>
                 <ContextMenuTrigger asChild>
                   <TableRow
-                    draggable={!hasActiveFilters && !isRowEditing}
+                    draggable={!hasActiveFilters}
                     onDragStart={e => handleDragStart(e, index)}
                     onDragOver={e => handleDragOver(e, index)}
                     onDragLeave={() => setDragOverIndex(null)}
                     onDrop={e => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
                     className={`transition-colors ${
-                      !hasActiveFilters && !isRowEditing ? 'cursor-grab active:cursor-grabbing' : ''
+                      !hasActiveFilters ? 'cursor-grab active:cursor-grabbing' : ''
                     } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
                     } ${!blocked && reworkOrderIds.has(o.id) ? 'bg-destructive/10 hover:bg-destructive/15 border-l-4 border-l-destructive' : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
-                    } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''
-                    } ${!blocked && isRowEditing ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}
+                    } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''}`}
                   >
                     <TableCell className="px-1" onClick={e => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(o.id)} onCheckedChange={() => toggleSelect(o.id)} />
                     </TableCell>
                     <TableCell className="text-center px-1">
                       <div className="flex items-center justify-center gap-0.5">
-                        {!hasActiveFilters && !isRowEditing && <GripVertical className="w-3 h-3 text-muted-foreground" />}
+                        {!hasActiveFilters && <GripVertical className="w-3 h-3 text-muted-foreground" />}
                         <span className="text-xs font-medium text-muted-foreground">{o.displayOrder ?? index + 1}</span>
                       </div>
                     </TableCell>
-                    {(() => {
-                      const actionsCell = (
-                        <TableCell className="px-1">
-                          <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-
-                            {(() => {
-                              const hasSteps = steps.some(s => s.orderId === o.id && s.operationId !== absenceOperationId);
-                              return (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-12 w-12 min-w-12"
-                                  onClick={() => openUnified(o.id, "steps")}
-                                  title={hasSteps ? 'التعيينات' : 'Aucune étape définie — cliquer pour définir'}
-                                >
-                                  {hasSteps ? (
-                                    <CalendarCheck className="w-7 h-7" />
-                                  ) : (
-                                    <WarningTriangleIcon className="w-7 h-7" />
-                                  )}
-                                </Button>
-                              );
-                            })()}
-                            {isRowEditing && (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => saveInlineEdits(o.id)} title="حفظ">
-                                  <span className="text-normal text-sm font-bold">✓</span>
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => cancelInlineEdits(o.id)} title="إلغاء">
-                                  <span className="text-destructive text-sm font-bold">✕</span>
-                                </Button>
-                              </>
-                            )}
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
-                              <Ban className="w-3.5 h-3.5 text-orange-500" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette commande ?', () => deleteOrder(o.id), { variant: 'destructive' })}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                          </div>
-                        </TableCell>
-                      );
-                      return columns.map((col, ci) => (
-                        <React.Fragment key={col.key}>
-                          <TableCell className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>{renderCell(o, col.key, index)}</TableCell>
-                          {ci === operationsInsertAfter && actionsCell}
-                        </React.Fragment>
-                      ));
-                    })()}
+                    {columns.map(col => (
+                      <TableCell key={col.key} className={`py-1.5 px-2 ${col.key === 'priority' || col.key === 'globalStatus' ? 'preserve-status-color' : ''}`}>
+                        {renderCell(o, col.key)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
@@ -1001,11 +724,6 @@ const OrdersPage: React.FC = () => {
         </table>
       </div>
 
-
-
-
-      {/* Excel Paste Dialog */}
-      
       {/* Print tracking sheet */}
       <PrintTrackingSheetDialog
         open={printDialogOpen}
@@ -1023,63 +741,6 @@ const OrdersPage: React.FC = () => {
         onOpenChange={(open) => { if (!open) setUnifiedOrderId(null); }}
         initialTab={unifiedInitialTab}
       />
-      <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
-
-      {cancelTarget && (
-        <CancelOrderDialog
-          open={!!cancelTarget}
-          onClose={() => setCancelTarget(null)}
-          orderLabel={cancelTarget.orderNumber}
-          onConfirm={async (data) => {
-            const ok = await cancelOrder(cancelTarget.id, data);
-            if (ok) setCancelTarget(null);
-          }}
-        />
-      )}
-
-      {statusDatePrompt && (
-        <DatePromptDialog
-          open={!!statusDatePrompt}
-          label={statusDatePrompt.label}
-          onConfirm={async (date) => {
-            const saved = await applyStatusToOrderAndSteps(statusDatePrompt.orderId, statusDatePrompt.field, statusDatePrompt.status, date);
-            if (saved) setStatusDatePrompt(null);
-          }}
-          onCancel={() => setStatusDatePrompt(null)}
-        />
-      )}
-
-      <ConfirmDialog
-        open={materialConfirmOpen}
-        title="هل تؤكد هذه العملية؟"
-        onConfirm={() => {
-          setMaterialConfirmOpen(false);
-          setMaterialDatePromptOpen(true);
-        }}
-        onCancel={() => {
-          setMaterialConfirmOpen(false);
-          setMaterialDatePromptOpen(false);
-          setPendingMaterialStatus(null);
-        }}
-      />
-
-      {pendingMaterialStatus && materialDatePromptOpen && (
-        <DatePromptDialog
-          open={materialDatePromptOpen}
-          label="تاريخ استلام المواد الأولية"
-          defaultDate={orders.find(o => o.id === pendingMaterialStatus.orderId)?.materialReceivedDate || today}
-          onConfirm={async (date) => {
-            const saved = await applyStatusToOrderAndSteps(pendingMaterialStatus.orderId, 'material', pendingMaterialStatus.status, undefined, date);
-            if (!saved) return;
-            setMaterialDatePromptOpen(false);
-            setPendingMaterialStatus(null);
-          }}
-          onCancel={() => {
-            setMaterialDatePromptOpen(false);
-            setPendingMaterialStatus(null);
-          }}
-        />
-      )}
 
       {/* Move selection by Cn dialog */}
       <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
