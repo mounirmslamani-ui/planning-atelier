@@ -1,35 +1,27 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import DesignationCell from '@/components/DesignationCell';
-import type { ResourceStatus } from '@/types/planning';
 import { formatDateFR } from '@/lib/utils';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import DatePromptDialog from '@/components/DatePromptDialog';
-import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const MaterialPurchasesPage: React.FC = () => {
-  const { orders, clients, steps, updateStep, updateOrder, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
+  const { orders, clients, steps, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
   const excludedIds = useMemo(() => buildOutOfPreparationFlowSet({ orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId }), [orders, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, absenceOperationId]);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [pendingReceipt, setPendingReceipt] = useState<{ orderId: string; stepIds: string[] } | null>(null);
-  const [datePromptOpen, setDatePromptOpen] = useState(false);
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
-  const today = new Date().toISOString().split('T')[0];
 
   const rows = useMemo(() => {
-    const isMaterialBlocked = (status: ResourceStatus | undefined) => status === 'non-disponible' || status === 'partiel';
+    const isMaterialBlocked = (status: any) => status === 'non-disponible' || status === 'partiel';
     const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
     orders
       .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isMaterialBlocked(o.materialStatus))
@@ -101,32 +93,7 @@ const MaterialPurchasesPage: React.FC = () => {
       Priorité: r.order.priority || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
       'التاريخ المبرمج لشراء المواد الأولية': formatDateFR(r.deadline) || '—',
-      Fait: 'Non',
-    })), [8, 20, 24, 45, 10, 12, 16, 26, 10]);
-  };
-
-  const markDone = async (orderId: string, stepIds: string[], receivedDate: string) => {
-    const updatedSteps = stepIds.map(id => {
-      const step = steps.find(s => s.id === id);
-      return step ? { ...step, materialStatus: 'disponible' as ResourceStatus, materialAvailable: true, materialDeadline: undefined } : null;
-    }).filter(Boolean) as typeof steps;
-
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return false;
-
-    const updatedOrder = {
-      ...order,
-      materialStatus: 'disponible' as ResourceStatus,
-      materialAvailable: true,
-      materialReceivedDate: receivedDate,
-    };
-
-    const saved = await Promise.all([...updatedSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
-    if (saved.some(ok => !ok)) return false;
-
-    updatedSteps.forEach(updateStep);
-    updateOrder(updatedOrder);
-    return true;
+    })), [8, 20, 24, 45, 10, 12, 16, 26]);
   };
 
   return (
@@ -151,12 +118,11 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
               <TableHead>التاريخ المبرمج لشراء المواد الأولية</TableHead>
-              <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Toutes les matières sont disponibles ✓</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Toutes les matières sont disponibles ✓</TableCell></TableRow>
             ) : filteredRows.map((r: any) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
@@ -167,40 +133,11 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
-                <TableCell className="text-center"><Checkbox checked={false} onCheckedChange={() => setPendingReceipt({ orderId: r.orderId, stepIds: r.stepIds })} title={`Client : ${getClientName(r.order.clientId)}`} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
         </table>
       </div>
-
-      <ConfirmDialog
-        open={!!pendingReceipt && !datePromptOpen}
-        title="هل تؤكد هذه العملية؟"
-        onConfirm={() => setDatePromptOpen(true)}
-        onCancel={() => {
-          setDatePromptOpen(false);
-          setPendingReceipt(null);
-        }}
-      />
-
-      {pendingReceipt && datePromptOpen && (
-        <DatePromptDialog
-          open={datePromptOpen}
-          label="تاريخ استلام المواد الأولية"
-          defaultDate={orders.find(o => o.id === pendingReceipt.orderId)?.materialReceivedDate || today}
-          onConfirm={async (date) => {
-            const saved = await markDone(pendingReceipt.orderId, pendingReceipt.stepIds, date);
-            if (!saved) return;
-            setDatePromptOpen(false);
-            setPendingReceipt(null);
-          }}
-          onCancel={() => {
-            setDatePromptOpen(false);
-            setPendingReceipt(null);
-          }}
-        />
-      )}
     </div>
   );
 };
