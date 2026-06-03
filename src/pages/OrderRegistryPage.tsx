@@ -2,12 +2,9 @@ import React, { useMemo, useState, useCallback } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Download, Ban, RotateCcw, Trash2, Save, X } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { formatDateFR } from '@/lib/utils';
@@ -16,9 +13,9 @@ import { useConfirm } from '@/hooks/use-confirm';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
 import PriorityBadge from '@/components/orders/PriorityBadge';
-import type { Order, OrderCategory, OrderPriority } from '@/types/planning';
-import { ORDER_CATEGORY_LABEL, ORDER_CATEGORY_PREFIX } from '@/types/planning';
-import { generateOrderCode, getOrderRegistryStatus, REGISTRY_STATUS_CLASS, type RegistryStatus } from '@/lib/orderRegistry';
+import type { Order, OrderCategory } from '@/types/planning';
+import { ORDER_CATEGORY_LABEL } from '@/types/planning';
+import { generateOrderCode, getOrderRegistryStatus, REGISTRY_STATUS_CLASS } from '@/lib/orderRegistry';
 import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
 import { getExportFilename } from '@/lib/excelExport';
 import ColumnHeader from '@/components/orders/ColumnHeader';
@@ -28,17 +25,13 @@ import DesignationCell from '@/components/DesignationCell';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
-const PRIORITIES: OrderPriority[] = ['P1', 'P2', 'P3', 'P4', 'undetermined'];
 
 const OrderRegistryPage: React.FC = () => {
   const {
-    orders, clients, addOrder, updateOrder, deleteOrder,
+    orders, clients, addOrder, updateOrder,
     qcEntries, deliveryEntries, deliveredOrders, productionRecords, steps,
     absenceOrderId, absenceOperationId,
     cancelledOrders, deleteCancelledOrder,
-    addDeliveredOrder, updateDeliveredOrder, deleteDeliveredOrder,
-    addQCEntry, deleteQCEntry,
-    addDeliveryEntry, deleteDeliveryEntry,
   } = usePlanning();
   const cancelOrder = useCancelOrder();
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
@@ -46,12 +39,8 @@ const OrderRegistryPage: React.FC = () => {
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
   const [search, setSearch] = useState('');
   const [cancelTarget, setCancelTarget] = useState<Order | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [createDraft, setCreateDraft] = useState<Partial<Order> | null>(null);
-  const [draft, setDraft] = useState<Partial<Order>>({});
-  const [history, setHistory] = useState<Order[][]>([]);
-  const [redoStack, setRedoStack] = useState<Order[][]>([]);
 
   const realOrders = useMemo(
     () => orders.filter(o => o.id !== absenceOrderId),
@@ -64,11 +53,6 @@ const OrderRegistryPage: React.FC = () => {
     return m;
   }, [cancelledOrders]);
 
-  const deliveryMap = useMemo(() => {
-    const m = new Map<string, string>();
-    deliveryEntries.forEach(d => m.set(d.orderId, d.movedAt || d.controlDate));
-    return m;
-  }, [deliveryEntries]);
 
   const deliveredMap = useMemo(() => {
     const m = new Map<string, typeof deliveredOrders[number]>();
@@ -143,10 +127,7 @@ const OrderRegistryPage: React.FC = () => {
     return map;
   }, [baseList, accessors]);
 
-  const pushHistory = useCallback(() => {
-    setHistory(h => [...h.slice(-49), realOrders]);
-    setRedoStack([]);
-  }, [realOrders]);
+
 
   const handleAdd = () => {
     const code = generateOrderCode(activeCat, realOrders);
@@ -169,166 +150,8 @@ const OrderRegistryPage: React.FC = () => {
     });
   };
 
-  const startEdit = (o: Order) => {
-    setEditingId(o.id);
-    setDraft({});
-  };
-
-  const saveEdit = (o: Order) => {
-    const next: Order = { ...o, ...draft };
-    if (next.orderNumber !== o.orderNumber) {
-      const dup = realOrders.some(x => x.id !== o.id && x.orderNumber.trim().toLowerCase() === next.orderNumber.trim().toLowerCase());
-      if (dup) {
-        toast.error('Erreur : ce numéro de commande existe déjà.');
-        return;
-      }
-    }
-    pushHistory();
-    updateOrder(next);
-    setEditingId(null);
-    setDraft({});
-  };
-
-  const cancelEdit = () => { setEditingId(null); setDraft({}); };
-
-  /**
-   * Upsert delivered_order row from registry inline edits.
-   * - Setting an invoice number/date or a delivery date should remove the order
-   *   from active workshop list (الطلبيات الحالية) and surface it in طلبيات مسلمة.
-   * - The order itself remains in the registry (archive) untouched.
-   * - Existing invoice/delivery data is preserved if not changed.
-   */
-  const upsertDeliveredFields = useCallback((
-    order: Order,
-    patch: { invoiceNumber?: string; invoiceDate?: string; deliveryDate?: string },
-  ) => {
-    const existing = deliveredMap.get(order.id);
-    const hasInvoice = (patch.invoiceNumber ?? existing?.invoiceNumber ?? '').trim() !== '';
-    const hasDelivery = !!(patch.deliveryDate ?? existing?.deliveryDate);
-    if (!hasInvoice && !hasDelivery) return;
-
-    if (existing) {
-      updateDeliveredOrder({
-        ...existing,
-        invoiceNumber: patch.invoiceNumber !== undefined ? patch.invoiceNumber || undefined : existing.invoiceNumber,
-        invoiceDate: patch.invoiceDate !== undefined ? patch.invoiceDate || undefined : existing.invoiceDate,
-        deliveryDate: patch.deliveryDate ?? existing.deliveryDate,
-      });
-    } else {
-      const today = new Date().toISOString().split('T')[0];
-      addDeliveredOrder({
-        id: crypto.randomUUID(),
-        orderId: order.id,
-        deliveryDate: patch.deliveryDate || today,
-        salePriceStatus: 'non-calcule',
-        invoiceNumber: patch.invoiceNumber || undefined,
-        invoiceDate: patch.invoiceDate || undefined,
-      });
-    }
-    // Remove from "ready for delivery" queue if present — it has now moved past delivery.
-    const pending = deliveryEntries.find(d => d.orderId === order.id);
-    if (pending) deleteDeliveryEntry(pending.id);
-  }, [deliveredMap, deliveryEntries, addDeliveredOrder, updateDeliveredOrder, deleteDeliveryEntry]);
-
-  /**
-   * Manual status change from the registry: forces the order into the right
-   * downstream table (active workshop, QC queue, delivery queue, delivered,
-   * pending invoicing). Strict transfer — an order is never present in two
-   * flows simultaneously.
-   */
-  const changeStatus = useCallback((order: Order, target: RegistryStatus | 'ملغاة') => {
-    if (target === 'ملغاة') {
-      setCancelTarget(order);
-      return;
-    }
-    // If currently cancelled, restore it first.
-    const cancelled = cancelledMap.get(order.id);
-    if (cancelled) deleteCancelledOrder(cancelled.id);
-
-    const today = new Date().toISOString().split('T')[0];
-    const nowIso = new Date().toISOString();
-    const orderId = order.id;
-
-    const existingQc = qcEntries.find(q => q.orderId === orderId);
-    const existingDelivery = deliveryEntries.find(d => d.orderId === orderId);
-    const existingDelivered = deliveredOrders.find(d => d.orderId === orderId);
-
-    // Helper to clear flow rows we don't want anymore
-    const clearQc = () => { if (existingQc) deleteQCEntry(existingQc.id); };
-    const clearDelivery = () => { if (existingDelivery) deleteDeliveryEntry(existingDelivery.id); };
-    const clearDelivered = (preserveInvoiced = true) => {
-      if (!existingDelivered) return;
-      if (preserveInvoiced && existingDelivered.invoiceNumber) return;
-      deleteDeliveredOrder(existingDelivered.id);
-    };
-
-    switch (target) {
-      case 'قيد الانتظار':
-      case 'قيد الإنجاز': {
-        clearQc(); clearDelivery(); clearDelivered(false);
-        // mark reintegration so the order resurfaces in الطلبيات الجارية even if it had progress
-        if (existingQc || existingDelivery || existingDelivered) {
-          updateOrder({ ...order, reintegratedAt: order.reintegratedAt || nowIso });
-        }
-        break;
-      }
-      case 'في انتظار مراقبة الجودة': {
-        clearDelivery(); clearDelivered(false);
-        if (!existingQc) {
-          addQCEntry({ id: crypto.randomUUID(), orderId, controlDate: today, createdAt: nowIso });
-        }
-        break;
-      }
-      case 'في انتظار التسليم': {
-        clearQc(); clearDelivered(false);
-        if (!existingDelivery) {
-          addDeliveryEntry({
-            id: crypto.randomUUID(), orderId, controlDate: today,
-            decision: 'conforme', movedAt: nowIso,
-          });
-        }
-        break;
-      }
-      case 'في انتظار الفوترة': {
-        clearQc(); clearDelivery();
-        if (existingDelivered) {
-          if (existingDelivered.invoiceNumber) {
-            // strip invoice to put it back into pending invoicing
-            updateDeliveredOrder({ ...existingDelivered, invoiceNumber: undefined, invoiceDate: undefined });
-          }
-        } else {
-          addDeliveredOrder({
-            id: crypto.randomUUID(), orderId,
-            deliveryDate: today, salePriceStatus: 'non-calcule',
-          });
-        }
-        break;
-      }
-      case 'مفوترة': {
-        clearQc(); clearDelivery();
-        if (!existingDelivered) {
-          toast.error('Veuillez saisir un numéro de facture pour passer à "مفوترة".');
-          return;
-        }
-        if (!existingDelivered.invoiceNumber) {
-          toast.error('Renseignez d\'abord le numéro de facture dans la colonne "رقم الفاتورة".');
-          return;
-        }
-        break;
-      }
-    }
-    toast.success(`Statut mis à jour : ${target}`);
-  }, [
-    cancelledMap, deleteCancelledOrder,
-    qcEntries, deliveryEntries, deliveredOrders,
-    deleteQCEntry, deleteDeliveryEntry, deleteDeliveredOrder,
-    addQCEntry, addDeliveryEntry, addDeliveredOrder, updateDeliveredOrder,
-    updateOrder,
-  ]);
 
   const lastSeriesNumbers = useMemo(() => computeLastSeriesNumbers(realOrders), [realOrders]);
-
-
 
   const handleExportExcel = useCallback(() => {
     const rows = displayed.map(o => {
@@ -358,59 +181,6 @@ const OrderRegistryPage: React.FC = () => {
     XLSX.writeFile(wb, getExportFilename(`Registre_${ORDER_CATEGORY_LABEL[activeCat]}`));
   }, [displayed, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId, deliveredMap, qcMap, clients, activeCat]);
 
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setRedoStack(r => [...r, realOrders]);
-    setHistory(h => h.slice(0, -1));
-    // Apply diff: simplest approach — update existing orders that exist in both
-    prev.forEach(o => {
-      const cur = realOrders.find(x => x.id === o.id);
-      if (cur && JSON.stringify(cur) !== JSON.stringify(o)) updateOrder(o);
-    });
-    toast.success('Annulation effectuée');
-  };
-
-  const handleRedo = () => {
-    if (redoStack.length === 0) return;
-    const next = redoStack[redoStack.length - 1];
-    setHistory(h => [...h, realOrders]);
-    setRedoStack(r => r.slice(0, -1));
-    next.forEach(o => {
-      const cur = realOrders.find(x => x.id === o.id);
-      if (cur && JSON.stringify(cur) !== JSON.stringify(o)) updateOrder(o);
-    });
-    toast.success('Rétabli');
-  };
-
-  const handleRestore = (orderId: string) => {
-    const cancelled = cancelledMap.get(orderId);
-    if (!cancelled) return;
-    confirm(
-      'Réintégrer cette commande dans la liste active ?',
-      () => {
-        deleteCancelledOrder(cancelled.id);
-        toast.success('Commande réintégrée');
-      },
-    );
-  };
-
-  const renderEditableCell = (o: Order, field: keyof Order, type: 'text' | 'number' | 'date' = 'text') => {
-    if (editingId !== o.id) {
-      const val = o[field] as any;
-      if (type === 'date') return <span className="text-xs">{val ? formatDateFR(val) : '—'}</span>;
-      return <span className="text-xs">{val ?? '—'}</span>;
-    }
-    const v = (draft[field] ?? o[field] ?? '') as any;
-    return (
-      <Input
-        type={type}
-        className="h-7 text-xs"
-        value={v}
-        onChange={e => setDraft(d => ({ ...d, [field]: type === 'number' ? (parseInt(e.target.value) || 0) : e.target.value }))}
-      />
-    );
-  };
 
   return (
    <div className="p-6 space-y-4">
@@ -418,7 +188,7 @@ const OrderRegistryPage: React.FC = () => {
 
 
 
-      <Tabs value={activeCat} onValueChange={v => { setActiveCat(v as OrderCategory); setEditingId(null); }}>
+      <Tabs value={activeCat} onValueChange={v => setActiveCat(v as OrderCategory)}>
 <div className="flex flex-wrap items-center gap-2 mb-2">
    <div className="flex-1" />
   <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
@@ -458,7 +228,6 @@ const OrderRegistryPage: React.FC = () => {
                     <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} allValues={allValuesByKey.drawingModel} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ملاحظات/تعليمات تقنية" columnKey="observation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.observation || ''} onFilter={handleFilter} allValues={allValuesByKey.observation} /></TableHead>
-                    <TableHead className="text-xs">عمليات</TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.status || ''} onFilter={handleFilter} allValues={allValuesByKey.status} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="qcDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.qcDate || ''} onFilter={handleFilter} allValues={allValuesByKey.qcDate} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDate} /></TableHead>
@@ -469,7 +238,7 @@ const OrderRegistryPage: React.FC = () => {
                 <TableBody>
                   {displayed.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={16} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
+                      <TableCell colSpan={15} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
                     </TableRow>
                   )}
                   {displayed.map(o => {
@@ -479,156 +248,36 @@ const OrderRegistryPage: React.FC = () => {
                       ? 'bg-destructive/10 text-destructive border-destructive/30'
                       : (REGISTRY_STATUS_CLASS as any)[status] || '';
                     const delivered = deliveredMap.get(o.id);
-                    const isEditing = editingId === o.id;
                     return (
                       <TableRow key={o.id} className={isCancelled ? 'opacity-60' : ''}>
                         <TableCell className="w-px whitespace-nowrap">
-                          {editingId === o.id ? renderEditableCell(o, 'orderNumber') : (
-                            <button
-                              type="button"
-                              className="text-sm font-heading underline-offset-2 hover:underline text-primary"
-                              title="فتح بطاقة متابعة الطلبية"
-                              onClick={() => setUnifiedOrderId(o.id)}
-                            >
-                              {o.orderNumber}
-                            </button>
-                          )}
-                        </TableCell>
-                        <TableCell className="w-px whitespace-nowrap">{renderEditableCell(o, 'orderDate', 'date')}</TableCell>
-                        <TableCell className="w-px whitespace-nowrap">
-                          {isEditing ? (
-                            <Select value={(draft.clientId ?? o.clientId) || ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
-                              <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {clients.map(cl => <SelectItem key={cl.id} value={cl.id}>{cl.name}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <span className="text-sm">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span>
-                          )}
-                        </TableCell>
-                      <TableCell style={{ minWidth: 200 }} className="">{editingId === o.id ? renderEditableCell(o, 'designation') : <DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-sm whitespace-normal break-words block" />}</TableCell>
-                       <TableCell>
-  {editingId === o.id
-    ? <Input type="number" className="h-7 text-sm" value={(draft.quantity ?? o.quantity ?? '') as any} onChange={e => setDraft(d => ({ ...d, quantity: parseInt(e.target.value) || 0 }))} />
-    : <span className="text-sm">{o.quantity ?? '—'}</span>}
-</TableCell>
-                        <TableCell>
-                          {isEditing ? (
-                            <Select value={(draft.priority ?? o.priority) || 'undetermined'} onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}>
-                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <PriorityBadge priority={o.priority} />
-                          )}
-                        </TableCell>
-                        <TableCell>{renderEditableCell(o, 'deliveryDeadline', 'date')}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'clientRepresentative')}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'drawingModel')}</TableCell>
-                        <TableCell>{renderEditableCell(o, 'observation')}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {isEditing ? (
-                              <>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => saveEdit(o)} title="Enregistrer">
-                                  <Save className="w-3.5 h-3.5 text-primary" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
-                                  <X className="w-3.5 h-3.5" />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-
-                                {isCancelled ? (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRestore(o.id)} title="Réintégrer">
-                                    <RotateCcw className="w-3.5 h-3.5 text-green-600" />
-                                  </Button>
-                                ) : (
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCancelTarget(o)} title="Annuler la commande">
-                                    <Ban className="w-3.5 h-3.5 text-orange-600" />
-                                  </Button>
-                                )}
-                                <Button
-                                  size="icon" variant="ghost" className="h-7 w-7"
-                                  onClick={() => confirm(
-                                    'Supprimer définitivement cette commande ?',
-                                    () => {
-                                      if (isCancelled) deleteCancelledOrder(cancelledMap.get(o.id)!.id);
-                                      deleteOrder(o.id);
-                                      toast.success('Supprimé');
-                                    },
-                                    { variant: 'destructive' },
-                                  )}
-                                  title="Supprimer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={status}
-                            onValueChange={v => {
-                              if (v === status) return;
-                              changeStatus(o, v as RegistryStatus | 'ملغاة');
-                            }}
+                          <button
+                            type="button"
+                            className="text-sm font-heading underline-offset-2 hover:underline text-primary"
+                            title="فتح بطاقة متابعة الطلبية"
+                            onClick={() => setUnifiedOrderId(o.id)}
                           >
-                            <SelectTrigger className={`h-7 text-xs w-44 border ${statusClass}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(['قيد الانتظار','قيد الإنجاز','في انتظار مراقبة الجودة','في انتظار التسليم','في انتظار الفوترة','مفوترة','ملغاة'] as const).map(s => (
-                                <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            {o.orderNumber}
+                          </button>
+                        </TableCell>
+                        <TableCell className="w-px whitespace-nowrap"><span className="text-xs">{o.orderDate ? formatDateFR(o.orderDate) : '—'}</span></TableCell>
+                        <TableCell className="w-px whitespace-nowrap"><span className="text-sm">{clients.find(cl => cl.id === o.clientId)?.name || '—'}</span></TableCell>
+                        <TableCell style={{ minWidth: 200 }}><DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-sm whitespace-normal break-words block" /></TableCell>
+                        <TableCell><span className="text-sm">{o.quantity ?? '—'}</span></TableCell>
+                        <TableCell><PriorityBadge priority={o.priority} /></TableCell>
+                        <TableCell><span className="text-xs">{o.deliveryDeadline || o.plannedDeadline ? formatDateFR(o.deliveryDeadline || o.plannedDeadline) : '—'}</span></TableCell>
+                        <TableCell><span className="text-xs">{o.clientRepresentative || '—'}</span></TableCell>
+                        <TableCell><span className="text-xs">{o.drawingModel || '—'}</span></TableCell>
+                        <TableCell><span className="text-xs">{o.observation || o.instructions || '—'}</span></TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                            {status}
+                          </span>
                         </TableCell>
                         <TableCell><span className="text-xs">{qcMap.get(o.id) ? formatDateFR(qcMap.get(o.id)!) : '—'}</span></TableCell>
-                        <TableCell>
-                          <Input
-                            type="date"
-                            className="h-7 text-xs w-32"
-                            defaultValue={delivered?.deliveryDate || ''}
-                            onBlur={e => {
-                              const v = e.target.value;
-                              if (v !== (delivered?.deliveryDate || '')) {
-                                upsertDeliveredFields(o, { deliveryDate: v });
-                              }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="date"
-                            className="h-7 text-xs w-32"
-                            defaultValue={delivered?.invoiceDate || ''}
-                            onBlur={e => {
-                              const v = e.target.value;
-                              if (v !== (delivered?.invoiceDate || '')) {
-                                upsertDeliveredFields(o, { invoiceDate: v });
-                              }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="text"
-                            className="h-7 text-xs w-28"
-                            defaultValue={delivered?.invoiceNumber || ''}
-                            onBlur={e => {
-                              const v = e.target.value;
-                              if (v !== (delivered?.invoiceNumber || '')) {
-                                upsertDeliveredFields(o, { invoiceNumber: v });
-                              }
-                            }}
-                          />
-                        </TableCell>
+                        <TableCell><span className="text-xs">{delivered?.deliveryDate ? formatDateFR(delivered.deliveryDate) : '—'}</span></TableCell>
+                        <TableCell><span className="text-xs">{delivered?.invoiceDate ? formatDateFR(delivered.invoiceDate) : '—'}</span></TableCell>
+                        <TableCell><span className="text-xs">{delivered?.invoiceNumber || '—'}</span></TableCell>
                       </TableRow>
                     );
                   })}
