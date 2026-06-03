@@ -1454,7 +1454,7 @@ if (nextRecord) {
                           <span className="text-sm">{getClientName(order.clientId)}</span>
                         </TableCell>
                         <TableCell className={`py-1.5 px-2 w-[180px] min-w-[180px] max-w-[180px] align-top ${designBg}`}>
-                          <DesignationCell orderId={order.id} designation={order.designation} className={`text-sm whitespace-normal break-words block ${blocked ? 'text-white font-medium' : ''}`} />
+                          <DesignationCell orderId={order.id} designation={order.designation} className={`text-sm whitespace-normal break-words block ${blocked ? 'text-black font-medium' : ''}`} />
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
                           <span className="text-sm">{order.quantity}</span>
@@ -1488,7 +1488,7 @@ if (nextRecord) {
                           {order.notesUpdatedAt ? (
                             <Tooltip delayDuration={150}>
                               <TooltipTrigger asChild>
-                                <span className={`text-xs whitespace-normal break-words block cursor-help ${blocked ? 'text-white' : 'text-muted-foreground'}`}>
+                                <span className={`text-xs whitespace-normal break-words block cursor-help ${blocked ? 'text-black' : 'text-muted-foreground'}`}>
                                   {order.observation || '—'}
                                 </span>
                               </TooltipTrigger>
@@ -1497,7 +1497,7 @@ if (nextRecord) {
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-white' : 'text-muted-foreground'}`}>
+                            <span className={`text-xs whitespace-normal break-words block ${blocked ? 'text-black' : 'text-muted-foreground'}`}>
                               {order.observation || '—'}
                             </span>
                           )}
