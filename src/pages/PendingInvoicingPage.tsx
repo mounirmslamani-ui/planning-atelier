@@ -1,27 +1,21 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { formatDateFR } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import DesignationCell from '@/components/DesignationCell';
-import { Download, Pencil, Trash2, Check, X } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { getOrderGlobalStatus } from '@/lib/stepProgress';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { useConfirm } from '@/hooks/use-confirm';
-import type { Order, OrderPriority, SalePriceStatus, OrderCategory } from '@/types/planning';
+import type { Order, SalePriceStatus, OrderCategory } from '@/types/planning';
 import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { cn } from '@/lib/utils';
-import ReintegrateButton from '@/components/orders/ReintegrateButton';
-import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
@@ -49,7 +43,7 @@ function getYearKey(orderNumber: string): string {
 }
 
 type DeliveryKey = 'delivered' | 'ready-for-delivery' | 'awaiting-qc' | 'in-progress' | 'on-hold';
-type PriceKey = SalePriceStatus; // 'gratuit' | 'non-calcule' | 'non-valide' | 'valide'
+type PriceKey = SalePriceStatus;
 
 const DELIVERY_BUTTONS: { key: DeliveryKey; label: string }[] = [
   { key: 'delivered', label: 'مسلمة' },
@@ -66,6 +60,13 @@ const PRICE_BUTTONS: { key: PriceKey; label: string }[] = [
   { key: 'valide', label: 'ثمن مصادق عليه' },
 ];
 
+const PRICE_LABELS: Record<SalePriceStatus, string> = {
+  'gratuit': 'مجانا',
+  'non-calcule': 'ثمن غير محسوب',
+  'non-valide': 'ثمن غير مصادق عليه',
+  'valide': 'ثمن مصادق عليه',
+};
+
 type Row = {
   order: Order;
   clientName: string;
@@ -81,23 +82,15 @@ const PendingInvoicingPage: React.FC = () => {
     orders, clients, operators, steps, productionRecords,
     deliveredOrders, deliveryEntries, qcEntries,
     absenceOperationId, absenceOrderId,
-    updateOrder, deleteOrder, updateDeliveredOrder,
   } = usePlanning();
 
-  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
-  const reint = useReintegrateOrder();
-
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Partial<Order>>({});
-
-  // Cross-filter state — by default all selected
-  const [deliveryFilter, setDeliveryFilter] = useState<Set<DeliveryKey>>(
+  const [deliveryFilter, setDeliveryFilter] = React.useState<Set<DeliveryKey>>(
     () => new Set(DELIVERY_BUTTONS.map(b => b.key))
   );
-  const [priceFilter, setPriceFilter] = useState<Set<PriceKey>>(
+  const [priceFilter, setPriceFilter] = React.useState<Set<PriceKey>>(
     () => new Set(PRICE_BUTTONS.map(b => b.key))
   );
-  const [activeCat, setActiveCat] = useState<Extract<OrderCategory, 'fabrication' | 'prestation'>>('fabrication');
+  const [activeCat, setActiveCat] = React.useState<Extract<OrderCategory, 'fabrication' | 'prestation'>>('fabrication');
 
   const allDeliveryActive = deliveryFilter.size === DELIVERY_BUTTONS.length;
   const allPriceActive = priceFilter.size === PRICE_BUTTONS.length;
@@ -105,10 +98,7 @@ const PendingInvoicingPage: React.FC = () => {
   const toggleDelivery = (k: DeliveryKey) => {
     setDeliveryFilter(prev => {
       const next = new Set(prev);
-      // If "all" was active, clicking a single one selects only that one
-      if (next.size === DELIVERY_BUTTONS.length) {
-        return new Set([k]);
-      }
+      if (next.size === DELIVERY_BUTTONS.length) return new Set([k]);
       if (next.has(k)) next.delete(k); else next.add(k);
       if (next.size === 0) return new Set(DELIVERY_BUTTONS.map(b => b.key));
       return next;
@@ -117,9 +107,7 @@ const PendingInvoicingPage: React.FC = () => {
   const togglePrice = (k: PriceKey) => {
     setPriceFilter(prev => {
       const next = new Set(prev);
-      if (next.size === PRICE_BUTTONS.length) {
-        return new Set([k]);
-      }
+      if (next.size === PRICE_BUTTONS.length) return new Set([k]);
       if (next.has(k)) next.delete(k); else next.add(k);
       if (next.size === 0) return new Set(PRICE_BUTTONS.map(b => b.key));
       return next;
@@ -130,7 +118,6 @@ const PendingInvoicingPage: React.FC = () => {
 
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '—';
 
-  // Build flat row list
   const rows = useMemo<Row[]>(() => {
     const deliveredById = new Map(deliveredOrders.map(d => [d.orderId, d]));
     const deliveryReadyIds = new Set(deliveryEntries.map(d => d.orderId));
@@ -176,7 +163,7 @@ const PendingInvoicingPage: React.FC = () => {
           }
           deliveryKey = 'on-hold';
         } else {
-          continue; // Terminée without delivery → skip
+          continue;
         }
       }
 
@@ -193,7 +180,6 @@ const PendingInvoicingPage: React.FC = () => {
     return result;
   }, [orders, deliveredOrders, deliveryEntries, qcEntries, steps, productionRecords, absenceOperationId, absenceOrderId, clients]);
 
-  // Apply button filters BEFORE column filters/sort
   const buttonFilteredRows = useMemo(
     () => rows.filter(r =>
       deliveryFilter.has(r.deliveryKey) &&
@@ -206,7 +192,6 @@ const PendingInvoicingPage: React.FC = () => {
   const catCount = (cat: 'fabrication' | 'prestation') =>
     rows.filter(r => inferCategoryFromOrderNumber(r.order.orderNumber) === cat).length;
 
-  // Sort/filter
   const accessors = useMemo(() => ({
     orderNumber: (r: Row) => r.order.orderNumber,
     orderDate: (r: Row) => r.order.orderDate,
@@ -235,7 +220,6 @@ const PendingInvoicingPage: React.FC = () => {
 
   const isFilteredOrSorted = sortKey !== null || Object.values(filters).some(Boolean);
 
-  // Group only when not filtered/sorted
   const grouped = useMemo(() => {
     const byClient = new Map<string, Row[]>();
     for (const item of processed) {
@@ -295,57 +279,6 @@ const PendingInvoicingPage: React.FC = () => {
     return [...mats].join(', ') || '—';
   };
 
-  // Edit handlers
-  const [draftPrice, setDraftPrice] = useState<SalePriceStatus | undefined>(undefined);
-  const startEdit = useCallback((order: Order, currentPrice?: SalePriceStatus) => {
-    setEditingId(order.id);
-    setDraft({
-      orderNumber: order.orderNumber,
-      orderDate: order.orderDate,
-      clientId: order.clientId,
-      designation: order.designation,
-      quantity: order.quantity,
-      clientRepresentative: order.clientRepresentative,
-      priority: order.priority,
-      deliveryDeadline: order.deliveryDeadline,
-    });
-    setDraftPrice(currentPrice);
-  }, []);
-
-  const cancelEdit = useCallback(() => {
-    setEditingId(null);
-    setDraft({});
-    setDraftPrice(undefined);
-  }, []);
-
-  const saveEdit = useCallback((order: Order, deliveredId?: string) => {
-    updateOrder({ ...order, ...draft } as Order);
-    if (deliveredId && draftPrice) {
-      const existing = deliveredOrders.find(d => d.id === deliveredId);
-      if (existing && existing.salePriceStatus !== draftPrice) {
-        updateDeliveredOrder({ ...existing, salePriceStatus: draftPrice });
-      }
-    }
-    setEditingId(null);
-    setDraft({});
-    setDraftPrice(undefined);
-  }, [draft, draftPrice, updateOrder, updateDeliveredOrder, deliveredOrders]);
-
-  const handleDelete = useCallback((order: Order) => {
-    confirm(
-      `Supprimer la commande ${order.orderNumber} ?`,
-      () => deleteOrder(order.id),
-      { description: 'Cette commande sera supprimée définitivement de la base de données.', variant: 'destructive' }
-    );
-  }, [confirm, deleteOrder]);
-
-  const PRICE_LABELS: Record<SalePriceStatus, string> = {
-    'gratuit': 'مجانا',
-    'non-calcule': 'ثمن غير محسوب',
-    'non-valide': 'ثمن غير مصادق عليه',
-    'valide': 'ثمن مصادق عليه',
-  };
-
   const handleExportExcel = () => {
     const exportRows: Record<string, string | number>[] = [];
     for (const group of grouped) {
@@ -380,88 +313,43 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   const totalRows = processed.length;
-  const totalCols = 10 + 1 + OPERATOR_COLUMNS.length + 3 + 1 + 1; // +1 price, +1 reintegrate, +1 actions
-  const priorityOptions: OrderPriority[] = ['P1', 'P2', 'P3', 'P4'];
+  // 10 base cols + operators + 3 (heat/subc/materials)
+  const totalCols = 10 + OPERATOR_COLUMNS.length + 3;
 
   const deliveredByOrderId = useMemo(
     () => new Map(deliveredOrders.map(d => [d.orderId, d])),
     [deliveredOrders]
   );
 
-  // Render a data row (edit mode or view mode)
   const renderDataRow = (row: Row, clientNameOverride?: string) => {
     const { order, statusLabel, deliveryDateOrProgress, priceStatus } = row;
     const clientName = clientNameOverride ?? row.clientName;
-    const isEditing = editingId === order.id;
     const opIds = operatorIdsForOrder(order.id);
     const delivered = deliveredByOrderId.get(order.id);
 
     return (
       <TableRow key={order.id}>
         <TableCell className="font-heading text-sm whitespace-nowrap">
-          {isEditing ? (
-            <Input value={draft.orderNumber ?? ''} onChange={e => setDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
-          ) : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
+          <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />
         </TableCell>
-        <TableCell className="text-xs whitespace-nowrap">
-          {isEditing ? (
-            <Input type="date" value={draft.orderDate ?? ''} onChange={e => setDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
-          ) : formatDateFR(order.orderDate)}
+        <TableCell className="text-xs whitespace-nowrap">{formatDateFR(order.orderDate)}</TableCell>
+        <TableCell className="text-sm whitespace-nowrap">{clientName}</TableCell>
+        <TableCell className="text-sm" style={{ minWidth: 200 }}>
+          <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />
         </TableCell>
+        <TableCell className="text-sm text-center">{order.quantity}</TableCell>
+        <TableCell><PriorityBadge priority={order.priority} className="" /></TableCell>
         <TableCell className="text-sm whitespace-nowrap">
-          {isEditing ? (
-            <Select value={draft.clientId ?? ''} onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}>
-              <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          ) : clientName}
+          {order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—'}
         </TableCell>
-              <TableCell className="text-sm" style={{ minWidth: 200 }}>
-          {isEditing ? (
-            <Input value={draft.designation ?? ''} onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-          ) : <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />}
-        </TableCell>
-        <TableCell className="text-sm text-center">
-          {isEditing ? (
-            <Input type="number" value={draft.quantity ?? 0} onChange={e => setDraft(d => ({ ...d, quantity: Number(e.target.value) }))} className="h-8 w-20" />
-          ) : order.quantity}
-        </TableCell>
-        <TableCell>
-          {isEditing ? (
-            <Select value={draft.priority ?? ''} onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}>
-              <SelectTrigger className="h-8 w-24"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {priorityOptions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          ) : <PriorityBadge priority={order.priority} className="" />}
-        </TableCell>
-        <TableCell className="text-sm whitespace-nowrap">
-          {isEditing ? (
-            <Input type="date" value={draft.deliveryDeadline ?? ''} onChange={e => setDraft(d => ({ ...d, deliveryDeadline: e.target.value }))} className="h-8 w-36" />
-          ) : (order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—')}
-        </TableCell>
-        <TableCell className="text-sm whitespace-nowrap">
-          {isEditing ? (
-            <Input value={draft.clientRepresentative ?? ''} onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))} className="h-8 w-36" />
-          ) : (order.clientRepresentative || '—')}
-        </TableCell>
+        <TableCell className="text-sm whitespace-nowrap">{order.clientRepresentative || '—'}</TableCell>
         <TableCell className="text-xs whitespace-nowrap">
           <span className="text-muted-foreground">{statusLabel}</span>
           <br />
           <span className="font-medium">{deliveryDateOrProgress}</span>
         </TableCell>
         <TableCell className="text-xs whitespace-nowrap">
-          {isEditing && delivered ? (
-            <Select value={draftPrice ?? priceStatus} onValueChange={v => setDraftPrice(v as SalePriceStatus)}>
-              <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PRICE_BUTTONS.map(p => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          ) : delivered ? (
+          {delivered ? (
             <span className="font-medium">{PRICE_LABELS[priceStatus]}</span>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -481,38 +369,12 @@ const PendingInvoicingPage: React.FC = () => {
         <TableCell className="text-xs max-w-40 truncate" title={rawMaterialsForOrder(order.id)}>
           {rawMaterialsForOrder(order.id)}
         </TableCell>
-        <TableCell className="text-center">
-          <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
-        </TableCell>
-        <TableCell className="text-center whitespace-nowrap">
-          <div className="flex items-center justify-center gap-1">
-            {isEditing ? (
-              <>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => saveEdit(order, delivered?.id)} title="Enregistrer">
-                  <Check className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
-                  <X className="w-4 h-4" />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(order, priceStatus)} title="Modifier">
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(order)} title="Supprimer">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        </TableCell>
       </TableRow>
     );
   };
 
   return (
-          <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
       <div className="flex-none bg-background pb-3">
         <PageHeader
           title="طلبيات في انتظار الإنجاز و الفوترة"
@@ -526,7 +388,6 @@ const PendingInvoicingPage: React.FC = () => {
 
         {/* Filter buttons — cross-filter (Delivery × Price) */}
         <div className="mt-3 space-y-2">
-          {/* Delivery row */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground min-w-20">تسليم:</span>
             <Button
@@ -552,7 +413,6 @@ const PendingInvoicingPage: React.FC = () => {
               );
             })}
           </div>
-          {/* Price row */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted-foreground min-w-20">ثمن البيع:</span>
             <Button
@@ -581,8 +441,8 @@ const PendingInvoicingPage: React.FC = () => {
         </div>
       </div>
 
-     <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as 'fabrication' | 'prestation')} dir="rtl" className="flex-none mb-2 w-full">
-  <TabsList className="justify-start">
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as 'fabrication' | 'prestation')} dir="rtl" className="flex-none mb-2 w-full">
+        <TabsList className="justify-start">
           {(['fabrication','prestation'] as const).map(c => (
             <TabsTrigger key={c} value={c}>
               {ORDER_CATEGORY_LABEL[c]}
@@ -632,8 +492,6 @@ const PendingInvoicingPage: React.FC = () => {
               <TableHead className="text-xs font-semibold whitespace-nowrap">معالجة حرارية</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">مناولة</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">المواد الأولية المستعملة</TableHead>
-              <TableHead className="text-xs font-semibold whitespace-nowrap text-center">إعادة إدماج</TableHead>
-              <TableHead className="text-xs font-semibold whitespace-nowrap text-center">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -667,27 +525,7 @@ const PendingInvoicingPage: React.FC = () => {
           </TableBody>
         </table>
       </div>
-
-      <ConfirmDialog
-        open={confirmState.open}
-        title={confirmState.title}
-        description={confirmState.description}
-        variant={confirmState.variant}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
-
-      <ConfirmDialog
-        open={!!reint.pending}
-        title="إعادة إدماج الطلبية"
-        description="La commande sera réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). La date de livraison sera supprimée si la commande n'a pas encore été facturée. Tout numéro de facture existant reste intact pour préserver l'intégrité comptable."
-        onConfirm={reint.confirmReintegrate}
-        onCancel={reint.cancelReintegrate}
-        confirmLabel="Oui, réintégrer"
-        cancelLabel="Annuler"
-      />
     </div>
-
   );
 };
 
