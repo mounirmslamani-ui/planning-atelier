@@ -3,13 +3,12 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
-import { Download, Plus, Minus, GripVertical, Pencil, CalendarCheck, ArrowUpDown, Check, Undo2, Redo2, Unlock, LogIn, LogOut, X, MoveVertical } from 'lucide-react';
-import { WarningTriangleIcon, YellowLockIcon } from '@/components/icons/StatusIcons';
+import { Download, Plus, Minus, GripVertical, ArrowUpDown, Undo2, Redo2, LogIn, LogOut, X, MoveVertical } from 'lucide-react';
+import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
@@ -21,11 +20,9 @@ import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHead
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import { useConfirm } from '@/hooks/use-confirm';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
-import DatePromptDialog from '@/components/DatePromptDialog';
 import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
-import { dbUpdateOrder, dbUpdateStep } from '@/lib/supabase-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
@@ -342,9 +339,6 @@ const PlanningTableauPage: React.FC = () => {
     return saved ? parseInt(saved, 10) || 5 : 5;
   });
   const [numDaysInput, setNumDaysInput] = useState(String(numDays));
-  const [planningOrderId, setPlanningOrderId] = useState<string | null>(null);
-  const [editingRowId, setEditingRowId] = useState<string | null>(null);
-  const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({});
   const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
   // Pn per step: position dans le planning propre à chaque opérateur (persisté en DB)
   const [planningOrderMap, setPlanningOrderMap] = useState<Record<string, number>>({});
@@ -391,7 +385,7 @@ const PlanningTableauPage: React.FC = () => {
     }
   }, []);
 
-  // ─── DRAFT STEPS: local layer that defers DB writes until "Valider" ───
+  // ─── DRAFT STEPS: local layer that defers DB writes until «Valider» ───
   const [draftSteps, setDraftSteps] = useState<ProductionStep[]>(steps);
   const draftInitialized = useRef(false);
   const [forcedPhaseAmontWarnings, setForcedPhaseAmontWarnings] = useState<Record<string, boolean>>({});
@@ -843,140 +837,12 @@ const PlanningTableauPage: React.FC = () => {
 
   // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
-
-  // ─── Inline edit helpers ───
-  const getStepInlineValue = (step: ProductionStep, field: string) => {
-    return inlineEdits[step.id]?.[field] ?? (step as any)[field];
-  };
-  const setStepInlineValue = (stepId: string, field: string, value: any) => {
-    setInlineEdits(prev => ({ ...prev, [stepId]: { ...prev[stepId], [field]: value } }));
-  };
-
-  const saveInlineEdits = (stepId: string) => {
-    const changes = inlineEdits[stepId];
-    const step = draftSteps.find(s => s.id === stepId);
-    if (step && changes && Object.keys(changes).length > 0) {
-      const updated = { ...step };
-      if (changes.startDate !== undefined) updated.startDate = changes.startDate;
-      if (changes.operationId !== undefined) updated.operationId = changes.operationId;
-      if (changes.estimatedDuration !== undefined) updated.estimatedDuration = changes.estimatedDuration;
-      // Status updates (Étude/Matière/Outillage) are now handled directly by ResourceStatusPill
-      const nextDraftSteps = draftSteps.map(s => s.id === stepId ? updated : s);
-      setDraftSteps(nextDraftSteps);
-      commitPlanningHistory(nextDraftSteps, draftOrders, forcedPhaseAmontWarnings, false);
-      // Persist instantly to DB
-      updateStep(updated);
-    }
-    setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
-    setEditingRowId(null);
-  };
-
-  const cancelInlineEdits = (stepId: string) => {
-    setInlineEdits(prev => { const n = { ...prev }; delete n[stepId]; return n; });
-    setEditingRowId(null);
-  };
-
   // Compute blocked step IDs (violet) — propagates to all successor steps of the same order
   const blockedStepIds = useMemo(
     () => computeBlockedStepIds(draftSteps, draftOrders),
     [draftSteps, draftOrders]
   );
   const isStepBlocked = (step: ProductionStep): boolean => blockedStepIds.has(step.id);
-
-  // ─── Status update for Étude / Matière / Outillage via ResourceStatusPill ───
-  const [statusDatePrompt, setStatusDatePrompt] = useState<{
-    open: boolean;
-    stepId: string;
-    field: 'study' | 'material' | 'tooling';
-    nextStatus: ResourceStatus;
-  } | null>(null);
-  const [pendingMaterialStatus, setPendingMaterialStatus] = useState<{ stepId: string; nextStatus: ResourceStatus } | null>(null);
-  const [materialConfirmOpen, setMaterialConfirmOpen] = useState(false);
-  const [materialDatePromptOpen, setMaterialDatePromptOpen] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
-
-  const applyStepStatus = useCallback(async (stepId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus, deadline?: string, receivedDate?: string) => {
-    const sourceStep = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
-    if (!sourceStep) return false;
-
-    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
-    const boolKey = field === 'study' ? 'studyReady' : field === 'material' ? 'materialAvailable' : 'toolingAvailable';
-    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    const isAvailable = status === 'disponible';
-
-    const updatedDraftSteps = draftSteps.map(s => {
-      if (s.orderId !== sourceStep.orderId || s.operationId === absenceOperationId) return s;
-      const updated = { ...s };
-      if (field === 'study') {
-        updated.studyStatus = status;
-        updated.studyReady = status === 'disponible';
-        if (status === 'partiel' || status === 'non-disponible') {
-          if (deadline) updated.studyDeadline = deadline;
-        } else {
-          updated.studyDeadline = undefined;
-        }
-      } else if (field === 'material') {
-        updated.materialStatus = status;
-        updated.materialAvailable = status === 'disponible';
-        if (status === 'partiel' || status === 'non-disponible') {
-          if (deadline) updated.materialDeadline = deadline;
-        } else {
-          updated.materialDeadline = undefined;
-        }
-      } else {
-        updated.toolingStatus = status;
-        updated.toolingAvailable = status === 'disponible';
-        if (status === 'partiel' || status === 'non-disponible') {
-          if (deadline) updated.toolingDeadline = deadline;
-        } else {
-          updated.toolingDeadline = undefined;
-        }
-      }
-      return updated;
-    });
-
-    const updatedContextSteps = steps
-      .filter(s => s.orderId === sourceStep.orderId && s.operationId !== absenceOperationId)
-      .map(s => ({
-        ...s,
-        [statusKey]: status,
-        [boolKey]: isAvailable,
-        [deadlineKey]: (status === 'partiel' || status === 'non-disponible') ? deadline || undefined : undefined,
-      } as ProductionStep));
-
-    const order = draftOrders.find(o => o.id === sourceStep.orderId) || orders.find(o => o.id === sourceStep.orderId);
-    if (!order) return false;
-    const updatedOrder = {
-      ...order,
-      [statusKey]: status,
-      [boolKey]: isAvailable,
-      ...(field === 'material' ? { materialReceivedDate: isAvailable ? receivedDate : undefined } : {}),
-    } as Order;
-
-    const saved = await Promise.all([...updatedContextSteps.map(dbUpdateStep), dbUpdateOrder(updatedOrder)]);
-    if (saved.some(ok => !ok)) return false;
-
-    const nextDraftOrders = draftOrders.map(existingOrder => existingOrder.id === updatedOrder.id ? updatedOrder : existingOrder);
-    setDraftSteps(updatedDraftSteps);
-    setDraftOrders(nextDraftOrders);
-    commitPlanningHistory(updatedDraftSteps, nextDraftOrders, forcedPhaseAmontWarnings, true);
-    setOrderDirty(true);
-    updatedContextSteps.forEach(updateStep);
-    updateOrder(updatedOrder);
-    return true;
-  }, [draftSteps, steps, orders, absenceOperationId, updateStep, updateOrder, draftOrders, forcedPhaseAmontWarnings, commitPlanningHistory]);
-
-  const handleStatusChange = useCallback((stepId: string, field: 'study' | 'material' | 'tooling', next: ResourceStatus) => {
-    if (next === 'partiel' || next === 'non-disponible') {
-      setStatusDatePrompt({ open: true, stepId, field, nextStatus: next });
-    } else if (field === 'material' && next === 'disponible') {
-      setPendingMaterialStatus({ stepId, nextStatus: next });
-      setMaterialDatePromptOpen(false);
-      setMaterialConfirmOpen(true);
-    } else {
-      applyStepStatus(stepId, field, next);
-    }
-  }, [applyStepStatus]);
 
   // (Drag to Production Register is now integrated in handleDragStart)
 
@@ -1515,13 +1381,11 @@ if (nextRecord) {
                     <TableHead className="w-[30px] text-xs text-center" title="مواد أولية">مواد</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="أداة">عدة</TableHead>
                     <TableHead className="w-[30px] text-xs text-center" title="المرحلة السابقة">سابق</TableHead>
-                    <TableHead className="w-[100px] text-xs px-1">عمليات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTasks.map(({ step, order }, index) => {
                     const blocked = isStepBlocked(step);
-                    const isEditing = editingRowId === step.id;
                     const designBg = blocked ? BLOCKED_TABLE_BG_CLASS : getDesignationBg(order.priority);
                     const flowPos = getStepFlowPosition(step, draftSteps);
 
@@ -1542,7 +1406,7 @@ if (nextRecord) {
                       <ContextMenu key={step.id}>
                         <ContextMenuTrigger asChild>
                       <TableRow
-                        draggable={!isEditing && !hasActiveFilters}
+                        draggable={!hasActiveFilters}
                         onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
                         onDragOver={e => handleDragOver(e, group.operator.id, index)}
                         onDragLeave={() => setDragOverState(null)}
@@ -1575,34 +1439,13 @@ if (nextRecord) {
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          {isEditing ? (
-                            <Input type="date" className="h-7 text-xs w-[110px]"
-                              value={getStepInlineValue(step, 'startDate') || ''}
-                              onChange={e => setStepInlineValue(step.id, 'startDate', e.target.value)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className="text-xs">{formatDateFR(step.startDate)}</span>
-                          )}
+                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          {isEditing ? (
-                            <Input type="date" className="h-7 text-xs w-[110px]"
-                              value={getStepInlineValue(step, 'endDate') || ''}
-                              onChange={e => setStepInlineValue(step.id, 'endDate', e.target.value)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className="text-xs">{formatDateFR(step.endDate)}</span>
-                          )}
+                          <span className="text-xs">{formatDateFR(step.endDate)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center">
-                          {isEditing ? (
-                            <Input type="number" min={0} step={15} className="h-7 w-16 text-xs"
-                              value={getStepInlineValue(step, 'estimatedDuration') ?? step.estimatedDuration}
-                              onChange={e => setStepInlineValue(step.id, 'estimatedDuration', parseInt(e.target.value) || 0)}
-                              onClick={e => e.stopPropagation()} />
-                          ) : (
-                            <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
-                          )}
+                          <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-sm" />
@@ -1637,25 +1480,7 @@ if (nextRecord) {
                             {flowPos === 'last' && (
                               <LogOut className="w-3.5 h-3.5 text-[hsl(0,72%,51%)] shrink-0" />
                             )}
-                            {isEditing ? (
-                              <Select
-                                value={getStepInlineValue(step, 'operationId') || step.operationId}
-                                onValueChange={val => setStepInlineValue(step.id, 'operationId', val)}
-                              >
-                                <SelectTrigger className="h-7 text-xs w-full" onClick={e => e.stopPropagation()}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {operations
-                                    .filter(o => o.id !== absenceOperationId && o.category === 'operator')
-                                    .map(o => (
-                                      <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span className="text-xs">{getOperationName(step.operationId)}</span>
-                            )}
+                            <span className="text-xs">{getOperationName(step.operationId)}</span>
                           </div>
                         </TableCell>
                         {/* Observation */}
@@ -1685,29 +1510,29 @@ if (nextRecord) {
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{getStepProgressStatus(step, productionRecords)}</span>
                         </TableCell>
-                        {/* Étude */}
-                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                        {/* دراسة — lecture seule */}
+                        <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={studyStatus}
-                            onChange={(next) => handleStatusChange(step.id, 'study', next)}
                             deadline={step.studyDeadline}
+                            readOnly
                           />
                         </TableCell>
-                        {/* Matière */}
-                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                        {/* مواد أولية — lecture seule */}
+                        <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={matStatus}
-                            onChange={(next) => handleStatusChange(step.id, 'material', next)}
                             deadline={step.materialDeadline}
                             receivedDate={order.materialReceivedDate}
+                            readOnly
                           />
                         </TableCell>
-                        {/* Outillage */}
-                        <TableCell className="py-1.5 px-1 text-center" onClick={e => e.stopPropagation()}>
+                        {/* عدة — lecture seule */}
+                        <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={toolStatus}
-                            onChange={(next) => handleStatusChange(step.id, 'tooling', next)}
                             deadline={step.toolingDeadline}
+                            readOnly
                           />
                         </TableCell>
                         {/* Phase amont */}
@@ -1716,23 +1541,6 @@ if (nextRecord) {
                             <TooltipTrigger><span className="text-sm">{amontEmoji}</span></TooltipTrigger>
                             <TooltipContent>{phaseAmontLabel(amontStatus)}</TooltipContent>
                           </Tooltip></TooltipProvider>
-                        </TableCell>
-                        <TableCell className="px-1">
-                          <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setPlanningOrderId(order.id)} title="التعيينات">
-                              <CalendarCheck className="w-7 h-7" />
-                            </Button>
-                            {isEditing && (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => saveInlineEdits(step.id)} title="حفظ">
-                                  <span className="text-normal text-sm font-bold">✓</span>
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => cancelInlineEdits(step.id)} title="إلغاء">
-                                  <span className="text-destructive text-sm font-bold">✕</span>
-                                </Button>
-                              </>
-                            )}
-                          </div>
                         </TableCell>
 
                       </TableRow>
@@ -1755,13 +1563,6 @@ if (nextRecord) {
           );
         })}
       </div>
-
-      <OrderUnifiedSheet
-        orderId={planningOrderId}
-        open={!!planningOrderId}
-        onOpenChange={(open) => { if (!open) setPlanningOrderId(null); }}
-        initialTab="steps"
-      />
 
       {/* Chained prerequisite check dialogs */}
       <ConfirmDialog
@@ -1904,55 +1705,6 @@ if (nextRecord) {
 
       <ConfirmDialog open={confirmState.open} title={confirmState.title} description={confirmState.description} onConfirm={handleConfirm} onCancel={handleCancel} variant={confirmState.variant} />
 
-      {statusDatePrompt && (
-        <DatePromptDialog
-          open={statusDatePrompt.open}
-          label={
-            statusDatePrompt.field === 'study'
-              ? "Date prévue de finalisation de l'étude"
-              : statusDatePrompt.field === 'material'
-                ? 'Date prévue de disponibilité de la matière'
-                : "Date prévue de disponibilité de l'outillage"
-          }
-          onConfirm={async (date) => {
-            const saved = await applyStepStatus(statusDatePrompt.stepId, statusDatePrompt.field, statusDatePrompt.nextStatus, date);
-            if (saved) setStatusDatePrompt(null);
-          }}
-          onCancel={() => setStatusDatePrompt(null)}
-        />
-      )}
-
-      <ConfirmDialog
-        open={materialConfirmOpen}
-        title="هل تؤكد هذه العملية؟"
-        onConfirm={() => {
-          setMaterialConfirmOpen(false);
-          setMaterialDatePromptOpen(true);
-        }}
-        onCancel={() => {
-          setMaterialConfirmOpen(false);
-          setMaterialDatePromptOpen(false);
-          setPendingMaterialStatus(null);
-        }}
-      />
-
-      {pendingMaterialStatus && materialDatePromptOpen && (
-        <DatePromptDialog
-          open={materialDatePromptOpen}
-          label="تاريخ استلام المواد الأولية"
-          defaultDate={orders.find(o => o.id === (draftSteps.find(s => s.id === pendingMaterialStatus.stepId) || steps.find(s => s.id === pendingMaterialStatus.stepId))?.orderId)?.materialReceivedDate || today}
-          onConfirm={async (date) => {
-            const saved = await applyStepStatus(pendingMaterialStatus.stepId, 'material', pendingMaterialStatus.nextStatus, undefined, date);
-            if (!saved) return;
-            setMaterialDatePromptOpen(false);
-            setPendingMaterialStatus(null);
-          }}
-          onCancel={() => {
-            setMaterialDatePromptOpen(false);
-            setPendingMaterialStatus(null);
-          }}
-        />
-      )}
       {/* Déplacement par Pn — sélection multiple */}
       <Dialog open={movePnDialogOpen} onOpenChange={setMovePnDialogOpen}>
         <DialogContent>
