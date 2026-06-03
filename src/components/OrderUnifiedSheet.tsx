@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer, RotateCcw, FileText } from 'lucide-react';
+import { Printer, RotateCcw, FileText, Ban, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
 
@@ -17,6 +17,9 @@ import PriorityBadge from '@/components/orders/PriorityBadge';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
+import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
+import { useCancelOrder } from '@/hooks/useCancelOrder';
+import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority } from '@/types/planning';
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 
@@ -42,7 +45,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
     orders, clients, steps,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
     updateOrder, addOrder, addQCEntry, updateDeliveredOrder, addDeliveredOrder,
-    absenceOperationId,
+    absenceOperationId, deleteOrder,
   } = usePlanning();
 
   const existingOrder = useMemo(() => orders.find(o => o.id === orderId) || null, [orders, orderId]);
@@ -53,6 +56,9 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
   const [printOpen, setPrintOpen] = useState(false);
 
   const reintegration = useReintegrateOrder();
+  const cancelOrder = useCancelOrder();
+  const [cancelTarget, setCancelTarget] = useState<boolean>(false);
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   React.useEffect(() => {
     if (open) {
@@ -399,11 +405,59 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                     </Button>
                   </div>
                 )}
+
+                {!createMode && (
+                  <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
+                    <Button
+                      variant="outline"
+                      className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                      onClick={() => setCancelTarget(true)}
+                    >
+                      <Ban className="w-4 h-4 ms-1" />
+                      إلغاء الطلبية
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() =>
+                        confirm(
+                          'هل أنت متأكد من محو هذه الطلبية نهائياً؟',
+                          () => { deleteOrder(order.id); onOpenChange(false); },
+                          { variant: 'destructive' }
+                        )
+                      }
+                    >
+                      <Trash2 className="w-4 h-4 ms-1" />
+                      محو الطلبية
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </div>
           </Tabs>
         </DialogContent>
       </Dialog>
+
+      {/* Cancel / Delete confirmation dialogs */}
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+      />
+
+      {cancelTarget && (
+        <CancelOrderDialog
+          open={cancelTarget}
+          onClose={() => setCancelTarget(false)}
+          orderLabel={order.orderNumber}
+          onConfirm={async (data) => {
+            const ok = await cancelOrder(order.id, data);
+            if (ok) { setCancelTarget(false); onOpenChange(false); }
+          }}
+        />
+      )}
 
       {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
       <PlanningEditorDialogs editor={editor} order={order} />
