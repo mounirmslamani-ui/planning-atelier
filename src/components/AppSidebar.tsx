@@ -171,7 +171,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
         <button
           type="button"
           onClick={() => setReportOpen(true)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-accent text-black hover:opacity-90 transition-opacity"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-accent !text-black hover:opacity-90 transition-opacity"
           title="تقرير وضعية الطلبية"
         >
           <FileText className="w-4 h-4" />
@@ -181,7 +181,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
           type="button"
           onClick={handleGlobalExport}
           disabled={exporting}
-          className="w-full flex items-center justify-center gap-2 px-className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-sidebar-primary text-black hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+         className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-sidebar-primary !text-black hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           title="تنزيل أرشيف كامل لجميع الجداول"
         >
           <DownloadCloud className="w-4 h-4" />
