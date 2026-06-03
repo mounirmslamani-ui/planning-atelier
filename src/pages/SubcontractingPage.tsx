@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { usePlanning } from '@/context/PlanningContext';
 import PageHeader from '@/components/PageHeader';
@@ -8,9 +7,6 @@ import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHead
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import DesignationCell from '@/components/DesignationCell';
 import { formatDateFR } from '@/lib/utils';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import DatePromptDialog from '@/components/DatePromptDialog';
-import { dbUpdateStep } from '@/lib/supabase-data';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
@@ -18,14 +14,11 @@ import { OrderNumberLink } from '@/context/OrderSheetContext';
 type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
 const SubcontractingPage: React.FC = () => {
-  const { orders, clients, steps, operations, subcontractors, updateStep, absenceOrderId } = usePlanning();
+  const { orders, clients, steps, operations, subcontractors, absenceOrderId } = usePlanning();
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [activeSubTab, setActiveSubTab] = useState<string>('__all__');
-  const [pendingDone, setPendingDone] = useState<{ stepIds: string[] } | null>(null);
-  const [datePromptOpen, setDatePromptOpen] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
 
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
   const getSubcontractorName = useCallback((id: string | undefined) => {
@@ -33,7 +26,6 @@ const SubcontractingPage: React.FC = () => {
     return subcontractors.find(s => s.id === id)?.companyName || '—';
   }, [subcontractors]);
 
-  // Find all subcontractor steps (operations with category 'subcontractor')
   const subcontractorOpIds = useMemo(() => {
     return new Set(operations.filter(op => op.category === 'subcontractor').map(op => op.id));
   }, [operations]);
@@ -57,7 +49,6 @@ const SubcontractingPage: React.FC = () => {
         }
         if (!(s.subcontractingDone ?? false)) existing.done = false;
         existing.stepIds.push(s.id);
-        // Use first non-empty subcontractorId
         if (!existing.subcontractorId && s.subcontractorId) {
           existing.subcontractorId = s.subcontractorId;
         }
@@ -70,7 +61,6 @@ const SubcontractingPage: React.FC = () => {
       return { order, ...info };
     }).filter(Boolean) as { order: typeof orders[0]; deadline: string; done: boolean; stepIds: string[]; subcontractorId: string | undefined }[];
 
-    // Sort by displayOrder (Cn) from "الطلبيات الجارية"
     rows.sort((a, b) => (a.order.displayOrder ?? 9999) - (b.order.displayOrder ?? 9999));
     return rows;
   }, [steps, orders, subcontractorOpIds, absenceOrderId]);
@@ -124,7 +114,6 @@ const SubcontractingPage: React.FC = () => {
     return result;
   }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab]);
 
-  // Tabs: derived from all non-done rows (before tab filter), distinct subcontractors with counts
   const subTabs = useMemo(() => {
     const counts = new Map<string, number>();
     subcontractingRows.filter(r => !r.done).forEach(r => {
@@ -179,27 +168,7 @@ const SubcontractingPage: React.FC = () => {
       'مناول': getSubcontractorName(row.subcontractorId),
       'أجل التسليم الموعود': formatDateFR(row.order.plannedDeadline) || '—',
       'أجل انتهاء المناولة': formatDateFR(row.deadline) || '—',
-      Fait: row.done ? 'Oui' : 'Non',
-    })), [8, 20, 14, 24, 45, 10, 12, 24, 16, 22, 10]);
-  };
-
-  const applyDone = async (stepIds: string[], done: boolean, receivedDate?: string) => {
-    const updatedSteps = stepIds.map(id => {
-      const step = steps.find(s => s.id === id);
-      return step ? { ...step, subcontractingDone: done, subcontractingReceivedDate: done ? receivedDate : undefined } : null;
-    }).filter(Boolean) as typeof steps;
-
-    const saved = await Promise.all(updatedSteps.map(dbUpdateStep));
-    if (saved.some(ok => !ok)) return;
-    updatedSteps.forEach(updateStep);
-  };
-
-  const toggleDone = (stepIds: string[], currentDone: boolean) => {
-    if (currentDone) {
-      applyDone(stepIds, false);
-      return;
-    }
-    setPendingDone({ stepIds });
+    })), [8, 20, 14, 24, 45, 10, 12, 24, 16, 22]);
   };
 
   return (
@@ -245,19 +214,18 @@ const SubcontractingPage: React.FC = () => {
               <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.plannedDeadline} /></TableHead>
               <TableHead><ColumnHeader label="مناول" columnKey="subcontractor" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractor || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractor} /></TableHead>
               <TableHead><ColumnHeader label="أجل انتهاء المناولة" columnKey="subcontractingDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.subcontractingDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.subcontractingDeadline} /></TableHead>
-              <TableHead className="text-center w-16">تم</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   Aucune sous-traitance planifiée ✓
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRows.map((row, idx) => (
-                <TableRow key={row.order.id} className={row.done ? 'opacity-60' : ''}>
+              filteredRows.map((row) => (
+                <TableRow key={row.order.id}>
                   <TableCell className="text-center text-muted-foreground font-mono text-xs">{row.order.displayOrder ?? '—'}</TableCell>
                   <TableCell className="text-sm font-medium"><OrderNumberLink orderId={row.order.id} orderNumber={row.order.orderNumber} /></TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.order.orderDate) || '—'}</TableCell>
@@ -270,43 +238,12 @@ const SubcontractingPage: React.FC = () => {
                   <TableCell className="text-sm">{formatDateFR(row.order.plannedDeadline) || '—'}</TableCell>
                   <TableCell className="text-sm font-medium">{getSubcontractorName(row.subcontractorId)}</TableCell>
                   <TableCell className="text-sm">{formatDateFR(row.deadline) || '—'}</TableCell>
-                  <TableCell className="text-center">
-                    <Checkbox
-                      checked={row.done}
-                      onCheckedChange={() => toggleDone(row.stepIds, row.done)}
-                      title={row.done ? `Reçu le ${formatDateFR(steps.find(s => row.stepIds.includes(s.id))?.subcontractingReceivedDate) || '—'}` : 'Sous-traitance effectuée'}
-                    />
-                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </table>
       </div>
-
-      <ConfirmDialog
-        open={!!pendingDone && !datePromptOpen}
-        title="هل تؤكد هذه العملية؟"
-        onConfirm={() => setDatePromptOpen(true)}
-        onCancel={() => setPendingDone(null)}
-      />
-
-      {pendingDone && datePromptOpen && (
-        <DatePromptDialog
-          open={datePromptOpen}
-          label="تاريخ استلام المناولة"
-          defaultDate={today}
-          onConfirm={(date) => {
-            applyDone(pendingDone.stepIds, true, date);
-            setDatePromptOpen(false);
-            setPendingDone(null);
-          }}
-          onCancel={() => {
-            setDatePromptOpen(false);
-            setPendingDone(null);
-          }}
-        />
-      )}
     </div>
   );
 };
