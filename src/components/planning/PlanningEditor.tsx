@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save, Pencil } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { OperationToSchedule } from '@/lib/scheduler';
@@ -67,6 +68,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
+  const [editDurationPrompt, setEditDurationPrompt] = useState<{ rowId: string } | null>(null);
   const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
 
   const initializedRef = useRef(false);
@@ -483,10 +485,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     forcePrompt, setForcePrompt,
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
+    editDurationPrompt, setEditDurationPrompt,
     savePrompt, setSavePrompt,
-    getRowProgressStatus, getRowActualDuration,
+    getRowProgressStatus, getRowActualDuration, getRowRecords,
     operations, operators, subcontractors, absenceOperationId,
-    addProductionRecord, clientName,
+    addProductionRecord, updateProductionRecord, clientName,
   };
 }
 
@@ -619,17 +622,28 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
                     </div>
                   </td>
                   <td className="p-1.5">
-                    <button
-                      type="button"
-                      className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded"
-                      onClick={() => {
-                        const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
-                        e.setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
-                      }}
-                      disabled={e.isLocked}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </button>
+                    <div className="flex items-center justify-center gap-0.5">
+                      <button
+                        type="button"
+                        className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        onClick={() => e.setEditDurationPrompt({ rowId: row.id })}
+                        disabled={!row.stepId || e.getRowRecords(row).length === 0 || row.assignType === 'subcontractor'}
+                        title="تعديل مدة إنجاز الطلبية"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded"
+                        onClick={() => {
+                          const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
+                          e.setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
+                        }}
+                        disabled={e.isLocked}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -866,6 +880,157 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
           onCancel={() => e.setRemovePrompt(null)}
         />
       )}
+
+      {e.editDurationPrompt && (() => {
+        const row = e.rows.find(r => r.id === e.editDurationPrompt!.rowId);
+        if (!row) return null;
+        const records = e.getRowRecords(row);
+        return (
+          <EditStepDurationDialog
+            open={!!e.editDurationPrompt}
+            records={records}
+            operators={e.operators}
+            operations={e.operations}
+            onClose={() => e.setEditDurationPrompt(null)}
+            onSave={(updates) => {
+              updates.forEach(u => e.updateProductionRecord(u));
+              e.setEditDurationPrompt(null);
+              toast.success('تم تحديث المدد');
+            }}
+          />
+        );
+      })()}
     </>
+  );
+};
+
+// ───────── Edit step duration dialog ─────────
+const parseHHMMStr = (s: string): number | null => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((s || '').trim());
+  if (!m) return null;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+};
+const fmtHHMM = (mins: number): string => {
+  const h = Math.floor(Math.max(0, mins) / 60);
+  const m = Math.max(0, mins) % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
+
+interface EditStepDurationDialogProps {
+  open: boolean;
+  records: ProductionRecord[];
+  operators: { id: string; name: string }[];
+  operations: { id: string; name: string }[];
+  onClose: () => void;
+  onSave: (updates: ProductionRecord[]) => void;
+}
+
+const EditStepDurationDialog: React.FC<EditStepDurationDialogProps> = ({ open, records, operators, operations, onClose, onSave }) => {
+  type RowState = { id: string; startTime: string; endTime: string; pauseHHMM: string };
+  const [draft, setDraft] = useState<RowState[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    setDraft(records.map(r => ({
+      id: r.id,
+      startTime: r.startTime ?? '',
+      endTime: r.endTime ?? '',
+      pauseHHMM: fmtHHMM(r.pauseMinutes ?? 0),
+    })));
+  }, [open, records]);
+
+  const computeDur = (d: RowState): number => {
+    const s = d.startTime ? parseHHMMStr(d.startTime) : null;
+    const e = d.endTime ? parseHHMMStr(d.endTime) : null;
+    const p = parseHHMMStr(d.pauseHHMM) ?? 0;
+    if (s === null || e === null || e <= s) return 0;
+    return Math.max(0, e - s - p);
+  };
+
+  const totalDur = useMemo(() => draft.reduce((sum, d) => sum + computeDur(d), 0), [draft]);
+
+  const update = (id: string, field: keyof RowState, value: string) => {
+    setDraft(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d));
+  };
+
+  const handleConfirm = () => {
+    const updates: ProductionRecord[] = [];
+    draft.forEach(d => {
+      const original = records.find(r => r.id === d.id);
+      if (!original) return;
+      const dur = computeDur(d);
+      if (dur <= 0) return;
+      updates.push({
+        ...original,
+        startTime: d.startTime || undefined,
+        endTime: d.endTime || undefined,
+        pauseMinutes: parseHHMMStr(d.pauseHHMM) || undefined,
+        actualDuration: dur,
+      });
+    });
+    onSave(updates);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-3xl" dir="rtl">
+        <DialogHeader>
+          <DialogTitle>تعديل مدة إنجاز الطلبية</DialogTitle>
+        </DialogHeader>
+
+        {draft.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">لا توجد تسجيلات إنجاز لهذه المرحلة.</p>
+        ) : (
+          <div className="overflow-auto max-h-[60vh]">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40 sticky top-0">
+                <tr>
+                  <th className="p-1.5 text-right">العامل</th>
+                  <th className="p-1.5 text-right">تاريخ الأشغال</th>
+                  <th className="p-1.5 text-center">ساعة البداية</th>
+                  <th className="p-1.5 text-center">ساعة النهاية</th>
+                  <th className="p-1.5 text-center">الوقت المستقطع</th>
+                  <th className="p-1.5 text-center">المدة الفعلية</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draft.map(d => {
+                  const rec = records.find(r => r.id === d.id)!;
+                  const opName = operators.find(o => o.id === rec.operatorId)?.name ?? '—';
+                  const dur = computeDur(d);
+                  return (
+                    <tr key={d.id} className="border-t">
+                      <td className="p-1.5">{opName}</td>
+                      <td className="p-1.5 whitespace-nowrap">{rec.workDate ?? rec.validatedAt.slice(0, 10)}</td>
+                      <td className="p-1.5">
+                        <Input type="time" value={d.startTime} onChange={ev => update(d.id, 'startTime', ev.target.value)} className="h-8 text-xs font-mono" />
+                      </td>
+                      <td className="p-1.5">
+                        <Input type="time" value={d.endTime} onChange={ev => update(d.id, 'endTime', ev.target.value)} className="h-8 text-xs font-mono" />
+                      </td>
+                      <td className="p-1.5">
+                        <Input value={d.pauseHHMM} onChange={ev => update(d.id, 'pauseHHMM', ev.target.value)} placeholder="00:00" className="h-8 text-xs font-mono text-center" />
+                      </td>
+                      <td className="p-1.5 text-center font-mono font-medium">{fmtHHMM(dur)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t bg-muted/30">
+                  <td colSpan={5} className="p-1.5 text-right font-semibold">المدة الإجمالية</td>
+                  <td className="p-1.5 text-center font-mono font-semibold">{fmtHHMM(totalDur)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>إلغاء</Button>
+          <Button size="sm" onClick={handleConfirm} disabled={draft.length === 0}>تأكيد</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
