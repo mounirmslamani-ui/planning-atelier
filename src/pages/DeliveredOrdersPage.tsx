@@ -13,13 +13,9 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { ORDER_CATEGORY_LABEL } from '@/types/planning';
-import type { DeliveredOrder, SalePriceStatus, Order, OrderCategory } from '@/types/planning';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, Trash2, Pencil, Check, X } from 'lucide-react';
+import type { DeliveredOrder, SalePriceStatus, OrderCategory } from '@/types/planning';
+import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
-import { useConfirm } from '@/hooks/use-confirm';
-import ReintegrateButton from '@/components/orders/ReintegrateButton';
-import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -37,17 +33,13 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
 const PRICE_ORDER: SalePriceStatus[] = ['gratuit', 'non-calcule', 'non-valide', 'valide'];
 
 const DeliveredOrdersPage: React.FC = () => {
-  const { deliveredOrders, orders, clients, updateDeliveredOrder, deleteDeliveredOrder, deleteOrder, updateOrder } = usePlanning();
-  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
-  const reint = useReintegrateOrder();
+  const { deliveredOrders, orders, clients, updateDeliveredOrder } = usePlanning();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
   const [pendingPrice, setPendingPrice] = useState<{ entry: DeliveredOrder; next: SalePriceStatus } | null>(null);
   const [observationDrafts, setObservationDrafts] = useState<Record<string, string>>({});
   const [invoiceDialog, setInvoiceDialog] = useState<{ entry: DeliveredOrder; value: string } | null>(null);
-  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<Partial<Order>>({});
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
   const visibleDelivered = React.useMemo(
@@ -61,21 +53,6 @@ const DeliveredOrdersPage: React.FC = () => {
   const catCount = (cat: OrderCategory) =>
     visibleDelivered.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === cat).length;
 
-  const startEdit = (order: Order) => {
-    setEditingOrderId(order.id);
-    setEditDraft({
-      orderNumber: order.orderNumber,
-      orderDate: order.orderDate,
-      clientId: order.clientId,
-      designation: order.designation,
-      quantity: order.quantity,
-    });
-  };
-  const cancelEdit = () => { setEditingOrderId(null); setEditDraft({}); };
-  const saveEdit = (order: Order) => {
-    updateOrder({ ...order, ...editDraft } as Order);
-    setEditingOrderId(null); setEditDraft({});
-  };
 
   const accessors = {
     priority: (d: DeliveredOrder) => getOrder(d.orderId)?.priority || '',
@@ -168,8 +145,6 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
-              <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إعادة إدماج</TableHead>
-              <TableHead className="text-center text-xs font-semibold whitespace-nowrap">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -195,63 +170,29 @@ const DeliveredOrdersPage: React.FC = () => {
                       </button>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{entry.observation || '—'}</TableCell>
-                    <TableCell className="text-center">—</TableCell>
-                    <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => confirm(
-                          'Cette ligne est orpheline (commande source supprimée). Supprimer définitivement cette entrée livrée ?',
-                          () => {
-                            deleteDeliveredOrder(entry.id);
-                            toast.success('Entrée orpheline supprimée');
-                          },
-                          { variant: 'destructive' }
-                        )}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 );
               }
               const obsValue = observationDrafts[entry.id] !== undefined
                 ? observationDrafts[entry.id]
                 : (entry.observation || '');
-              const isEditing = editingOrderId === order.id;
               return (
                 <TableRow key={entry.id}>
                   <TableCell><PriorityBadge priority={order.priority} className="" /></TableCell>
                   <TableCell className="font-heading text-sm">
-                    {isEditing
-                      ? <Input value={editDraft.orderNumber ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderNumber: e.target.value }))} className="h-8 w-28" />
-                      : <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />}
+                    <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />
                   </TableCell>
                   <TableCell className="text-xs">
-                    {isEditing
-                      ? <Input type="date" value={editDraft.orderDate ?? ''} onChange={e => setEditDraft(d => ({ ...d, orderDate: e.target.value }))} className="h-8 w-36" />
-                      : formatDateFR(order.orderDate)}
+                    {formatDateFR(order.orderDate)}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {isEditing ? (
-                      <Select value={editDraft.clientId ?? ''} onValueChange={v => setEditDraft(d => ({ ...d, clientId: v }))}>
-                        <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    ) : getClientName(order.clientId)}
+                    {getClientName(order.clientId)}
                   </TableCell>
                  <TableCell className="text-sm" style={{ minWidth: 200 }}>
-                    {isEditing
-                      ? <Input value={editDraft.designation ?? ''} onChange={e => setEditDraft(d => ({ ...d, designation: e.target.value }))} className="h-8 w-56" />
-                     : <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />}
+                     <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">
-                    {isEditing
-                      ? <Input type="number" value={editDraft.quantity ?? 0} onChange={e => setEditDraft(d => ({ ...d, quantity: Number(e.target.value) }))} className="h-8 w-20" />
-                      : order.quantity}
+                    {order.quantity}
                   </TableCell>
                   <TableCell className="text-sm">{formatDateFR(entry.deliveryDate)}</TableCell>
                   <TableCell>
@@ -299,50 +240,12 @@ const DeliveredOrdersPage: React.FC = () => {
                       className="h-8 text-xs min-w-48"
                     />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <ReintegrateButton onClick={() => reint.requestReintegrate(order.id)} />
-                  </TableCell>
-                  <TableCell className="text-center whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1">
-                      {isEditing ? (
-                        <>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => saveEdit(order)} title="Enregistrer">
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={cancelEdit} title="Annuler">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(order)} title="Modifier">
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => confirm(
-                              'Êtes-vous sûr de vouloir supprimer définitivement cette commande ? Elle sera retirée de tous les tableaux et de la base de données.',
-                              () => {
-                                deleteDeliveredOrder(entry.id);
-                                deleteOrder(entry.orderId);
-                                toast.success('Commande supprimée définitivement');
-                              },
-                              { variant: 'destructive' }
-                            )}
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
                 </TableRow>
               );
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
@@ -402,25 +305,6 @@ const DeliveredOrdersPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog
-        open={confirmState.open}
-        title={confirmState.title}
-        description={confirmState.description}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        variant={confirmState.variant}
-        confirmLabel="Supprimer"
-      />
-
-      <ConfirmDialog
-        open={!!reint.pending}
-        title="إعادة إدماج الطلبية"
-        description="La commande sera réinjectée dans 'الطلبيات الحالية' (P1 — Reprise/Retouche). Si une facture existe déjà, son numéro et sa date sont CONSERVÉS intacts pour préserver l'intégrité comptable. Sinon, l'enregistrement de livraison est supprimé."
-        onConfirm={reint.confirmReintegrate}
-        onCancel={reint.cancelReintegrate}
-        confirmLabel="Oui, réintégrer"
-        cancelLabel="Annuler"
-      />
     </div>
   );
 };
