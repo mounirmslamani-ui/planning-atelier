@@ -139,8 +139,7 @@ const DeliveryPage: React.FC = () => {
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deadline} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} allValues={allValuesByKey.controlDate} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} allValues={allValuesByKey.decision} /></TableHead>
-              <TableHead className="text-xs font-semibold">التسليم</TableHead>
-            </TableRow>
+             </TableRow>
           </TableHeader>
           <TableBody>
             {processed.map(entry => {
@@ -175,22 +174,12 @@ const DeliveryPage: React.FC = () => {
                       {entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية'}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <input
-                      type="date"
-                      className="h-8 w-36 text-xs rounded-md border border-input bg-background px-2 py-1"
-                      onChange={(e) => {
-                        const date = e.target.value;
-                        if (date) setPending({ entryId: entry.id, date });
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
+                 </TableRow>
               );
             })}
             {deliveryEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
                 </TableCell>
               </TableRow>
