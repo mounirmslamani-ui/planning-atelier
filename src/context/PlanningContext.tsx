@@ -569,9 +569,28 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setDeliveryEntries(prev => prev.filter(e => e.id !== id)); dbDeleteDelivery(id);
   }, [pushUndo]);
 
-  // Delivered Orders (archive)
+  // Delivered Orders (archive) — idempotent: never create a 2nd row for the same orderId.
+  // If one already exists, we MERGE (preserve invoice_number / sale_price_status if the
+  // incoming entry doesn't carry them) instead of inserting a duplicate.
   const addDeliveredOrder = useCallback((entry: DeliveredOrder) => {
-    pushUndo(); setDeliveredOrders(prev => [...prev, entry]); dbInsertDeliveredOrder(entry);
+    pushUndo();
+    setDeliveredOrders(prev => {
+      const existing = prev.find(d => d.orderId === entry.orderId);
+      if (existing) {
+        const merged: DeliveredOrder = {
+          ...existing,
+          deliveryDate: entry.deliveryDate || existing.deliveryDate,
+          salePriceStatus: entry.salePriceStatus ?? existing.salePriceStatus,
+          observation: entry.observation ?? existing.observation,
+          invoiceNumber: entry.invoiceNumber ?? existing.invoiceNumber,
+          invoiceDate: entry.invoiceDate ?? existing.invoiceDate,
+        };
+        dbUpdateDeliveredOrder(merged);
+        return prev.map(d => d.id === existing.id ? merged : d);
+      }
+      dbInsertDeliveredOrder(entry);
+      return [...prev, entry];
+    });
   }, [pushUndo]);
   const updateDeliveredOrder = useCallback((entry: DeliveredOrder) => {
     pushUndo(); setDeliveredOrders(prev => prev.map(d => d.id === entry.id ? entry : d)); dbUpdateDeliveredOrder(entry);
@@ -580,14 +599,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setDeliveredOrders(prev => prev.filter(d => d.id !== id)); dbDeleteDeliveredOrder(id);
   }, [pushUndo]);
 
-  // Cancelled Orders
+  // Cancelled Orders — idempotent: if a cancellation already exists for that orderId, no-op.
   const addCancelledOrder = useCallback(async (entry: CancelledOrder) => {
+    if (cancelledOrders.some(c => c.orderId === entry.orderId)) return true;
     pushUndo();
-    setCancelledOrders(prev => [...prev.filter(c => c.orderId !== entry.orderId), entry]);
+    setCancelledOrders(prev => [...prev, entry]);
     const ok = await dbInsertCancelledOrder(entry);
     if (!ok) setCancelledOrders(prev => prev.filter(c => c.id !== entry.id));
     return ok;
-  }, [pushUndo]);
+  }, [pushUndo, cancelledOrders]);
   const updateCancelledOrder = useCallback((entry: CancelledOrder) => {
     pushUndo();
     setCancelledOrders(prev => prev.map(c => c.id === entry.id ? entry : c));
