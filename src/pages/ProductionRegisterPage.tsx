@@ -230,54 +230,8 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
     })));
   };
 
-  const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
-    const dt = recordDisplayDate(rec);
-    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-    const hh = Math.floor(rec.actualDuration / 60);
-    const mm = rec.actualDuration % 60;
-    const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
-    const pM = (rec.pauseMinutes ?? 0) % 60;
-    setEditRecord({
-      id: rec.id,
-      workDate: dateStr,
-      startTime: rec.startTime ?? '',
-      endTime: rec.endTime ?? '',
-      pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
-      actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
-    });
-  }, []);
 
-  const parseHHMM = (s: string): number | null => {
-    const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
-    if (!m) return null;
-    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-  };
 
-  const saveEdit = useCallback(() => {
-    if (!editRecord) return;
-    const rec = productionRecords.find(r => r.id === editRecord.id);
-    if (!rec) return;
-
-    // Si début + fin saisies → recalcul de la durée réelle.
-    let dur = parseHHMM(editRecord.actualDuration) ?? 0;
-    const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
-    const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
-    const pauseMin = parseHHMM(editRecord.pauseHHMM) ?? 0;
-    if (startMin !== null && endMin !== null && endMin > startMin) {
-      dur = Math.max(0, endMin - startMin - pauseMin);
-    }
-    if (dur <= 0) return;
-
-    updateProductionRecord({
-      ...rec,
-      workDate: editRecord.workDate,
-      startTime: editRecord.startTime || undefined,
-      endTime: editRecord.endTime || undefined,
-      pauseMinutes: pauseMin || undefined,
-      actualDuration: dur,
-    });
-    setEditRecord(null);
-  }, [editRecord, productionRecords, updateProductionRecord]);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
