@@ -498,10 +498,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setProductionRecords(prev => prev.filter(r => r.id !== id)); dbDeleteRecord(id);
   }, [pushUndo]);
 
-  // QC Entry
+  // QC Entry — idempotent: skip if a QC entry already exists for that order,
+  // or if the order is already in delivery_entries / delivered_orders / cancelled_orders.
   const addQCEntry = useCallback((entry: QualityControlEntry) => {
+    if (qcEntries.some(e => e.orderId === entry.orderId)) return;
+    if (deliveryEntries.some(e => e.orderId === entry.orderId)) return;
+    if (deliveredOrders.some(e => e.orderId === entry.orderId)) return;
+    if (cancelledOrders.some(e => e.orderId === entry.orderId)) return;
     pushUndo(); setQCEntries(prev => [...prev, entry]); dbInsertQCEntry(entry);
-  }, [pushUndo]);
+  }, [pushUndo, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
   const updateQCEntry = useCallback((entry: QualityControlEntry) => {
     pushUndo(); setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)); dbUpdateQCEntry(entry);
   }, [pushUndo]);
