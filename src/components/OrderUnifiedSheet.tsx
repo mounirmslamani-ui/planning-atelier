@@ -107,8 +107,8 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
   const {
     orders, clients, steps,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
-    updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntry,
-    updateDeliveredOrder,
+updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntry,
+    updateDeliveredOrder, addDeliveredOrder, deleteDeliveryEntry,
     absenceOperationId, deleteOrder,
   } = usePlanning();
 
@@ -457,10 +457,35 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                         />
                       </div>
                     </div>
-                  ) : orderDelivery.length > 0 ? (
-                    <p className="text-sm border rounded-md p-3 bg-blue-500/5">
-                      الطلبية في قائمة الانتظار للتسليم (تاريخ التحريك: {formatDateFR(orderDelivery[0].controlDate)}).
-                    </p>
+                    ) : orderDelivery.length > 0 ? (
+                    <div className="border rounded-md p-3 bg-blue-500/5 flex flex-col gap-2">
+                      <p className="text-sm">الطلبية جاهزة للتسليم (تاريخ مراقبة الجودة: {formatDateFR(orderDelivery[0].controlDate)}).</p>
+                      <div className="flex items-end gap-3">
+                        <div>
+                          <Label className="text-xs">تاريخ التسليم</Label>
+                          <Input
+                            type="date"
+                            className="h-8 w-40 text-xs"
+                            onChange={e => {
+                              const date = e.target.value;
+                              if (!date) return;
+                              const entry = orderDelivery[0];
+                              addDeliveredOrder({
+                                id: crypto.randomUUID(),
+                                orderId: entry.orderId,
+                                deliveryDate: date,
+                                salePriceStatus: 'non-calcule',
+                                observation: undefined,
+                              });
+                              deleteDeliveryEntry(entry.id);
+                              toast.success('تم تسجيل تاريخ التسليم');
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+Et n'oublie pas d'appliquer aussi les 3 modifications sur DeliveryPage.tsx vues dans le message précédent (supprimer l'en-tête الت
                   ) : (
                     <p className="text-sm text-muted-foreground p-3 border rounded-md text-center">
                       لم يتم تسليم هذه الطلبية بعد.
