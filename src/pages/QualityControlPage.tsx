@@ -101,6 +101,7 @@ const QualityControlPage: React.FC = () => {
   };
   const activeQcEntries = qcEntries.filter(entry =>
     !deliveredOrders.some(d => d.orderId === entry.orderId)
+    && !deliveryEntries.some(d => d.orderId === entry.orderId)
   );
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(activeQcEntries, accessors);
 
