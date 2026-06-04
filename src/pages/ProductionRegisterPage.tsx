@@ -373,7 +373,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       المدة الفعلية <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-16 text-center">عمليات</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
