@@ -69,16 +69,6 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const [editRecord, setEditRecord] = useState<{
-    id: string;
-    workDate: string;
-    startTime: string;
-    endTime: string;
-    pauseHHMM: string;
-    actualDuration: string;
-  } | null>(null);
-
-  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   const tabRecords = useMemo(() =>
     validTab ? productionRecords.filter(r => r.operatorId === validTab) : [],
