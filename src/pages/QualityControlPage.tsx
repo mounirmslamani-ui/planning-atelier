@@ -175,8 +175,6 @@ const QualityControlPage: React.FC = () => {
               <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
               <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deadline} /></TableHead>
-              <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} allValues={allValuesByKey.controlDate} /></TableHead>
-              <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} allValues={allValuesByKey.decision} /></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -198,20 +196,12 @@ const QualityControlPage: React.FC = () => {
                     <PriorityBadge priority={order.priority} className="" />
                   </TableCell>
                   <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
-                  <TableCell className="text-sm">{formatDateFR(entry.controlDate)}</TableCell>
-                  <TableCell>
-                    {entry.decision ? (
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${decisionColors[entry.decision]}`}>
-                        {decisionLabels[entry.decision]}
-                      </span>
-                    ) : '—'}
-                  </TableCell>
                 </TableRow>
               );
             })}
             {qcEntries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Aucune commande en contrôle qualité.
                 </TableCell>
               </TableRow>
