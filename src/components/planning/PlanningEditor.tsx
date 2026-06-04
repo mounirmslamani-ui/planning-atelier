@@ -485,6 +485,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     forcePrompt, setForcePrompt,
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
+    editDurationPrompt, setEditDurationPrompt,
     savePrompt, setSavePrompt,
     getRowProgressStatus, getRowActualDuration, getRowRecords,
     operations, operators, subcontractors, absenceOperationId,
