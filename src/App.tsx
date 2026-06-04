@@ -44,7 +44,7 @@ const App = () => (
           <OrderSheetProvider>
             <AppLayout>
               <Routes>
-                <Route path="/" element={<Navigate to="/orders" replace />} />
+                <Route path="/" element={<Navigate to="/planning-tableau" replace />} />
                 <Route path="/planning-gantt" element={<Index />} />
                 <Route path="/operators" element={<OperatorsPage />} />
                 <Route path="/operations" element={<OperationsPage />} />
