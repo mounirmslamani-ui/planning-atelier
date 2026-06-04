@@ -324,7 +324,26 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        setQCEntries(data.qcEntries);
+        // Filter out qcEntries for orders that are now in delivery / delivered / cancelled (defensive against duplicates)
+        {
+          const blockedOrderIds = new Set<string>([
+            ...data.deliveredOrders.map(d => d.orderId),
+            ...data.deliveryEntries.map(d => d.orderId),
+            ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
+          ]);
+          const seen = new Set<string>();
+          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          const kept: typeof data.qcEntries = [];
+          for (const e of sorted) {
+            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
+              dbDeleteQCEntry(e.id);
+            } else {
+              seen.add(e.orderId);
+              kept.push(e);
+            }
+          }
+          setQCEntries(kept);
+        }
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
