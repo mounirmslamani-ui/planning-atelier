@@ -620,17 +620,28 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
                     </div>
                   </td>
                   <td className="p-1.5">
-                    <button
-                      type="button"
-                      className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded"
-                      onClick={() => {
-                        const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
-                        e.setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
-                      }}
-                      disabled={e.isLocked}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </button>
+                    <div className="flex items-center justify-center gap-0.5">
+                      <button
+                        type="button"
+                        className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        onClick={() => e.setEditDurationPrompt({ rowId: row.id })}
+                        disabled={!row.stepId || e.getRowRecords(row).length === 0 || row.assignType === 'subcontractor'}
+                        title="تعديل مدة إنجاز الطلبية"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded"
+                        onClick={() => {
+                          const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
+                          e.setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
+                        }}
+                        disabled={e.isLocked}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
