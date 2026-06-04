@@ -68,6 +68,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
+  const [editDurationPrompt, setEditDurationPrompt] = useState<{ rowId: string } | null>(null);
   const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
 
   const initializedRef = useRef(false);
