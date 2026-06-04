@@ -254,13 +254,31 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        // Nettoyer les qcEntries des commandes déjà livrées
-        const deliveredOrderIds = new Set(data.deliveredOrders.map(d => d.orderId));
-        const staleQcEntries = data.qcEntries.filter(e => deliveredOrderIds.has(e.orderId));
-        if (staleQcEntries.length > 0) {
-          console.warn(`[Cleanup] Suppression de ${staleQcEntries.length} qcEntries obsolètes`);
-          staleQcEntries.forEach(e => dbDeleteQCEntry(e.id));
-          data.qcEntries = data.qcEntries.filter(e => !deliveredOrderIds.has(e.orderId));
+        // Nettoyer les qcEntries obsolètes (commandes déjà livrées / prêtes à livrer / annulées) et les doublons
+        {
+          const blockedOrderIds = new Set<string>([
+            ...data.deliveredOrders.map(d => d.orderId),
+            ...data.deliveryEntries.map(d => d.orderId),
+            ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
+          ]);
+          const seen = new Set<string>();
+          const kept: typeof data.qcEntries = [];
+          const stale: typeof data.qcEntries = [];
+          // Iterate from most recent to oldest so we keep the latest QC entry per order
+          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          for (const e of sorted) {
+            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
+              stale.push(e);
+            } else {
+              seen.add(e.orderId);
+              kept.push(e);
+            }
+          }
+          if (stale.length > 0) {
+            console.warn(`[Cleanup] Suppression de ${stale.length} qcEntries obsolètes`);
+            stale.forEach(e => dbDeleteQCEntry(e.id));
+            data.qcEntries = kept;
+          }
         }
         setQCEntries(data.qcEntries);
         // Dedupe delivery entries by orderId — keep most recent
