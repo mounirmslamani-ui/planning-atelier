@@ -254,13 +254,31 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        // Nettoyer les qcEntries des commandes déjà livrées
-        const deliveredOrderIds = new Set(data.deliveredOrders.map(d => d.orderId));
-        const staleQcEntries = data.qcEntries.filter(e => deliveredOrderIds.has(e.orderId));
-        if (staleQcEntries.length > 0) {
-          console.warn(`[Cleanup] Suppression de ${staleQcEntries.length} qcEntries obsolètes`);
-          staleQcEntries.forEach(e => dbDeleteQCEntry(e.id));
-          data.qcEntries = data.qcEntries.filter(e => !deliveredOrderIds.has(e.orderId));
+        // Nettoyer les qcEntries obsolètes (commandes déjà livrées / prêtes à livrer / annulées) et les doublons
+        {
+          const blockedOrderIds = new Set<string>([
+            ...data.deliveredOrders.map(d => d.orderId),
+            ...data.deliveryEntries.map(d => d.orderId),
+            ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
+          ]);
+          const seen = new Set<string>();
+          const kept: typeof data.qcEntries = [];
+          const stale: typeof data.qcEntries = [];
+          // Iterate from most recent to oldest so we keep the latest QC entry per order
+          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          for (const e of sorted) {
+            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
+              stale.push(e);
+            } else {
+              seen.add(e.orderId);
+              kept.push(e);
+            }
+          }
+          if (stale.length > 0) {
+            console.warn(`[Cleanup] Suppression de ${stale.length} qcEntries obsolètes`);
+            stale.forEach(e => dbDeleteQCEntry(e.id));
+            data.qcEntries = kept;
+          }
         }
         setQCEntries(data.qcEntries);
         // Dedupe delivery entries by orderId — keep most recent
@@ -306,7 +324,26 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        setQCEntries(data.qcEntries);
+        // Filter out qcEntries for orders that are now in delivery / delivered / cancelled (defensive against duplicates)
+        {
+          const blockedOrderIds = new Set<string>([
+            ...data.deliveredOrders.map(d => d.orderId),
+            ...data.deliveryEntries.map(d => d.orderId),
+            ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
+          ]);
+          const seen = new Set<string>();
+          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          const kept: typeof data.qcEntries = [];
+          for (const e of sorted) {
+            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
+              dbDeleteQCEntry(e.id);
+            } else {
+              seen.add(e.orderId);
+              kept.push(e);
+            }
+          }
+          setQCEntries(kept);
+        }
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
@@ -498,10 +535,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setProductionRecords(prev => prev.filter(r => r.id !== id)); dbDeleteRecord(id);
   }, [pushUndo]);
 
-  // QC Entry
+  // QC Entry — idempotent: skip if a QC entry already exists for that order,
+  // or if the order is already in delivery_entries / delivered_orders / cancelled_orders.
   const addQCEntry = useCallback((entry: QualityControlEntry) => {
+    if (qcEntries.some(e => e.orderId === entry.orderId)) return;
+    if (deliveryEntries.some(e => e.orderId === entry.orderId)) return;
+    if (deliveredOrders.some(e => e.orderId === entry.orderId)) return;
+    if (cancelledOrders.some(e => e.orderId === entry.orderId)) return;
     pushUndo(); setQCEntries(prev => [...prev, entry]); dbInsertQCEntry(entry);
-  }, [pushUndo]);
+  }, [pushUndo, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
   const updateQCEntry = useCallback((entry: QualityControlEntry) => {
     pushUndo(); setQCEntries(prev => prev.map(e => e.id === entry.id ? entry : e)); dbUpdateQCEntry(entry);
   }, [pushUndo]);
