@@ -20,7 +20,7 @@ import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { useConfirm } from '@/hooks/use-confirm';
-import type { Order, OrderPriority } from '@/types/planning';
+import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/types/planning';
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 
 interface Props {
@@ -40,11 +40,75 @@ const TAB_TITLES = {
   qc: 'مراقبة الجودة والتسليم',
 } as const;
 
+const decisionLabels: Record<QCDecision, string> = {
+  'conforme': 'مطابق للمواصفات',
+  'reprise-retouche': 'إعادة/تعديل',
+  'conforme-derogation': 'مطابق للمواصفات بصفة استثنائية',
+  'non-conforme': 'غير مطابق للمواصفات',
+};
+
+// Sub-component for a single QC entry row — extracted to respect React Hooks rules (no hooks in .map())
+interface QCEntryRowProps {
+  q: QualityControlEntry;
+  onSave: (q: QualityControlEntry, localDate: string, localDecision: QCDecision | '', localNotes: string) => void;
+}
+
+const QCEntryRow: React.FC<QCEntryRowProps> = ({ q, onSave }) => {
+  const [localDate, setLocalDate] = useState(q.controlDate);
+  const [localDecision, setLocalDecision] = useState<QCDecision | ''>(q.decision || '');
+  const [localNotes, setLocalNotes] = useState(q.reworkNotes || '');
+
+  return (
+    <tr className="border-t">
+      <td className="p-2">
+        <Input
+          type="date"
+          value={localDate}
+          onChange={e => setLocalDate(e.target.value)}
+          className="w-36 text-xs h-8"
+        />
+      </td>
+      <td className="p-2">
+        <select
+          className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+          value={localDecision}
+          onChange={e => setLocalDecision(e.target.value as QCDecision)}
+        >
+          <option value="">— Choisir —</option>
+          <option value="conforme">مطابق للمواصفات</option>
+          <option value="reprise-retouche">إعادة/تعديل</option>
+          <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
+          <option value="non-conforme">غير مطابق للمواصفات</option>
+        </select>
+        {localDecision && (
+          <span className="block mt-1 text-[10px] text-muted-foreground">
+            {decisionLabels[localDecision as QCDecision]}
+          </span>
+        )}
+      </td>
+      <td className="p-2">
+        <Input
+          value={localNotes}
+          onChange={e => setLocalNotes(e.target.value)}
+          placeholder="ملاحظات..."
+          className="text-xs h-8"
+        />
+      </td>
+      <td className="p-2">
+        <Button size="sm" variant="outline" onClick={() => onSave(q, localDate, localDecision, localNotes)}>
+          حفظ
+        </Button>
+      </td>
+    </tr>
+  );
+};
+
 const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft, onCreated }) => {
   const {
     orders, clients, steps,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
-    updateOrder, addOrder, addQCEntry, updateDeliveredOrder, addDeliveredOrder,
+    updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntry,
+    updateDeliveredOrder,
     absenceOperationId, deleteOrder,
   } = usePlanning();
 
@@ -126,6 +190,35 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
     toast.success('تم حفظ معلومات الطلبية');
   };
 
+  // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
+  const handleQCSave = (
+    q: QualityControlEntry,
+    localDate: string,
+    localDecision: QCDecision | '',
+    localNotes: string,
+  ) => {
+    const controlDate = localDate || new Date().toISOString().split('T')[0];
+    if (localDecision && localDecision !== q.decision) {
+      if (localDecision === 'conforme' || localDecision === 'conforme-derogation') {
+        addDeliveryEntry({
+          id: crypto.randomUUID(),
+          orderId: q.orderId,
+          controlDate,
+          decision: localDecision as 'conforme' | 'conforme-derogation',
+          movedAt: new Date().toISOString(),
+        });
+        deleteQCEntry(q.id);
+        toast.success('تم نقل الطلبية إلى قائمة التسليم');
+      } else {
+        updateQCEntry({ ...q, controlDate, decision: localDecision, reworkNotes: localNotes });
+        toast.success('تم حفظ قرار مراقبة الجودة');
+      }
+    } else {
+      updateQCEntry({ ...q, controlDate, reworkNotes: localNotes });
+      toast.success('تم حفظ سجل مراقبة الجودة');
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,17 +236,6 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
         : `بطاقة متابعة إنجاز الطلبية — ${order.orderNumber}`}
     </DialogTitle>
     <div className="flex items-center gap-2 flex-shrink-0">
-      {canReintegrate && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-amber-700 border-amber-300 hover:bg-amber-50"
-          onClick={() => reintegration.requestReintegrate(order.id)}
-        >
-          <RotateCcw className="w-4 h-4 ms-1" />
-          إعادة إدماج
-        </Button>
-      )}
       {!createMode && (
         <Button variant="outline" size="sm" onClick={() => setPrintOpen(true)}>
           <Printer className="w-4 h-4 ms-1" />
@@ -318,7 +400,6 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                 <StepsEditorTable editor={editor} />
               </TabsContent>
 
-
               {/* TAB 4 — QC + DELIVERY */}
               <TabsContent value="qc" className="mt-0 space-y-4">
                 <section>
@@ -335,15 +416,12 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
                             <th className="text-right p-2">تاريخ المراقبة</th>
                             <th className="text-right p-2">القرار</th>
                             <th className="text-right p-2">ملاحظات</th>
+                            <th className="text-right p-2 w-24">حفظ</th>
                           </tr>
                         </thead>
                         <tbody>
                           {orderQc.map(q => (
-                            <tr key={q.id} className="border-t">
-                              <td className="p-2">{formatDateFR(q.controlDate)}</td>
-                              <td className="p-2 font-semibold">{q.decision || '—'}</td>
-                              <td className="p-2">{q.reworkNotes || '—'}</td>
-                            </tr>
+                            <QCEntryRow key={q.id} q={q} onSave={handleQCSave} />
                           ))}
                         </tbody>
                       </table>
@@ -408,6 +486,16 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
+                    {canReintegrate && (
+                      <Button
+                        variant="outline"
+                        className="text-amber-700 border-amber-300 hover:bg-amber-50 me-auto"
+                        onClick={() => reintegration.requestReintegrate(order.id)}
+                      >
+                        <RotateCcw className="w-4 h-4 ms-1" />
+                        إعادة إدماج
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       className="text-orange-600 border-orange-300 hover:bg-orange-50"
@@ -461,7 +549,6 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
 
       {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
       <PlanningEditorDialogs editor={editor} order={order} />
-
 
       {/* Print sheet (A4) */}
       {printOpen && (
