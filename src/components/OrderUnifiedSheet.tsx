@@ -22,6 +22,8 @@ import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/types/planning';
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
+import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
+
 
 interface Props {
   orderId: string | null;
