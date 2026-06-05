@@ -37,33 +37,52 @@ const DeliveryPage: React.FC = () => {
 
   const allRows = React.useMemo<Row[]>(() => {
     const map = new Map<string, Row>();
-    // Seed from legacy deliveryEntries (back-compat) and QC entries
+    const considerOrder = (orderId: string, fallbackDate: string, fallbackDecision: 'conforme' | 'conforme-derogation', fallbackId: string) => {
+      if (map.has(orderId)) return;
+      const order = getOrder(orderId);
+      if (!order) return;
+      // accepted from QC sessions
+      let acceptedFromQc = 0;
+      let hasQcAccept = false;
+      for (const x of qcEntries) {
+        if (x.orderId !== orderId) continue;
+        if (x.acceptedQty != null) { acceptedFromQc += x.acceptedQty; hasQcAccept = true; }
+        else if (x.decision === 'conforme' || x.decision === 'conforme-derogation') { acceptedFromQc += order.quantity; hasQcAccept = true; }
+      }
+      // legacy: also count deliveryEntries (each represents accepted qty ready to ship)
+      let acceptedFromDelivery = 0;
+      for (const d of deliveryEntries) {
+        if (d.orderId !== orderId) continue;
+        acceptedFromDelivery += (d.deliveredQty ?? order.quantity);
+      }
+      // Use max so we don't double-count when both QC accept entries AND legacy
+      // deliveryEntries exist for the same order.
+      const accepted = Math.max(acceptedFromQc, acceptedFromDelivery);
+      if (accepted <= 0) return;
+      const shipped = deliveredOrders
+        .filter(d => d.orderId === orderId)
+        .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
+      const forceClosed = deliveredOrders.some(d => d.orderId === orderId && d.forceClosed);
+      const deliverable = Math.max(0, accepted - shipped);
+      if (forceClosed || deliverable <= 0) return;
+      map.set(orderId, {
+        id: fallbackId, orderId, controlDate: fallbackDate,
+        decision: fallbackDecision, accepted, shipped, deliverable,
+      });
+    };
+
+    // 1) legacy deliveryEntries (orders moved to "ready to deliver" the old way)
+    for (const d of deliveryEntries) {
+      considerOrder(d.orderId, d.controlDate, d.decision, d.id);
+    }
+    // 2) QC entries with an accept decision (new-flow sessions)
     for (const q of qcEntries) {
       if (q.decision !== 'conforme' && q.decision !== 'conforme-derogation') continue;
-      const order = getOrder(q.orderId);
-      if (!order) continue;
-      const accepted = qcEntries
-        .filter(x => x.orderId === order.id)
-        .reduce((s, x) => {
-          if (x.acceptedQty != null) return s + x.acceptedQty;
-          if (x.decision === 'conforme' || x.decision === 'conforme-derogation') return s + order.quantity;
-          return s;
-        }, 0);
-      const shipped = deliveredOrders
-        .filter(d => d.orderId === order.id)
-        .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
-      const forceClosed = deliveredOrders.some(d => d.orderId === order.id && d.forceClosed);
-      const deliverable = Math.max(0, accepted - shipped);
-      if (forceClosed || deliverable <= 0) continue;
-      if (!map.has(order.id)) {
-        map.set(order.id, {
-          id: q.id, orderId: order.id, controlDate: q.controlDate,
-          decision: q.decision, accepted, shipped, deliverable,
-        });
-      }
+      considerOrder(q.orderId, q.controlDate, q.decision, q.id);
     }
     return Array.from(map.values());
-  }, [qcEntries, deliveredOrders, orders]);
+  }, [qcEntries, deliveryEntries, deliveredOrders, orders]);
+
 
   const filteredEntries = React.useMemo(
     () => allRows.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === activeCat),
