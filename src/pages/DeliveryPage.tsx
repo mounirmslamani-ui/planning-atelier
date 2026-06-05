@@ -21,30 +21,68 @@ import { toast } from 'sonner';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry } = usePlanning();
+  const { deliveryEntries, qcEntries, deliveredOrders, orders, clients } = usePlanning();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
-  const [pending, setPending] = useState<{ entryId: string; date: string } | null>(null);
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
+  // Build a unified list: one entry per order that has deliverable qty
+  // (accepted by QC but not yet shipped) and is not force-closed.
+  type Row = {
+    id: string; orderId: string; controlDate: string;
+    decision: 'conforme' | 'conforme-derogation';
+    accepted: number; shipped: number; deliverable: number;
+  };
+
+  const allRows = React.useMemo<Row[]>(() => {
+    const map = new Map<string, Row>();
+    // Seed from legacy deliveryEntries (back-compat) and QC entries
+    for (const q of qcEntries) {
+      if (q.decision !== 'conforme' && q.decision !== 'conforme-derogation') continue;
+      const order = getOrder(q.orderId);
+      if (!order) continue;
+      const accepted = qcEntries
+        .filter(x => x.orderId === order.id)
+        .reduce((s, x) => {
+          if (x.acceptedQty != null) return s + x.acceptedQty;
+          if (x.decision === 'conforme' || x.decision === 'conforme-derogation') return s + order.quantity;
+          return s;
+        }, 0);
+      const shipped = deliveredOrders
+        .filter(d => d.orderId === order.id)
+        .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
+      const forceClosed = deliveredOrders.some(d => d.orderId === order.id && d.forceClosed);
+      const deliverable = Math.max(0, accepted - shipped);
+      if (forceClosed || deliverable <= 0) continue;
+      if (!map.has(order.id)) {
+        map.set(order.id, {
+          id: q.id, orderId: order.id, controlDate: q.controlDate,
+          decision: q.decision, accepted, shipped, deliverable,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [qcEntries, deliveredOrders, orders]);
+
   const filteredEntries = React.useMemo(
-    () => deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === activeCat),
-    [deliveryEntries, activeCat, orders]
+    () => allRows.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === activeCat),
+    [allRows, activeCat, orders]
   );
   const catCount = (cat: OrderCategory) =>
-    deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === cat).length;
+    allRows.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === cat).length;
+
 
   const accessors = {
-    priority: (e: DeliveryEntry) => getOrder(e.orderId)?.priority || '',
-    orderNumber: (e: DeliveryEntry) => getOrder(e.orderId)?.orderNumber || '',
-    orderDate: (e: DeliveryEntry) => getOrder(e.orderId)?.orderDate || '',
-    client: (e: DeliveryEntry) => getClientName(getOrder(e.orderId)?.clientId || ''),
-    designation: (e: DeliveryEntry) => getOrder(e.orderId)?.designation || '',
-    quantity: (e: DeliveryEntry) => getOrder(e.orderId)?.quantity ?? 0,
-    deadline: (e: DeliveryEntry) => getOrder(e.orderId)?.plannedDeadline || '',
-    controlDate: (e: DeliveryEntry) => e.controlDate,
-    decision: (e: DeliveryEntry) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
+    priority: (e: Row) => getOrder(e.orderId)?.priority || '',
+    orderNumber: (e: Row) => getOrder(e.orderId)?.orderNumber || '',
+    orderDate: (e: Row) => getOrder(e.orderId)?.orderDate || '',
+    client: (e: Row) => getClientName(getOrder(e.orderId)?.clientId || ''),
+    designation: (e: Row) => getOrder(e.orderId)?.designation || '',
+    quantity: (e: Row) => e.deliverable,
+    deadline: (e: Row) => getOrder(e.orderId)?.plannedDeadline || '',
+    controlDate: (e: Row) => e.controlDate,
+    decision: (e: Row) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(filteredEntries, accessors);
 
@@ -67,34 +105,15 @@ const DeliveryPage: React.FC = () => {
         Date: order ? formatDateFR(order.orderDate) : '—',
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
-        Quantité: order?.quantity ?? '—',
+        'Qté à livrer': entry.deliverable,
+        'Qté totale': order?.quantity ?? '—',
         Délais: order ? formatDateFR(order.plannedDeadline) : '—',
         'تاريخ مراقبة الجودة': formatDateFR(entry.controlDate),
         Décision: entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
       };
-    }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
+    }), [12, 20, 14, 24, 45, 10, 10, 14, 16, 26]);
   };
 
-  const handleConfirmTransfer = () => {
-    if (!pending) return;
-    const entry = deliveryEntries.find(e => e.id === pending.entryId);
-    if (!entry) { setPending(null); return; }
-    const delivered: DeliveredOrder = {
-      id: crypto.randomUUID(),
-      orderId: entry.orderId,
-      deliveryDate: pending.date,
-      salePriceStatus: 'non-calcule',
-      observation: undefined,
-    };
-    addDeliveredOrder(delivered);
-    deleteDeliveryEntry(entry.id);
-    setPending(null);
-    toast.success('Commande transférée vers les Commandes livrées');
-  };
-
-  const handleCancelTransfer = () => {
-    setPending(null);
-  };
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
@@ -103,7 +122,7 @@ const DeliveryPage: React.FC = () => {
           title="طلبيات جاهزة للتسليم"
           description={
             <span className="flex items-center gap-2">
-              <span className="font-bold text-lg">{deliveryEntries.length}</span>
+              <span className="font-bold text-lg">{allRows.length}</span>
               <span>عدد الطلبيات الجاهزة للتسليم</span>
             </span>
           }
@@ -160,7 +179,8 @@ const DeliveryPage: React.FC = () => {
                     <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">
-                    {order.quantity}
+                    <span className="text-amber-600 font-semibold">{entry.deliverable}</span>
+                    <span className="text-xs text-muted-foreground"> / {order.quantity}</span>
                   </TableCell>
                   <TableCell>
                     <PriorityBadge priority={order.priority} className="" />
@@ -177,7 +197,7 @@ const DeliveryPage: React.FC = () => {
                  </TableRow>
               );
             })}
-            {deliveryEntries.length === 0 && (
+            {allRows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
@@ -187,18 +207,9 @@ const DeliveryPage: React.FC = () => {
           </TableBody>
         </table>
       </div>
-
-      <ConfirmDialog
-        open={!!pending}
-        title="هل تؤكد هذه العملية؟"
-        description={pending ? `La commande sera transférée vers 'طلبيات مسلمة' avec la date du ${formatDateFR(pending.date)}.` : ''}
-        onConfirm={handleConfirmTransfer}
-        onCancel={handleCancelTransfer}
-        confirmLabel="Oui, transférer"
-        cancelLabel="Non"
-      />
     </div>
   );
 };
+
 
 export default DeliveryPage;

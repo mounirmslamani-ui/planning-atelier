@@ -99,11 +99,28 @@ const QualityControlPage: React.FC = () => {
     controlDate: (e: QualityControlEntry) => e.controlDate,
     decision: (e: QualityControlEntry) => e.decision ? decisionLabels[e.decision] : '',
   };
-  const activeQcEntries = qcEntries.filter(entry =>
-    !deliveredOrders.some(d => d.orderId === entry.orderId)
-    && !deliveryEntries.some(d => d.orderId === entry.orderId)
-  );
+  // Group QC entries by order — show one row per order, hide orders fully closed
+  // (QCRemaining ≤ 0) or already moved past delivery.
+  const activeQcEntries = React.useMemo(() => {
+    const seen = new Set<string>();
+    const list: QualityControlEntry[] = [];
+    for (const entry of qcEntries) {
+      if (seen.has(entry.orderId)) continue;
+      seen.add(entry.orderId);
+      const order = getOrder(entry.orderId);
+      if (!order) continue;
+      const controlled = qcEntries
+        .filter(q => q.orderId === entry.orderId)
+        .reduce((s, q) => s + (q.controlledQty ?? order.quantity), 0);
+      const forceClosed = qcEntries.some(q => q.orderId === entry.orderId && q.forceClosed);
+      if (forceClosed) continue;
+      if (controlled >= order.quantity) continue;
+      list.push(entry);
+    }
+    return list;
+  }, [qcEntries, orders]);
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(activeQcEntries, accessors);
+
 
   const allValuesByKey = React.useMemo(() => {
     const map: Record<string, string[]> = {};
@@ -173,8 +190,10 @@ const QualityControlPage: React.FC = () => {
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} allValues={allValuesByKey.client} /></TableHead>
               <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
               <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
+              <TableHead className="text-xs font-semibold">المتبقّي للمراقبة</TableHead>
               <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deadline} /></TableHead>
+
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -192,20 +211,31 @@ const QualityControlPage: React.FC = () => {
                     <DesignationCell orderId={order.id} designation={order.designation} className="text-xs whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
+                  <TableCell className="text-sm">
+                    {(() => {
+                      const controlled = qcEntries
+                        .filter(q => q.orderId === order.id)
+                        .reduce((s, q) => s + (q.controlledQty ?? order.quantity), 0);
+                      const remaining = Math.max(0, order.quantity - controlled);
+                      return <span className={remaining > 0 ? 'text-amber-600 font-semibold' : 'text-green-600'}>{remaining} / {order.quantity}</span>;
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <PriorityBadge priority={order.priority} className="" />
                   </TableCell>
                   <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
+
                 </TableRow>
               );
             })}
-            {qcEntries.length === 0 && (
+            {processed.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Aucune commande en contrôle qualité.
                 </TableCell>
               </TableRow>
             )}
+
           </TableBody>
         </table>
       </div>

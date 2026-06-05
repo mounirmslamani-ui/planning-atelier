@@ -22,6 +22,8 @@ import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/types/planning';
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
+import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
+
 
 interface Props {
   orderId: string | null;
@@ -421,112 +423,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 <StepsEditorTable editor={editor} />
               </TabsContent>
 
-              {/* TAB 4 — QC + DELIVERY */}
+              {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
-                <section>
-                  <h3 className="font-bold mb-2">سجل مراقبة الجودة</h3>
-                  {orderQc.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-3 border rounded-md text-center">
-                      لا يوجد تسجيل لمراقبة الجودة لهذه الطلبية بعد.
-                    </p>
-                  ) : (
-                    <div className="border rounded-md overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/40">
-                          <tr>
-                            <th className="text-right p-2">تاريخ المراقبة</th>
-                            <th className="text-right p-2">القرار</th>
-                            <th className="text-right p-2">ملاحظات</th>
-                            <th className="text-right p-2 w-24">حفظ</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {orderQc.map(q => (
-                            <QCEntryRow key={q.id} q={q} onSave={handleQCSave} />
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-
-                <section>
-                  <h3 className="font-bold mb-2">التسليم</h3>
-                  {orderDelivered ? (
-                    <div className="border rounded-md p-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                      <div>
-                        <Label className="text-xs">تاريخ التسليم</Label>
-                        <Input
-                          type="date"
-                          value={orderDelivered.deliveryDate || ''}
-                          onChange={e => updateDeliveredOrder({ ...orderDelivered, deliveryDate: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">رقم الفاتورة</Label>
-                        <Input
-                          value={orderDelivered.invoiceNumber || ''}
-                          onChange={e => updateDeliveredOrder({ ...orderDelivered, invoiceNumber: e.target.value || undefined })}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">تاريخ الفاتورة</Label>
-                        <Input
-                          type="date"
-                          value={orderDelivered.invoiceDate || ''}
-                          onChange={e => updateDeliveredOrder({ ...orderDelivered, invoiceDate: e.target.value || undefined })}
-                        />
-                      </div>
-                    </div>
-                    ) : orderDelivery.length > 0 ? (
-                    <div className="border rounded-md p-3 bg-blue-500/5 flex flex-col gap-2">
-                      <p className="text-sm">الطلبية جاهزة للتسليم (تاريخ مراقبة الجودة: {formatDateFR(orderDelivery[0].controlDate)}).</p>
-                      <div className="flex items-end gap-3">
-                        <div>
-                          <Label className="text-xs">تاريخ التسليم</Label>
-                          <Input
-                            type="date"
-                            className="h-8 w-40 text-xs"
-                            onChange={e => {
-                              const date = e.target.value;
-                              if (!date) return;
-                              const entry = orderDelivery[0];
-                              addDeliveredOrder({
-                                id: crypto.randomUUID(),
-                                orderId: entry.orderId,
-                                deliveryDate: date,
-                                salePriceStatus: 'non-calcule',
-                                observation: undefined,
-                              });
-                              deleteDeliveryEntry(entry.id);
-                              toast.success('تم تسجيل تاريخ التسليم');
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground p-3 border rounded-md text-center">
-                      لم يتم تسليم هذه الطلبية بعد.
-                    </p>
-                  )}
-                </section>
-
-                {!orderQc.length && !orderDelivery.length && !orderDelivered && (
-                  <div className="border-t pt-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        addQCEntry({ id: crypto.randomUUID(), orderId: order.id, controlDate: today, createdAt: new Date().toISOString() });
-                        toast.success('تم إنشاء سجل مراقبة الجودة');
-                      }}
-                    >
-                      <FileText className="w-4 h-4 ms-1" />
-                      إنشاء تسجيل مراقبة الجودة
-                    </Button>
-                  </div>
-                )}
+                <PartialQCDelivery order={order} />
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
@@ -564,6 +463,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   </div>
                 )}
               </TabsContent>
+
             </div>
           </Tabs>
         </DialogContent>

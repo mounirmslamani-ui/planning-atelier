@@ -60,7 +60,7 @@ const DeliveredOrdersPage: React.FC = () => {
     orderDate: (d: DeliveredOrder) => getOrder(d.orderId)?.orderDate || '',
     client: (d: DeliveredOrder) => getClientName(getOrder(d.orderId)?.clientId || ''),
     designation: (d: DeliveredOrder) => getOrder(d.orderId)?.designation || '',
-    quantity: (d: DeliveredOrder) => getOrder(d.orderId)?.quantity ?? 0,
+    quantity: (d: DeliveredOrder) => d.deliveredQty ?? getOrder(d.orderId)?.quantity ?? 0,
     deliveryDate: (d: DeliveredOrder) => d.deliveryDate,
     salePriceStatus: (d: DeliveredOrder) => PRICE_META[d.salePriceStatus].label,
     invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
@@ -140,11 +140,12 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الكمية المسلَّمة" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
+
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -192,8 +193,10 @@ const DeliveredOrdersPage: React.FC = () => {
                      <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">
-                    {order.quantity}
+                    {entry.forceClosed ? <span className="text-xs italic text-blue-600">إقفال</span> : (entry.deliveredQty ?? order.quantity)}
+                    <span className="text-xs text-muted-foreground"> / {order.quantity}</span>
                   </TableCell>
+
                   <TableCell className="text-sm">{formatDateFR(entry.deliveryDate)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
