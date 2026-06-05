@@ -193,8 +193,10 @@ const DeliveredOrdersPage: React.FC = () => {
                      <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">
-                    {order.quantity}
+                    {entry.forceClosed ? <span className="text-xs italic text-blue-600">إقفال</span> : (entry.deliveredQty ?? order.quantity)}
+                    <span className="text-xs text-muted-foreground"> / {order.quantity}</span>
                   </TableCell>
+
                   <TableCell className="text-sm">{formatDateFR(entry.deliveryDate)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
