@@ -58,7 +58,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const qcForceClosed = isQCForceClosed(order.id, qcEntries);
 
   const shipped = getDeliveredQty(order.id, deliveredOrders, qty);
-  const deliverable = getDeliverableRemaining(order, qcEntries, deliveredOrders);
+  const deliverable = getDeliverableRemaining(order, qcEntries, deliveredOrders, deliveryEntries);
   const deliveryRemaining = getDeliveryRemaining(order, deliveredOrders);
   const deliveryForceClosed = isDeliveryForceClosed(order.id, deliveredOrders);
 
