@@ -114,14 +114,23 @@ export function isDeliveryForceClosed(orderId: string, delivered: DeliveredOrder
 
 /**
  * Quantity that has been accepted by QC but not yet shipped.
- *  deliverable = accepted − delivered  (clamped at 0)
+ *  deliverable = max(acceptedFromQc, acceptedFromLegacyDelivery) − delivered
+ * Legacy "ready to deliver" rows live in `delivery_entries` (single row per
+ * order with no qty), created by the old full-flow before partial QC existed.
+ * We treat them as full-quantity accepted so the order sheet and listing pages
+ * remain in sync for orders that pre-date the partial model.
  */
 export function getDeliverableRemaining(
   order: Order,
   qc: QualityControlEntry[],
   delivered: DeliveredOrder[],
+  deliveryEntries: DeliveryEntry[] = [],
 ): number {
-  const accepted = getQCAccepted(order.id, qc, order.quantity);
+  const acceptedFromQc = getQCAccepted(order.id, qc, order.quantity);
+  const acceptedFromLegacy = deliveryEntries
+    .filter(d => d.orderId === order.id)
+    .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
+  const accepted = Math.max(acceptedFromQc, acceptedFromLegacy);
   const shipped = getDeliveredQty(order.id, delivered, order.quantity);
   return Math.max(0, accepted - shipped);
 }
@@ -134,3 +143,4 @@ export function getDeliveryRemaining(order: Order, delivered: DeliveredOrder[]):
 export function isDeliveryClosed(order: Order, delivered: DeliveredOrder[]): boolean {
   return getDeliveryRemaining(order, delivered) <= 0;
 }
+
