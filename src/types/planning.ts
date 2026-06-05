@@ -200,6 +200,14 @@ export interface QualityControlEntry {
   decision?: QCDecision;
   reworkNotes?: string; // notes for reprise/retouche
   createdAt: string;
+  /** Quantity controlled during this session. NULL → legacy "covers full order". */
+  controlledQty?: number;
+  /** Quantity accepted (conforme) — only this qty is forwarded to delivery. */
+  acceptedQty?: number;
+  /** Quantity rejected (controlledQty − acceptedQty), kept for traceability. */
+  rejectedQty?: number;
+  /** Administrator override: closes the QC as fully done even if remaining > 0. */
+  forceClosed?: boolean;
 }
 
 export interface DeliveryEntry {
@@ -208,6 +216,9 @@ export interface DeliveryEntry {
   controlDate: string;
   decision: 'conforme' | 'conforme-derogation';
   movedAt: string;
+  /** Quantity ready to deliver in this session. NULL → legacy "covers full order". */
+  deliveredQty?: number;
+  forceClosed?: boolean;
 }
 
 export type SalePriceStatus = 'gratuit' | 'non-calcule' | 'non-valide' | 'valide';
@@ -221,7 +232,11 @@ export interface DeliveredOrder {
   invoiceNumber?: string;
   invoiceDate?: string;
   createdAt?: string;
+  /** Quantity delivered in this session. NULL → legacy "covers full order". */
+  deliveredQty?: number;
+  forceClosed?: boolean;
 }
+
 
 export interface CancelledOrder {
   id: string;

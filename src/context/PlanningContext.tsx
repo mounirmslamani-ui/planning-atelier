@@ -16,8 +16,9 @@ import {
   dbInsertHoliday, dbUpdateHoliday, dbDeleteHoliday,
   dbInsertRecord, dbUpdateRecord, dbDeleteRecord,
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
-  dbInsertDelivery, dbDeleteDelivery,
+  dbInsertDelivery, dbUpdateDelivery, dbDeleteDelivery,
   dbInsertDeliveredOrder, dbUpdateDeliveredOrder, dbDeleteDeliveredOrder,
+
   dbInsertCancelledOrder, dbUpdateCancelledOrder, dbDeleteCancelledOrder,
 } from '@/lib/supabase-data';
 import { computeResyncedSteps } from '@/lib/resyncPlanning';
@@ -75,13 +76,21 @@ interface PlanningContextType {
   updateProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
   addQCEntry: (entry: QualityControlEntry) => void;
+  /** Add a QC SESSION (partial control). Bypasses the one-per-order guard. */
+  addQCSession: (entry: QualityControlEntry) => void;
   updateQCEntry: (entry: QualityControlEntry) => void;
   deleteQCEntry: (id: string) => void;
   addDeliveryEntry: (entry: DeliveryEntry) => void;
+  /** Add a DELIVERY-READY session (partial). Bypasses the one-per-order merge. */
+  addDeliverySession: (entry: DeliveryEntry) => void;
+  updateDeliveryEntry: (entry: DeliveryEntry) => void;
   deleteDeliveryEntry: (id: string) => void;
   addDeliveredOrder: (entry: DeliveredOrder) => void;
+  /** Add a DELIVERED session (partial). Bypasses the one-per-order merge. */
+  addDeliveredSession: (entry: DeliveredOrder) => void;
   updateDeliveredOrder: (entry: DeliveredOrder) => void;
   deleteDeliveredOrder: (id: string) => void;
+
   addCancelledOrder: (entry: CancelledOrder) => Promise<boolean>;
   updateCancelledOrder: (entry: CancelledOrder) => void;
   deleteCancelledOrder: (id: string) => void;
@@ -254,49 +263,24 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        // Nettoyer les qcEntries obsolètes (commandes déjà livrées / prêtes à livrer / annulées) et les doublons
+        // Nettoyer uniquement les qcEntries d'une commande annulée
+        // (les sessions multiples par commande sont autorisées par le flux partiel)
         {
           const blockedOrderIds = new Set<string>([
-            ...data.deliveredOrders.map(d => d.orderId),
-            ...data.deliveryEntries.map(d => d.orderId),
             ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
           ]);
-          const seen = new Set<string>();
-          const kept: typeof data.qcEntries = [];
-          const stale: typeof data.qcEntries = [];
-          // Iterate from most recent to oldest so we keep the latest QC entry per order
-          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-          for (const e of sorted) {
-            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
-              stale.push(e);
-            } else {
-              seen.add(e.orderId);
-              kept.push(e);
-            }
-          }
+          const stale = data.qcEntries.filter(e => blockedOrderIds.has(e.orderId));
           if (stale.length > 0) {
-            console.warn(`[Cleanup] Suppression de ${stale.length} qcEntries obsolètes`);
+            console.warn(`[Cleanup] Suppression de ${stale.length} qcEntries de commandes annulées`);
             stale.forEach(e => dbDeleteQCEntry(e.id));
-            data.qcEntries = kept;
+            data.qcEntries = data.qcEntries.filter(e => !blockedOrderIds.has(e.orderId));
           }
         }
         setQCEntries(data.qcEntries);
-        // Dedupe delivery entries by orderId — keep most recent
-        const dedupedDelivery = (() => {
-          const byOrder = new Map<string, typeof data.deliveryEntries[number]>();
-          for (const e of data.deliveryEntries) {
-            const existing = byOrder.get(e.orderId);
-            const ts = (e.movedAt || '') as string;
-            const exTs = existing ? ((existing.movedAt || '') as string) : '';
-            if (!existing || ts > exTs) byOrder.set(e.orderId, e);
-          }
-          const kept = new Set(Array.from(byOrder.values()).map(e => e.id));
-          data.deliveryEntries.filter(e => !kept.has(e.id)).forEach(e => { void dbDeleteDelivery(e.id); });
-          return Array.from(byOrder.values());
-        })();
-        setDeliveryEntries(dedupedDelivery);
+        setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
+
 
         // Re-sync all data to DB to fix date format issues and any automatic planning resync.
         
@@ -324,29 +308,20 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        // Filter out qcEntries for orders that are now in delivery / delivered / cancelled (defensive against duplicates)
+        // Sessions multiples par commande autorisées (flux partiel QC/Livraison) :
+        // on ne supprime que les qcEntries des commandes annulées.
         {
-          const blockedOrderIds = new Set<string>([
-            ...data.deliveredOrders.map(d => d.orderId),
-            ...data.deliveryEntries.map(d => d.orderId),
-            ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
-          ]);
-          const seen = new Set<string>();
-          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-          const kept: typeof data.qcEntries = [];
-          for (const e of sorted) {
-            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
-              dbDeleteQCEntry(e.id);
-            } else {
-              seen.add(e.orderId);
-              kept.push(e);
-            }
-          }
+          const blockedOrderIds = new Set<string>(
+            ((data as any).cancelledOrders || []).map((c: any) => c.orderId),
+          );
+          const kept = data.qcEntries.filter(e => !blockedOrderIds.has(e.orderId));
+          data.qcEntries.filter(e => blockedOrderIds.has(e.orderId)).forEach(e => dbDeleteQCEntry(e.id));
           setQCEntries(kept);
         }
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
+
       } catch (err) {
         console.error('[PlanningContext] Periodic refresh failed:', err);
       }
@@ -550,28 +525,43 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteQCEntry = useCallback((id: string) => {
     pushUndo(); setQCEntries(prev => prev.filter(e => e.id !== id)); dbDeleteQCEntry(id);
   }, [pushUndo]);
+  // Partial QC session — always inserts a NEW row.
+  const addQCSession = useCallback((entry: QualityControlEntry) => {
+    pushUndo();
+    setQCEntries(prev => [...prev, entry]);
+    dbInsertQCEntry(entry);
+  }, [pushUndo]);
 
-  // Delivery Entry
+  // Delivery Entry — legacy: merges by orderId (back-compat for full-flow callers).
   const addDeliveryEntry = useCallback((entry: DeliveryEntry) => {
     pushUndo();
     setDeliveryEntries(prev => {
       const existing = prev.find(e => e.orderId === entry.orderId);
       if (existing) {
         const mergedEntry = { ...entry, id: existing.id };
-        dbInsertDelivery(mergedEntry);
+        dbUpdateDelivery(mergedEntry);
         return prev.map(e => e.orderId === entry.orderId ? mergedEntry : e);
       }
       dbInsertDelivery(entry);
       return [...prev, entry];
     });
   }, [pushUndo]);
+  // Partial delivery-ready session — always inserts a NEW row.
+  const addDeliverySession = useCallback((entry: DeliveryEntry) => {
+    pushUndo();
+    setDeliveryEntries(prev => [...prev, entry]);
+    dbInsertDelivery(entry);
+  }, [pushUndo]);
+  const updateDeliveryEntry = useCallback((entry: DeliveryEntry) => {
+    pushUndo();
+    setDeliveryEntries(prev => prev.map(e => e.id === entry.id ? entry : e));
+    dbUpdateDelivery(entry);
+  }, [pushUndo]);
   const deleteDeliveryEntry = useCallback((id: string) => {
     pushUndo(); setDeliveryEntries(prev => prev.filter(e => e.id !== id)); dbDeleteDelivery(id);
   }, [pushUndo]);
 
-  // Delivered Orders (archive) — idempotent: never create a 2nd row for the same orderId.
-  // If one already exists, we MERGE (preserve invoice_number / sale_price_status if the
-  // incoming entry doesn't carry them) instead of inserting a duplicate.
+  // Delivered Orders (archive) — legacy: idempotent merge by orderId.
   const addDeliveredOrder = useCallback((entry: DeliveredOrder) => {
     pushUndo();
     setDeliveredOrders(prev => {
@@ -592,12 +582,19 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return [...prev, entry];
     });
   }, [pushUndo]);
+  // Partial delivered session — always inserts a NEW row.
+  const addDeliveredSession = useCallback((entry: DeliveredOrder) => {
+    pushUndo();
+    setDeliveredOrders(prev => [...prev, entry]);
+    dbInsertDeliveredOrder(entry);
+  }, [pushUndo]);
   const updateDeliveredOrder = useCallback((entry: DeliveredOrder) => {
     pushUndo(); setDeliveredOrders(prev => prev.map(d => d.id === entry.id ? entry : d)); dbUpdateDeliveredOrder(entry);
   }, [pushUndo]);
   const deleteDeliveredOrder = useCallback((id: string) => {
     pushUndo(); setDeliveredOrders(prev => prev.filter(d => d.id !== id)); dbDeleteDeliveredOrder(id);
   }, [pushUndo]);
+
 
   // Cancelled Orders — idempotent: if a cancellation already exists for that orderId, no-op.
   const addCancelledOrder = useCallback(async (entry: CancelledOrder) => {
@@ -633,9 +630,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       steps, setSteps, addStep, updateStep, deleteStep,
       holidays, setHolidays, addHoliday, updateHoliday, deleteHoliday,
       productionRecords, addProductionRecord, updateProductionRecord, deleteProductionRecord,
-      qcEntries, addQCEntry, updateQCEntry, deleteQCEntry,
-      deliveryEntries, addDeliveryEntry, deleteDeliveryEntry,
-      deliveredOrders, addDeliveredOrder, updateDeliveredOrder, deleteDeliveredOrder,
+      qcEntries, addQCEntry, addQCSession, updateQCEntry, deleteQCEntry,
+      deliveryEntries, addDeliveryEntry, addDeliverySession, updateDeliveryEntry, deleteDeliveryEntry,
+      deliveredOrders, addDeliveredOrder, addDeliveredSession, updateDeliveredOrder, deleteDeliveredOrder,
+
       cancelledOrders, addCancelledOrder, updateCancelledOrder, deleteCancelledOrder,
       equipments, setEquipments, addEquipment, updateEquipment, deleteEquipment,
       ganttView, setGanttView,
