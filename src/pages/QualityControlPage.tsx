@@ -211,10 +211,20 @@ const QualityControlPage: React.FC = () => {
                     <DesignationCell orderId={order.id} designation={order.designation} className="text-xs whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">{order.quantity}</TableCell>
+                  <TableCell className="text-sm">
+                    {(() => {
+                      const controlled = qcEntries
+                        .filter(q => q.orderId === order.id)
+                        .reduce((s, q) => s + (q.controlledQty ?? order.quantity), 0);
+                      const remaining = Math.max(0, order.quantity - controlled);
+                      return <span className={remaining > 0 ? 'text-amber-600 font-semibold' : 'text-green-600'}>{remaining} / {order.quantity}</span>;
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <PriorityBadge priority={order.priority} className="" />
                   </TableCell>
                   <TableCell className="text-sm">{formatDateFR(order.plannedDeadline)}</TableCell>
+
                 </TableRow>
               );
             })}
