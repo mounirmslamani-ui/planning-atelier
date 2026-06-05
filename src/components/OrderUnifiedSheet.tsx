@@ -484,8 +484,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                         </div>
                       </div>
                     </div>
-
-Et n'oublie pas d'appliquer aussi les 3 modifications sur DeliveryPage.tsx vues dans le message précédent (supprimer l'en-tête الت
                   ) : (
                     <p className="text-sm text-muted-foreground p-3 border rounded-md text-center">
                       لم يتم تسليم هذه الطلبية بعد.
