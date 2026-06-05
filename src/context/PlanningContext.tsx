@@ -263,49 +263,24 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        // Nettoyer les qcEntries obsolètes (commandes déjà livrées / prêtes à livrer / annulées) et les doublons
+        // Nettoyer uniquement les qcEntries d'une commande annulée
+        // (les sessions multiples par commande sont autorisées par le flux partiel)
         {
           const blockedOrderIds = new Set<string>([
-            ...data.deliveredOrders.map(d => d.orderId),
-            ...data.deliveryEntries.map(d => d.orderId),
             ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
           ]);
-          const seen = new Set<string>();
-          const kept: typeof data.qcEntries = [];
-          const stale: typeof data.qcEntries = [];
-          // Iterate from most recent to oldest so we keep the latest QC entry per order
-          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-          for (const e of sorted) {
-            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
-              stale.push(e);
-            } else {
-              seen.add(e.orderId);
-              kept.push(e);
-            }
-          }
+          const stale = data.qcEntries.filter(e => blockedOrderIds.has(e.orderId));
           if (stale.length > 0) {
-            console.warn(`[Cleanup] Suppression de ${stale.length} qcEntries obsolètes`);
+            console.warn(`[Cleanup] Suppression de ${stale.length} qcEntries de commandes annulées`);
             stale.forEach(e => dbDeleteQCEntry(e.id));
-            data.qcEntries = kept;
+            data.qcEntries = data.qcEntries.filter(e => !blockedOrderIds.has(e.orderId));
           }
         }
         setQCEntries(data.qcEntries);
-        // Dedupe delivery entries by orderId — keep most recent
-        const dedupedDelivery = (() => {
-          const byOrder = new Map<string, typeof data.deliveryEntries[number]>();
-          for (const e of data.deliveryEntries) {
-            const existing = byOrder.get(e.orderId);
-            const ts = (e.movedAt || '') as string;
-            const exTs = existing ? ((existing.movedAt || '') as string) : '';
-            if (!existing || ts > exTs) byOrder.set(e.orderId, e);
-          }
-          const kept = new Set(Array.from(byOrder.values()).map(e => e.id));
-          data.deliveryEntries.filter(e => !kept.has(e.id)).forEach(e => { void dbDeleteDelivery(e.id); });
-          return Array.from(byOrder.values());
-        })();
-        setDeliveryEntries(dedupedDelivery);
+        setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
+
 
         // Re-sync all data to DB to fix date format issues and any automatic planning resync.
         
