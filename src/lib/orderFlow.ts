@@ -60,7 +60,12 @@ export function buildOutOfActiveProductionSet(
 export function getQCControlled(orderId: string, qc: QualityControlEntry[], orderQty: number): number {
   return qc
     .filter(q => q.orderId === orderId)
-    .reduce((s, q) => s + (q.controlledQty ?? orderQty), 0);
+    .reduce((s, q) => {
+      if (q.controlledQty != null) return s + q.controlledQty;
+      // Legacy entry without qty: counts as full order ONLY if a decision was recorded.
+      // Pending legacy entries (no decision) must NOT be treated as already controlled.
+      return s + (q.decision ? orderQty : 0);
+    }, 0);
 }
 
 export function getQCAccepted(orderId: string, qc: QualityControlEntry[], orderQty: number): number {
@@ -73,6 +78,7 @@ export function getQCAccepted(orderId: string, qc: QualityControlEntry[], orderQ
       return s;
     }, 0);
 }
+
 
 export function isQCForceClosed(orderId: string, qc: QualityControlEntry[]): boolean {
   return qc.some(q => q.orderId === orderId && q.forceClosed);
