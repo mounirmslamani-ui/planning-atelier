@@ -34,10 +34,11 @@ interface Props {
 
 const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const {
-    qcEntries, deliveredOrders,
+    qcEntries, deliveredOrders, deliveryEntries,
     addQCSession, updateQCEntry, deleteQCEntry,
     addDeliveredSession, updateDeliveredOrder, deleteDeliveredOrder,
   } = usePlanning();
+
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
