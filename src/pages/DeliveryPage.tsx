@@ -21,19 +21,57 @@ import { toast } from 'sonner';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const DeliveryPage: React.FC = () => {
-  const { deliveryEntries, orders, clients, addDeliveredOrder, deleteDeliveryEntry } = usePlanning();
+  const { deliveryEntries, qcEntries, deliveredOrders, orders, clients } = usePlanning();
   const getOrder = (id: string) => orders.find(o => o.id === id);
   const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
-  const [pending, setPending] = useState<{ entryId: string; date: string } | null>(null);
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
+  // Build a unified list: one entry per order that has deliverable qty
+  // (accepted by QC but not yet shipped) and is not force-closed.
+  type Row = {
+    id: string; orderId: string; controlDate: string;
+    decision: 'conforme' | 'conforme-derogation';
+    accepted: number; shipped: number; deliverable: number;
+  };
+
+  const allRows = React.useMemo<Row[]>(() => {
+    const map = new Map<string, Row>();
+    // Seed from legacy deliveryEntries (back-compat) and QC entries
+    for (const q of qcEntries) {
+      if (q.decision !== 'conforme' && q.decision !== 'conforme-derogation') continue;
+      const order = getOrder(q.orderId);
+      if (!order) continue;
+      const accepted = qcEntries
+        .filter(x => x.orderId === order.id)
+        .reduce((s, x) => {
+          if (x.acceptedQty != null) return s + x.acceptedQty;
+          if (x.decision === 'conforme' || x.decision === 'conforme-derogation') return s + order.quantity;
+          return s;
+        }, 0);
+      const shipped = deliveredOrders
+        .filter(d => d.orderId === order.id)
+        .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
+      const forceClosed = deliveredOrders.some(d => d.orderId === order.id && d.forceClosed);
+      const deliverable = Math.max(0, accepted - shipped);
+      if (forceClosed || deliverable <= 0) continue;
+      if (!map.has(order.id)) {
+        map.set(order.id, {
+          id: q.id, orderId: order.id, controlDate: q.controlDate,
+          decision: q.decision, accepted, shipped, deliverable,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [qcEntries, deliveredOrders, orders]);
+
   const filteredEntries = React.useMemo(
-    () => deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === activeCat),
-    [deliveryEntries, activeCat, orders]
+    () => allRows.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === activeCat),
+    [allRows, activeCat, orders]
   );
   const catCount = (cat: OrderCategory) =>
-    deliveryEntries.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === cat).length;
+    allRows.filter(e => inferCategoryFromOrderNumber(getOrder(e.orderId)?.orderNumber) === cat).length;
+
 
   const accessors = {
     priority: (e: DeliveryEntry) => getOrder(e.orderId)?.priority || '',
