@@ -125,7 +125,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
         });
         toast.success('تم إقفال مراقبة الجودة');
       },
-      { confirmLabel: 'تأكيد', cancelLabel: 'إلغاء' },
+      undefined,
     );
   };
 
@@ -177,7 +177,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
         });
         toast.success('تم إقفال التسليم');
       },
-      { confirmLabel: 'تأكيد', cancelLabel: 'إلغاء' },
+      undefined,
     );
   };
 
