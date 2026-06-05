@@ -385,6 +385,10 @@ export function mapQCEntryFromDB(row: any): QualityControlEntry {
     decision: row.decision as QCDecision | undefined,
     reworkNotes: row.rework_notes || undefined,
     createdAt: row.created_at || '',
+    controlledQty: row.controlled_qty ?? undefined,
+    acceptedQty: row.accepted_qty ?? undefined,
+    rejectedQty: row.rejected_qty ?? undefined,
+    forceClosed: !!row.force_closed,
   };
 }
 
@@ -395,6 +399,10 @@ export function mapQCEntryToDB(e: QualityControlEntry) {
     control_date: toISODate(e.controlDate),
     decision: e.decision || null,
     rework_notes: e.reworkNotes || null,
+    controlled_qty: e.controlledQty ?? null,
+    accepted_qty: e.acceptedQty ?? null,
+    rejected_qty: e.rejectedQty ?? null,
+    force_closed: !!e.forceClosed,
   };
 }
 
@@ -407,6 +415,8 @@ export function mapDeliveryFromDB(row: any): DeliveryEntry {
     controlDate: row.control_date || '',
     decision: row.decision as 'conforme' | 'conforme-derogation',
     movedAt: row.moved_at || '',
+    deliveredQty: row.delivered_qty ?? undefined,
+    forceClosed: !!row.force_closed,
   };
 }
 
@@ -417,6 +427,8 @@ export function mapDeliveryToDB(e: DeliveryEntry) {
     control_date: toISODate(e.controlDate),
     decision: e.decision,
     moved_at: e.movedAt || new Date().toISOString(),
+    delivered_qty: e.deliveredQty ?? null,
+    force_closed: !!e.forceClosed,
   };
 }
 
@@ -432,6 +444,8 @@ export function mapDeliveredOrderFromDB(row: any): DeliveredOrder {
     invoiceNumber: row.invoice_number || undefined,
     invoiceDate: row.invoice_date || undefined,
     createdAt: row.created_at || undefined,
+    deliveredQty: row.delivered_qty ?? undefined,
+    forceClosed: !!row.force_closed,
   };
 }
 
@@ -444,8 +458,11 @@ export function mapDeliveredOrderToDB(d: DeliveredOrder) {
     observation: d.observation || null,
     invoice_number: d.invoiceNumber || null,
     invoice_date: d.invoiceDate ? toISODate(d.invoiceDate) : null,
+    delivered_qty: d.deliveredQty ?? null,
+    force_closed: !!d.forceClosed,
   };
 }
+
 
 // ───────────────────── CancelledOrder ─────────────────────
 
@@ -709,17 +726,25 @@ export async function dbDeleteQCEntry(id: string) {
   if (error) logError('qc_entry', 'delete', error);
 }
 
-// Delivery Entry
+// Delivery Entry — multiple sessions per order are now allowed (partial deliveries).
 export async function dbInsertDelivery(e: DeliveryEntry) {
   const { error } = await supabase
     .from('delivery_entries')
-    .upsert(mapDeliveryToDB(e), { onConflict: 'order_id' });
+    .insert(mapDeliveryToDB(e));
   if (error) logError('delivery', 'insert', error);
+}
+export async function dbUpdateDelivery(e: DeliveryEntry) {
+  const { error } = await supabase
+    .from('delivery_entries')
+    .update(mapDeliveryToDB(e))
+    .eq('id', e.id);
+  if (error) logError('delivery', 'update', error);
 }
 export async function dbDeleteDelivery(id: string) {
   const { error } = await supabase.from('delivery_entries').delete().eq('id', id);
   if (error) logError('delivery', 'delete', error);
 }
+
 
 // Delivered Orders (archive)
 export async function dbInsertDeliveredOrder(d: DeliveredOrder) {

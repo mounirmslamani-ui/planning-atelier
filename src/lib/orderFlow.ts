@@ -1,62 +1,85 @@
-import type {
-  CancelledOrder,
-  DeliveryEntry,
-  DeliveredOrder,
-  Order,
-  QualityControlEntry,
-} from '@/types/planning';
+/**
+ * Order flow helpers — Partial Quality Control & Partial Delivery.
+ *
+ * A single order can now have multiple QC sessions and multiple delivery
+ * sessions (each represented by a row with its own `*_qty`). Legacy entries
+ * with NULL qty are treated as "covers the full order quantity" for
+ * back-compat.
+ */
+import type { Order, QualityControlEntry, DeliveryEntry, DeliveredOrder } from '@/types/planning';
 
-function isMarkerCurrent(markerTimestamp: string | undefined, reintegratedAt: string | undefined): boolean {
-  if (!reintegratedAt) return true;
-  if (!markerTimestamp) return true;
+const fullQty = (o: Order | undefined | null): number => (o?.quantity ?? 0);
 
-  // Date-only values represent a whole day. Treat the same day as current so a
-  // second QC/delivery cycle cannot remain visible in active production.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(markerTimestamp)) {
-    return markerTimestamp >= reintegratedAt.slice(0, 10);
-  }
+// ──────────────── Quality Control ────────────────
 
-  const markerTime = Date.parse(markerTimestamp);
-  const reintegrationTime = Date.parse(reintegratedAt);
-  if (Number.isNaN(markerTime) || Number.isNaN(reintegrationTime)) return true;
-  return markerTime >= reintegrationTime;
+export function getQCControlled(orderId: string, qc: QualityControlEntry[], orderQty: number): number {
+  return qc
+    .filter(q => q.orderId === orderId)
+    .reduce((s, q) => s + (q.controlledQty ?? orderQty), 0);
 }
 
-export function isDeliveryEntryCurrentForOrder(order: Pick<Order, 'id' | 'reintegratedAt'>, entry: DeliveryEntry): boolean {
-  return entry.orderId === order.id && isMarkerCurrent(entry.movedAt || entry.controlDate, order.reintegratedAt);
+export function getQCAccepted(orderId: string, qc: QualityControlEntry[], orderQty: number): number {
+  return qc
+    .filter(q => q.orderId === orderId)
+    .reduce((s, q) => {
+      if (q.acceptedQty != null) return s + q.acceptedQty;
+      // legacy entry without qty: full order if decision is accept-style
+      if (q.decision === 'conforme' || q.decision === 'conforme-derogation') return s + orderQty;
+      return s;
+    }, 0);
 }
 
-export function isDeliveredOrderCurrentForOrder(order: Pick<Order, 'id' | 'reintegratedAt'>, entry: DeliveredOrder): boolean {
-  return entry.orderId === order.id && isMarkerCurrent(entry.createdAt || entry.deliveryDate, order.reintegratedAt);
+export function isQCForceClosed(orderId: string, qc: QualityControlEntry[]): boolean {
+  return qc.some(q => q.orderId === orderId && q.forceClosed);
 }
 
-export function isConformingQCEntryCurrentForOrder(order: Pick<Order, 'id' | 'reintegratedAt'>, entry: QualityControlEntry): boolean {
-  return entry.orderId === order.id
-    && (entry.decision === 'conforme' || entry.decision === 'conforme-derogation')
-    && isMarkerCurrent(entry.createdAt || entry.controlDate, order.reintegratedAt);
+export function getQCRemaining(order: Order, qc: QualityControlEntry[]): number {
+  if (isQCForceClosed(order.id, qc)) return 0;
+  return Math.max(0, fullQty(order) - getQCControlled(order.id, qc, order.quantity));
 }
 
-export function hasCurrentPostProductionFlow(order: Pick<Order, 'id' | 'reintegratedAt'>, flow: {
-  qcEntries: QualityControlEntry[];
-  deliveryEntries: DeliveryEntry[];
-  deliveredOrders: DeliveredOrder[];
-  cancelledOrders: Pick<CancelledOrder, 'orderId'>[];
-}): boolean {
-  if (flow.cancelledOrders.some(entry => entry.orderId === order.id)) return true;
-  if (flow.deliveryEntries.some(entry => isDeliveryEntryCurrentForOrder(order, entry))) return true;
-  if (flow.deliveredOrders.some(entry => isDeliveredOrderCurrentForOrder(order, entry))) return true;
-  return flow.qcEntries.some(entry => isConformingQCEntryCurrentForOrder(order, entry));
+/** True when the order's QC is fully done (controlled = qty) or force-closed. */
+export function isQCClosed(order: Order, qc: QualityControlEntry[]): boolean {
+  return getQCRemaining(order, qc) <= 0;
 }
 
-export function buildOutOfActiveProductionSet(orders: Order[], flow: {
-  qcEntries: QualityControlEntry[];
-  deliveryEntries: DeliveryEntry[];
-  deliveredOrders: DeliveredOrder[];
-  cancelledOrders: Pick<CancelledOrder, 'orderId'>[];
-}): Set<string> {
-  const ids = new Set<string>();
-  orders.forEach(order => {
-    if (hasCurrentPostProductionFlow(order, flow)) ids.add(order.id);
-  });
-  return ids;
+// ──────────────── Delivery ────────────────
+
+export function getDeliveredQty(orderId: string, delivered: DeliveredOrder[], orderQty: number): number {
+  return delivered
+    .filter(d => d.orderId === orderId)
+    .reduce((s, d) => s + (d.deliveredQty ?? orderQty), 0);
+}
+
+export function getReadyQty(orderId: string, entries: DeliveryEntry[], orderQty: number): number {
+  return entries
+    .filter(d => d.orderId === orderId)
+    .reduce((s, d) => s + (d.deliveredQty ?? orderQty), 0);
+}
+
+export function isDeliveryForceClosed(orderId: string, delivered: DeliveredOrder[]): boolean {
+  return delivered.some(d => d.orderId === orderId && d.forceClosed);
+}
+
+/**
+ * Quantity that has been accepted by QC but not yet shipped.
+ *  deliverable = accepted − delivered  (clamped at 0)
+ */
+export function getDeliverableRemaining(
+  order: Order,
+  qc: QualityControlEntry[],
+  delivered: DeliveredOrder[],
+): number {
+  const accepted = getQCAccepted(order.id, qc, order.quantity);
+  const shipped = getDeliveredQty(order.id, delivered, order.quantity);
+  return Math.max(0, accepted - shipped);
+}
+
+export function getDeliveryRemaining(order: Order, delivered: DeliveredOrder[]): number {
+  if (isDeliveryForceClosed(order.id, delivered)) return 0;
+  return Math.max(0, fullQty(order) - getDeliveredQty(order.id, delivered, order.quantity));
+}
+
+export function isDeliveryClosed(order: Order, delivered: DeliveredOrder[]): boolean {
+  return getDeliveryRemaining(order, delivered) <= 0;
 }
