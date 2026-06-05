@@ -111,7 +111,7 @@ const QualityControlPage: React.FC = () => {
       if (!order) continue;
       const controlled = qcEntries
         .filter(q => q.orderId === entry.orderId)
-        .reduce((s, q) => s + (q.controlledQty ?? order.quantity), 0);
+        .reduce((s, q) => s + (q.controlledQty != null ? q.controlledQty : (q.decision ? order.quantity : 0)), 0);
       const forceClosed = qcEntries.some(q => q.orderId === entry.orderId && q.forceClosed);
       if (forceClosed) continue;
       if (controlled >= order.quantity) continue;
@@ -215,7 +215,7 @@ const QualityControlPage: React.FC = () => {
                     {(() => {
                       const controlled = qcEntries
                         .filter(q => q.orderId === order.id)
-                        .reduce((s, q) => s + (q.controlledQty ?? order.quantity), 0);
+                        .reduce((s, q) => s + (q.controlledQty != null ? q.controlledQty : (q.decision ? order.quantity : 0)), 0);
                       const remaining = Math.max(0, order.quantity - controlled);
                       return <span className={remaining > 0 ? 'text-amber-600 font-semibold' : 'text-green-600'}>{remaining} / {order.quantity}</span>;
                     })()}
