@@ -122,7 +122,7 @@ const DeliveryPage: React.FC = () => {
           title="طلبيات جاهزة للتسليم"
           description={
             <span className="flex items-center gap-2">
-              <span className="font-bold text-lg">{deliveryEntries.length}</span>
+              <span className="font-bold text-lg">{allRows.length}</span>
               <span>عدد الطلبيات الجاهزة للتسليم</span>
             </span>
           }
