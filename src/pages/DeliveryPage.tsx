@@ -74,15 +74,15 @@ const DeliveryPage: React.FC = () => {
 
 
   const accessors = {
-    priority: (e: DeliveryEntry) => getOrder(e.orderId)?.priority || '',
-    orderNumber: (e: DeliveryEntry) => getOrder(e.orderId)?.orderNumber || '',
-    orderDate: (e: DeliveryEntry) => getOrder(e.orderId)?.orderDate || '',
-    client: (e: DeliveryEntry) => getClientName(getOrder(e.orderId)?.clientId || ''),
-    designation: (e: DeliveryEntry) => getOrder(e.orderId)?.designation || '',
-    quantity: (e: DeliveryEntry) => getOrder(e.orderId)?.quantity ?? 0,
-    deadline: (e: DeliveryEntry) => getOrder(e.orderId)?.plannedDeadline || '',
-    controlDate: (e: DeliveryEntry) => e.controlDate,
-    decision: (e: DeliveryEntry) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
+    priority: (e: Row) => getOrder(e.orderId)?.priority || '',
+    orderNumber: (e: Row) => getOrder(e.orderId)?.orderNumber || '',
+    orderDate: (e: Row) => getOrder(e.orderId)?.orderDate || '',
+    client: (e: Row) => getClientName(getOrder(e.orderId)?.clientId || ''),
+    designation: (e: Row) => getOrder(e.orderId)?.designation || '',
+    quantity: (e: Row) => e.deliverable,
+    deadline: (e: Row) => getOrder(e.orderId)?.plannedDeadline || '',
+    controlDate: (e: Row) => e.controlDate,
+    decision: (e: Row) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(filteredEntries, accessors);
 
@@ -105,34 +105,15 @@ const DeliveryPage: React.FC = () => {
         Date: order ? formatDateFR(order.orderDate) : '—',
         Client: order ? getClientName(order.clientId) : '—',
         Désignation: order?.designation || '—',
-        Quantité: order?.quantity ?? '—',
+        'Qté à livrer': entry.deliverable,
+        'Qté totale': order?.quantity ?? '—',
         Délais: order ? formatDateFR(order.plannedDeadline) : '—',
         'تاريخ مراقبة الجودة': formatDateFR(entry.controlDate),
         Décision: entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
       };
-    }), [12, 20, 14, 24, 45, 10, 14, 16, 26]);
+    }), [12, 20, 14, 24, 45, 10, 10, 14, 16, 26]);
   };
 
-  const handleConfirmTransfer = () => {
-    if (!pending) return;
-    const entry = deliveryEntries.find(e => e.id === pending.entryId);
-    if (!entry) { setPending(null); return; }
-    const delivered: DeliveredOrder = {
-      id: crypto.randomUUID(),
-      orderId: entry.orderId,
-      deliveryDate: pending.date,
-      salePriceStatus: 'non-calcule',
-      observation: undefined,
-    };
-    addDeliveredOrder(delivered);
-    deleteDeliveryEntry(entry.id);
-    setPending(null);
-    toast.success('Commande transférée vers les Commandes livrées');
-  };
-
-  const handleCancelTransfer = () => {
-    setPending(null);
-  };
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
