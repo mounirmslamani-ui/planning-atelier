@@ -60,7 +60,12 @@ export function buildOutOfActiveProductionSet(
 export function getQCControlled(orderId: string, qc: QualityControlEntry[], orderQty: number): number {
   return qc
     .filter(q => q.orderId === orderId)
-    .reduce((s, q) => s + (q.controlledQty ?? orderQty), 0);
+    .reduce((s, q) => {
+      if (q.controlledQty != null) return s + q.controlledQty;
+      // Legacy entry without qty: counts as full order ONLY if a decision was recorded.
+      // Pending legacy entries (no decision) must NOT be treated as already controlled.
+      return s + (q.decision ? orderQty : 0);
+    }, 0);
 }
 
 export function getQCAccepted(orderId: string, qc: QualityControlEntry[], orderQty: number): number {
@@ -73,6 +78,7 @@ export function getQCAccepted(orderId: string, qc: QualityControlEntry[], orderQ
       return s;
     }, 0);
 }
+
 
 export function isQCForceClosed(orderId: string, qc: QualityControlEntry[]): boolean {
   return qc.some(q => q.orderId === orderId && q.forceClosed);
@@ -108,14 +114,23 @@ export function isDeliveryForceClosed(orderId: string, delivered: DeliveredOrder
 
 /**
  * Quantity that has been accepted by QC but not yet shipped.
- *  deliverable = accepted − delivered  (clamped at 0)
+ *  deliverable = max(acceptedFromQc, acceptedFromLegacyDelivery) − delivered
+ * Legacy "ready to deliver" rows live in `delivery_entries` (single row per
+ * order with no qty), created by the old full-flow before partial QC existed.
+ * We treat them as full-quantity accepted so the order sheet and listing pages
+ * remain in sync for orders that pre-date the partial model.
  */
 export function getDeliverableRemaining(
   order: Order,
   qc: QualityControlEntry[],
   delivered: DeliveredOrder[],
+  deliveryEntries: DeliveryEntry[] = [],
 ): number {
-  const accepted = getQCAccepted(order.id, qc, order.quantity);
+  const acceptedFromQc = getQCAccepted(order.id, qc, order.quantity);
+  const acceptedFromLegacy = deliveryEntries
+    .filter(d => d.orderId === order.id)
+    .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
+  const accepted = Math.max(acceptedFromQc, acceptedFromLegacy);
   const shipped = getDeliveredQty(order.id, delivered, order.quantity);
   return Math.max(0, accepted - shipped);
 }
@@ -128,3 +143,4 @@ export function getDeliveryRemaining(order: Order, delivered: DeliveredOrder[]):
 export function isDeliveryClosed(order: Order, delivered: DeliveredOrder[]): boolean {
   return getDeliveryRemaining(order, delivered) <= 0;
 }
+

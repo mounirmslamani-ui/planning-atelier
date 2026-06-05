@@ -34,10 +34,11 @@ interface Props {
 
 const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const {
-    qcEntries, deliveredOrders,
+    qcEntries, deliveredOrders, deliveryEntries,
     addQCSession, updateQCEntry, deleteQCEntry,
     addDeliveredSession, updateDeliveredOrder, deleteDeliveredOrder,
   } = usePlanning();
+
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
@@ -57,7 +58,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const qcForceClosed = isQCForceClosed(order.id, qcEntries);
 
   const shipped = getDeliveredQty(order.id, deliveredOrders, qty);
-  const deliverable = getDeliverableRemaining(order, qcEntries, deliveredOrders);
+  const deliverable = getDeliverableRemaining(order, qcEntries, deliveredOrders, deliveryEntries);
   const deliveryRemaining = getDeliveryRemaining(order, deliveredOrders);
   const deliveryForceClosed = isDeliveryForceClosed(order.id, deliveredOrders);
 
