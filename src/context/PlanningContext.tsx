@@ -308,29 +308,20 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSteps(data.steps);
         setHolidays(data.holidays);
         setProductionRecords(data.productionRecords);
-        // Filter out qcEntries for orders that are now in delivery / delivered / cancelled (defensive against duplicates)
+        // Sessions multiples par commande autorisées (flux partiel QC/Livraison) :
+        // on ne supprime que les qcEntries des commandes annulées.
         {
-          const blockedOrderIds = new Set<string>([
-            ...data.deliveredOrders.map(d => d.orderId),
-            ...data.deliveryEntries.map(d => d.orderId),
-            ...((data as any).cancelledOrders || []).map((c: any) => c.orderId),
-          ]);
-          const seen = new Set<string>();
-          const sorted = [...data.qcEntries].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-          const kept: typeof data.qcEntries = [];
-          for (const e of sorted) {
-            if (blockedOrderIds.has(e.orderId) || seen.has(e.orderId)) {
-              dbDeleteQCEntry(e.id);
-            } else {
-              seen.add(e.orderId);
-              kept.push(e);
-            }
-          }
+          const blockedOrderIds = new Set<string>(
+            ((data as any).cancelledOrders || []).map((c: any) => c.orderId),
+          );
+          const kept = data.qcEntries.filter(e => !blockedOrderIds.has(e.orderId));
+          data.qcEntries.filter(e => blockedOrderIds.has(e.orderId)).forEach(e => dbDeleteQCEntry(e.id));
           setQCEntries(kept);
         }
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
+
       } catch (err) {
         console.error('[PlanningContext] Periodic refresh failed:', err);
       }
