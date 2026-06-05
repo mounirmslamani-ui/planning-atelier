@@ -424,8 +424,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
                 <PartialQCDelivery order={order} />
-              </TabsContent>
-
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
@@ -463,6 +461,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   </div>
                 )}
               </TabsContent>
+
             </div>
           </Tabs>
         </DialogContent>
