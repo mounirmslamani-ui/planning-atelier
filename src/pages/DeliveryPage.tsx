@@ -179,7 +179,8 @@ const DeliveryPage: React.FC = () => {
                     <DesignationCell orderId={order.id} designation={order.designation} className="text-sm whitespace-normal break-words block" />
                   </TableCell>
                   <TableCell className="text-sm">
-                    {order.quantity}
+                    <span className="text-amber-600 font-semibold">{entry.deliverable}</span>
+                    <span className="text-xs text-muted-foreground"> / {order.quantity}</span>
                   </TableCell>
                   <TableCell>
                     <PriorityBadge priority={order.priority} className="" />
@@ -196,7 +197,7 @@ const DeliveryPage: React.FC = () => {
                  </TableRow>
               );
             })}
-            {deliveryEntries.length === 0 && (
+            {allRows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
@@ -206,18 +207,9 @@ const DeliveryPage: React.FC = () => {
           </TableBody>
         </table>
       </div>
-
-      <ConfirmDialog
-        open={!!pending}
-        title="هل تؤكد هذه العملية؟"
-        description={pending ? `La commande sera transférée vers 'طلبيات مسلمة' avec la date du ${formatDateFR(pending.date)}.` : ''}
-        onConfirm={handleConfirmTransfer}
-        onCancel={handleCancelTransfer}
-        confirmLabel="Oui, transférer"
-        cancelLabel="Non"
-      />
     </div>
   );
 };
+
 
 export default DeliveryPage;
