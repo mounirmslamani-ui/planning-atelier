@@ -7,8 +7,53 @@
  * back-compat.
  */
 import type { Order, QualityControlEntry, DeliveryEntry, DeliveredOrder } from '@/types/planning';
+import { isReintegratedOrder } from '@/lib/reintegration';
 
 const fullQty = (o: Order | undefined | null): number => (o?.quantity ?? 0);
+
+/**
+ * Backward-compat helpers retained for callers that pre-date the
+ * partial-QC/Delivery model. They answer the binary question
+ * "is this order currently in a post-production flow (and therefore
+ *  must not appear in active-production / preparation lists)?".
+ *
+ * A reintegrated order (SAV/Reprise) is considered back in active production
+ * and returns false until it reaches the post-production flow again.
+ */
+export function hasCurrentPostProductionFlow(
+  order: Pick<Order, 'id' | 'observation' | 'reintegratedAt'>,
+  data: {
+    qcEntries: { orderId: string }[];
+    deliveryEntries: { orderId: string }[];
+    deliveredOrders: { orderId: string }[];
+    cancelledOrders: { orderId: string }[];
+  },
+): boolean {
+  if (isReintegratedOrder(order)) return false;
+  return (
+    data.qcEntries.some(e => e.orderId === order.id) ||
+    data.deliveryEntries.some(e => e.orderId === order.id) ||
+    data.deliveredOrders.some(e => e.orderId === order.id) ||
+    data.cancelledOrders.some(e => e.orderId === order.id)
+  );
+}
+
+export function buildOutOfActiveProductionSet(
+  orders: Pick<Order, 'id' | 'observation' | 'reintegratedAt'>[],
+  data: {
+    qcEntries: { orderId: string }[];
+    deliveryEntries: { orderId: string }[];
+    deliveredOrders: { orderId: string }[];
+    cancelledOrders: { orderId: string }[];
+  },
+): Set<string> {
+  const ids = new Set<string>();
+  orders.forEach(o => {
+    if (hasCurrentPostProductionFlow(o, data)) ids.add(o.id);
+  });
+  return ids;
+}
+
 
 // ──────────────── Quality Control ────────────────
 
