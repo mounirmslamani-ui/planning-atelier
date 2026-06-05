@@ -60,7 +60,7 @@ const DeliveredOrdersPage: React.FC = () => {
     orderDate: (d: DeliveredOrder) => getOrder(d.orderId)?.orderDate || '',
     client: (d: DeliveredOrder) => getClientName(getOrder(d.orderId)?.clientId || ''),
     designation: (d: DeliveredOrder) => getOrder(d.orderId)?.designation || '',
-    quantity: (d: DeliveredOrder) => getOrder(d.orderId)?.quantity ?? 0,
+    quantity: (d: DeliveredOrder) => d.deliveredQty ?? getOrder(d.orderId)?.quantity ?? 0,
     deliveryDate: (d: DeliveredOrder) => d.deliveryDate,
     salePriceStatus: (d: DeliveredOrder) => PRICE_META[d.salePriceStatus].label,
     invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
