@@ -307,10 +307,31 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   </div>
                   <div>
                     <Label>ممثل الزبون</Label>
-                    <Input
-                      value={merged.clientRepresentative || ''}
-                      onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))}
-                    />
+                    {(() => {
+                      const selectedClient = clients.find(c => c.id === (merged.clientId || ''));
+                      const reps = selectedClient?.representatives?.filter(r => r.name?.trim()) || [];
+                      if (reps.length > 0) {
+                        return (
+                          <Select
+                            value={merged.clientRepresentative || ''}
+                            onValueChange={v => setDraft(d => ({ ...d, clientRepresentative: v }))}
+                          >
+                            <SelectTrigger><SelectValue placeholder="— اختر ممثلاً —" /></SelectTrigger>
+                            <SelectContent>
+                              {reps.map(r => (
+                                <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      }
+                      return (
+                        <Input
+                          value={merged.clientRepresentative || ''}
+                          onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))}
+                        />
+                      );
+                    })()}
                   </div>
                   <div className="md:col-span-2">
                     <Label>التعيين / Désignation</Label>
