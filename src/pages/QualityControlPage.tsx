@@ -99,11 +99,28 @@ const QualityControlPage: React.FC = () => {
     controlDate: (e: QualityControlEntry) => e.controlDate,
     decision: (e: QualityControlEntry) => e.decision ? decisionLabels[e.decision] : '',
   };
-  const activeQcEntries = qcEntries.filter(entry =>
-    !deliveredOrders.some(d => d.orderId === entry.orderId)
-    && !deliveryEntries.some(d => d.orderId === entry.orderId)
-  );
+  // Group QC entries by order — show one row per order, hide orders fully closed
+  // (QCRemaining ≤ 0) or already moved past delivery.
+  const activeQcEntries = React.useMemo(() => {
+    const seen = new Set<string>();
+    const list: QualityControlEntry[] = [];
+    for (const entry of qcEntries) {
+      if (seen.has(entry.orderId)) continue;
+      seen.add(entry.orderId);
+      const order = getOrder(entry.orderId);
+      if (!order) continue;
+      const controlled = qcEntries
+        .filter(q => q.orderId === entry.orderId)
+        .reduce((s, q) => s + (q.controlledQty ?? order.quantity), 0);
+      const forceClosed = qcEntries.some(q => q.orderId === entry.orderId && q.forceClosed);
+      if (forceClosed) continue;
+      if (controlled >= order.quantity) continue;
+      list.push(entry);
+    }
+    return list;
+  }, [qcEntries, orders]);
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(activeQcEntries, accessors);
+
 
   const allValuesByKey = React.useMemo(() => {
     const map: Record<string, string[]> = {};
