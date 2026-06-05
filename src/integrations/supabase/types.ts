@@ -98,7 +98,9 @@ export type Database = {
       delivered_orders: {
         Row: {
           created_at: string
+          delivered_qty: number | null
           delivery_date: string
+          force_closed: boolean
           id: string
           invoice_date: string | null
           invoice_number: string | null
@@ -109,7 +111,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivered_qty?: number | null
           delivery_date?: string
+          force_closed?: boolean
           id?: string
           invoice_date?: string | null
           invoice_number?: string | null
@@ -120,7 +124,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivered_qty?: number | null
           delivery_date?: string
+          force_closed?: boolean
           id?: string
           invoice_date?: string | null
           invoice_number?: string | null
@@ -136,6 +142,8 @@ export type Database = {
           control_date: string
           created_at: string
           decision: Database["public"]["Enums"]["delivery_decision"]
+          delivered_qty: number | null
+          force_closed: boolean
           id: string
           moved_at: string
           order_id: string
@@ -144,6 +152,8 @@ export type Database = {
           control_date?: string
           created_at?: string
           decision: Database["public"]["Enums"]["delivery_decision"]
+          delivered_qty?: number | null
+          force_closed?: boolean
           id?: string
           moved_at?: string
           order_id: string
@@ -152,6 +162,8 @@ export type Database = {
           control_date?: string
           created_at?: string
           decision?: Database["public"]["Enums"]["delivery_decision"]
+          delivered_qty?: number | null
+          force_closed?: boolean
           id?: string
           moved_at?: string
           order_id?: string
@@ -611,27 +623,39 @@ export type Database = {
       }
       quality_control_entries: {
         Row: {
+          accepted_qty: number | null
           control_date: string
+          controlled_qty: number | null
           created_at: string
           decision: Database["public"]["Enums"]["qc_decision"] | null
+          force_closed: boolean
           id: string
           order_id: string
+          rejected_qty: number | null
           rework_notes: string | null
         }
         Insert: {
+          accepted_qty?: number | null
           control_date?: string
+          controlled_qty?: number | null
           created_at?: string
           decision?: Database["public"]["Enums"]["qc_decision"] | null
+          force_closed?: boolean
           id?: string
           order_id: string
+          rejected_qty?: number | null
           rework_notes?: string | null
         }
         Update: {
+          accepted_qty?: number | null
           control_date?: string
+          controlled_qty?: number | null
           created_at?: string
           decision?: Database["public"]["Enums"]["qc_decision"] | null
+          force_closed?: boolean
           id?: string
           order_id?: string
+          rejected_qty?: number | null
           rework_notes?: string | null
         }
         Relationships: [
