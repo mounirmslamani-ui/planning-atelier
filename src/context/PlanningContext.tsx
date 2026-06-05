@@ -16,8 +16,9 @@ import {
   dbInsertHoliday, dbUpdateHoliday, dbDeleteHoliday,
   dbInsertRecord, dbUpdateRecord, dbDeleteRecord,
   dbInsertQCEntry, dbUpdateQCEntry, dbDeleteQCEntry,
-  dbInsertDelivery, dbDeleteDelivery,
+  dbInsertDelivery, dbUpdateDelivery, dbDeleteDelivery,
   dbInsertDeliveredOrder, dbUpdateDeliveredOrder, dbDeleteDeliveredOrder,
+
   dbInsertCancelledOrder, dbUpdateCancelledOrder, dbDeleteCancelledOrder,
 } from '@/lib/supabase-data';
 import { computeResyncedSteps } from '@/lib/resyncPlanning';
@@ -75,13 +76,21 @@ interface PlanningContextType {
   updateProductionRecord: (record: ProductionRecord) => void;
   deleteProductionRecord: (id: string) => void;
   addQCEntry: (entry: QualityControlEntry) => void;
+  /** Add a QC SESSION (partial control). Bypasses the one-per-order guard. */
+  addQCSession: (entry: QualityControlEntry) => void;
   updateQCEntry: (entry: QualityControlEntry) => void;
   deleteQCEntry: (id: string) => void;
   addDeliveryEntry: (entry: DeliveryEntry) => void;
+  /** Add a DELIVERY-READY session (partial). Bypasses the one-per-order merge. */
+  addDeliverySession: (entry: DeliveryEntry) => void;
+  updateDeliveryEntry: (entry: DeliveryEntry) => void;
   deleteDeliveryEntry: (id: string) => void;
   addDeliveredOrder: (entry: DeliveredOrder) => void;
+  /** Add a DELIVERED session (partial). Bypasses the one-per-order merge. */
+  addDeliveredSession: (entry: DeliveredOrder) => void;
   updateDeliveredOrder: (entry: DeliveredOrder) => void;
   deleteDeliveredOrder: (id: string) => void;
+
   addCancelledOrder: (entry: CancelledOrder) => Promise<boolean>;
   updateCancelledOrder: (entry: CancelledOrder) => void;
   deleteCancelledOrder: (id: string) => void;
