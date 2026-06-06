@@ -640,6 +640,9 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
 /** Editable Resources tab table. */
 export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor }) => {
   const e = editor;
+  const materialSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.materialStatus)), [e.rows]);
+  const toolingSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.toolingStatus)), [e.rows]);
+  const studySynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.studyStatus)), [e.rows]);
   return (
     <div className="space-y-3">
       {e.isLocked && (
