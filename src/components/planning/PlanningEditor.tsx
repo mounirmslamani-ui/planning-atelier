@@ -660,9 +660,24 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
             <tr>
               <th className="p-1.5 text-right">#</th>
               <th className="p-1.5 text-right">العملية</th>
-              <th className="p-1.5 text-right">المواد الأولية</th>
-              <th className="p-1.5 text-right">العدة</th>
-              <th className="p-1.5 text-right">الدراسة</th>
+              <th className="p-1.5 text-right">
+                <div className="flex items-center gap-1.5">
+                  <ResourceStatusPill value={materialSynth} onChange={s => e.handleColumnStatusChange('material', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <span>المواد الأولية</span>
+                </div>
+              </th>
+              <th className="p-1.5 text-right">
+                <div className="flex items-center gap-1.5">
+                  <ResourceStatusPill value={toolingSynth} onChange={s => e.handleColumnStatusChange('tooling', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <span>العدة</span>
+                </div>
+              </th>
+              <th className="p-1.5 text-right">
+                <div className="flex items-center gap-1.5">
+                  <ResourceStatusPill value={studySynth} onChange={s => e.handleColumnStatusChange('study', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <span>الدراسة</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
