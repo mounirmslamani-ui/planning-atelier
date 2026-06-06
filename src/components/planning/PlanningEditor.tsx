@@ -693,7 +693,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   <td className="p-1.5">{opName}</td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} deadline={row.materialDeadline} />
+                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} />
                       {(row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
                         <div key={idx} className="flex items-center gap-1">
                           <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'rawMaterialNeeds', idx, ev.target.value)} placeholder="مادة..." disabled={e.isLocked} />
@@ -712,7 +712,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   </td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} deadline={row.toolingDeadline} />
+                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} />
                       {(row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
                         <div key={idx} className="flex items-center gap-1">
                           <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'specialToolingNeeds', idx, ev.target.value)} placeholder="أداة..." disabled={e.isLocked} />
@@ -730,7 +730,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                     </div>
                   </td>
                   <td className="p-1.5 text-center">
-                    <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} deadline={row.studyDeadline} />
+                    <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} />
                   </td>
                 </tr>
               );
@@ -755,25 +755,6 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
   const e = editor;
   return (
     <>
-      {e.datePrompt && (
-        <DatePromptDialog
-          open={!!e.datePrompt}
-          label={e.datePrompt.label}
-          onConfirm={(date) => {
-            e.setRows(prev => prev.map(row => row.id !== e.datePrompt!.rowId ? row : ({ ...row, [e.datePrompt!.field]: date } as OperationRow)));
-            e.setDatePrompt(null);
-          }}
-          onCancel={() => {
-            const statusMap: Record<string, 'studyStatus' | 'materialStatus' | 'toolingStatus'> = {
-              studyDeadline: 'studyStatus', materialDeadline: 'materialStatus', toolingDeadline: 'toolingStatus',
-            };
-            const statusKey = statusMap[e.datePrompt!.field];
-            e.setRows(prev => prev.map(row => row.id !== e.datePrompt!.rowId ? row : ({ ...row, [statusKey]: 'disponible', [e.datePrompt!.field]: '' } as OperationRow)));
-            e.setDatePrompt(null);
-          }}
-        />
-      )}
-
       {e.forcePrompt && (
         <ConfirmDialog
           open={!!e.forcePrompt}
