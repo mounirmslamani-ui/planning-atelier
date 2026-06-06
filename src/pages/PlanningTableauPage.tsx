@@ -1521,7 +1521,7 @@ if (nextRecord) {
                         <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={matStatus}
-                            receivedDate={order.materialReceivedDate}
+                            
                             readOnly
                           />
                         </TableCell>
