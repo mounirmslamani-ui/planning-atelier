@@ -768,7 +768,7 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
               studyStatus: 'disponible' as ResourceStatus,
               materialStatus: 'disponible' as ResourceStatus,
               toolingStatus: 'disponible' as ResourceStatus,
-              studyDeadline: '', materialDeadline: '', toolingDeadline: '',
+              
             }) : r);
             e.setRows(forced);
             e.setForcePrompt(null);
