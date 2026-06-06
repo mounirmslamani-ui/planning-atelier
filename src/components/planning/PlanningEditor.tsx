@@ -109,20 +109,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }
   }, [open, order?.id, steps, absenceOperationId]);
 
-  useEffect(() => {
-    if (!open || rows.length === 0) return;
-    setRows(prev => prev.map(row => {
-      if (!row.stepId) return row;
-      const step = steps.find(s => s.id === row.stepId);
-      if (!step) return row;
-      return {
-        ...row,
-        studyDeadline: step.studyDeadline || row.studyDeadline,
-        materialDeadline: step.materialDeadline || row.materialDeadline,
-        toolingDeadline: step.toolingDeadline || row.toolingDeadline,
-      };
-    }));
-  }, [open, steps]);
 
   const blockedSet = useMemo(() => {
     const set = new Set<string>();
