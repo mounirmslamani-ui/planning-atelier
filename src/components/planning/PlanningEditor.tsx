@@ -133,7 +133,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       studyStatus: currentOrder.studyStatus ?? 'non-disponible',
       materialStatus: currentOrder.materialStatus ?? 'non-disponible',
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible',
-      studyDeadline: '', materialDeadline: '', toolingDeadline: '',
       specialToolingNeeds: [''],
       rawMaterialNeeds: [''],
     }]);
@@ -183,20 +182,12 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
-    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    setRows(prev => prev.map(row => row.id !== rowId ? row : ({
-      ...row,
-      [statusKey]: status,
-      ...(status === 'disponible' || status === 'non-applicable' ? { [deadlineKey]: '' } : {}),
-    } as OperationRow)));
-    if (status === 'non-disponible' || status === 'partiel') {
-      const labels = {
-        study: 'Date prévue pour fin Étude',
-        material: 'Date prévue pour disponibilité Matière',
-        tooling: 'Date prévue pour disponibilité Outillage',
-      };
-      setDatePrompt({ rowId, field: deadlineKey, label: labels[field] });
-    }
+    setRows(prev => prev.map(row => row.id !== rowId ? row : ({ ...row, [statusKey]: status } as OperationRow)));
+  };
+
+  const handleColumnStatusChange = (field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    setRows(prev => prev.map(row => ({ ...row, [statusKey]: status } as OperationRow)));
   };
 
   const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
@@ -319,9 +310,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.studyReady = s.studyStatus === 'disponible';
         s.materialAvailable = s.materialStatus === 'disponible';
         s.toolingAvailable = s.toolingStatus === 'disponible';
-        s.studyDeadline = sourceRow.studyDeadline;
-        s.materialDeadline = sourceRow.materialDeadline;
-        s.toolingDeadline = sourceRow.toolingDeadline;
+        s.studyDeadline = undefined;
+        s.materialDeadline = undefined;
+        s.toolingDeadline = undefined;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
         s.estimatedDuration = sourceRow.estimatedDuration;
@@ -355,9 +346,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyReady: row.studyStatus === 'disponible',
         materialAvailable: row.materialStatus === 'disponible',
         toolingAvailable: row.toolingStatus === 'disponible',
-        studyDeadline: row.studyDeadline,
-        materialDeadline: row.materialDeadline,
-        toolingDeadline: row.toolingDeadline,
+        studyDeadline: undefined,
+        materialDeadline: undefined,
+        toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
       });
@@ -415,9 +406,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyReady: row.studyStatus === 'disponible',
         materialAvailable: row.materialStatus === 'disponible',
         toolingAvailable: row.toolingStatus === 'disponible',
-        studyDeadline: row.studyDeadline,
-        materialDeadline: row.materialDeadline,
-        toolingDeadline: row.toolingDeadline,
+        studyDeadline: undefined,
+        materialDeadline: undefined,
+        toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
       });
@@ -461,7 +452,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
-    datePrompt, setDatePrompt,
+    handleColumnStatusChange,
     forcePrompt, setForcePrompt,
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
