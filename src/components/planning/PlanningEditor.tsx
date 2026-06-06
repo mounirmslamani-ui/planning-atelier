@@ -7,7 +7,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { OperationToSchedule } from '@/lib/scheduler';
 import type { Order, ProductionRecord, ResourceStatus } from '@/types/planning';
-import DatePromptDialog from '@/components/DatePromptDialog';
+
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
