@@ -11,8 +11,6 @@ import { formatDateFR } from '@/lib/utils';
 interface Props {
   value: ResourceStatus | undefined;
   onChange?: (next: ResourceStatus) => void;
-  deadline?: string;
-  receivedDate?: string;
   size?: 'sm' | 'md';
   readOnly?: boolean;
 }
@@ -26,23 +24,18 @@ const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
 
 const ORDER: ResourceStatus[] = ['disponible', 'partiel', 'non-disponible', 'non-applicable'];
 
-const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receivedDate, size = 'sm', readOnly = false }) => {
+const ResourceStatusPill: React.FC<Props> = ({ value, onChange, size = 'sm', readOnly = false }) => {
   const [open, setOpen] = React.useState(false);
   const current = value ?? 'non-disponible';
   const meta = STATUS_META[current];
   const cls = size === 'sm' ? 'text-sm' : 'text-base';
-  const dateInfo = receivedDate
-    ? ` — Reçu : ${formatDateFR(receivedDate)}`
-    : deadline && deadline !== 'warning' && deadline !== 'pending'
-      ? ` — Prévu : ${formatDateFR(deadline)}`
-      : '';
 
   // Mode lecture seule : affichage simple sans dropdown
   if (readOnly) {
     return (
       <span
         className={`${cls} select-none`}
-        title={meta.label + dateInfo}
+        title={meta.label}
       >
         {meta.emoji}
       </span>
@@ -55,7 +48,7 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, deadline, receiv
         <button
           type="button"
           className={`${cls} cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-ring rounded`}
-          title={meta.label + dateInfo}
+          title={meta.label}
         >
           {meta.emoji}
         </button>

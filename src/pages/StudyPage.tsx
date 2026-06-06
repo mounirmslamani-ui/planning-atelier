@@ -22,21 +22,20 @@ const StudyPage: React.FC = () => {
 
   const rows = useMemo(() => {
     const isStudyBlocked = (status: any) => status === 'non-disponible' || status === 'partiel';
-    const result: { orderId: string; stepIds: string[]; deadline: string }[] = [];
-    const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
+    const result: { orderId: string; stepIds: string[] }[] = [];
+    const orderMap = new Map<string, { stepIds: string[] }>();
     orders
       .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isStudyBlocked(o.studyStatus))
-      .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
+      .forEach(o => orderMap.set(o.id, { stepIds: [] }));
 
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
       if (!order || excludedIds.has(order.id) || !isStudyBlocked(s.studyStatus ?? order.studyStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
-        orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.studyDeadline || '' });
+        orderMap.set(s.orderId, { stepIds: [s.id] });
       } else {
         existing.stepIds.push(s.id);
-        if ((s.studyDeadline || '') > existing.deadline) existing.deadline = s.studyDeadline || '';
       }
     });
 
@@ -96,8 +95,7 @@ const StudyPage: React.FC = () => {
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-      'تاريخ نهاية الدراسة المبرمج': formatDateFR(r.deadline) || '—',
-    })), [8, 20, 24, 45, 10, 12, 16, 22]);
+    })), [8, 20, 24, 45, 10, 12, 16]);
   };
 
   return (
@@ -121,12 +119,11 @@ const StudyPage: React.FC = () => {
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
-              <TableHead>تاريخ نهاية الدراسة المبرمج</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
             ) : filteredRows.map((r) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
@@ -136,7 +133,6 @@ const StudyPage: React.FC = () => {
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
-                <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
