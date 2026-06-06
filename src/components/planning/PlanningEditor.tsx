@@ -100,9 +100,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           studyStatus: (s.studyStatus ?? currentOrder!.studyStatus ?? 'non-disponible') as ResourceStatus,
           materialStatus: (s.materialStatus ?? currentOrder!.materialStatus ?? 'non-disponible') as ResourceStatus,
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
-          studyDeadline: s.studyDeadline || '',
-          materialDeadline: s.materialDeadline || '',
-          toolingDeadline: s.toolingDeadline || '',
           specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
           rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
         };
