@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ResourceStatus } from '@/types/planning';
-import { formatDateFR } from '@/lib/utils';
+
 
 interface Props {
   value: ResourceStatus | undefined;
