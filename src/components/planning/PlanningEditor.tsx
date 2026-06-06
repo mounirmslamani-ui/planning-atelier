@@ -7,7 +7,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { OperationToSchedule } from '@/lib/scheduler';
 import type { Order, ProductionRecord, ResourceStatus } from '@/types/planning';
-import DatePromptDialog from '@/components/DatePromptDialog';
+
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
@@ -29,9 +29,6 @@ export interface OperationRow {
   studyStatus: ResourceStatus;
   materialStatus: ResourceStatus;
   toolingStatus: ResourceStatus;
-  studyDeadline: string;
-  materialDeadline: string;
-  toolingDeadline: string;
   specialToolingNeeds: string[];
   rawMaterialNeeds: string[];
 }
@@ -64,7 +61,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     : '';
 
   const [rows, setRows] = useState<OperationRow[]>([]);
-  const [datePrompt, setDatePrompt] = useState<{ rowId: string; field: 'studyDeadline' | 'materialDeadline' | 'toolingDeadline'; label: string } | null>(null);
+  
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
@@ -103,9 +100,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           studyStatus: (s.studyStatus ?? currentOrder!.studyStatus ?? 'non-disponible') as ResourceStatus,
           materialStatus: (s.materialStatus ?? currentOrder!.materialStatus ?? 'non-disponible') as ResourceStatus,
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
-          studyDeadline: s.studyDeadline || '',
-          materialDeadline: s.materialDeadline || '',
-          toolingDeadline: s.toolingDeadline || '',
           specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
           rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
         };
@@ -115,20 +109,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }
   }, [open, order?.id, steps, absenceOperationId]);
 
-  useEffect(() => {
-    if (!open || rows.length === 0) return;
-    setRows(prev => prev.map(row => {
-      if (!row.stepId) return row;
-      const step = steps.find(s => s.id === row.stepId);
-      if (!step) return row;
-      return {
-        ...row,
-        studyDeadline: step.studyDeadline || row.studyDeadline,
-        materialDeadline: step.materialDeadline || row.materialDeadline,
-        toolingDeadline: step.toolingDeadline || row.toolingDeadline,
-      };
-    }));
-  }, [open, steps]);
 
   const blockedSet = useMemo(() => {
     const set = new Set<string>();
@@ -153,7 +133,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       studyStatus: currentOrder.studyStatus ?? 'non-disponible',
       materialStatus: currentOrder.materialStatus ?? 'non-disponible',
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible',
-      studyDeadline: '', materialDeadline: '', toolingDeadline: '',
       specialToolingNeeds: [''],
       rawMaterialNeeds: [''],
     }]);
@@ -203,20 +182,12 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const handleStatusChange = (rowId: string, field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
     const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
-    const deadlineKey = `${field}Deadline` as 'studyDeadline' | 'materialDeadline' | 'toolingDeadline';
-    setRows(prev => prev.map(row => row.id !== rowId ? row : ({
-      ...row,
-      [statusKey]: status,
-      ...(status === 'disponible' || status === 'non-applicable' ? { [deadlineKey]: '' } : {}),
-    } as OperationRow)));
-    if (status === 'non-disponible' || status === 'partiel') {
-      const labels = {
-        study: 'Date prévue pour fin Étude',
-        material: 'Date prévue pour disponibilité Matière',
-        tooling: 'Date prévue pour disponibilité Outillage',
-      };
-      setDatePrompt({ rowId, field: deadlineKey, label: labels[field] });
-    }
+    setRows(prev => prev.map(row => row.id !== rowId ? row : ({ ...row, [statusKey]: status } as OperationRow)));
+  };
+
+  const handleColumnStatusChange = (field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
+    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
+    setRows(prev => prev.map(row => ({ ...row, [statusKey]: status } as OperationRow)));
   };
 
   const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
@@ -339,9 +310,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.studyReady = s.studyStatus === 'disponible';
         s.materialAvailable = s.materialStatus === 'disponible';
         s.toolingAvailable = s.toolingStatus === 'disponible';
-        s.studyDeadline = sourceRow.studyDeadline;
-        s.materialDeadline = sourceRow.materialDeadline;
-        s.toolingDeadline = sourceRow.toolingDeadline;
+        s.studyDeadline = undefined;
+        s.materialDeadline = undefined;
+        s.toolingDeadline = undefined;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
         s.estimatedDuration = sourceRow.estimatedDuration;
@@ -375,9 +346,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyReady: row.studyStatus === 'disponible',
         materialAvailable: row.materialStatus === 'disponible',
         toolingAvailable: row.toolingStatus === 'disponible',
-        studyDeadline: row.studyDeadline,
-        materialDeadline: row.materialDeadline,
-        toolingDeadline: row.toolingDeadline,
+        studyDeadline: undefined,
+        materialDeadline: undefined,
+        toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
       });
@@ -435,9 +406,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyReady: row.studyStatus === 'disponible',
         materialAvailable: row.materialStatus === 'disponible',
         toolingAvailable: row.toolingStatus === 'disponible',
-        studyDeadline: row.studyDeadline,
-        materialDeadline: row.materialDeadline,
-        toolingDeadline: row.toolingDeadline,
+        studyDeadline: undefined,
+        materialDeadline: undefined,
+        toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
       });
@@ -481,7 +452,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
-    datePrompt, setDatePrompt,
+    handleColumnStatusChange,
     forcePrompt, setForcePrompt,
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
@@ -669,6 +640,9 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
 /** Editable Resources tab table. */
 export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor }) => {
   const e = editor;
+  const materialSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.materialStatus)), [e.rows]);
+  const toolingSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.toolingStatus)), [e.rows]);
+  const studySynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.studyStatus)), [e.rows]);
   return (
     <div className="space-y-3">
       {e.isLocked && (
@@ -689,9 +663,24 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
             <tr>
               <th className="p-1.5 text-right">#</th>
               <th className="p-1.5 text-right">العملية</th>
-              <th className="p-1.5 text-right">المواد الأولية</th>
-              <th className="p-1.5 text-right">العدة</th>
-              <th className="p-1.5 text-right">الدراسة</th>
+              <th className="p-1.5 text-right">
+                <div className="flex items-center gap-1.5">
+                  <ResourceStatusPill value={materialSynth} onChange={s => e.handleColumnStatusChange('material', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <span>المواد الأولية</span>
+                </div>
+              </th>
+              <th className="p-1.5 text-right">
+                <div className="flex items-center gap-1.5">
+                  <ResourceStatusPill value={toolingSynth} onChange={s => e.handleColumnStatusChange('tooling', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <span>العدة</span>
+                </div>
+              </th>
+              <th className="p-1.5 text-right">
+                <div className="flex items-center gap-1.5">
+                  <ResourceStatusPill value={studySynth} onChange={s => e.handleColumnStatusChange('study', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <span>الدراسة</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -704,7 +693,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   <td className="p-1.5">{opName}</td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} deadline={row.materialDeadline} />
+                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} />
                       {(row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
                         <div key={idx} className="flex items-center gap-1">
                           <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'rawMaterialNeeds', idx, ev.target.value)} placeholder="مادة..." disabled={e.isLocked} />
@@ -723,7 +712,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   </td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} deadline={row.toolingDeadline} />
+                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} />
                       {(row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
                         <div key={idx} className="flex items-center gap-1">
                           <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'specialToolingNeeds', idx, ev.target.value)} placeholder="أداة..." disabled={e.isLocked} />
@@ -741,7 +730,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                     </div>
                   </td>
                   <td className="p-1.5 text-center">
-                    <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} deadline={row.studyDeadline} />
+                    <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} />
                   </td>
                 </tr>
               );
@@ -766,25 +755,6 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
   const e = editor;
   return (
     <>
-      {e.datePrompt && (
-        <DatePromptDialog
-          open={!!e.datePrompt}
-          label={e.datePrompt.label}
-          onConfirm={(date) => {
-            e.setRows(prev => prev.map(row => row.id !== e.datePrompt!.rowId ? row : ({ ...row, [e.datePrompt!.field]: date } as OperationRow)));
-            e.setDatePrompt(null);
-          }}
-          onCancel={() => {
-            const statusMap: Record<string, 'studyStatus' | 'materialStatus' | 'toolingStatus'> = {
-              studyDeadline: 'studyStatus', materialDeadline: 'materialStatus', toolingDeadline: 'toolingStatus',
-            };
-            const statusKey = statusMap[e.datePrompt!.field];
-            e.setRows(prev => prev.map(row => row.id !== e.datePrompt!.rowId ? row : ({ ...row, [statusKey]: 'disponible', [e.datePrompt!.field]: '' } as OperationRow)));
-            e.setDatePrompt(null);
-          }}
-        />
-      )}
-
       {e.forcePrompt && (
         <ConfirmDialog
           open={!!e.forcePrompt}
@@ -798,7 +768,7 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
               studyStatus: 'disponible' as ResourceStatus,
               materialStatus: 'disponible' as ResourceStatus,
               toolingStatus: 'disponible' as ResourceStatus,
-              studyDeadline: '', materialDeadline: '', toolingDeadline: '',
+              
             }) : r);
             e.setRows(forced);
             e.setForcePrompt(null);

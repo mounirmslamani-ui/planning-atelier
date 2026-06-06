@@ -1514,7 +1514,6 @@ if (nextRecord) {
                         <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={studyStatus}
-                            deadline={step.studyDeadline}
                             readOnly
                           />
                         </TableCell>
@@ -1522,8 +1521,7 @@ if (nextRecord) {
                         <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={matStatus}
-                            deadline={step.materialDeadline}
-                            receivedDate={order.materialReceivedDate}
+                            
                             readOnly
                           />
                         </TableCell>
@@ -1531,7 +1529,6 @@ if (nextRecord) {
                         <TableCell className="py-1.5 px-1 text-center">
                           <ResourceStatusPill
                             value={toolStatus}
-                            deadline={step.toolingDeadline}
                             readOnly
                           />
                         </TableCell>

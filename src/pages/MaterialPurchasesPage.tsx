@@ -22,19 +22,18 @@ const MaterialPurchasesPage: React.FC = () => {
 
   const rows = useMemo(() => {
     const isMaterialBlocked = (status: any) => status === 'non-disponible' || status === 'partiel';
-    const orderMap = new Map<string, { stepIds: string[]; deadline: string }>();
+    const orderMap = new Map<string, { stepIds: string[] }>();
     orders
       .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isMaterialBlocked(o.materialStatus))
-      .forEach(o => orderMap.set(o.id, { stepIds: [], deadline: '' }));
+      .forEach(o => orderMap.set(o.id, { stepIds: [] }));
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
       if (!order || excludedIds.has(order.id) || !isMaterialBlocked(order.materialStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
-        orderMap.set(s.orderId, { stepIds: [s.id], deadline: s.materialDeadline || '' });
+        orderMap.set(s.orderId, { stepIds: [s.id] });
       } else {
         existing.stepIds.push(s.id);
-        if ((s.materialDeadline || '') > existing.deadline) existing.deadline = s.materialDeadline || '';
       }
     });
     return Array.from(orderMap.entries()).map(([orderId, info]) => {
@@ -92,8 +91,7 @@ const MaterialPurchasesPage: React.FC = () => {
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-      'التاريخ المبرمج لشراء المواد الأولية': formatDateFR(r.deadline) || '—',
-    })), [8, 20, 24, 45, 10, 12, 16, 26]);
+    })), [8, 20, 24, 45, 10, 12, 16]);
   };
 
   return (
@@ -117,12 +115,11 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
-              <TableHead>التاريخ المبرمج لشراء المواد الأولية</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Toutes les matières sont disponibles ✓</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Toutes les matières sont disponibles ✓</TableCell></TableRow>
             ) : filteredRows.map((r: any) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
@@ -132,7 +129,6 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
-                <TableCell className="text-sm">{formatDateFR(r.deadline) || '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
