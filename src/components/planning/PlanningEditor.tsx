@@ -29,9 +29,6 @@ export interface OperationRow {
   studyStatus: ResourceStatus;
   materialStatus: ResourceStatus;
   toolingStatus: ResourceStatus;
-  studyDeadline: string;
-  materialDeadline: string;
-  toolingDeadline: string;
   specialToolingNeeds: string[];
   rawMaterialNeeds: string[];
 }
