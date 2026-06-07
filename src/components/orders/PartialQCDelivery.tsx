@@ -337,6 +337,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                 <th className="text-right p-2">رقم الفاتورة</th>
                 <th className="text-right p-2">تاريخ الفاتورة</th>
                 <th className="text-right p-2">ثمن البيع</th>
+                <th className="text-right p-2">ملاحظات وتعليمات</th>
                 <th className="text-right p-2 w-12"></th>
               </tr>
             </thead>
