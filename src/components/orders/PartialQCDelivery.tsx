@@ -213,7 +213,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                 <th className="text-right p-2 w-24">الكمية المراقبة</th>
                 <th className="text-right p-2 w-24">الكمية المقبولة</th>
                 <th className="text-right p-2">القرار</th>
-                <th className="text-right p-2">ملاحظات</th>
+                <th className="text-right p-2">ملاحظات وتعليمات</th>
                 <th className="text-right p-2 w-12"></th>
               </tr>
             </thead>
