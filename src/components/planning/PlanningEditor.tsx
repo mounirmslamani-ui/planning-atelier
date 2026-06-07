@@ -853,7 +853,7 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
               if (row && row.stepId && row.assignType === 'operator' && row.option1) {
                 const op = e.operations.find(o => o.id === row.operationId);
                 e.addProductionRecord({
-                  id: `prod-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  id: crypto.randomUUID(),
                   stepId: row.stepId,
                   orderId: order.id,
                   operatorId: row.option1,
