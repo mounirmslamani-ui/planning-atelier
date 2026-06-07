@@ -139,6 +139,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible',
       specialToolingNeeds: [''],
       rawMaterialNeeds: [''],
+      stepNotes: '',
+      resourceNotes: '',
     }]);
   };
 
