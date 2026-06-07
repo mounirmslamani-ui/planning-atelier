@@ -31,6 +31,8 @@ export interface OperationRow {
   toolingStatus: ResourceStatus;
   specialToolingNeeds: string[];
   rawMaterialNeeds: string[];
+  stepNotes: string;
+  resourceNotes: string;
 }
 
 const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
