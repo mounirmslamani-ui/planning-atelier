@@ -132,10 +132,14 @@ const OrderRegistryPage: React.FC = () => {
   const handleAdd = () => {
     const code = generateOrderCode(activeCat, realOrders);
     const today = new Date().toISOString().split('T')[0];
+    const isSlamani = activeCat === 'slamani';
+    const slamaniClient = isSlamani
+      ? clients.find(c => (c.name || '').toLowerCase().includes('slamani'))
+      : undefined;
     setCreateDraft({
       orderNumber: code,
       orderDate: today,
-      clientId: '',
+      clientId: slamaniClient?.id || '',
       designation: '',
       quantity: 1,
       priority: 'undetermined',
@@ -147,6 +151,7 @@ const OrderRegistryPage: React.FC = () => {
       toolingStatus: 'non-disponible',
       studyStatus: 'non-disponible',
       category: activeCat,
+      clientRepresentative: isSlamani ? 'سلاماني' : undefined,
     });
   };
 
