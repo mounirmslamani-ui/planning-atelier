@@ -31,6 +31,8 @@ export interface OperationRow {
   toolingStatus: ResourceStatus;
   specialToolingNeeds: string[];
   rawMaterialNeeds: string[];
+  stepNotes: string;
+  resourceNotes: string;
 }
 
 const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
@@ -102,6 +104,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
           specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
           rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
+          stepNotes: s.stepNotes ?? '',
+          resourceNotes: s.resourceNotes ?? '',
         };
       }));
     } else {
@@ -135,6 +139,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible',
       specialToolingNeeds: [''],
       rawMaterialNeeds: [''],
+      stepNotes: '',
+      resourceNotes: '',
     }]);
   };
 
@@ -315,6 +321,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.toolingDeadline = undefined;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
+        s.stepNotes = sourceRow.stepNotes || undefined;
+        s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
         s.order = orderByRowId.get(sourceRow.id) ?? s.order;
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
@@ -351,6 +359,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
+        stepNotes: row.stepNotes || undefined,
+        resourceNotes: row.resourceNotes || undefined,
       });
     });
 
@@ -411,6 +421,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
+        stepNotes: row.stepNotes || undefined,
+        resourceNotes: row.resourceNotes || undefined,
       });
       updated++;
     });
@@ -471,7 +483,7 @@ const durationStep = (t: 'operator' | 'subcontractor') => t === 'subcontractor' 
 const durationFactor = (t: 'operator' | 'subcontractor') => t === 'subcontractor' ? 450 : 60;
 
 /** Editable Steps tab table. */
-export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor }) => {
+export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
   const e = editor;
   const hasExistingSteps = e.rows.some(r => !!r.stepId);
   return (
@@ -485,12 +497,13 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
         <table className="w-full table-fixed text-xs">
           <colgroup>
             <col style={{ width: '4%' }} />
-            <col style={{ width: '24%' }} />
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '11%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '9%' }} />
             <col style={{ width: '8%' }} />
+            <col style={{ width: '16%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '4%' }} />
           </colgroup>
@@ -503,6 +516,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
               <th className="p-1.5 text-right">العامل / المناول</th>
               <th className="p-1.5 text-right">التقدم</th>
               <th className="p-1.5 text-right">المدة الفعلية</th>
+              <th className="p-1.5 text-right">ملاحظات وتعليمات</th>
               <th className="p-1.5"></th>
               <th className="p-1.5"></th>
             </tr>
@@ -583,6 +597,15 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
                   </td>
                   <td className="p-1.5 text-xs font-mono">{e.getRowActualDuration(row)}</td>
                   <td className="p-1.5">
+                    <Input
+                      className="h-8 text-xs px-1"
+                      value={row.stepNotes || ''}
+                      onChange={ev => e.updateRow(row.id, 'stepNotes', ev.target.value)}
+                      placeholder="..."
+                      disabled={e.isLocked}
+                    />
+                  </td>
+                  <td className="p-1.5">
                     <div className="flex flex-col items-center">
                       <button type="button" className="h-5 w-5 inline-flex items-center justify-center hover:bg-accent rounded" onClick={() => e.moveRow(row.id, 'up')} disabled={row.order === 1 || e.isLocked}>
                         <ChevronUp className="w-3.5 h-3.5" />
@@ -620,7 +643,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
               );
             })}
             {e.rows.length === 0 && (
-              <tr><td colSpan={9} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل. أضف عملية.</td></tr>
+              <tr><td colSpan={10} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل. أضف عملية.</td></tr>
             )}
           </tbody>
         </table>
@@ -629,16 +652,21 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
         <Button variant="outline" size="sm" onClick={e.addRow} disabled={e.isLocked}>
           <Plus className="w-4 h-4 mr-1" /> إضافة عملية
         </Button>
-        <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
-          <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'تأكيد' : 'تأكيد'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {onCancel && (
+            <Button variant="outline" onClick={onCancel}>إلغاء</Button>
+          )}
+          <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
+            <CalendarCheck className="w-4 h-4 mr-1" /> تأكيد
+          </Button>
+        </div>
       </div>
     </div>
   );
 };
 
 /** Editable Resources tab table. */
-export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor }) => {
+export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
   const e = editor;
   const materialSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.materialStatus)), [e.rows]);
   const toolingSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.toolingStatus)), [e.rows]);
@@ -654,10 +682,11 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
         <table className="w-full table-fixed text-xs">
           <colgroup>
             <col style={{ width: '5%' }} />
-            <col style={{ width: '25%' }} />
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '14%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '22%' }} />
           </colgroup>
           <thead className="bg-muted/40">
             <tr>
@@ -681,6 +710,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   <span>الدراسة</span>
                 </div>
               </th>
+              <th className="p-1.5 text-right">ملاحظات وتعليمات</th>
             </tr>
           </thead>
           <tbody>
@@ -732,18 +762,30 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   <td className="p-1.5 text-center">
                     <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} />
                   </td>
+                  <td className="p-1.5">
+                    <Input
+                      className="h-8 text-xs px-1"
+                      value={row.resourceNotes || ''}
+                      onChange={ev => e.updateRow(row.id, 'resourceNotes', ev.target.value)}
+                      placeholder="..."
+                      disabled={e.isLocked}
+                    />
+                  </td>
                 </tr>
               );
             })}
             {e.rows.length === 0 && (
-              <tr><td colSpan={5} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل بعد. عرّفها أولًا في علامة التبويب «مراحل الإنجاز».</td></tr>
+              <tr><td colSpan={6} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل بعد. عرّفها أولًا في علامة التبويب «مراحل الإنجاز».</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel}>إلغاء</Button>
+        )}
         <Button onClick={e.saveResourcesOnly} disabled={e.isLocked || e.rows.length === 0}>
-          <Save className="w-4 h-4 mr-1" /> حفظ الموارد
+          <Save className="w-4 h-4 mr-1" /> تأكيد
         </Button>
       </div>
     </div>

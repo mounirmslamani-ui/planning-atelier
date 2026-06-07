@@ -132,10 +132,14 @@ const OrderRegistryPage: React.FC = () => {
   const handleAdd = () => {
     const code = generateOrderCode(activeCat, realOrders);
     const today = new Date().toISOString().split('T')[0];
+    const isSlamani = activeCat === 'slamani';
+    const slamaniClient = isSlamani
+      ? clients.find(c => (c.name || '').toLowerCase().includes('slamani'))
+      : undefined;
     setCreateDraft({
       orderNumber: code,
       orderDate: today,
-      clientId: '',
+      clientId: slamaniClient?.id || '',
       designation: '',
       quantity: 1,
       priority: 'undetermined',
@@ -147,6 +151,7 @@ const OrderRegistryPage: React.FC = () => {
       toolingStatus: 'non-disponible',
       studyStatus: 'non-disponible',
       category: activeCat,
+      clientRepresentative: isSlamani ? 'سلاماني' : undefined,
     });
   };
 
@@ -191,7 +196,7 @@ const OrderRegistryPage: React.FC = () => {
       <Tabs value={activeCat} onValueChange={v => setActiveCat(v as OrderCategory)}>
 <div className="flex flex-wrap items-center gap-2 mb-2">
    <div className="flex-1" />
-  <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">إضافة طلبية</span></Button>
+  <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">طلبية جديدة</span></Button>
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
 </div>
 

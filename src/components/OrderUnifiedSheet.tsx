@@ -225,7 +225,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="w-[794px] h-[1123px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col p-0"
+          className="w-[1400px] h-[1123px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col p-0"
           dir="rtl"
         >
           {/* HEADER */}
@@ -310,9 +310,20 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   <div>
                     <Label>ممثل الزبون</Label>
                     {(() => {
+                      const isSlamani = (merged.category) === 'slamani';
                       const selectedClient = clients.find(c => c.id === (merged.clientId || ''));
                       const reps = selectedClient?.representatives?.filter(r => r.name?.trim()) || [];
-                      if (reps.length > 0) {
+                      if (isSlamani) {
+                        return (
+                          <Input value="سلاماني" readOnly className="bg-muted/40" />
+                        );
+                      }
+                      if (reps.length === 1) {
+                        return (
+                          <Input value={reps[0].name} readOnly className="bg-muted/40" />
+                        );
+                      }
+                      if (reps.length > 1) {
                         return (
                           <Select
                             value={merged.clientRepresentative || ''}
@@ -406,26 +417,27 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
                 <div className="flex justify-end gap-2 pt-2 border-t">
                   <Button variant="outline" onClick={() => { setDraft({}); onOpenChange(false); }}>إلغاء</Button>
-                  <Button onClick={saveInfo} disabled={!createMode && Object.keys(draft).length === 0}>حفظ</Button>
+                  <Button onClick={saveInfo} disabled={!createMode && Object.keys(draft).length === 0}>تأكيد</Button>
                 </div>
               </TabsContent>
 
               {/* TAB 2 — RESOURCES (editable in place) */}
               <TabsContent value="resources" className="mt-0 space-y-3">
-                <ResourcesEditorTable editor={editor} />
-                <p className="text-xs text-muted-foreground">
-                  ⓘ كل مرحلة لها مواردها المستقلة. لا تأثير من مرحلة على أخرى.
-                </p>
+                <ResourcesEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
               </TabsContent>
 
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
               <TabsContent value="steps" className="mt-0 space-y-3">
-                <StepsEditorTable editor={editor} />
+                <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
               </TabsContent>
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
                 <PartialQCDelivery order={order} />
+                <div className="border-t pt-3 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
+                  <Button onClick={() => { toast.success('تم الحفظ'); onOpenChange(false); }}>تأكيد</Button>
+                </div>
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">

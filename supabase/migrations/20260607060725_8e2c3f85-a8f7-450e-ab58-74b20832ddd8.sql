@@ -1,0 +1,1 @@
+ALTER TABLE public.production_steps ADD COLUMN IF NOT EXISTS step_notes text, ADD COLUMN IF NOT EXISTS resource_notes text;

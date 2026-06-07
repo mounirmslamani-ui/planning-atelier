@@ -501,9 +501,11 @@ export type Database = {
           order_id: string
           planning_order: number | null
           raw_material_needs: string[]
+          resource_notes: string | null
           special_tooling_needs: string[]
           start_date: string | null
           start_time: string | null
+          step_notes: string | null
           step_order: number
           study_completed_date: string | null
           study_deadline: string | null
@@ -534,9 +536,11 @@ export type Database = {
           order_id: string
           planning_order?: number | null
           raw_material_needs?: string[]
+          resource_notes?: string | null
           special_tooling_needs?: string[]
           start_date?: string | null
           start_time?: string | null
+          step_notes?: string | null
           step_order?: number
           study_completed_date?: string | null
           study_deadline?: string | null
@@ -567,9 +571,11 @@ export type Database = {
           order_id?: string
           planning_order?: number | null
           raw_material_needs?: string[]
+          resource_notes?: string | null
           special_tooling_needs?: string[]
           start_date?: string | null
           start_time?: string | null
+          step_notes?: string | null
           step_order?: number
           study_completed_date?: string | null
           study_deadline?: string | null
