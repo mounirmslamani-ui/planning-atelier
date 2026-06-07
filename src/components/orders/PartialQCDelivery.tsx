@@ -231,7 +231,14 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-center">{q.controlledQty ?? qty}</td>
                   <td className="p-2 text-center">{q.acceptedQty ?? (q.decision === 'conforme' || q.decision === 'conforme-derogation' ? qty : 0)}</td>
                   <td className="p-2 text-xs">{q.decision ? decisionLabels[q.decision] : '—'}</td>
-                  <td className="p-2 text-xs text-muted-foreground">{q.reworkNotes || '—'}</td>
+                  <td className="p-2 text-xs">
+                    <Input
+                      value={q.reworkNotes || ''}
+                      onChange={e => updateQCEntry({ ...q, reworkNotes: e.target.value || undefined })}
+                      placeholder="..."
+                      className="h-8 text-xs"
+                    />
+                  </td>
                   <td className="p-2">
                     <Button
                       size="icon" variant="ghost"
