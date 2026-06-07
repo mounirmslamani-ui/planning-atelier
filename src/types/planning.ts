@@ -158,6 +158,10 @@ export interface ProductionStep {
   subcontractingReceivedDate?: string;
   specialToolingNeeds?: string[];
   rawMaterialNeeds?: string[];
+  /** Notes / instructions on the step (planning steps tab) */
+  stepNotes?: string;
+  /** Notes / instructions on the resources of the step (resources tab) */
+  resourceNotes?: string;
   /** Pn — numéro d'ordre propre à chaque opérateur dans le planning */
   planningOrder?: number;
 }
