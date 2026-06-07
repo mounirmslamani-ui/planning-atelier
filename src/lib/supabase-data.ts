@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type {
   Equipment, Operator, Subcontractor, Operation, Client, Order,
   ProductionStep, Holiday, ProductionRecord, QualityControlEntry, DeliveryEntry,
@@ -551,7 +552,15 @@ export async function fetchAllData() {
 // ───────────────────── DB CRUD (fire-and-forget) ─────────────────────
 
 function logError(entity: string, action: string, error: any) {
-  console.error(`[DB] Failed to ${action} ${entity}:`, error);
+  const details = error
+    ? `${error.message || ''}${error.code ? ` [code=${error.code}]` : ''}${error.details ? ` details=${error.details}` : ''}${error.hint ? ` hint=${error.hint}` : ''}`
+    : 'unknown error';
+  console.error(`[DB] Failed to ${action} ${entity}:`, error, details);
+  try {
+    toast.error(`Échec ${action} ${entity}`, { description: details || 'Erreur base de données' });
+  } catch {
+    // toast not available in non-UI context
+  }
 }
 
 // Equipment
