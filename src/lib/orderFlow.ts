@@ -29,13 +29,14 @@ export function hasCurrentPostProductionFlow(
     cancelledOrders: { orderId: string }[];
   },
 ): boolean {
-  if (isReintegratedOrder(order)) return false;
-  return (
+  const hasEntries =
     data.qcEntries.some(e => e.orderId === order.id) ||
     data.deliveryEntries.some(e => e.orderId === order.id) ||
     data.deliveredOrders.some(e => e.orderId === order.id) ||
-    data.cancelledOrders.some(e => e.orderId === order.id)
-  );
+    data.cancelledOrders.some(e => e.orderId === order.id);
+  if (hasEntries) return true;
+  if (isReintegratedOrder(order)) return false;
+  return false;
 }
 
 export function buildOutOfActiveProductionSet(
