@@ -411,6 +411,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       if (!st) return;
       updateStep({
         ...st,
+        estimatedDuration: row.estimatedDuration,
         studyStatus: row.studyStatus,
         materialStatus: row.materialStatus,
         toolingStatus: row.toolingStatus,
