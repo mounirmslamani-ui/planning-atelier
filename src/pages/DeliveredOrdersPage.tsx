@@ -43,8 +43,8 @@ const DeliveredOrdersPage: React.FC = () => {
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
   const visibleDelivered = React.useMemo(
-    () => deliveredOrders.filter(d => !isReintegratedOrder(getOrder(d.orderId))),
-    [deliveredOrders, orders]
+    () => deliveredOrders,
+    [deliveredOrders]
   );
   const filteredDelivered = React.useMemo(
     () => visibleDelivered.filter(d => inferCategoryFromOrderNumber(getOrder(d.orderId)?.orderNumber) === activeCat),
