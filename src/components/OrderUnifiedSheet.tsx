@@ -417,16 +417,13 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
                 <div className="flex justify-end gap-2 pt-2 border-t">
                   <Button variant="outline" onClick={() => { setDraft({}); onOpenChange(false); }}>إلغاء</Button>
-                  <Button onClick={saveInfo} disabled={!createMode && Object.keys(draft).length === 0}>حفظ</Button>
+                  <Button onClick={saveInfo} disabled={!createMode && Object.keys(draft).length === 0}>تأكيد</Button>
                 </div>
               </TabsContent>
 
               {/* TAB 2 — RESOURCES (editable in place) */}
               <TabsContent value="resources" className="mt-0 space-y-3">
-                <ResourcesEditorTable editor={editor} />
-                <p className="text-xs text-muted-foreground">
-                  ⓘ كل مرحلة لها مواردها المستقلة. لا تأثير من مرحلة على أخرى.
-                </p>
+                <ResourcesEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
               </TabsContent>
 
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
