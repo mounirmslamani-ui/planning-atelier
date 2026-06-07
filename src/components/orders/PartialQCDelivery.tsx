@@ -344,7 +344,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             <tbody>
               {orderDelivered.length === 0 && !showDelForm && (
                 <tr>
-                  <td colSpan={6} className="p-3 text-center text-muted-foreground text-sm">
+                  <td colSpan={7} className="p-3 text-center text-muted-foreground text-sm">
                     لا توجد جلسات تسليم بعد.
                   </td>
                 </tr>
@@ -380,6 +380,14 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   </td>
                   <td className="p-2 text-xs">{PRICE_META[d.salePriceStatus].emoji} {PRICE_META[d.salePriceStatus].label}</td>
                   <td className="p-2">
+                    <Input
+                      value={d.observation || ''}
+                      onChange={e => updateDeliveredOrder({ ...d, observation: e.target.value || undefined })}
+                      placeholder="..."
+                      className="h-8 text-xs"
+                    />
+                  </td>
+                  <td className="p-2">
                     <Button
                       size="icon" variant="ghost"
                       className="h-7 w-7 text-destructive"
@@ -407,6 +415,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2">
                     <Input type="date" value={delInvoiceDate} onChange={e => setDelInvoiceDate(e.target.value)} className="h-8 text-xs" />
                   </td>
+                  <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
