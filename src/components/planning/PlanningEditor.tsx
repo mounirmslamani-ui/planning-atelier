@@ -483,7 +483,7 @@ const durationStep = (t: 'operator' | 'subcontractor') => t === 'subcontractor' 
 const durationFactor = (t: 'operator' | 'subcontractor') => t === 'subcontractor' ? 450 : 60;
 
 /** Editable Steps tab table. */
-export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor }) => {
+export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
   const e = editor;
   const hasExistingSteps = e.rows.some(r => !!r.stepId);
   return (
@@ -497,12 +497,13 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
         <table className="w-full table-fixed text-xs">
           <colgroup>
             <col style={{ width: '4%' }} />
-            <col style={{ width: '24%' }} />
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '11%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '9%' }} />
             <col style={{ width: '8%' }} />
+            <col style={{ width: '16%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '4%' }} />
           </colgroup>
@@ -515,6 +516,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
               <th className="p-1.5 text-right">العامل / المناول</th>
               <th className="p-1.5 text-right">التقدم</th>
               <th className="p-1.5 text-right">المدة الفعلية</th>
+              <th className="p-1.5 text-right">ملاحظات وتعليمات</th>
               <th className="p-1.5"></th>
               <th className="p-1.5"></th>
             </tr>
@@ -595,6 +597,15 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
                   </td>
                   <td className="p-1.5 text-xs font-mono">{e.getRowActualDuration(row)}</td>
                   <td className="p-1.5">
+                    <Input
+                      className="h-8 text-xs px-1"
+                      value={row.stepNotes || ''}
+                      onChange={ev => e.updateRow(row.id, 'stepNotes', ev.target.value)}
+                      placeholder="..."
+                      disabled={e.isLocked}
+                    />
+                  </td>
+                  <td className="p-1.5">
                     <div className="flex flex-col items-center">
                       <button type="button" className="h-5 w-5 inline-flex items-center justify-center hover:bg-accent rounded" onClick={() => e.moveRow(row.id, 'up')} disabled={row.order === 1 || e.isLocked}>
                         <ChevronUp className="w-3.5 h-3.5" />
@@ -632,7 +643,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
               );
             })}
             {e.rows.length === 0 && (
-              <tr><td colSpan={9} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل. أضف عملية.</td></tr>
+              <tr><td colSpan={10} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل. أضف عملية.</td></tr>
             )}
           </tbody>
         </table>
@@ -641,9 +652,14 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor 
         <Button variant="outline" size="sm" onClick={e.addRow} disabled={e.isLocked}>
           <Plus className="w-4 h-4 mr-1" /> إضافة عملية
         </Button>
-        <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
-          <CalendarCheck className="w-4 h-4 mr-1" /> {hasExistingSteps ? 'تأكيد' : 'تأكيد'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {onCancel && (
+            <Button variant="outline" onClick={onCancel}>إلغاء</Button>
+          )}
+          <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
+            <CalendarCheck className="w-4 h-4 mr-1" /> تأكيد
+          </Button>
+        </div>
       </div>
     </div>
   );
