@@ -666,7 +666,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
 };
 
 /** Editable Resources tab table. */
-export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ editor }) => {
+export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
   const e = editor;
   const materialSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.materialStatus)), [e.rows]);
   const toolingSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.toolingStatus)), [e.rows]);
@@ -682,10 +682,11 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
         <table className="w-full table-fixed text-xs">
           <colgroup>
             <col style={{ width: '5%' }} />
-            <col style={{ width: '25%' }} />
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '14%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '22%' }} />
           </colgroup>
           <thead className="bg-muted/40">
             <tr>
@@ -709,6 +710,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   <span>الدراسة</span>
                 </div>
               </th>
+              <th className="p-1.5 text-right">ملاحظات وتعليمات</th>
             </tr>
           </thead>
           <tbody>
@@ -760,18 +762,30 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor }> = ({ edi
                   <td className="p-1.5 text-center">
                     <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} />
                   </td>
+                  <td className="p-1.5">
+                    <Input
+                      className="h-8 text-xs px-1"
+                      value={row.resourceNotes || ''}
+                      onChange={ev => e.updateRow(row.id, 'resourceNotes', ev.target.value)}
+                      placeholder="..."
+                      disabled={e.isLocked}
+                    />
+                  </td>
                 </tr>
               );
             })}
             {e.rows.length === 0 && (
-              <tr><td colSpan={5} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل بعد. عرّفها أولًا في علامة التبويب «مراحل الإنجاز».</td></tr>
+              <tr><td colSpan={6} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل بعد. عرّفها أولًا في علامة التبويب «مراحل الإنجاز».</td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel}>إلغاء</Button>
+        )}
         <Button onClick={e.saveResourcesOnly} disabled={e.isLocked || e.rows.length === 0}>
-          <Save className="w-4 h-4 mr-1" /> حفظ الموارد
+          <Save className="w-4 h-4 mr-1" /> تأكيد
         </Button>
       </div>
     </div>
