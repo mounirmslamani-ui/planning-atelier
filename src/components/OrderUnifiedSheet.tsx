@@ -428,12 +428,16 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
               <TabsContent value="steps" className="mt-0 space-y-3">
-                <StepsEditorTable editor={editor} />
+                <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
               </TabsContent>
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
                 <PartialQCDelivery order={order} />
+                <div className="border-t pt-3 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
+                  <Button onClick={() => { toast.success('تم الحفظ'); onOpenChange(false); }}>تأكيد</Button>
+                </div>
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
