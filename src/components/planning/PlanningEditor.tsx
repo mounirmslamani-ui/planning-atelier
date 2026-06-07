@@ -104,6 +104,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
           specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
           rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
+          stepNotes: s.stepNotes ?? '',
+          resourceNotes: s.resourceNotes ?? '',
         };
       }));
     } else {
