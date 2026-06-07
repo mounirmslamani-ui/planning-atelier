@@ -321,6 +321,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.toolingDeadline = undefined;
         s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
         s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
+        s.stepNotes = sourceRow.stepNotes || undefined;
+        s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
         s.order = orderByRowId.get(sourceRow.id) ?? s.order;
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
