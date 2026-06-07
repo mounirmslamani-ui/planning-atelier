@@ -359,6 +359,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
+        stepNotes: row.stepNotes || undefined,
+        resourceNotes: row.resourceNotes || undefined,
       });
     });
 
