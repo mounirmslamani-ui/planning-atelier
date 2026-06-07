@@ -317,6 +317,8 @@ export function mapStepToDB(s: ProductionStep) {
     subcontracting_received_date: toISODateOrNull(s.subcontractingReceivedDate),
     special_tooling_needs: s.specialToolingNeeds || [],
     raw_material_needs: s.rawMaterialNeeds || [],
+    step_notes: s.stepNotes ?? null,
+    resource_notes: s.resourceNotes ?? null,
     planning_order: s.planningOrder ?? null,
   };
 }
