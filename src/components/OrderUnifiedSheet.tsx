@@ -310,9 +310,20 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   <div>
                     <Label>ممثل الزبون</Label>
                     {(() => {
+                      const isSlamani = (merged.category) === 'slamani';
                       const selectedClient = clients.find(c => c.id === (merged.clientId || ''));
                       const reps = selectedClient?.representatives?.filter(r => r.name?.trim()) || [];
-                      if (reps.length > 0) {
+                      if (isSlamani) {
+                        return (
+                          <Input value="سلاماني" readOnly className="bg-muted/40" />
+                        );
+                      }
+                      if (reps.length === 1) {
+                        return (
+                          <Input value={reps[0].name} readOnly className="bg-muted/40" />
+                        );
+                      }
+                      if (reps.length > 1) {
                         return (
                           <Select
                             value={merged.clientRepresentative || ''}
