@@ -1042,21 +1042,6 @@ if (nextRecord) {
   if (step) {
     updateStep({ ...step, startTime: nextRecord.startTime });
   }
-  const startRecord: ProductionRecord = {
-    id: crypto.randomUUID(),
-    stepId: nextRecord.stepId,
-    orderId: nextRecord.orderId,
-    operatorId: nextRecord.operatorId,
-    operationId: nextRecord.operationId,
-    actualDuration: 0,
-    validatedAt: new Date().toISOString(),
-    workDate: nextRecord.workDate,
-    startTime: nextRecord.startTime,
-    endTime: undefined,
-    pauseMinutes: 0,
-    workStatus: 'continue',
-  };
-  addProductionRecord(startRecord);
 }
 
     setRelaisDialog(null);

@@ -71,7 +71,9 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
 
 
   const tabRecords = useMemo(() =>
-    validTab ? productionRecords.filter(r => r.operatorId === validTab) : [],
+    validTab
+      ? productionRecords.filter(r => r.operatorId === validTab && !!r.endTime && r.endTime.trim() !== '' && (r.actualDuration ?? 0) >= 1)
+      : [],
     [productionRecords, validTab]
   );
 
