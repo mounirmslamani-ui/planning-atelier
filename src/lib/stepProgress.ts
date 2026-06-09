@@ -24,7 +24,9 @@ function normalizeRecordStatus(value: string | null | undefined): string {
 
 export function getStepProgressStatus(step: ProductionStep, records: ProductionRecord[]): StepProgressStatus {
   if (step.subcontractorId) {
-    return step.subcontractingDone ? 'Terminée' : 'Non entamée';
+    if (step.subcontractingDone) return 'Terminée';
+    if (step.subcontractingInProgress) return 'En cours';
+    return 'Non entamée';
   }
 
   // Match strictly by step ID. The re-planification flow in
