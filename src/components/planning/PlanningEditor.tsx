@@ -85,7 +85,10 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
     const existingSteps = steps
       .filter(s => s.orderId === order.id && s.operationId !== absenceOperationId)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => {
+        if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0);
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      });
 
     if (existingSteps.length > 0) {
       setRows(existingSteps.map((s, i) => {
