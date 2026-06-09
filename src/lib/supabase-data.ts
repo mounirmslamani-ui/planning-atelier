@@ -315,6 +315,7 @@ export function mapStepToDB(s: ProductionStep) {
     study_completed_date: toISODateOrNull(s.studyCompletedDate),
     tooling_received_date: toISODateOrNull(s.toolingReceivedDate),
     subcontracting_done: s.subcontractingDone ?? false,
+    subcontracting_in_progress: s.subcontractingInProgress ?? false,
     subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
     subcontracting_received_date: toISODateOrNull(s.subcontractingReceivedDate),
     special_tooling_needs: s.specialToolingNeeds || [],
