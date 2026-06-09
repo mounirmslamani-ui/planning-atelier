@@ -381,6 +381,12 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
+        subcontractingDone: hist.subcontractorId
+          ? !!row.subcontractingDone
+          : false,
+        subcontractingInProgress: hist.subcontractorId
+          ? (!row.subcontractingDone && !!row.subcontractingInProgress)
+          : false,
       });
     });
 
