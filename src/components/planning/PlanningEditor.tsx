@@ -33,6 +33,9 @@ export interface OperationRow {
   rawMaterialNeeds: string[];
   stepNotes: string;
   resourceNotes: string;
+  /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
+  subcontractingDone?: boolean;
+  subcontractingInProgress?: boolean;
 }
 
 const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
