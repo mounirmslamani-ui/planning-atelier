@@ -606,6 +606,27 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                   </td>
                   <td className="p-1.5 text-xs font-medium">
                     {(() => {
+                      if (row.assignType === 'subcontractor') {
+                        const value: 'not-started' | 'in-progress' | 'done' = row.subcontractingDone
+                          ? 'done'
+                          : row.subcontractingInProgress ? 'in-progress' : 'not-started';
+                        return (
+                          <select
+                            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                            value={value}
+                            onChange={ev => {
+                              const v = ev.target.value;
+                              e.updateRow(row.id, 'subcontractingDone', v === 'done');
+                              e.updateRow(row.id, 'subcontractingInProgress', v === 'in-progress');
+                            }}
+                            disabled={e.isLocked}
+                          >
+                            <option value="not-started">{PROGRESS_AR['Non entamée']}</option>
+                            <option value="in-progress">{PROGRESS_AR['En cours']}</option>
+                            <option value="done">{PROGRESS_AR['Terminée']}</option>
+                          </select>
+                        );
+                      }
                       const st = e.getRowProgressStatus(row);
                       if (st === 'En cours' && row.stepId) {
                         const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
