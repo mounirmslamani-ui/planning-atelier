@@ -85,7 +85,10 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
     const existingSteps = steps
       .filter(s => s.orderId === order.id && s.operationId !== absenceOperationId)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => {
+        if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0);
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      });
 
     if (existingSteps.length > 0) {
       setRows(existingSteps.map((s, i) => {
@@ -308,6 +311,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     newSteps.forEach(s => {
       const rowId = sourceIdByStepId[s.id];
       const sourceRow = finalRows.find(r => r.id === rowId);
+      // Always resolve order from finalRows position (rowId match, then stepId match), never fall back to scheduler index
+      const resolvedOrderIdx = sourceRow
+        ? finalRows.findIndex(r => r.id === sourceRow.id)
+        : finalRows.findIndex(r => r.stepId === s.id);
+      if (resolvedOrderIdx >= 0) s.order = resolvedOrderIdx + 1;
       let reused = false;
       if (sourceRow) {
         s.studyStatus = sourceRow.studyStatus;
@@ -324,7 +332,6 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
-        s.order = orderByRowId.get(sourceRow.id) ?? s.order;
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
           s.id = sourceRow.stepId;
           reusedIds.add(sourceRow.stepId);

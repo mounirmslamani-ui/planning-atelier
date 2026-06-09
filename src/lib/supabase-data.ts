@@ -539,7 +539,11 @@ export async function fetchAllData() {
     operations: (operations || []).map(mapOperationFromDB),
     clients: (clients || []).map(mapClientFromDB),
     orders: (orders || []).map(mapOrderFromDB),
-    steps: (steps || []).map(mapStepFromDB),
+    steps: (steps || []).map(mapStepFromDB).sort((a, b) => {
+      if (a.orderId !== b.orderId) return a.orderId < b.orderId ? -1 : 1;
+      if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0);
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    }),
     holidays: (holidays || []).map(mapHolidayFromDB),
     productionRecords: (records || []).map(mapRecordFromDB),
     qcEntries: (qcEntries || []).map(mapQCEntryFromDB),
