@@ -275,6 +275,7 @@ export function mapStepFromDB(row: any): ProductionStep {
     studyCompletedDate: row.study_completed_date || undefined,
     toolingReceivedDate: row.tooling_received_date || undefined,
     subcontractingDone: row.subcontracting_done ?? false,
+    subcontractingInProgress: row.subcontracting_in_progress ?? false,
     subcontractingDeadline: row.subcontracting_deadline || undefined,
     subcontractingReceivedDate: row.subcontracting_received_date || undefined,
     specialToolingNeeds: row.special_tooling_needs || [],
