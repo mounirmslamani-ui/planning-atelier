@@ -154,6 +154,8 @@ export interface ProductionStep {
   toolingReceivedDate?: string; // manually entered receipt date
   // Subcontracting tracking (in-memory only — persisted via production_records validation)
   subcontractingDone?: boolean;
+  /** True when subcontracting is in progress (intermediate state — exclusive with subcontractingDone). */
+  subcontractingInProgress?: boolean;
   subcontractingDeadline?: string;
   subcontractingReceivedDate?: string;
   specialToolingNeeds?: string[];

@@ -33,6 +33,9 @@ export interface OperationRow {
   rawMaterialNeeds: string[];
   stepNotes: string;
   resourceNotes: string;
+  /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
+  subcontractingDone?: boolean;
+  subcontractingInProgress?: boolean;
 }
 
 const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
@@ -109,6 +112,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
           stepNotes: s.stepNotes ?? '',
           resourceNotes: s.resourceNotes ?? '',
+          subcontractingDone: isSub ? !!s.subcontractingDone : false,
+          subcontractingInProgress: isSub ? !!s.subcontractingInProgress : false,
         };
       }));
     } else {
@@ -332,6 +337,13 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
+        if (sourceRow.assignType === 'subcontractor') {
+          s.subcontractingDone = !!sourceRow.subcontractingDone;
+          s.subcontractingInProgress = !sourceRow.subcontractingDone && !!sourceRow.subcontractingInProgress;
+        } else {
+          s.subcontractingDone = false;
+          s.subcontractingInProgress = false;
+        }
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
           s.id = sourceRow.stepId;
           reusedIds.add(sourceRow.stepId);
@@ -369,6 +381,12 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
+        subcontractingDone: hist.subcontractorId
+          ? !!row.subcontractingDone
+          : false,
+        subcontractingInProgress: hist.subcontractorId
+          ? (!row.subcontractingDone && !!row.subcontractingInProgress)
+          : false,
       });
     });
 
@@ -588,6 +606,27 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                   </td>
                   <td className="p-1.5 text-xs font-medium">
                     {(() => {
+                      if (row.assignType === 'subcontractor') {
+                        const value: 'not-started' | 'in-progress' | 'done' = row.subcontractingDone
+                          ? 'done'
+                          : row.subcontractingInProgress ? 'in-progress' : 'not-started';
+                        return (
+                          <select
+                            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                            value={value}
+                            onChange={ev => {
+                              const v = ev.target.value;
+                              e.updateRow(row.id, 'subcontractingDone', v === 'done');
+                              e.updateRow(row.id, 'subcontractingInProgress', v === 'in-progress');
+                            }}
+                            disabled={e.isLocked}
+                          >
+                            <option value="not-started">{PROGRESS_AR['Non entamée']}</option>
+                            <option value="in-progress">{PROGRESS_AR['En cours']}</option>
+                            <option value="done">{PROGRESS_AR['Terminée']}</option>
+                          </select>
+                        );
+                      }
                       const st = e.getRowProgressStatus(row);
                       if (st === 'En cours' && row.stepId) {
                         const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
