@@ -112,6 +112,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
           stepNotes: s.stepNotes ?? '',
           resourceNotes: s.resourceNotes ?? '',
+          subcontractingDone: isSub ? !!s.subcontractingDone : false,
+          subcontractingInProgress: isSub ? !!s.subcontractingInProgress : false,
         };
       }));
     } else {
