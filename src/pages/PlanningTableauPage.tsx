@@ -1042,6 +1042,7 @@ if (nextRecord) {
   if (step) {
     updateStep({ ...step, startTime: nextRecord.startTime });
   }
+  localStorage.setItem(`relais-started-${nextRecord.operatorId}-${nextRecord.workDate}`, nextRecord.startTime);
 }
 
     setRelaisDialog(null);
@@ -1274,7 +1275,8 @@ if (nextRecord) {
             });
           }
           const operatorId = group.operator.id;
-          const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO());
+          const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO())
+            || localStorage.getItem(`relais-started-${operatorId}-${todayISO()}`) !== null;
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
