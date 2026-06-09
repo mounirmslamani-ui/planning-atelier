@@ -512,6 +512,7 @@ export type Database = {
           study_status: Database["public"]["Enums"]["resource_status"]
           subcontracting_deadline: string | null
           subcontracting_done: boolean
+          subcontracting_in_progress: boolean
           subcontracting_received_date: string | null
           subcontractor_id: string | null
           tooling_deadline: string | null
@@ -547,6 +548,7 @@ export type Database = {
           study_status?: Database["public"]["Enums"]["resource_status"]
           subcontracting_deadline?: string | null
           subcontracting_done?: boolean
+          subcontracting_in_progress?: boolean
           subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
@@ -582,6 +584,7 @@ export type Database = {
           study_status?: Database["public"]["Enums"]["resource_status"]
           subcontracting_deadline?: string | null
           subcontracting_done?: boolean
+          subcontracting_in_progress?: boolean
           subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
