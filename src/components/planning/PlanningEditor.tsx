@@ -337,6 +337,13 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
+        if (sourceRow.assignType === 'subcontractor') {
+          s.subcontractingDone = !!sourceRow.subcontractingDone;
+          s.subcontractingInProgress = !sourceRow.subcontractingDone && !!sourceRow.subcontractingInProgress;
+        } else {
+          s.subcontractingDone = false;
+          s.subcontractingInProgress = false;
+        }
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
           s.id = sourceRow.stepId;
           reusedIds.add(sourceRow.stepId);
