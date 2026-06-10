@@ -125,26 +125,19 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
           onPointerDown={e => e.stopPropagation()}
           onClick={e => {
             e.stopPropagation();
-            // Contournement COOP (iframe Lovable / Firefox) : on ouvre d'abord
-            // une fenêtre vide (origine opaque "about:blank"), puis on y injecte
-            // une page HTML qui redirige vers Drive. Le nouvel onglet n'hérite
-            // ainsi d'aucune COOP de l'application, ce qui évite le blocage
-            // "Cross-Origin-Opener-Policy" affiché par Firefox.
-            const win = window.open('', '_blank', 'noopener,noreferrer');
-            if (!win) {
-              // Popup bloquée : fallback navigation directe
-              window.location.href = folderLink;
-              return;
-            }
-            try {
-              win.opener = null;
-            } catch { /* ignore */ }
-            const safeUrl = String(folderLink).replace(/"/g, '&quot;');
-            win.document.open();
-            win.document.write(
-              `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta http-equiv="refresh" content="0;url=${safeUrl}"><title>Ouverture…</title></head><body style="font-family:system-ui;padding:24px;text-align:center"><p>Ouverture du dossier Google Drive…</p><p><a href="${safeUrl}" rel="noreferrer">Cliquer ici si la redirection ne démarre pas</a></p><script>window.location.replace(${JSON.stringify(folderLink)});<\/script></body></html>`
-            );
-            win.document.close();
+            // On simule un vrai clic utilisateur sur un <a target="_blank">.
+            // Important : NE PAS utiliser window.open(url, '_blank', 'noopener,noreferrer'),
+            // car avec le flag "noopener", Chrome/Firefox renvoient null et n'exécutent
+            // aucun script/redirection injecté → l'onglet reste blanc.
+            // Un anchor.click() déclenche une vraie navigation native vers Drive.
+            const a = document.createElement('a');
+            a.href = folderLink;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
           }}
           className={combinedClassName}
           title={`Ouvrir : ${folderLink}`}
