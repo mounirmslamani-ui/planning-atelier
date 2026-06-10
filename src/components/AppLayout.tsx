@@ -29,6 +29,8 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     orders.forEach(order => {
       if (order.id === absenceOrderId) return;
       if (qcEntries.some(entry => entry.orderId === order.id)) return;
+      if (deliveryEntries.some(e => e.orderId === order.id)) return;
+      if (deliveredOrders.some(e => e.orderId === order.id)) return;
       if (hasCurrentPostProductionFlow(order, { qcEntries, deliveryEntries, deliveredOrders, cancelledOrders })) return;
       const check = getOrderQualityControlCheck(order.id, steps, productionRecords, absenceOperationId);
       if (check.isReady) transferOrderToQualityControl(order.id);
