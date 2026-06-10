@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,8 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   const folderLink = order?.folderLink;
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(folderLink || '');
-  const anchorRef = useRef<HTMLAnchorElement>(null);
+
+
 
   useEffect(() => { setValue(folderLink || ''); }, [folderLink, open]);
 
@@ -119,19 +120,15 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
-        <a
-          ref={anchorRef}
-          href={folderLink}
-          target="_blank"
-          rel="noopener noreferrer"
+        <span
           onContextMenu={handleContextMenu}
           onPointerDown={e => e.stopPropagation()}
-          onClick={e => { e.preventDefault(); e.stopPropagation(); window.open(folderLink, '_blank', 'noopener,noreferrer'); }}
+          onClick={e => { e.stopPropagation(); window.open(folderLink, '_blank', 'noopener,noreferrer'); }}
           className={combinedClassName}
           title={`Ouvrir : ${folderLink}`}
         >
           {designation}
-        </a>
+        </span>
       </PopoverAnchor>
       <PopoverContent className="w-80" onClick={e => e.stopPropagation()} onContextMenu={e => e.preventDefault()}>
         <div className="space-y-2">
