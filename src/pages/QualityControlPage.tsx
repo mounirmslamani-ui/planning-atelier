@@ -109,6 +109,8 @@ const QualityControlPage: React.FC = () => {
       seen.add(entry.orderId);
       const order = getOrder(entry.orderId);
       if (!order) continue;
+      if (deliveryEntries.some(d => d.orderId === entry.orderId)) continue;
+      if (deliveredOrders.some(d => d.orderId === entry.orderId)) continue;
       const controlled = qcEntries
         .filter(q => q.orderId === entry.orderId)
         .reduce((s, q) => s + (q.controlledQty != null ? q.controlledQty : (q.decision ? order.quantity : 0)), 0);
@@ -118,7 +120,7 @@ const QualityControlPage: React.FC = () => {
       list.push(entry);
     }
     return list;
-  }, [qcEntries, orders]);
+  }, [qcEntries, orders, deliveryEntries, deliveredOrders]);
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(activeQcEntries, accessors);
 
 
