@@ -70,6 +70,10 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const [qcAccepted, setQcAccepted] = useState<number>(qcRemaining || qty);
   const [qcDecision, setQcDecision] = useState<QCDecision | ''>('');
   const [qcNotes, setQcNotes] = useState('');
+  const [isSubmittingQc, setIsSubmittingQc] = useState(false);
+  const [isSubmittingDel, setIsSubmittingDel] = useState(false);
+
+  const hasConformeDecision = orderQc.some(q => q.decision === 'conforme' || q.decision === 'conforme-derogation');
 
   const openQcForm = () => {
     setQcDate(today);
@@ -81,6 +85,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   };
 
   const submitQcSession = () => {
+    if (isSubmittingQc) return;
     if (!qcDecision) { toast.error('اختر القرار'); return; }
     if (qcControlled <= 0 || qcControlled > qcRemaining) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${qcRemaining}`);
@@ -90,21 +95,26 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
       toast.error('الكمية المقبولة غير صحيحة');
       return;
     }
-    const isAcceptDecision = qcDecision === 'conforme' || qcDecision === 'conforme-derogation';
-    const acceptedFinal = isAcceptDecision ? qcAccepted : 0;
-    addQCSession({
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      controlDate: qcDate,
-      decision: qcDecision,
-      reworkNotes: qcNotes || undefined,
-      controlledQty: qcControlled,
-      acceptedQty: acceptedFinal,
-      rejectedQty: qcControlled - acceptedFinal,
-      createdAt: new Date().toISOString(),
-    });
-    setShowQcForm(false);
-    toast.success('تم تسجيل جلسة المراقبة');
+    setIsSubmittingQc(true);
+    try {
+      const isAcceptDecision = qcDecision === 'conforme' || qcDecision === 'conforme-derogation';
+      const acceptedFinal = isAcceptDecision ? qcAccepted : 0;
+      addQCSession({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        controlDate: qcDate,
+        decision: qcDecision,
+        reworkNotes: qcNotes || undefined,
+        controlledQty: qcControlled,
+        acceptedQty: acceptedFinal,
+        rejectedQty: qcControlled - acceptedFinal,
+        createdAt: new Date().toISOString(),
+      });
+      setShowQcForm(false);
+      toast.success('تم تسجيل جلسة المراقبة');
+    } finally {
+      setIsSubmittingQc(false);
+    }
   };
 
   const forceCloseQC = () => {
@@ -146,21 +156,27 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   };
 
   const submitDeliverySession = () => {
+    if (isSubmittingDel) return;
     if (delQty <= 0 || delQty > deliverable) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${deliverable}`);
       return;
     }
-    addDeliveredSession({
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      deliveryDate: delDate,
-      salePriceStatus: 'non-calcule',
-      deliveredQty: delQty,
-      invoiceNumber: delInvoice.trim() || undefined,
-      invoiceDate: delInvoiceDate || undefined,
-    });
-    setShowDelForm(false);
-    toast.success('تم تسجيل جلسة التسليم');
+    setIsSubmittingDel(true);
+    try {
+      addDeliveredSession({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        deliveryDate: delDate,
+        salePriceStatus: 'non-calcule',
+        deliveredQty: delQty,
+        invoiceNumber: delInvoice.trim() || undefined,
+        invoiceDate: delInvoiceDate || undefined,
+      });
+      setShowDelForm(false);
+      toast.success('تم تسجيل جلسة التسليم');
+    } finally {
+      setIsSubmittingDel(false);
+    }
   };
 
   const forceCloseDelivery = () => {
@@ -285,7 +301,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   </td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={submitQcSession}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={submitQcSession} disabled={isSubmittingQc}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowQcForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -419,7 +435,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={submitDeliverySession}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={submitDeliverySession} disabled={isSubmittingDel}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowDelForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -429,8 +445,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           </table>
         </div>
 
-        <div className="mt-2 flex gap-2 justify-end">
-          {deliverable > 0 && !deliveryForceClosed && !showDelForm && (
+        <div className="mt-2 flex gap-2 justify-end items-center">
+          {deliverable > 0 && !deliveryForceClosed && !hasConformeDecision && (
+            <span className="text-xs text-amber-600 me-auto">
+              لا يمكن التسليم قبل الحصول على قرار مطابقة من مراقبة الجودة
+            </span>
+          )}
+          {deliverable > 0 && !deliveryForceClosed && !showDelForm && hasConformeDecision && (
             <Button size="sm" variant="outline" onClick={openDelForm}>
               <Plus className="w-4 h-4 ms-1" />
               إضافة جلسة تسليم
