@@ -70,6 +70,10 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const [qcAccepted, setQcAccepted] = useState<number>(qcRemaining || qty);
   const [qcDecision, setQcDecision] = useState<QCDecision | ''>('');
   const [qcNotes, setQcNotes] = useState('');
+  const [isSubmittingQc, setIsSubmittingQc] = useState(false);
+  const [isSubmittingDel, setIsSubmittingDel] = useState(false);
+
+  const hasConformeDecision = orderQc.some(q => q.decision === 'conforme' || q.decision === 'conforme-derogation');
 
   const openQcForm = () => {
     setQcDate(today);
