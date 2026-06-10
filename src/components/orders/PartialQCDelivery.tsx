@@ -435,7 +435,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={submitDeliverySession}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={submitDeliverySession} disabled={isSubmittingDel}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowDelForm(false)}>إلغاء</Button>
                     </div>
                   </td>
