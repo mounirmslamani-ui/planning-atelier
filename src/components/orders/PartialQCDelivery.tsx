@@ -445,8 +445,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           </table>
         </div>
 
-        <div className="mt-2 flex gap-2 justify-end">
-          {deliverable > 0 && !deliveryForceClosed && !showDelForm && (
+        <div className="mt-2 flex gap-2 justify-end items-center">
+          {deliverable > 0 && !deliveryForceClosed && !hasConformeDecision && (
+            <span className="text-xs text-amber-600 me-auto">
+              لا يمكن التسليم قبل الحصول على قرار مطابقة من مراقبة الجودة
+            </span>
+          )}
+          {deliverable > 0 && !deliveryForceClosed && !showDelForm && hasConformeDecision && (
             <Button size="sm" variant="outline" onClick={openDelForm}>
               <Plus className="w-4 h-4 ms-1" />
               إضافة جلسة تسليم
