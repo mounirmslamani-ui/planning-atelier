@@ -156,21 +156,27 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   };
 
   const submitDeliverySession = () => {
+    if (isSubmittingDel) return;
     if (delQty <= 0 || delQty > deliverable) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${deliverable}`);
       return;
     }
-    addDeliveredSession({
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      deliveryDate: delDate,
-      salePriceStatus: 'non-calcule',
-      deliveredQty: delQty,
-      invoiceNumber: delInvoice.trim() || undefined,
-      invoiceDate: delInvoiceDate || undefined,
-    });
-    setShowDelForm(false);
-    toast.success('تم تسجيل جلسة التسليم');
+    setIsSubmittingDel(true);
+    try {
+      addDeliveredSession({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        deliveryDate: delDate,
+        salePriceStatus: 'non-calcule',
+        deliveredQty: delQty,
+        invoiceNumber: delInvoice.trim() || undefined,
+        invoiceDate: delInvoiceDate || undefined,
+      });
+      setShowDelForm(false);
+      toast.success('تم تسجيل جلسة التسليم');
+    } finally {
+      setIsSubmittingDel(false);
+    }
   };
 
   const forceCloseDelivery = () => {
