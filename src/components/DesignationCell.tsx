@@ -22,7 +22,7 @@ const isDriveLink = (url: string) => {
   }
 };
 
-const buildRelayUrl = (url: string) => `/open-external.html?to=${encodeURIComponent(url)}`;
+
 
 /**
  * Renders the order designation as a clickable Google Drive link (when set),
@@ -116,20 +116,17 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   }
 
   // Avec lien : on rend un vrai <a> pour bénéficier d'une vraie navigation utilisateur
-  const href = buildRelayUrl(folderLink);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
         <a
           ref={anchorRef}
-          href={href}
+          href={folderLink}
           target="_blank"
           rel="noopener noreferrer"
-          referrerPolicy="no-referrer"
           onContextMenu={handleContextMenu}
           onPointerDown={e => e.stopPropagation()}
-          onClick={e => e.stopPropagation()}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); window.open(folderLink, '_blank', 'noopener,noreferrer'); }}
           className={combinedClassName}
           title={`Ouvrir : ${folderLink}`}
         >
