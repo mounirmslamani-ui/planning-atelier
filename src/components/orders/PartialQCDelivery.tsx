@@ -85,6 +85,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   };
 
   const submitQcSession = () => {
+    if (isSubmittingQc) return;
     if (!qcDecision) { toast.error('اختر القرار'); return; }
     if (qcControlled <= 0 || qcControlled > qcRemaining) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${qcRemaining}`);
@@ -94,21 +95,26 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
       toast.error('الكمية المقبولة غير صحيحة');
       return;
     }
-    const isAcceptDecision = qcDecision === 'conforme' || qcDecision === 'conforme-derogation';
-    const acceptedFinal = isAcceptDecision ? qcAccepted : 0;
-    addQCSession({
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      controlDate: qcDate,
-      decision: qcDecision,
-      reworkNotes: qcNotes || undefined,
-      controlledQty: qcControlled,
-      acceptedQty: acceptedFinal,
-      rejectedQty: qcControlled - acceptedFinal,
-      createdAt: new Date().toISOString(),
-    });
-    setShowQcForm(false);
-    toast.success('تم تسجيل جلسة المراقبة');
+    setIsSubmittingQc(true);
+    try {
+      const isAcceptDecision = qcDecision === 'conforme' || qcDecision === 'conforme-derogation';
+      const acceptedFinal = isAcceptDecision ? qcAccepted : 0;
+      addQCSession({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        controlDate: qcDate,
+        decision: qcDecision,
+        reworkNotes: qcNotes || undefined,
+        controlledQty: qcControlled,
+        acceptedQty: acceptedFinal,
+        rejectedQty: qcControlled - acceptedFinal,
+        createdAt: new Date().toISOString(),
+      });
+      setShowQcForm(false);
+      toast.success('تم تسجيل جلسة المراقبة');
+    } finally {
+      setIsSubmittingQc(false);
+    }
   };
 
   const forceCloseQC = () => {
