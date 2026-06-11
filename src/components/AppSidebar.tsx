@@ -6,10 +6,12 @@ import {
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
   DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
+  UserCog,
 } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import OrderReportDialog from './OrderReportDialog';
 
@@ -71,6 +73,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
   const [reportOpen, setReportOpen] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
   const planning = usePlanning();
+  const { isAdmin, profile } = useAuth();
 
   const handleGlobalExport = () => {
     try {
@@ -166,6 +169,25 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
             </div>
           </div>
         ))}
+        {isAdmin && (
+          <div>
+            <div className="border-t border-sidebar-border my-2" />
+            <div className="px-3 py-2 text-sm font-heading font-bold text-sidebar-primary tracking-widest uppercase">المستخدمون</div>
+            <div className="space-y-0.5">
+              <NavLink
+                to="/users"
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                  location.pathname === '/users'
+                    ? 'bg-sidebar-accent text-sidebar-primary font-medium'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                }`}
+              >
+                <UserCog className="w-4 h-4" />
+                إدارة المستخدمين
+              </NavLink>
+            </div>
+          </div>
+        )}
       </nav>
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <button

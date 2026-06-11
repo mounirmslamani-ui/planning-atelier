@@ -5,10 +5,15 @@ import { usePlanning } from '@/context/PlanningContext';
 import { buildOrderQualityControlErrorMessage, getOrderQualityControlCheck } from '@/lib/stepProgress';
 import { fetchAllData } from '@/lib/supabase-data';
 import { hasCurrentPostProductionFlow } from '@/lib/orderFlow';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { useAuth } from '@/context/AuthContext';
+import SessionExpiryDialog from './SessionExpiryDialog';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading, orders, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, deliveryEntries, deliveredOrders, cancelledOrders } = usePlanning();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { signOut } = useAuth();
+  const { warning, extend } = useInactivityTimeout({ onTimeout: () => { void signOut(); } });
 
   const transferOrderToQualityControl = useCallback((orderId: string) => {
     if (orderId === absenceOrderId) return;
@@ -94,6 +99,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <main className="min-w-0 flex-1 overflow-auto h-screen">
         {children}
       </main>
+      <SessionExpiryDialog open={warning} onExtend={extend} onLogout={() => { void signOut(); }} />
     </div>
   );
 };

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cancelled_orders: {
         Row: {
           cancel_date: string
@@ -630,6 +654,33 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          force_password_change: boolean
+          id: string
+          role: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          force_password_change?: boolean
+          id: string
+          role?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          force_password_change?: boolean
+          id?: string
+          role?: string
+          status?: string
+        }
+        Relationships: []
+      }
       quality_control_entries: {
         Row: {
           accepted_qty: number | null
@@ -677,6 +728,33 @@ export type Database = {
           },
         ]
       }
+      rights_catalog: {
+        Row: {
+          champ_bouton: string
+          formulaire: string
+          id: string
+          ordre: number
+          sous_formulaire: string
+          tableau: string
+        }
+        Insert: {
+          champ_bouton?: string
+          formulaire?: string
+          id?: string
+          ordre: number
+          sous_formulaire?: string
+          tableau?: string
+        }
+        Update: {
+          champ_bouton?: string
+          formulaire?: string
+          id?: string
+          ordre?: number
+          sous_formulaire?: string
+          tableau?: string
+        }
+        Relationships: []
+      }
       subcontractors: {
         Row: {
           addresses: string[]
@@ -716,12 +794,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_rights: {
+        Row: {
+          champ_bouton: string
+          formulaire: string
+          id: string
+          niveau_acces: string
+          sous_formulaire: string
+          tableau: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          champ_bouton?: string
+          formulaire?: string
+          id?: string
+          niveau_acces?: string
+          sous_formulaire?: string
+          tableau?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          champ_bouton?: string
+          formulaire?: string
+          id?: string
+          niveau_acces?: string
+          sous_formulaire?: string
+          tableau?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       client_class: "A" | "B" | "C" | "D" | "E"
