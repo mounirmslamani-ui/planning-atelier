@@ -95,8 +95,8 @@ const UsersAdminPage: React.FC = () => {
     await supabase.from('audit_log').insert({
       user_id: session.user.id,
       action: 'change_right',
-      details: { target_user: userId, key: row, level },
-    });
+      details: { target_user: userId, key: row as any, level },
+    } as any);
     await load();
   };
 
@@ -118,7 +118,7 @@ const UsersAdminPage: React.FC = () => {
       user_id: session.user.id,
       action: newStatus === 'suspended' ? 'suspend_user' : 'unsuspend_user',
       details: { target_user: suspendTarget.id },
-    });
+    } as any);
     toast.success(newStatus === 'suspended' ? 'تم تعليق المستخدم' : 'تم إلغاء التعليق');
     setSuspendTarget(null);
     await load();
@@ -217,21 +217,23 @@ const UsersAdminPage: React.FC = () => {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => setConfirmTwice(true)}
         title="تأكيد الحذف"
-        message={`هل تريد حذف المستخدم ${deleteTarget?.display_name} ؟`}
+        description={`هل تريد حذف المستخدم ${deleteTarget?.display_name} ؟`}
+        variant="destructive"
       />
       <ConfirmDialog
         open={!!deleteTarget && confirmTwice}
         onCancel={() => { setDeleteTarget(null); setConfirmTwice(false); }}
         onConfirm={handleDelete}
         title="تأكيد نهائي"
-        message="هذا الإجراء نهائي ولا يمكن التراجع عنه. هل تريد المتابعة؟"
+        description="هذا الإجراء نهائي ولا يمكن التراجع عنه. هل تريد المتابعة؟"
+        variant="destructive"
       />
       <ConfirmDialog
         open={!!suspendTarget}
         onCancel={() => setSuspendTarget(null)}
         onConfirm={handleSuspend}
         title={suspendTarget?.status === 'suspended' ? 'إلغاء التعليق' : 'تعليق المستخدم'}
-        message={`هل أنت متأكد من ${suspendTarget?.status === 'suspended' ? 'إعادة تفعيل' : 'تعليق'} حساب ${suspendTarget?.display_name} ؟`}
+        description={`هل أنت متأكد من ${suspendTarget?.status === 'suspended' ? 'إعادة تفعيل' : 'تعليق'} حساب ${suspendTarget?.display_name} ؟`}
       />
     </div>
   );
