@@ -322,7 +322,7 @@ const PendingInvoicingPage: React.FC = () => {
           }
           row['معالجة حرارية'] = orderHasHeatTreatment(order.id) ? 'نعم' : '';
           row['مناولة'] = orderHasSubcontracting(order.id) ? 'نعم' : '';
-          row['المواد الأولية المستعملة'] = rawMaterialsForOrder(order.id);
+          
           exportRows.push(row);
         }
       }
