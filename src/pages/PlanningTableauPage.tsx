@@ -1045,6 +1045,11 @@ if (nextRecord) {
   localStorage.setItem(`relais-started-${nextRecord.operatorId}-${nextRecord.workDate}`, nextRecord.startTime);
 }
 
+    const closingOperatorId = relaisDialog?.operatorId;
+    const closingMode = relaisDialog?.mode;
+    if (closingMode === 'fin_poste' && closingOperatorId) {
+      localStorage.setItem(`fin-poste-${closingOperatorId}-${todayISO()}`, '1');
+    }
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
 
