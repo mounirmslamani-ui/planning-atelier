@@ -29,6 +29,7 @@ import EquipmentPage from "./pages/EquipmentPage";
 import SubcontractingPage from "./pages/SubcontractingPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import PlanningTableauPage from "./pages/PlanningTableauPage";
+import UsersAdminPage from "./pages/UsersAdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => (
                 <Route path="/subcontracting" element={<SubcontractingPage />} />
                 <Route path="/absences" element={<AbsencesPage />} />
                 <Route path="/planning-tableau" element={<PlanningTableauPage />} />
+                <Route path="/users" element={<UsersAdminPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppLayout>
