@@ -331,8 +331,8 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   const totalRows = processed.length;
-  // 10 base cols + operators + 3 (heat/subc/materials)
-  const totalCols = 10 + OPERATOR_COLUMNS.length + 3;
+  // 10 base cols + operators + 2 (heat/subc)
+  const totalCols = 10 + OPERATOR_COLUMNS.length + 2;
 
   const deliveredByOrderId = useMemo(
     () => new Map(deliveredOrders.map(d => [d.orderId, d])),
