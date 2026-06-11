@@ -255,7 +255,21 @@ const AddUserDialog: React.FC<{ open: boolean; onClose: () => void; onCreated: (
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
         body: { display_name: displayName, email, password },
       });
-      if (error) throw error;
+      // Extract real server error from FunctionsHttpError context
+      if (error) {
+        let serverMsg: string | undefined;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const parsed = await ctx.json();
+            serverMsg = parsed?.error;
+          } else if (ctx && typeof ctx.text === 'function') {
+            const t = await ctx.text();
+            try { serverMsg = JSON.parse(t)?.error; } catch { serverMsg = t; }
+          }
+        } catch { /* ignore */ }
+        throw new Error(serverMsg || error.message);
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
       toast.success('تم إنشاء المستخدم');
       setDisplayName(''); setEmail(''); setPassword('');
