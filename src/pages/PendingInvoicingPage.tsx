@@ -375,18 +375,15 @@ const PendingInvoicingPage: React.FC = () => {
         </TableCell>
         {OPERATOR_COLUMNS.map(name => {
           const opId = operatorIdByName.get(name);
-          const concerned = opId && opIds.has(opId);
+          const totalMinutes = opId ? operatorDurationForOrder(order.id, opId) : 0;
           return (
             <TableCell key={name} className="text-xs text-center">
-              {concerned ? <span className="font-medium text-primary">{name}</span> : ''}
+              {totalMinutes > 0 ? <span className="font-medium text-primary">{formatMinutesToHM(totalMinutes)}</span> : ''}
             </TableCell>
           );
         })}
         <TableCell className="text-xs text-center">{orderHasHeatTreatment(order.id) ? '✓' : ''}</TableCell>
         <TableCell className="text-xs text-center">{orderHasSubcontracting(order.id) ? '✓' : ''}</TableCell>
-        <TableCell className="text-xs max-w-40 truncate" title={rawMaterialsForOrder(order.id)}>
-          {rawMaterialsForOrder(order.id)}
-        </TableCell>
       </TableRow>
     );
   };
