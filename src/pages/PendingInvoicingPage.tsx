@@ -20,9 +20,16 @@ import { isReintegratedOrder } from '@/lib/reintegration';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const OPERATOR_COLUMNS = [
-  'محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة',
-  'عمر', 'ياسين', 'معاذ', 'عادل', 'يوسف',
+  'عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق',
+  'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'معالجة حرارية', 'عبد النور',
 ];
+
+function formatMinutesToHM(minutes: number): string {
+  if (!minutes) return '';
+  const h = Math.floor(minutes / 60);
+  const mm = String(minutes % 60).padStart(2, '0');
+  return `${h}h${mm}`;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   'delivered-pending-invoice': 'مسلمة (في انتظار الفوترة)',
