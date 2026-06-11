@@ -73,6 +73,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
   const [reportOpen, setReportOpen] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
   const planning = usePlanning();
+  const { isAdmin, profile } = useAuth();
 
   const handleGlobalExport = () => {
     try {
