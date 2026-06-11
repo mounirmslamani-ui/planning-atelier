@@ -1045,6 +1045,11 @@ if (nextRecord) {
   localStorage.setItem(`relais-started-${nextRecord.operatorId}-${nextRecord.workDate}`, nextRecord.startTime);
 }
 
+    const closingOperatorId = relaisDialog?.operatorId;
+    const closingMode = relaisDialog?.mode;
+    if (closingMode === 'fin_poste' && closingOperatorId) {
+      localStorage.setItem(`fin-poste-${closingOperatorId}-${todayISO()}`, '1');
+    }
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
 
@@ -1277,6 +1282,7 @@ if (nextRecord) {
           const operatorId = group.operator.id;
           const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO())
             || localStorage.getItem(`relais-started-${operatorId}-${todayISO()}`) !== null;
+          const hasFinishedShift = localStorage.getItem(`fin-poste-${operatorId}-${todayISO()}`) === '1';
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
           <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
@@ -1288,7 +1294,7 @@ if (nextRecord) {
                     بداية دوام
                   </Button>
                 )}
-                {hasRecordToday && (
+                {hasRecordToday && !hasFinishedShift && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -1298,7 +1304,7 @@ if (nextRecord) {
                     تبديل الشغل
                   </Button>
                 )}
-                {hasRecordToday && (
+                {hasRecordToday && !hasFinishedShift && (
                   <Button size="sm" variant="outline" onClick={() => setRelaisDialog({ open: true, mode: 'fin_poste', operatorId })}>
                     نهاية دوام
                   </Button>

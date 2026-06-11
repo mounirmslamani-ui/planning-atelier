@@ -20,9 +20,16 @@ import { isReintegratedOrder } from '@/lib/reintegration';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
 const OPERATOR_COLUMNS = [
-  'محمود', 'بلال', 'صالح', 'عبد الرزاق', 'حمزة',
-  'عمر', 'ياسين', 'معاذ', 'عادل', 'يوسف',
+  'عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق',
+  'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'معالجة حرارية', 'عبد النور',
 ];
+
+function formatMinutesToHM(minutes: number): string {
+  if (!minutes) return '';
+  const h = Math.floor(minutes / 60);
+  const mm = String(minutes % 60).padStart(2, '0');
+  return `${h}h${mm}`;
+}
 
 const STATUS_LABELS: Record<string, string> = {
   'delivered-pending-invoice': 'مسلمة (في انتظار الفوترة)',
@@ -266,6 +273,17 @@ const PendingInvoicingPage: React.FC = () => {
     return ids;
   };
 
+  const operatorDurationForOrder = (orderId: string, operatorId: string): number => {
+    let total = 0;
+    for (const s of steps) {
+      if (s.orderId !== orderId) continue;
+      if (s.operatorId !== operatorId) continue;
+      if (s.operationId === absenceOperationId) continue;
+      total += s.estimatedDuration || 0;
+    }
+    return total;
+  };
+
   const orderHasSubcontracting = (orderId: string): boolean =>
     steps.some(s => s.orderId === orderId && !!s.subcontractorId);
   const orderHasHeatTreatment = (orderId: string): boolean =>
@@ -304,7 +322,7 @@ const PendingInvoicingPage: React.FC = () => {
           }
           row['معالجة حرارية'] = orderHasHeatTreatment(order.id) ? 'نعم' : '';
           row['مناولة'] = orderHasSubcontracting(order.id) ? 'نعم' : '';
-          row['المواد الأولية المستعملة'] = rawMaterialsForOrder(order.id);
+          
           exportRows.push(row);
         }
       }
@@ -313,8 +331,8 @@ const PendingInvoicingPage: React.FC = () => {
   };
 
   const totalRows = processed.length;
-  // 10 base cols + operators + 3 (heat/subc/materials)
-  const totalCols = 10 + OPERATOR_COLUMNS.length + 3;
+  // 10 base cols + operators + 2 (heat/subc)
+  const totalCols = 10 + OPERATOR_COLUMNS.length + 2;
 
   const deliveredByOrderId = useMemo(
     () => new Map(deliveredOrders.map(d => [d.orderId, d])),
@@ -357,18 +375,15 @@ const PendingInvoicingPage: React.FC = () => {
         </TableCell>
         {OPERATOR_COLUMNS.map(name => {
           const opId = operatorIdByName.get(name);
-          const concerned = opId && opIds.has(opId);
+          const totalMinutes = opId ? operatorDurationForOrder(order.id, opId) : 0;
           return (
             <TableCell key={name} className="text-xs text-center">
-              {concerned ? <span className="font-medium text-primary">{name}</span> : ''}
+              {totalMinutes > 0 ? <span className="font-medium text-primary">{formatMinutesToHM(totalMinutes)}</span> : ''}
             </TableCell>
           );
         })}
         <TableCell className="text-xs text-center">{orderHasHeatTreatment(order.id) ? '✓' : ''}</TableCell>
         <TableCell className="text-xs text-center">{orderHasSubcontracting(order.id) ? '✓' : ''}</TableCell>
-        <TableCell className="text-xs max-w-40 truncate" title={rawMaterialsForOrder(order.id)}>
-          {rawMaterialsForOrder(order.id)}
-        </TableCell>
       </TableRow>
     );
   };
@@ -491,7 +506,6 @@ const PendingInvoicingPage: React.FC = () => {
               ))}
               <TableHead className="text-xs font-semibold whitespace-nowrap">معالجة حرارية</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">مناولة</TableHead>
-              <TableHead className="text-xs font-semibold whitespace-nowrap">المواد الأولية المستعملة</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
