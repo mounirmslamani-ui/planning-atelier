@@ -273,6 +273,17 @@ const PendingInvoicingPage: React.FC = () => {
     return ids;
   };
 
+  const operatorDurationForOrder = (orderId: string, operatorId: string): number => {
+    let total = 0;
+    for (const s of steps) {
+      if (s.orderId !== orderId) continue;
+      if (s.operatorId !== operatorId) continue;
+      if (s.operationId === absenceOperationId) continue;
+      total += s.estimatedDuration || 0;
+    }
+    return total;
+  };
+
   const orderHasSubcontracting = (orderId: string): boolean =>
     steps.some(s => s.orderId === orderId && !!s.subcontractorId);
   const orderHasHeatTreatment = (orderId: string): boolean =>
