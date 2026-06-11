@@ -506,7 +506,6 @@ const PendingInvoicingPage: React.FC = () => {
               ))}
               <TableHead className="text-xs font-semibold whitespace-nowrap">معالجة حرارية</TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">مناولة</TableHead>
-              <TableHead className="text-xs font-semibold whitespace-nowrap">المواد الأولية المستعملة</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
