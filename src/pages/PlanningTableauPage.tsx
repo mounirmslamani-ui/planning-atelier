@@ -327,6 +327,8 @@ interface PlanningDraftSnapshot {
 }
 
 const PlanningTableauPage: React.FC = () => {
+  const { hasAccess } = useAuth();
+  const canReorderPn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تغيير ترتيب الطلبيات في البرمجة', champ_bouton: '' }) === 'RW';
   const {
     operators, orders, steps, clients, operations,
     equipments,
