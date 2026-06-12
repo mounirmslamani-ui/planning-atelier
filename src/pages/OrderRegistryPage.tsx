@@ -22,6 +22,7 @@ import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import DesignationCell from '@/components/DesignationCell';
+import { useAuth } from '@/context/AuthContext';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
@@ -34,6 +35,8 @@ const OrderRegistryPage: React.FC = () => {
     cancelledOrders, deleteCancelledOrder,
   } = usePlanning();
   const cancelOrder = useCancelOrder();
+  const { hasAccess } = useAuth();
+  const canCreateOrder = hasAccess({ tableau: 'سجل الطلبيات', champ_bouton: 'طلبية جديدة' }) === 'RW';
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
@@ -196,7 +199,9 @@ const OrderRegistryPage: React.FC = () => {
       <Tabs value={activeCat} onValueChange={v => setActiveCat(v as OrderCategory)}>
 <div className="flex flex-wrap items-center gap-2 mb-2">
    <div className="flex-1" />
-  <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">طلبية جديدة</span></Button>
+  {canCreateOrder && (
+    <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">طلبية جديدة</span></Button>
+  )}
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
 </div>
 
