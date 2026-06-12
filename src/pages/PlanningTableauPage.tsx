@@ -28,6 +28,7 @@ import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
+import { useAuth } from '@/context/AuthContext';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
@@ -326,6 +327,8 @@ interface PlanningDraftSnapshot {
 }
 
 const PlanningTableauPage: React.FC = () => {
+  const { hasAccess } = useAuth();
+  const canReorderPn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تغيير ترتيب الطلبيات في البرمجة', champ_bouton: '' }) === 'RW';
   const {
     operators, orders, steps, clients, operations,
     equipments,
@@ -1399,12 +1402,12 @@ if (nextRecord) {
                       <ContextMenu key={step.id}>
                         <ContextMenuTrigger asChild>
                       <TableRow
-                        draggable={!hasActiveFilters}
-                        onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
-                        onDragOver={e => handleDragOver(e, group.operator.id, index)}
+                        draggable={!hasActiveFilters && canReorderPn}
+                        onDragStart={canReorderPn ? e => handleDragStart(e, group.operator.id, index, step, order) : undefined}
+                        onDragOver={canReorderPn ? e => handleDragOver(e, group.operator.id, index) : undefined}
                         onDragLeave={() => setDragOverState(null)}
-                        onDrop={e => handleDrop(e, group.operator.id, index)}
-                        onDragEnd={handleDragEnd}
+                        onDrop={canReorderPn ? e => handleDrop(e, group.operator.id, index) : undefined}
+                        onDragEnd={canReorderPn ? handleDragEnd : undefined}
                         className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
                       >
 

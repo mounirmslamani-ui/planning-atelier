@@ -26,6 +26,7 @@ import { buildOutOfActiveProductionSet } from '@/lib/orderFlow';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/AuthContext';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
@@ -85,6 +86,8 @@ function formatMinutesToHM(minutes: number): string {
 
 const OrdersPage: React.FC = () => {
   const { orders, clients, setOrders, steps, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
+  const { hasAccess } = useAuth();
+  const canReorderCn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تغيير ترتيب الطلبيات', champ_bouton: '' }) === 'RW';
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [unifiedInitialTab, setUnifiedInitialTab] = useState<'info' | 'resources' | 'steps' | 'qc'>('info');
   const openUnified = (orderId: string, tab: 'info' | 'resources' | 'steps' | 'qc' = 'info') => {
@@ -673,12 +676,12 @@ const OrdersPage: React.FC = () => {
               <ContextMenu key={o.id}>
                 <ContextMenuTrigger asChild>
                   <TableRow
-                    draggable={!hasActiveFilters}
-                    onDragStart={e => handleDragStart(e, index)}
-                    onDragOver={e => handleDragOver(e, index)}
+                    draggable={!hasActiveFilters && canReorderCn}
+                    onDragStart={canReorderCn ? e => handleDragStart(e, index) : undefined}
+                    onDragOver={canReorderCn ? e => handleDragOver(e, index) : undefined}
                     onDragLeave={() => setDragOverIndex(null)}
-                    onDrop={e => handleDrop(e, index)}
-                    onDragEnd={handleDragEnd}
+                    onDrop={canReorderCn ? e => handleDrop(e, index) : undefined}
+                    onDragEnd={canReorderCn ? handleDragEnd : undefined}
                     className={`transition-colors ${
                       !hasActiveFilters ? 'cursor-grab active:cursor-grabbing' : ''
                     } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
