@@ -130,9 +130,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
       <div className={`flex h-full flex-col overflow-hidden transition-[width] duration-200 ease-out ${isOpen ? 'w-60' : 'w-0'}`}>
       <div className="p-4 border-b border-sidebar-border flex items-center gap-2">
         <Factory className="w-8 h-8 text-sidebar-primary" />
-        <h1 className="font-heading text-lg font-bold text-sidebar-foreground tracking-wider uppercase">
-          برمجة الورشة
-        </h1>
+        <div className="flex flex-col min-w-0">
+          <h1 className="font-heading text-lg font-bold text-sidebar-foreground tracking-wider uppercase">
+            برمجة الورشة
+          </h1>
+          {profile?.display_name && (
+            <p className="text-xs text-sidebar-foreground/60 font-heading truncate">
+              {profile.display_name}
+            </p>
+          )}
+        </div>
       </div>
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {sidebarGroups.map((group, gi) => (
