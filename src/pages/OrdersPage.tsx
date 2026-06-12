@@ -619,7 +619,7 @@ const OrdersPage: React.FC = () => {
         </div>
      } actions={
         <div className="flex gap-2 items-center">
-          {selectedIds.size > 0 && (
+          {canReorderCn && selectedIds.size > 0 && (
             <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
             </Button>
