@@ -3,32 +3,36 @@ import { supabase } from '@/integrations/supabase/client';
 import { Factory } from 'lucide-react';
 import { toast } from 'sonner';
 
-type Mode = 'login' | 'signup';
-
 const AuthPage: React.FC = () => {
-  const [mode, setMode] = useState<Mode>('login');
-  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!displayName || !password) return;
     setLoading(true);
     try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success('مرحبا بك');
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
-        });
-        if (error) throw error;
-        toast.success('تم إنشاء الحساب');
+      const { data, error } = await supabase.functions.invoke('resolve-user-email', {
+        body: { display_name: displayName.trim() },
+      });
+      if (error) {
+        let serverMsg: string | undefined;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const parsed = await ctx.json();
+            serverMsg = parsed?.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(serverMsg || 'اسم المستخدم غير موجود');
       }
+      const email = (data as any)?.email;
+      if (!email) throw new Error('اسم المستخدم غير موجود');
+
+      const { error: signErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signErr) throw signErr;
+      toast.success('مرحبا بك');
     } catch (err: any) {
       toast.error(err?.message || 'خطأ في المصادقة');
     } finally {
@@ -42,22 +46,19 @@ const AuthPage: React.FC = () => {
         <div className="mb-6 flex flex-col items-center gap-2">
           <Factory className="h-10 w-10 text-primary" />
           <h1 className="font-heading text-lg font-bold uppercase tracking-wider">برمجة الورشة</h1>
-          <p className="text-sm text-muted-foreground">
-            {mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
-          </p>
+          <p className="text-sm text-muted-foreground">تسجيل الدخول</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3" dir="rtl">
           <div>
-            <label className="mb-1 block text-sm font-medium">البريد الإلكتروني</label>
+            <label className="mb-1 block text-sm font-medium">اسم المستخدم</label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="email@example.com"
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
           <div>
@@ -65,11 +66,11 @@ const AuthPage: React.FC = () => {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={4}
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
             />
           </div>
           <button
@@ -77,17 +78,9 @@ const AuthPage: React.FC = () => {
             disabled={loading}
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? '...' : mode === 'login' ? 'دخول' : 'إنشاء'}
+            {loading ? '...' : 'دخول'}
           </button>
         </form>
-
-        <button
-          type="button"
-          onClick={() => setMode(m => (m === 'login' ? 'signup' : 'login'))}
-          className="mt-4 w-full text-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          {mode === 'login' ? 'إنشاء حساب جديد' : 'لدي حساب — تسجيل الدخول'}
-        </button>
       </div>
     </div>
   );

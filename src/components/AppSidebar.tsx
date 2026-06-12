@@ -169,11 +169,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
             </div>
           </div>
         ))}
-        {isAdmin && (
-          <div>
-            <div className="border-t border-sidebar-border my-2" />
-            <div className="px-3 py-2 text-sm font-heading font-bold text-sidebar-primary tracking-widest uppercase">المستخدمون</div>
-            <div className="space-y-0.5">
+        <div>
+          <div className="border-t border-sidebar-border my-2" />
+          <div className="px-3 py-2 text-sm font-heading font-bold text-sidebar-primary tracking-widest uppercase">المستخدمون</div>
+          <div className="space-y-0.5">
+            {isAdmin ? (
               <NavLink
                 to="/users"
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
@@ -185,9 +185,19 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
                 <UserCog className="w-4 h-4" />
                 إدارة المستخدمين
               </NavLink>
-            </div>
+            ) : (
+              <div
+                title="هذه الصفحة محجوزة للمسؤول فقط"
+                aria-disabled="true"
+                className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-sidebar-foreground/40 cursor-not-allowed select-none pointer-events-none"
+              >
+                <UserCog className="w-4 h-4" />
+                <span>إدارة المستخدمين</span>
+                <span className="ml-auto text-xs">🔒</span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </nav>
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <button
