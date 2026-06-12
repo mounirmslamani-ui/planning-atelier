@@ -134,9 +134,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
           <h1 className="font-heading text-lg font-bold text-sidebar-foreground tracking-wider uppercase">
             برمجة الورشة
           </h1>
-          {profile?.display_name && (
-            <p className="text-xs text-sidebar-foreground/60 font-heading truncate">
-              {profile.display_name}
+{profile?.display_name && (
+  <p className="text-sm text-white font-heading truncate">
+    {profile.display_name}
             </p>
           )}
         </div>
