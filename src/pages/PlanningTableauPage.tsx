@@ -1402,12 +1402,12 @@ if (nextRecord) {
                       <ContextMenu key={step.id}>
                         <ContextMenuTrigger asChild>
                       <TableRow
-                        draggable={!hasActiveFilters}
-                        onDragStart={e => handleDragStart(e, group.operator.id, index, step, order)}
-                        onDragOver={e => handleDragOver(e, group.operator.id, index)}
+                        draggable={!hasActiveFilters && canReorderPn}
+                        onDragStart={canReorderPn ? e => handleDragStart(e, group.operator.id, index, step, order) : undefined}
+                        onDragOver={canReorderPn ? e => handleDragOver(e, group.operator.id, index) : undefined}
                         onDragLeave={() => setDragOverState(null)}
-                        onDrop={e => handleDrop(e, group.operator.id, index)}
-                        onDragEnd={handleDragEnd}
+                        onDrop={canReorderPn ? e => handleDrop(e, group.operator.id, index) : undefined}
+                        onDragEnd={canReorderPn ? handleDragEnd : undefined}
                         className={`transition-colors ${blocked ? `${BLOCKED_TABLE_BG_CLASS} hover:bg-blocked/90 [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''} ${dragIsOver ? 'border-t-2 border-t-primary' : ''} ${dragIsThis ? 'opacity-40' : ''} ${isSelected ? 'bg-primary/5' : ''}`}
                       >
 
