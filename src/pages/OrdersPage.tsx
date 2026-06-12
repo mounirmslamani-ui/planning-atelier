@@ -26,6 +26,7 @@ import { buildOutOfActiveProductionSet } from '@/lib/orderFlow';
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
+import { useAuth } from '@/context/AuthContext';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
