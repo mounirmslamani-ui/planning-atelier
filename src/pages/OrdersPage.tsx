@@ -676,12 +676,12 @@ const OrdersPage: React.FC = () => {
               <ContextMenu key={o.id}>
                 <ContextMenuTrigger asChild>
                   <TableRow
-                    draggable={!hasActiveFilters}
-                    onDragStart={e => handleDragStart(e, index)}
-                    onDragOver={e => handleDragOver(e, index)}
+                    draggable={!hasActiveFilters && canReorderCn}
+                    onDragStart={canReorderCn ? e => handleDragStart(e, index) : undefined}
+                    onDragOver={canReorderCn ? e => handleDragOver(e, index) : undefined}
                     onDragLeave={() => setDragOverIndex(null)}
-                    onDrop={e => handleDrop(e, index)}
-                    onDragEnd={handleDragEnd}
+                    onDrop={canReorderCn ? e => handleDrop(e, index) : undefined}
+                    onDragEnd={canReorderCn ? handleDragEnd : undefined}
                     className={`transition-colors ${
                       !hasActiveFilters ? 'cursor-grab active:cursor-grabbing' : ''
                     } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
