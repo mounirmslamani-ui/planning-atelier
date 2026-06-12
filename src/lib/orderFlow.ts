@@ -128,9 +128,11 @@ export function getDeliverableRemaining(
   deliveryEntries: DeliveryEntry[] = [],
 ): number {
   const acceptedFromQc = getQCAccepted(order.id, qc, order.quantity);
-  const acceptedFromLegacy = deliveryEntries
-    .filter(d => d.orderId === order.id)
-    .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
+  // Legacy `delivery_entries` mark the order as fully ready to deliver. Counting
+  // them more than once inflates the deliverable balance and makes shipped
+  // orders reappear in the delivery list.
+  const hasLegacyDelivery = deliveryEntries.some(d => d.orderId === order.id);
+  const acceptedFromLegacy = hasLegacyDelivery ? order.quantity : 0;
   const accepted = Math.max(acceptedFromQc, acceptedFromLegacy);
   const shipped = getDeliveredQty(order.id, delivered, order.quantity);
   return Math.max(0, accepted - shipped);

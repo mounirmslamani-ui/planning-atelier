@@ -49,12 +49,12 @@ const DeliveryPage: React.FC = () => {
         if (x.acceptedQty != null) { acceptedFromQc += x.acceptedQty; hasQcAccept = true; }
         else if (x.decision === 'conforme' || x.decision === 'conforme-derogation') { acceptedFromQc += order.quantity; hasQcAccept = true; }
       }
-      // legacy: also count deliveryEntries (each represents accepted qty ready to ship)
-      let acceptedFromDelivery = 0;
-      for (const d of deliveryEntries) {
-        if (d.orderId !== orderId) continue;
-        acceptedFromDelivery += (d.deliveredQty ?? order.quantity);
-      }
+      // Legacy `delivery_entries` are full-order "ready-to-deliver" markers, NOT
+      // partial increments. Count at most ONE order.quantity even if multiple
+      // legacy rows exist for the same order (otherwise the deliverable balance
+      // is artificially inflated and the order reappears after shipment).
+      const hasLegacyDelivery = deliveryEntries.some(d => d.orderId === orderId);
+      const acceptedFromDelivery = hasLegacyDelivery ? order.quantity : 0;
       // Use max so we don't double-count when both QC accept entries AND legacy
       // deliveryEntries exist for the same order.
       const accepted = Math.max(acceptedFromQc, acceptedFromDelivery);
