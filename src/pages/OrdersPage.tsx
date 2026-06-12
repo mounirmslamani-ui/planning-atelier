@@ -619,7 +619,7 @@ const OrdersPage: React.FC = () => {
         </div>
      } actions={
         <div className="flex gap-2 items-center">
-          {selectedIds.size > 0 && (
+          {canReorderCn && selectedIds.size > 0 && (
             <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
             </Button>
@@ -707,11 +707,15 @@ const OrdersPage: React.FC = () => {
                   </TableRow>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                  <ContextMenuItem onClick={() => openMoveDialog(o.id)}>
-                    <MoveVertical className="w-4 h-4 mr-2" />
-                    Déplacer la sélection {selectedIds.size > 0 ? `(${selectedIds.has(o.id) ? selectedIds.size : selectedIds.size + 1})` : '(1)'}
-                  </ContextMenuItem>
-                  <ContextMenuSeparator />
+                  {canReorderCn && (
+                    <>
+                      <ContextMenuItem onClick={() => openMoveDialog(o.id)}>
+                        <MoveVertical className="w-4 h-4 mr-2" />
+                        Déplacer la sélection {selectedIds.size > 0 ? `(${selectedIds.has(o.id) ? selectedIds.size : selectedIds.size + 1})` : '(1)'}
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                    </>
+                  )}
                   <ContextMenuItem onClick={() => openUnified(o.id, "steps")}>
                     <ListPlus className="w-4 h-4 mr-2" />
                     Étape suivante
