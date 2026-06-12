@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
+import { useAuth } from '@/context/AuthContext';
 import { formatDateFR } from '@/lib/utils';
 import {
   getQCControlled, getQCAccepted, getQCRemaining, isQCForceClosed,
@@ -41,6 +42,12 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
 
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+  const { hasAccess } = useAuth();
+  const canSaveQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
+  const canForceCloseQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال مراقبة الجودة يدوياً' }) === 'RW';
+  const canAddDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'التسليم' }) === 'RW';
+  const canForceCloseDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال التسليم يدوياً' }) === 'RW';
+  const canDeleteSession = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'حذف جلسة' }) === 'RW';
 
   const orderQc = useMemo(
     () => qcEntries.filter(q => q.orderId === order.id).sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
@@ -256,13 +263,15 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     />
                   </td>
                   <td className="p-2">
-                    <Button
-                      size="icon" variant="ghost"
-                      className="h-7 w-7 text-destructive"
-                      onClick={() => askDelete('جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canDeleteSession && (
+                      <Button
+                        size="icon" variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => askDelete('جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -312,13 +321,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
         </div>
 
         <div className="mt-2 flex gap-2 justify-end">
-          {qcRemaining > 0 && !qcForceClosed && !showQcForm && (
+          {qcRemaining > 0 && !qcForceClosed && !showQcForm && canSaveQc && (
             <Button size="sm" variant="outline" onClick={openQcForm}>
               <Plus className="w-4 h-4 ms-1" />
               إضافة جلسة مراقبة
             </Button>
           )}
-          {qcRemaining > 0 && !qcForceClosed && (
+          {qcRemaining > 0 && !qcForceClosed && canForceCloseQc && (
             <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={forceCloseQC}>
               <Lock className="w-4 h-4 ms-1" />
               إقفال CQ يدوياً
@@ -404,13 +413,15 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     />
                   </td>
                   <td className="p-2">
-                    <Button
-                      size="icon" variant="ghost"
-                      className="h-7 w-7 text-destructive"
-                      onClick={() => askDelete('جلسة التسليم', () => { deleteDeliveredOrder(d.id); toast.success('تم الحذف'); })}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canDeleteSession && (
+                      <Button
+                        size="icon" variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => askDelete('جلسة التسليم', () => { deleteDeliveredOrder(d.id); toast.success('تم الحذف'); })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -451,13 +462,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
               لا يمكن التسليم قبل الحصول على قرار مطابقة من مراقبة الجودة
             </span>
           )}
-          {deliverable > 0 && !deliveryForceClosed && !showDelForm && hasConformeDecision && (
+          {deliverable > 0 && !deliveryForceClosed && !showDelForm && hasConformeDecision && canAddDelivery && (
             <Button size="sm" variant="outline" onClick={openDelForm}>
               <Plus className="w-4 h-4 ms-1" />
               إضافة جلسة تسليم
             </Button>
           )}
-          {deliveryRemaining > 0 && !deliveryForceClosed && (
+          {deliveryRemaining > 0 && !deliveryForceClosed && canForceCloseDelivery && (
             <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={forceCloseDelivery}>
               <Lock className="w-4 h-4 ms-1" />
               إقفال التسليم يدوياً

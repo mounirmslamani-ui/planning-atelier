@@ -23,6 +23,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/types/planning';
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
+import { useAuth } from '@/context/AuthContext';
 
 
 interface Props {
@@ -169,6 +170,10 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
   const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
   const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered);
+  const { hasAccess } = useAuth();
+  const canReintegrateBtn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إعادة إدماج' }) === 'RW';
+  const canCancelOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إلغاء الطلبية' }) === 'RW';
+  const canDeleteOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'محو الطلبية' }) === 'RW';
 
   const merged: Order = { ...order, ...draft };
 
@@ -441,7 +446,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
-                    {canReintegrate && (
+                    {canReintegrate && canReintegrateBtn && (
                       <Button
                         variant="outline"
                         className="text-amber-700 border-amber-300 hover:bg-amber-50 me-auto"
@@ -451,27 +456,31 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                         إعادة إدماج
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                      onClick={() => setCancelTarget(true)}
-                    >
-                      <Ban className="w-4 h-4 ms-1" />
-                      إلغاء الطلبية
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() =>
-                        confirm(
-                          'هل أنت متأكد من محو هذه الطلبية نهائياً؟',
-                          () => { deleteOrder(order.id); onOpenChange(false); },
-                          { variant: 'destructive' }
-                        )
-                      }
-                    >
-                      <Trash2 className="w-4 h-4 ms-1" />
-                      محو الطلبية
-                    </Button>
+                    {canCancelOrder && (
+                      <Button
+                        variant="outline"
+                        className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                        onClick={() => setCancelTarget(true)}
+                      >
+                        <Ban className="w-4 h-4 ms-1" />
+                        إلغاء الطلبية
+                      </Button>
+                    )}
+                    {canDeleteOrder && (
+                      <Button
+                        variant="destructive"
+                        onClick={() =>
+                          confirm(
+                            'هل أنت متأكد من محو هذه الطلبية نهائياً؟',
+                            () => { deleteOrder(order.id); onOpenChange(false); },
+                            { variant: 'destructive' }
+                          )
+                        }
+                      >
+                        <Trash2 className="w-4 h-4 ms-1" />
+                        محو الطلبية
+                      </Button>
+                    )}
                   </div>
                 )}
               </TabsContent>
