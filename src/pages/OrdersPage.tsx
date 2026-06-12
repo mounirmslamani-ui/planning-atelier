@@ -86,6 +86,8 @@ function formatMinutesToHM(minutes: number): string {
 
 const OrdersPage: React.FC = () => {
   const { orders, clients, setOrders, steps, absenceOperationId, absenceOrderId, deliveryEntries, deliveredOrders, qcEntries, productionRecords, cancelledOrders } = usePlanning();
+  const { hasAccess } = useAuth();
+  const canReorderCn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تغيير ترتيب الطلبيات', champ_bouton: '' }) === 'RW';
   const [unifiedOrderId, setUnifiedOrderId] = useState<string | null>(null);
   const [unifiedInitialTab, setUnifiedInitialTab] = useState<'info' | 'resources' | 'steps' | 'qc'>('info');
   const openUnified = (orderId: string, tab: 'info' | 'resources' | 'steps' | 'qc' = 'info') => {
