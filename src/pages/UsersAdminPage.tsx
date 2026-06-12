@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
-import { UserPlus, UserMinus, UserX } from 'lucide-react';
+import { UserPlus, UserMinus, UserX, KeyRound } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -53,6 +53,7 @@ const UsersAdminPage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null);
   const [confirmTwice, setConfirmTwice] = useState(false);
   const [suspendTarget, setSuspendTarget] = useState<Profile | null>(null);
+  const [resetTarget, setResetTarget] = useState<Profile | null>(null);
 
   const load = useCallback(async () => {
     const [p, c, r] = await Promise.all([
@@ -149,9 +150,12 @@ const UsersAdminPage: React.FC = () => {
                 <td className="p-3">{p.status === 'active' ? 'مفعّل' : 'معلّق'}</td>
                 <td className="p-3">
                   {p.role !== 'admin' && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button size="sm" variant="outline" onClick={() => setSuspendTarget(p)}>
                         <UserX className="ml-1 h-3 w-3" />{p.status === 'suspended' ? 'إلغاء التعليق' : 'تعليق'}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setResetTarget(p)}>
+                        <KeyRound className="ml-1 h-3 w-3" />إعادة تعيين كلمة المرور
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => setDeleteTarget(p)}>
                         <UserMinus className="ml-1 h-3 w-3" />إزالة
@@ -235,7 +239,67 @@ const UsersAdminPage: React.FC = () => {
         title={suspendTarget?.status === 'suspended' ? 'إلغاء التعليق' : 'تعليق المستخدم'}
         description={`هل أنت متأكد من ${suspendTarget?.status === 'suspended' ? 'إعادة تفعيل' : 'تعليق'} حساب ${suspendTarget?.display_name} ؟`}
       />
+      <ResetPasswordDialog target={resetTarget} onClose={() => setResetTarget(null)} onDone={load} />
     </div>
+  );
+};
+
+const ResetPasswordDialog: React.FC<{ target: Profile | null; onClose: () => void; onDone: () => void }> = ({ target, onClose, onDone }) => {
+  const [pwd, setPwd] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { if (!target) { setPwd(''); setConfirm(''); } }, [target]);
+
+  const submit = async () => {
+    if (!target) return;
+    if (pwd.length < 6) { toast.error('كلمة المرور يجب أن تحتوي على 6 أحرف على الأقل'); return; }
+    if (pwd !== confirm) { toast.error('كلمتا المرور غير متطابقتين'); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { user_id: target.id, new_password: pwd },
+      });
+      if (error) {
+        let serverMsg: string | undefined;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const parsed = await ctx.json();
+            serverMsg = parsed?.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(serverMsg || error.message);
+      }
+      toast.success('تم تحديث كلمة المرور');
+      onClose(); onDone();
+    } catch (e: any) {
+      toast.error(e?.message || 'خطأ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent dir="rtl">
+        <DialogHeader><DialogTitle>إعادة تعيين كلمة المرور — {target?.display_name}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-sm">كلمة المرور الجديدة</label>
+            <Input type="password" value={pwd} onChange={e => setPwd(e.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm">تأكيد كلمة المرور</label>
+            <Input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إلغاء</Button>
+          <Button onClick={submit} disabled={loading}>{loading ? '...' : 'حفظ'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
