@@ -28,6 +28,7 @@ import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
+import { useAuth } from '@/context/AuthContext';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
