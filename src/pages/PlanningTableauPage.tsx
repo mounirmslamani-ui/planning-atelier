@@ -1539,12 +1539,14 @@ if (nextRecord) {
                       </TableRow>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
-                          <ContextMenuItem onClick={() => openMovePnDialog(group.operator.id, step.id)}>
-                            <MoveVertical className="w-4 h-4 mr-2" />
-                            Déplacer la sélection {selectedStepIds.size > 0
-                              ? `(${selectedStepIds.has(step.id) ? selectedStepIds.size : selectedStepIds.size + 1})`
-                              : '(1)'}
-                          </ContextMenuItem>
+                          {canReorderPn && (
+                            <ContextMenuItem onClick={() => openMovePnDialog(group.operator.id, step.id)}>
+                              <MoveVertical className="w-4 h-4 mr-2" />
+                              Déplacer la sélection {selectedStepIds.size > 0
+                                ? `(${selectedStepIds.has(step.id) ? selectedStepIds.size : selectedStepIds.size + 1})`
+                                : '(1)'}
+                            </ContextMenuItem>
+                          )}
                         </ContextMenuContent>
                       </ContextMenu>
                     );
