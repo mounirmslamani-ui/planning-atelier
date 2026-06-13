@@ -16,7 +16,7 @@ import { Pencil } from 'lucide-react';
  */
 export function useSubFormLock(canEdit: boolean) {
   const [locked, setLocked] = useState(true);
-  const unlock = useCallback(() => setLocked(true === false ? true : false), []);
+  const unlock = useCallback(() => setLocked(false), []);
   const lock = useCallback(() => setLocked(true), []);
 
   const EditButton: React.FC<{ className?: string; size?: 'sm' | 'default' | 'lg' | 'icon' }> = ({ className, size = 'default' }) => {
