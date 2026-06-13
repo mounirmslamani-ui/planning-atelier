@@ -359,9 +359,11 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                 <Lock className="w-3 h-3" /> مُقفَل
               </span>
             )}
+            <delLock.EditButton size="sm" />
           </div>
         </div>
 
+        <fieldset disabled={delLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
         <div className="border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
@@ -455,7 +457,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={submitDeliverySession} disabled={isSubmittingDel}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={() => { submitDeliverySession(); delLock.lock(); }} disabled={isSubmittingDel}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowDelForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -484,7 +486,9 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             </Button>
           )}
         </div>
+        </fieldset>
       </section>
+
 
       <ConfirmDialog
         open={confirmState.open}
