@@ -170,6 +170,33 @@ const UsersAdminPage: React.FC = () => {
       </section>
 
       <section className="rounded-lg border bg-card overflow-x-auto">
+        <h2 className="p-3 text-lg font-bold border-b">تشخيص — صلاحياتي الخام (المستخدم المتصل)</h2>
+        <table className="w-full text-xs font-mono">
+          <thead className="bg-muted">
+            <tr>
+              <th className="p-2 text-right">tableau</th>
+              <th className="p-2 text-right">formulaire</th>
+              <th className="p-2 text-right">sous_formulaire</th>
+              <th className="p-2 text-right">champ_bouton</th>
+              <th className="p-2 text-right">niveau_acces</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rights.filter(r => r.user_id === session.user.id).map(r => (
+              <tr key={r.id} className="border-t">
+                <td className="p-2">[{r.tableau}] ({r.tableau.length})</td>
+                <td className="p-2">[{r.formulaire}] ({r.formulaire.length})</td>
+                <td className="p-2">[{r.sous_formulaire}] ({r.sous_formulaire.length})</td>
+                <td className="p-2">[{r.champ_bouton}] ({r.champ_bouton.length})</td>
+                <td className="p-2">{r.niveau_acces}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="rounded-lg border bg-card overflow-x-auto">
+
         <h2 className="p-3 text-lg font-bold border-b">جدول الصلاحيات</h2>
         <table className="w-full text-sm">
           <thead className="bg-muted">

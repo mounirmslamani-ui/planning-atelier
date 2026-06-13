@@ -161,16 +161,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const editor = usePlanningEditor(order, open && !createMode);
 
-  if (!order) return null;
-
-  const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
-  const status = createMode
-    ? 'قيد الانتظار' as const
-    : getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
-  const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
-  const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
-  const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
-  const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered);
   const { hasAccess } = useAuth();
   const canReintegrateBtn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إعادة إدماج' }) === 'RW';
   const canCancelOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إلغاء الطلبية' }) === 'RW';
@@ -187,6 +177,18 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const stepsLock = useSubFormLock(canEditSteps);
   // In create mode, info starts unlocked so the user can fill it in
   React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
+
+  if (!order) return null;
+
+  const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
+  const status = createMode
+    ? 'قيد الانتظار' as const
+    : getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
+  const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
+  const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
+  const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
+  const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered);
+
 
   const merged: Order = { ...order, ...draft };
 
