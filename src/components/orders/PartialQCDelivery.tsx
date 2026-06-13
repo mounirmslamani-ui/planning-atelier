@@ -8,6 +8,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import { useAuth } from '@/context/AuthContext';
+import { useSubFormLock } from '@/components/orders/SubFormLock';
 import { formatDateFR } from '@/lib/utils';
 import {
   getQCControlled, getQCAccepted, getQCRemaining, isQCForceClosed,
@@ -48,6 +49,10 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const canAddDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'التسليم' }) === 'RW';
   const canForceCloseDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال التسليم يدوياً' }) === 'RW';
   const canDeleteSession = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'حذف جلسة' }) === 'RW';
+
+  // Per-section RBAC locks (QC and Delivery sub-forms are independent)
+  const qcLock = useSubFormLock(canSaveQc);
+  const delLock = useSubFormLock(canAddDelivery);
 
   const orderQc = useMemo(
     () => qcEntries.filter(q => q.orderId === order.id).sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
