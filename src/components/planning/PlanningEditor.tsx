@@ -16,6 +16,7 @@ import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { isLinkedToOperation } from '@/lib/operationLinks';
+import { useSubFormLock } from '@/components/orders/SubFormLock';
 
 export interface OperationRow {
   id: string;
@@ -714,8 +715,21 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
 };
 
 /** Editable Resources tab table. */
-export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
+export const ResourcesEditorTable: React.FC<{
+  editor: PlanningEditor;
+  onCancel?: () => void;
+  canEditMaterial?: boolean;
+  canEditTooling?: boolean;
+  canEditStudy?: boolean;
+}> = ({ editor, onCancel, canEditMaterial = true, canEditTooling = true, canEditStudy = true }) => {
   const e = editor;
+  const matLock = useSubFormLock(canEditMaterial);
+  const tooLock = useSubFormLock(canEditTooling);
+  const stuLock = useSubFormLock(canEditStudy);
+  const matDisabled = e.isLocked || matLock.locked;
+  const tooDisabled = e.isLocked || tooLock.locked;
+  const stuDisabled = e.isLocked || stuLock.locked;
+  const allDisabled = matDisabled && tooDisabled && stuDisabled;
   const materialSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.materialStatus)), [e.rows]);
   const toolingSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.toolingStatus)), [e.rows]);
   const studySynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.studyStatus)), [e.rows]);
@@ -726,6 +740,12 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
           🔒 {e.lockReason}
         </div>
       )}
+      <div className="flex flex-wrap items-center gap-2 justify-end">
+        <span className="text-xs text-muted-foreground me-auto">حقوق التعديل حسب العمود</span>
+        <div className="flex items-center gap-1"><span className="text-xs">المواد الأولية:</span><matLock.EditButton size="sm" /></div>
+        <div className="flex items-center gap-1"><span className="text-xs">العدة:</span><tooLock.EditButton size="sm" /></div>
+        <div className="flex items-center gap-1"><span className="text-xs">الدراسة:</span><stuLock.EditButton size="sm" /></div>
+      </div>
       <div className="bg-card rounded-md border w-full">
         <table className="w-full table-fixed text-xs">
           <colgroup>
@@ -742,19 +762,19 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
               <th className="p-1.5 text-right">العملية</th>
               <th className="p-1.5 text-right">
                 <div className="flex items-center gap-1.5">
-                  <ResourceStatusPill value={materialSynth} onChange={s => e.handleColumnStatusChange('material', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <ResourceStatusPill value={materialSynth} onChange={s => e.handleColumnStatusChange('material', s)} readOnly={matDisabled || e.rows.length === 0} />
                   <span>المواد الأولية</span>
                 </div>
               </th>
               <th className="p-1.5 text-right">
                 <div className="flex items-center gap-1.5">
-                  <ResourceStatusPill value={toolingSynth} onChange={s => e.handleColumnStatusChange('tooling', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <ResourceStatusPill value={toolingSynth} onChange={s => e.handleColumnStatusChange('tooling', s)} readOnly={tooDisabled || e.rows.length === 0} />
                   <span>العدة</span>
                 </div>
               </th>
               <th className="p-1.5 text-right">
                 <div className="flex items-center gap-1.5">
-                  <ResourceStatusPill value={studySynth} onChange={s => e.handleColumnStatusChange('study', s)} readOnly={e.isLocked || e.rows.length === 0} />
+                  <ResourceStatusPill value={studySynth} onChange={s => e.handleColumnStatusChange('study', s)} readOnly={stuDisabled || e.rows.length === 0} />
                   <span>الدراسة</span>
                 </div>
               </th>
@@ -771,16 +791,16 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
                   <td className="p-1.5">{opName}</td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} />
+                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} readOnly={matDisabled} />
                       {(row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
                         <div key={idx} className="flex items-center gap-1">
-                          <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'rawMaterialNeeds', idx, ev.target.value)} placeholder="مادة..." disabled={e.isLocked} />
+                          <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'rawMaterialNeeds', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled} />
                           {idx === row.rawMaterialNeeds.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialNeeds')} disabled={e.isLocked}>
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialNeeds')} disabled={matDisabled}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialNeeds', idx)} disabled={e.isLocked}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialNeeds', idx)} disabled={matDisabled}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -790,16 +810,16 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
                   </td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} />
+                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} readOnly={tooDisabled} />
                       {(row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
                         <div key={idx} className="flex items-center gap-1">
-                          <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'specialToolingNeeds', idx, ev.target.value)} placeholder="أداة..." disabled={e.isLocked} />
+                          <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'specialToolingNeeds', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled} />
                           {idx === row.specialToolingNeeds.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingNeeds')} disabled={e.isLocked}>
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingNeeds')} disabled={tooDisabled}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingNeeds', idx)} disabled={e.isLocked}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingNeeds', idx)} disabled={tooDisabled}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -808,7 +828,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
                     </div>
                   </td>
                   <td className="p-1.5 text-center">
-                    <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} />
+                    <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} readOnly={stuDisabled} />
                   </td>
                   <td className="p-1.5">
                     <Input
@@ -816,7 +836,7 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
                       value={row.resourceNotes || ''}
                       onChange={ev => e.updateRow(row.id, 'resourceNotes', ev.target.value)}
                       placeholder="..."
-                      disabled={e.isLocked}
+                      disabled={allDisabled}
                     />
                   </td>
                 </tr>
@@ -832,7 +852,10 @@ export const ResourcesEditorTable: React.FC<{ editor: PlanningEditor; onCancel?:
         {onCancel && (
           <Button variant="outline" onClick={onCancel}>إلغاء</Button>
         )}
-        <Button onClick={e.saveResourcesOnly} disabled={e.isLocked || e.rows.length === 0}>
+        <Button
+          onClick={() => { e.saveResourcesOnly(); matLock.lock(); tooLock.lock(); stuLock.lock(); }}
+          disabled={e.isLocked || e.rows.length === 0 || allDisabled}
+        >
           <Save className="w-4 h-4 mr-1" /> تأكيد
         </Button>
       </div>

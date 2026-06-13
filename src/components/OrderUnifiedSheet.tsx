@@ -24,6 +24,7 @@ import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/ty
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
+import { useSubFormLock } from '@/components/orders/SubFormLock';
 
 
 interface Props {
@@ -175,6 +176,18 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const canCancelOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إلغاء الطلبية' }) === 'RW';
   const canDeleteOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'محو الطلبية' }) === 'RW';
 
+  // Per-sub-form RBAC
+  const canEditInfo = hasAccess({ tableau: 'Tous', formulaire: 'بطاقة متابعة إنجاز الطلبية', sous_formulaire: 'معلومات الطلب والزبون', champ_bouton: 'Tous' }) === 'RW';
+  const canEditMaterial = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'المواد الأولية' }) === 'RW';
+  const canEditTooling  = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'العدة' }) === 'RW';
+  const canEditStudy    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'الدراسة' }) === 'RW';
+  const canEditSteps    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراحل الإنجاز والتوقيت', champ_bouton: 'Tous' }) === 'RW';
+  // Create mode: always allow (the order doesn't exist yet — no RBAC scope applies)
+  const infoLock  = useSubFormLock(createMode ? true : canEditInfo);
+  const stepsLock = useSubFormLock(canEditSteps);
+  // In create mode, info starts unlocked so the user can fill it in
+  React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
+
   const merged: Order = { ...order, ...draft };
 
   const saveInfo = () => {
@@ -191,10 +204,17 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
       return;
     }
-    if (Object.keys(draft).length === 0) { onOpenChange(false); return; }
+    if (Object.keys(draft).length === 0) { infoLock.lock(); return; }
     updateOrder({ ...order, ...draft });
     setDraft({});
+    infoLock.lock();
     toast.success('تم حفظ معلومات الطلبية');
+  };
+
+  const cancelInfo = () => {
+    setDraft({});
+    if (createMode) onOpenChange(false);
+    else infoLock.lock();
   };
 
   // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
@@ -284,6 +304,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
             <div className="flex-1 overflow-auto px-6 py-4">
               {/* TAB 1 — INFO */}
               <TabsContent value="info" className="mt-0 space-y-4">
+                <fieldset disabled={infoLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>رقم الطلبية</Label>
@@ -305,6 +326,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     <Select
                       value={merged.clientId || ''}
                       onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}
+                      disabled={infoLock.locked}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -333,6 +355,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                           <Select
                             value={merged.clientRepresentative || ''}
                             onValueChange={v => setDraft(d => ({ ...d, clientRepresentative: v }))}
+                            disabled={infoLock.locked}
                           >
                             <SelectTrigger><SelectValue placeholder="— اختر ممثلاً —" /></SelectTrigger>
                             <SelectContent>
@@ -371,6 +394,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     <Select
                       value={merged.priority || 'undetermined'}
                       onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}
+                      disabled={infoLock.locked}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -393,6 +417,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     <Select
                       value={merged.drawingModel || ''}
                       onValueChange={v => setDraft(d => ({ ...d, drawingModel: v }))}
+                      disabled={infoLock.locked}
                     >
                       <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                       <SelectContent>
@@ -419,21 +444,34 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     />
                   </div>
                 </div>
+                </fieldset>
 
                 <div className="flex justify-end gap-2 pt-2 border-t">
-                  <Button variant="outline" onClick={() => { setDraft({}); onOpenChange(false); }}>إلغاء</Button>
-                  <Button onClick={saveInfo} disabled={!createMode && Object.keys(draft).length === 0}>تأكيد</Button>
+                  <infoLock.EditButton />
+                  <Button variant="outline" onClick={cancelInfo} disabled={infoLock.locked}>إلغاء</Button>
+                  <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
                 </div>
               </TabsContent>
 
               {/* TAB 2 — RESOURCES (editable in place) */}
               <TabsContent value="resources" className="mt-0 space-y-3">
-                <ResourcesEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
+                <ResourcesEditorTable
+                  editor={editor}
+                  onCancel={() => { setDraft({}); onOpenChange(false); }}
+                  canEditMaterial={canEditMaterial}
+                  canEditTooling={canEditTooling}
+                  canEditStudy={canEditStudy}
+                />
               </TabsContent>
 
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
               <TabsContent value="steps" className="mt-0 space-y-3">
-                <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
+                <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
+                  <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
+                </fieldset>
+                <div className="flex justify-end gap-2 pt-2">
+                  <stepsLock.EditButton />
+                </div>
               </TabsContent>
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
@@ -443,6 +481,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
                   <Button onClick={() => { toast.success('تم الحفظ'); onOpenChange(false); }}>تأكيد</Button>
                 </div>
+
 
                 {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">

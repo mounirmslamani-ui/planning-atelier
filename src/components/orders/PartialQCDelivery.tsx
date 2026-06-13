@@ -8,6 +8,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import { useAuth } from '@/context/AuthContext';
+import { useSubFormLock } from '@/components/orders/SubFormLock';
 import { formatDateFR } from '@/lib/utils';
 import {
   getQCControlled, getQCAccepted, getQCRemaining, isQCForceClosed,
@@ -48,6 +49,10 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const canAddDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'التسليم' }) === 'RW';
   const canForceCloseDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال التسليم يدوياً' }) === 'RW';
   const canDeleteSession = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'حذف جلسة' }) === 'RW';
+
+  // Per-section RBAC locks (QC and Delivery sub-forms are independent)
+  const qcLock = useSubFormLock(canSaveQc);
+  const delLock = useSubFormLock(canAddDelivery);
 
   const orderQc = useMemo(
     () => qcEntries.filter(q => q.orderId === order.id).sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
@@ -225,9 +230,11 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                 <Lock className="w-3 h-3" /> مُقفَل
               </span>
             )}
+            <qcLock.EditButton size="sm" />
           </div>
         </div>
 
+        <fieldset disabled={qcLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
         <div className="border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
@@ -310,7 +317,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   </td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={submitQcSession} disabled={isSubmittingQc}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={() => { submitQcSession(); qcLock.lock(); }} disabled={isSubmittingQc}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowQcForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -334,7 +341,9 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             </Button>
           )}
         </div>
+        </fieldset>
       </section>
+
 
       {/* ───────── DELIVERY SECTION ───────── */}
       <section className="mt-4">
@@ -350,9 +359,11 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                 <Lock className="w-3 h-3" /> مُقفَل
               </span>
             )}
+            <delLock.EditButton size="sm" />
           </div>
         </div>
 
+        <fieldset disabled={delLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
         <div className="border rounded-md overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
@@ -446,7 +457,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={submitDeliverySession} disabled={isSubmittingDel}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={() => { submitDeliverySession(); delLock.lock(); }} disabled={isSubmittingDel}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowDelForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -475,7 +486,9 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             </Button>
           )}
         </div>
+        </fieldset>
       </section>
+
 
       <ConfirmDialog
         open={confirmState.open}
