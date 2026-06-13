@@ -24,6 +24,7 @@ import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/ty
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
 import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
+import { useSubFormLock } from '@/components/orders/SubFormLock';
 
 
 interface Props {
@@ -174,6 +175,18 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const canReintegrateBtn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إعادة إدماج' }) === 'RW';
   const canCancelOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إلغاء الطلبية' }) === 'RW';
   const canDeleteOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'محو الطلبية' }) === 'RW';
+
+  // Per-sub-form RBAC
+  const canEditInfo = hasAccess({ tableau: 'Tous', formulaire: 'بطاقة متابعة إنجاز الطلبية', sous_formulaire: 'معلومات الطلب والزبون', champ_bouton: 'Tous' }) === 'RW';
+  const canEditMaterial = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'المواد الأولية' }) === 'RW';
+  const canEditTooling  = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'العدة' }) === 'RW';
+  const canEditStudy    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'الدراسة' }) === 'RW';
+  const canEditSteps    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراحل الإنجاز والتوقيت', champ_bouton: 'Tous' }) === 'RW';
+  // Create mode: always allow (the order doesn't exist yet — no RBAC scope applies)
+  const infoLock  = useSubFormLock(createMode ? true : canEditInfo);
+  const stepsLock = useSubFormLock(canEditSteps);
+  // In create mode, info starts unlocked so the user can fill it in
+  React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
 
   const merged: Order = { ...order, ...draft };
 
