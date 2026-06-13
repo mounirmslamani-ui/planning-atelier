@@ -204,10 +204,17 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
       return;
     }
-    if (Object.keys(draft).length === 0) { onOpenChange(false); return; }
+    if (Object.keys(draft).length === 0) { infoLock.lock(); return; }
     updateOrder({ ...order, ...draft });
     setDraft({});
+    infoLock.lock();
     toast.success('تم حفظ معلومات الطلبية');
+  };
+
+  const cancelInfo = () => {
+    setDraft({});
+    if (createMode) onOpenChange(false);
+    else infoLock.lock();
   };
 
   // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
