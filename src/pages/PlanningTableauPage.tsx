@@ -1127,7 +1127,7 @@ if (nextRecord) {
         default: return '';
       }
     };
-    const keys = ['displayOrder','startDate','endDate','orderNumber','client','designation','quantity','priority','globalStatus','machine','status','operation'];
+    const keys = ['displayOrder','startDate','endDate','orderNumber','client','designation','quantity','priority','complexity','globalStatus','machine','status','operation'];
     const map: Record<string, string[]> = {};
     keys.forEach(k => { map[k] = [...new Set(allTasks.map((t: any) => get(t, k)).filter(Boolean))].sort(); });
     return map;
