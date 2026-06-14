@@ -314,6 +314,7 @@ const PendingInvoicingPage: React.FC = () => {
             'الكمية': order.quantity,
             'ممثل الزبون': order.clientRepresentative || '—',
             'الأولوية': order.priority || '—',
+            'مستوى التعقيد التقني': TC_LONG[order.technicalComplexity || ''] || '—',
             'أجل التسليم': order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—',
             'تاريخ التسليم/تقدم الأشغال': `${statusLabel} — ${deliveryDateOrProgress}`,
             'ثمن البيع': PRICE_LABELS[priceStatus],
