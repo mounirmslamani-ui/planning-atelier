@@ -1075,7 +1075,7 @@ if (nextRecord) {
         Opération: getOperationName(step.operationId),
         Durée: formatMinutesToHM(step.estimatedDuration),
       })),
-      columnWidths: [12, 12, 18, 45, 8, 8, 12, 20, 8],
+      columnWidths: [12, 12, 18, 45, 8, 8, 14, 12, 20, 8],
     })));
   }, [operatorTasks, getClientName, getOperationName]);
 
