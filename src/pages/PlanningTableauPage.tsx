@@ -1367,6 +1367,9 @@ if (nextRecord) {
                     <TableHead className="w-[70px] text-xs text-center">
                       <ColumnHeader label="الأولوية" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.priority} />
                     </TableHead>
+                    <TableHead className="w-[80px] text-xs text-center">
+                      <ColumnHeader label="مستوى التعقيد التقني" columnKey="complexity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['complexity'] || ''} onFilter={handleColFilter} allValues={TC_LEVELS as unknown as string[]} />
+                    </TableHead>
                     <TableHead className="w-[80px] text-xs">أجل التسليم</TableHead>
                     <TableHead className="w-[120px] text-xs">
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
