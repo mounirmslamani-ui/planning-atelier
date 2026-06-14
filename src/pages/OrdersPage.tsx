@@ -408,7 +408,7 @@ const OrdersPage: React.FC = () => {
   // Excel-style unique values per column for ColumnHeader checkbox lists.
   const allValuesByKey = useMemo(() => {
     const map: Record<string, string[]> = {};
-    const keys: ColumnKey[] = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','globalStatus','remainingSteps','deliveryDeadline','clientRepresentative','instructions','drawingModel','atelierTime','study','material','tooling','observation'];
+    const keys: ColumnKey[] = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','complexity','globalStatus','remainingSteps','deliveryDeadline','clientRepresentative','instructions','drawingModel','atelierTime','study','material','tooling','observation'];
     keys.forEach(k => {
       const set = new Set<string>();
       baseSorted.forEach(o => { const v = getColValue(o, k); if (v) set.add(v); });
