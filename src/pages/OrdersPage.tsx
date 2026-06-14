@@ -427,6 +427,7 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
+    { key: 'complexity', label: 'مستوى التعقيد التقني', className: 'w-[90px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
     { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
     { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
