@@ -721,8 +721,10 @@ export const ResourcesEditorTable: React.FC<{
   canEditMaterial?: boolean;
   canEditTooling?: boolean;
   canEditStudy?: boolean;
-}> = ({ editor, onCancel, canEditMaterial = true, canEditTooling = true, canEditStudy = true }) => {
+  order?: Order | null;
+}> = ({ editor, onCancel, canEditMaterial = true, canEditTooling = true, canEditStudy = true, order }) => {
   const e = editor;
+  const { updateOrder } = usePlanning();
   const matLock = useSubFormLock(canEditMaterial);
   const tooLock = useSubFormLock(canEditTooling);
   const stuLock = useSubFormLock(canEditStudy);
@@ -733,11 +735,51 @@ export const ResourcesEditorTable: React.FC<{
   const materialSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.materialStatus)), [e.rows]);
   const toolingSynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.toolingStatus)), [e.rows]);
   const studySynth = useMemo(() => synthesizeResourceStatuses(e.rows.map(r => r.studyStatus)), [e.rows]);
+  const complexity = order?.technicalComplexity || '';
+  const complexityDescriptions: Record<string, string> = {
+    level1: 'المعايير: عمليات تشغيل بسيطة: خرط بسيط، تسوية أسطح Surfaçage ، ثقب عادي، ... التجاوزات (Tolérances) تكون واسعة وغير حرجة.\nأمثلة: أعمدة بسيطة (Axes)، جلب برونزية (Bagues) بدون مجاري داخلية معقدة، فلانشات (Brides) قياسية.\nالتوجيه: يمكن إسنادها لأي عامل أو مبتدئ في الورشة. وقت ضبط الماكينة يكون سريعاً جداً.',
+    level2: 'المعايير: تتطلب انتباهاً أكبر. قد تحتوي على عدة مراحل تشغيل، أو تسنين أو قلوظة خاص.\nأمثلة: صواميل خاصة، أو قطع تتطلب تركيباً بسيطاً على الفرازة، مسننات مستقيمة الأسنان، مسننات السلسلة.',
+    level3: 'المعايير: هندسة القطعة صعبة، والتجاوزات ضيقة جداً (تطابق دقيق Ajustements serrés). تتطلب تجهيزات تثبيت خاصة (Montages d\'usinage) أو عمليات مثل فتح التروس (Taillage d\'engrenages).\nأمثلة: تروس حلزونية (Pignons hélicoïdaux)، أعمدة مسننة طويلة (Arbres cannelés)، أو قوالب (Matrices) تتطلب دقة توازي صارمة.\nالتوجيه: تُسند حصراً للخراطين أو الفرازين المؤهلين. وقت إعداد الماكينة يكون طويلاً ويجب احتسابه في خطة الإنتاج.',
+    level4: 'المعايير: دقة متناهية تصل إلى أجزاء من المئة من المليمتر، أشكال هندسية غير تقليدية، قطع رقيقة وقابلة للاهتزاز بسهولة. غالباً ما تتطلب دمجاً مع ماكينات التجليخ (Rectification).\nأمثلة: قوالب حقن البلاستيك المعقدة، أعمدة الدوران عالية الدقة (Broches)، أو قطع غيار حرجة.\nالتوجيه: تُسند فقط للخراطين أو الفرازين الخبراء.',
+  };
+  const complexityLabels: Record<string, string> = {
+    level1: 'المستوى 1: طلبية بسيطة',
+    level2: 'المستوى 2: طلبية متوسطة التعقيد',
+    level3: 'المستوى 3: طلبية معقدة',
+    level4: 'المستوى 4: طلبية معقدة جداً',
+  };
   return (
     <div className="space-y-3">
       {e.isLocked && (
         <div className="rounded-md border border-urgent-moderate/40 bg-urgent-moderate/10 px-4 py-2 text-sm text-urgent-moderate font-medium">
           🔒 {e.lockReason}
+        </div>
+      )}
+      {order && (
+        <div className="rounded-md border bg-card p-3 space-y-2">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium whitespace-nowrap">مستوى التعقيد التقني</label>
+            <select
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm flex-1 max-w-md"
+              value={complexity}
+              disabled={e.isLocked}
+              onChange={ev => {
+                const v = ev.target.value;
+                updateOrder({ ...order, technicalComplexity: (v || undefined) as any });
+              }}
+            >
+              <option value="">— اختر المستوى —</option>
+              <option value="level1">{complexityLabels.level1}</option>
+              <option value="level2">{complexityLabels.level2}</option>
+              <option value="level3">{complexityLabels.level3}</option>
+              <option value="level4">{complexityLabels.level4}</option>
+            </select>
+          </div>
+          {complexity && complexityDescriptions[complexity] && (
+            <div className="rounded-md bg-muted/40 border border-border px-3 py-2 text-xs whitespace-pre-line leading-relaxed">
+              {complexityDescriptions[complexity]}
+            </div>
+          )}
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2 justify-end">
