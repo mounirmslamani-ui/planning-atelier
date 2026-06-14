@@ -306,7 +306,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
             <div className="flex-1 overflow-auto px-6 py-4">
               {/* TAB 1 — INFO */}
               <TabsContent value="info" className="mt-0 space-y-4">
-                <fieldset disabled={infoLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
+                <fieldset disabled={infoLock.locked} className="border-0 p-0 m-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>رقم الطلبية</Label>
@@ -468,7 +468,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
               <TabsContent value="steps" className="mt-0 space-y-3">
-                <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0 disabled:opacity-70">
+                <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
                   <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
                 </fieldset>
                 <div className="flex justify-end gap-2 pt-2">
