@@ -252,7 +252,7 @@ const OrderRegistryPage: React.FC = () => {
                 <TableBody>
                   {displayed.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={15} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
+                      <TableCell colSpan={16} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
                     </TableRow>
                   )}
                   {displayed.map(o => {
