@@ -1070,6 +1070,7 @@ if (nextRecord) {
         Désignation: order.designation,
         Qté: order.quantity,
         Priorité: order.priority,
+        'مستوى التعقيد التقني': TC_LONG[order.technicalComplexity || ''] || '',
         Délai: formatDateFR(order.deliveryDeadline || order.plannedDeadline),
         Opération: getOperationName(step.operationId),
         Durée: formatMinutesToHM(step.estimatedDuration),
