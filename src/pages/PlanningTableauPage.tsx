@@ -230,7 +230,7 @@ interface TaskItem {
   order: Order;
 }
 
-type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
+type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'complexity' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
  * Append new steps (whose parent order is not yet ordered) to the END of each
