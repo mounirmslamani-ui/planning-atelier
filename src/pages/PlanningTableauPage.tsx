@@ -1119,6 +1119,7 @@ if (nextRecord) {
         case 'designation': return t.order.designation;
         case 'quantity': return String(t.order.quantity);
         case 'priority': return t.order.priority || '';
+        case 'complexity': return t.order.technicalComplexity || '';
         case 'globalStatus': return getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId);
         case 'machine': return getMachineName(t.step);
         case 'status': return getStepProgressStatus(t.step, productionRecords);
