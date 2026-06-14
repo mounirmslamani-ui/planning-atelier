@@ -494,6 +494,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return <DesignationCell orderId={o.id} designation={o.designation} className="text-sm whitespace-normal break-words block" />;
       case 'quantity': return <span className="text-sm">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
+      case 'complexity': return <span className="text-xs" title={TC_LONG[o.technicalComplexity || ''] || ''}>{tcShort(o.technicalComplexity)}</span>;
       case 'globalStatus': {
         const isRework = reworkOrderIds.has(o.id);
         const pendingQc = pendingQcOrderIds.has(o.id);
