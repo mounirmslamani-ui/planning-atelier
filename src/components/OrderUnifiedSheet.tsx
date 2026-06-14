@@ -473,6 +473,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   canEditMaterial={canEditMaterial}
                   canEditTooling={canEditTooling}
                   canEditStudy={canEditStudy}
+                  order={order}
                 />
               </TabsContent>
 
