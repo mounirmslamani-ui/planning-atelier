@@ -430,6 +430,16 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     </Select>
                   </div>
                   <div className="md:col-span-2">
+                    <Label>ملف الطلبية</Label>
+                    <Input
+                      type="url"
+                      value={merged.folderLink || ''}
+                      onChange={e => setDraft(d => ({ ...d, folderLink: e.target.value }))}
+                      placeholder="https://..."
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <Label>ملاحظات/تعليمات تقنية</Label>
                     <Textarea
                       rows={2}
