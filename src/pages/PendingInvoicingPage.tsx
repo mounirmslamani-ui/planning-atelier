@@ -494,6 +494,9 @@ const PendingInvoicingPage: React.FC = () => {
                 <ColumnHeader label="درجة الاستعجال" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
+                <ColumnHeader label="مستوى التعقيد التقني" columnKey="complexity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.complexity || ''} onFilter={handleFilter} allValues={TC_LEVELS as unknown as string[]} />
+              </TableHead>
+              <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
