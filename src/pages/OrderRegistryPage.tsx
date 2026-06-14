@@ -23,6 +23,7 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import DesignationCell from '@/components/DesignationCell';
 import { useAuth } from '@/context/AuthContext';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
