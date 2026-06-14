@@ -18,6 +18,7 @@ import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { cn } from '@/lib/utils';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const OPERATOR_COLUMNS = [
   'عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق',
