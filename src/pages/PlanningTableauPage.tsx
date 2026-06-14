@@ -1171,6 +1171,7 @@ if (nextRecord) {
           case 'designation': cmp = a.order.designation.localeCompare(b.order.designation, 'fr'); break;
           case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
           case 'priority': cmp = (priorityRank[a.order.priority] ?? 9) - (priorityRank[b.order.priority] ?? 9); break;
+          case 'complexity': cmp = (a.order.technicalComplexity || '').localeCompare(b.order.technicalComplexity || '', 'fr'); break;
           case 'globalStatus': cmp = getOrderGlobalStatus(a.order.id, draftSteps, productionRecords, absenceOperationId).localeCompare(getOrderGlobalStatus(b.order.id, draftSteps, productionRecords, absenceOperationId), 'fr'); break;
           case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
           case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
