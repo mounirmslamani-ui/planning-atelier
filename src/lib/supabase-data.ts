@@ -239,6 +239,7 @@ export function mapOrderToDB(o: Order) {
     category: o.category || 'fabrication',
     reintegrated_at: o.reintegratedAt || null,
     folder_link: o.folderLink || null,
+    technical_complexity: o.technicalComplexity || null,
   };
 }
 
