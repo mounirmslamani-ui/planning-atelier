@@ -453,6 +453,7 @@ const OrdersPage: React.FC = () => {
         'التعيين': o.designation,
         'الكمية': o.quantity,
         'الأولوية': o.priority || '',
+        'مستوى التعقيد التقني': TC_LONG[o.technicalComplexity || ''] || '',
         'أجل التسليم': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
         'ممثل الزبون': o.clientRepresentative || '',
         'ملاحظات/تعليمات تقنية': o.instructions || '',
