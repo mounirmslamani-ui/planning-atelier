@@ -109,6 +109,12 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
   }
+
+  /* Désactive la sélection de texte sur tous les éléments non-éditables */
+  *:not(input):not(textarea):not([contenteditable="true"]) {
+    user-select: none;
+    -webkit-user-select: none;
+  }
 }
 
 @layer utilities {
