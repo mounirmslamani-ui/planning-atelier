@@ -279,6 +279,7 @@ const OrderRegistryPage: React.FC = () => {
                         <TableCell style={{ minWidth: 200 }}><DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-sm whitespace-normal break-words block" /></TableCell>
                         <TableCell><span className="text-sm">{o.quantity ?? '—'}</span></TableCell>
                         <TableCell><PriorityBadge priority={o.priority} /></TableCell>
+                        <TableCell><span className="text-xs" title={TC_LONG[o.technicalComplexity || ''] || ''}>{tcShort(o.technicalComplexity)}</span></TableCell>
                         <TableCell><span className="text-xs">{o.deliveryDeadline || o.plannedDeadline ? formatDateFR(o.deliveryDeadline || o.plannedDeadline) : '—'}</span></TableCell>
                         <TableCell><span className="text-xs">{o.clientRepresentative || '—'}</span></TableCell>
                         <TableCell><span className="text-xs">{o.drawingModel || '—'}</span></TableCell>
