@@ -97,8 +97,9 @@ const StudyPage: React.FC = () => {
       Désignation: r.order.designation,
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
+      'مستوى التعقيد التقني': TC_LONG[r.order.technicalComplexity || ''] || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-    })), [8, 20, 24, 45, 10, 12, 16]);
+    })), [8, 20, 24, 45, 10, 12, 18, 16]);
   };
 
   return (
