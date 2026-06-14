@@ -128,7 +128,7 @@ const StudyPage: React.FC = () => {
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
             ) : filteredRows.map((r) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
