@@ -1466,6 +1466,9 @@ if (nextRecord) {
                         <TableCell className="py-1.5 px-2 text-center preserve-status-color">
                           <PriorityBadge priority={order.priority} />
                         </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          <span className="text-xs" title={TC_LONG[order.technicalComplexity || ''] || ''}>{tcShort(order.technicalComplexity)}</span>
+                        </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>
                         </TableCell>
