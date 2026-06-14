@@ -360,6 +360,7 @@ const PendingInvoicingPage: React.FC = () => {
         </TableCell>
         <TableCell className="text-sm text-center">{order.quantity}</TableCell>
         <TableCell><PriorityBadge priority={order.priority} className="" /></TableCell>
+        <TableCell className="text-xs whitespace-nowrap text-center" title={TC_LONG[order.technicalComplexity || ''] || ''}>{tcShort(order.technicalComplexity)}</TableCell>
         <TableCell className="text-sm whitespace-nowrap">
           {order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—'}
         </TableCell>
