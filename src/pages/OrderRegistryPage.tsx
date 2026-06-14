@@ -174,6 +174,7 @@ const OrderRegistryPage: React.FC = () => {
         'التعيين': o.designation,
         'الكمية': o.quantity,
         'الأولوية': o.priority || '',
+        'مستوى التعقيد التقني': TC_LONG[o.technicalComplexity || ''] || '',
         'ممثل الزبون': o.clientRepresentative || '',
         'ملاحظات/تعليمات': o.instructions || o.observation || '',
         'الحالة': status,
