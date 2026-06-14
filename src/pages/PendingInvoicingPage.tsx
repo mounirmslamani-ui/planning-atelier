@@ -18,6 +18,7 @@ import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { cn } from '@/lib/utils';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const OPERATOR_COLUMNS = [
   'عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق',
@@ -207,6 +208,7 @@ const PendingInvoicingPage: React.FC = () => {
     quantity: (r: Row) => r.order.quantity,
     clientRepresentative: (r: Row) => r.order.clientRepresentative || '',
     priority: (r: Row) => r.order.priority || '',
+    complexity: (r: Row) => r.order.technicalComplexity || '',
     deliveryDeadline: (r: Row) => r.order.deliveryDeadline || '',
     statusLabel: (r: Row) => r.statusLabel,
     priceStatus: (r: Row) => r.priceStatus,
@@ -312,6 +314,7 @@ const PendingInvoicingPage: React.FC = () => {
             'الكمية': order.quantity,
             'ممثل الزبون': order.clientRepresentative || '—',
             'الأولوية': order.priority || '—',
+            'مستوى التعقيد التقني': TC_LONG[order.technicalComplexity || ''] || '—',
             'أجل التسليم': order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—',
             'تاريخ التسليم/تقدم الأشغال': `${statusLabel} — ${deliveryDateOrProgress}`,
             'ثمن البيع': PRICE_LABELS[priceStatus],
@@ -332,7 +335,7 @@ const PendingInvoicingPage: React.FC = () => {
 
   const totalRows = processed.length;
   // 10 base cols + operators + 2 (heat/subc)
-  const totalCols = 10 + OPERATOR_COLUMNS.length + 2;
+  const totalCols = 11 + OPERATOR_COLUMNS.length + 2;
 
   const deliveredByOrderId = useMemo(
     () => new Map(deliveredOrders.map(d => [d.orderId, d])),
@@ -357,6 +360,7 @@ const PendingInvoicingPage: React.FC = () => {
         </TableCell>
         <TableCell className="text-sm text-center">{order.quantity}</TableCell>
         <TableCell><PriorityBadge priority={order.priority} className="" /></TableCell>
+        <TableCell className="text-xs whitespace-nowrap text-center" title={TC_LONG[order.technicalComplexity || ''] || ''}>{tcShort(order.technicalComplexity)}</TableCell>
         <TableCell className="text-sm whitespace-nowrap">
           {order.deliveryDeadline ? formatDateFR(order.deliveryDeadline) : '—'}
         </TableCell>
@@ -488,6 +492,9 @@ const PendingInvoicingPage: React.FC = () => {
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="درجة الاستعجال" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} />
+              </TableHead>
+              <TableHead className="text-xs font-semibold whitespace-nowrap">
+                <ColumnHeader label="مستوى التعقيد التقني" columnKey="complexity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.complexity || ''} onFilter={handleFilter} allValues={TC_LEVELS as unknown as string[]} />
               </TableHead>
               <TableHead className="text-xs font-semibold whitespace-nowrap">
                 <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} />

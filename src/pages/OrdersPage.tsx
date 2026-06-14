@@ -27,10 +27,11 @@ import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
-type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'remainingSteps' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
+type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'complexity' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'remainingSteps' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
 const globalStatusClass: Record<OrderGlobalStatus, string> = {
   'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
@@ -265,6 +266,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return o.designation;
       case 'quantity': return String(o.quantity);
       case 'priority': return o.priority || '';
+      case 'complexity': return o.technicalComplexity || '';
       case 'globalStatus': return globalStatusLabel[getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)];
       case 'remainingSteps': return String(remainingStepsMap.get(o.id) ?? 0);
       case 'deliveryDeadline': return o.deliveryDeadline || o.plannedDeadline;
@@ -406,7 +408,7 @@ const OrdersPage: React.FC = () => {
   // Excel-style unique values per column for ColumnHeader checkbox lists.
   const allValuesByKey = useMemo(() => {
     const map: Record<string, string[]> = {};
-    const keys: ColumnKey[] = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','globalStatus','remainingSteps','deliveryDeadline','clientRepresentative','instructions','drawingModel','atelierTime','study','material','tooling','observation'];
+    const keys: ColumnKey[] = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','complexity','globalStatus','remainingSteps','deliveryDeadline','clientRepresentative','instructions','drawingModel','atelierTime','study','material','tooling','observation'];
     keys.forEach(k => {
       const set = new Set<string>();
       baseSorted.forEach(o => { const v = getColValue(o, k); if (v) set.add(v); });
@@ -425,6 +427,7 @@ const OrdersPage: React.FC = () => {
     { key: 'designation', label: 'التعيين', className: 'w-[180px] min-w-[180px] max-w-[180px]' },
     { key: 'quantity', label: 'الكمية', className: 'w-[50px]' },
     { key: 'priority', label: 'الأولوية', className: 'w-[70px]' },
+    { key: 'complexity', label: 'مستوى التعقيد التقني', className: 'w-[90px]' },
     { key: 'deliveryDeadline', label: 'أجل التسليم', className: 'w-[85px]' },
     { key: 'clientRepresentative', label: 'ممثل الزبون', className: 'w-[120px]' },
     { key: 'drawingModel', label: 'مخطط/نموذج', className: 'w-[120px]' },
@@ -450,6 +453,7 @@ const OrdersPage: React.FC = () => {
         'التعيين': o.designation,
         'الكمية': o.quantity,
         'الأولوية': o.priority || '',
+        'مستوى التعقيد التقني': TC_LONG[o.technicalComplexity || ''] || '',
         'أجل التسليم': formatDateFR(o.deliveryDeadline || o.plannedDeadline),
         'ممثل الزبون': o.clientRepresentative || '',
         'ملاحظات/تعليمات تقنية': o.instructions || '',
@@ -490,6 +494,7 @@ const OrdersPage: React.FC = () => {
       case 'designation': return <DesignationCell orderId={o.id} designation={o.designation} className="text-sm whitespace-normal break-words block" />;
       case 'quantity': return <span className="text-sm">{o.quantity}</span>;
       case 'priority': return <PriorityBadge priority={o.priority} />;
+      case 'complexity': return <span className="text-xs" title={TC_LONG[o.technicalComplexity || ''] || ''}>{tcShort(o.technicalComplexity)}</span>;
       case 'globalStatus': {
         const isRework = reworkOrderIds.has(o.id);
         const pendingQc = pendingQcOrderIds.has(o.id);

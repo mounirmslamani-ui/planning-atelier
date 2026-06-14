@@ -11,6 +11,7 @@ import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const StudyPage: React.FC = () => {
   const { orders, clients, steps, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
@@ -58,6 +59,7 @@ const StudyPage: React.FC = () => {
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
         if (key === 'quantity') return String(r.order.quantity).includes(val);
         if (key === 'priority') { const vals = val.split('|').filter(Boolean); return vals.includes(r.order.priority as string); }
+        if (key === 'complexity') { const vals = val.split('|').filter(Boolean); return vals.includes(r.order.technicalComplexity || ''); }
         return true;
       });
     });
@@ -74,10 +76,11 @@ const StudyPage: React.FC = () => {
         case 'designation': return r.order.designation;
         case 'quantity': return String(r.order.quantity);
         case 'priority': return r.order.priority || '';
+        case 'complexity': return r.order.technicalComplexity || '';
         default: return '';
       }
     };
-    const keys = ['displayOrder','orderNumber','client','designation','quantity','priority'];
+    const keys = ['displayOrder','orderNumber','client','designation','quantity','priority','complexity'];
     const map: Record<string, string[]> = {};
     keys.forEach(k => { map[k] = [...new Set(list.map((r: any) => get(r, k)).filter(Boolean))].sort(); });
     return map;
@@ -94,8 +97,9 @@ const StudyPage: React.FC = () => {
       Désignation: r.order.designation,
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
+      'مستوى التعقيد التقني': TC_LONG[r.order.technicalComplexity || ''] || '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-    })), [8, 20, 24, 45, 10, 12, 16]);
+    })), [8, 20, 24, 45, 10, 12, 18, 16]);
   };
 
   return (
@@ -118,12 +122,13 @@ const StudyPage: React.FC = () => {
                 <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+                <TableHead className="text-center"><ColumnHeader label="مستوى التعقيد التقني" columnKey="complexity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.complexity || ''} onFilter={handleFilter} allValues={TC_LEVELS as unknown as string[]} /></TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Toutes les études sont faites ✓</TableCell></TableRow>
             ) : filteredRows.map((r) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
@@ -132,6 +137,7 @@ const StudyPage: React.FC = () => {
                 <TableCell className="text-sm"><DesignationCell orderId={r.order.id} designation={r.order.designation} /></TableCell>
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
+                <TableCell className="text-center text-xs" title={TC_LONG[r.order.technicalComplexity || ''] || ''}>{tcShort(r.order.technicalComplexity)}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
               </TableRow>
             ))}

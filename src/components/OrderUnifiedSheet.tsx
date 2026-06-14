@@ -38,7 +38,7 @@ interface Props {
 }
 
 const TAB_TITLES = {
-  info: 'معلومات الطلب والزبون',
+  info: 'معلومات الطلبية والزبون',
   resources: 'تحضير الطلبية والموارد',
   steps: 'مراحل الإنجاز والتوقيت',
   qc: 'مراقبة الجودة والتسليم',
@@ -167,7 +167,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const canDeleteOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'محو الطلبية' }) === 'RW';
 
   // Per-sub-form RBAC
-  const canEditInfo = hasAccess({ tableau: 'Tous', formulaire: 'بطاقة متابعة إنجاز الطلبية', sous_formulaire: 'معلومات الطلب والزبون', champ_bouton: 'Tous' }) === 'RW';
+  const canEditInfo = hasAccess({ tableau: 'Tous', formulaire: 'بطاقة متابعة إنجاز الطلبية', sous_formulaire: 'معلومات الطلبية والزبون', champ_bouton: 'Tous' }) === 'RW';
   const canEditMaterial = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'المواد الأولية' }) === 'RW';
   const canEditTooling  = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'العدة' }) === 'RW';
   const canEditStudy    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'الدراسة' }) === 'RW';
@@ -430,6 +430,16 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     </Select>
                   </div>
                   <div className="md:col-span-2">
+                    <Label>ملف الطلبية</Label>
+                    <Input
+                      type="url"
+                      value={merged.folderLink || ''}
+                      onChange={e => setDraft(d => ({ ...d, folderLink: e.target.value }))}
+                      placeholder="https://..."
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <Label>ملاحظات/تعليمات تقنية</Label>
                     <Textarea
                       rows={2}
@@ -463,6 +473,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   canEditMaterial={canEditMaterial}
                   canEditTooling={canEditTooling}
                   canEditStudy={canEditStudy}
+                  order={order}
                 />
               </TabsContent>
 

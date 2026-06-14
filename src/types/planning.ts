@@ -122,6 +122,8 @@ export interface Order {
   category?: OrderCategory;
   /** ISO timestamp set when the order was reintegrated from QC/Delivery/Delivered. Persistent — survives observation edits. */
   reintegratedAt?: string;
+  /** Technical complexity level: level1..level4 */
+  technicalComplexity?: 'level1' | 'level2' | 'level3' | 'level4';
 }
 
 export interface ProductionStep {

@@ -26,6 +26,7 @@ import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatu
 import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 import { useAuth } from '@/context/AuthContext';
@@ -230,7 +231,7 @@ interface TaskItem {
   order: Order;
 }
 
-type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'globalStatus' | 'machine' | 'status' | 'operation';
+type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'complexity' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
  * Append new steps (whose parent order is not yet ordered) to the END of each
@@ -1069,11 +1070,12 @@ if (nextRecord) {
         Désignation: order.designation,
         Qté: order.quantity,
         Priorité: order.priority,
+        'مستوى التعقيد التقني': TC_LONG[order.technicalComplexity || ''] || '',
         Délai: formatDateFR(order.deliveryDeadline || order.plannedDeadline),
         Opération: getOperationName(step.operationId),
         Durée: formatMinutesToHM(step.estimatedDuration),
       })),
-      columnWidths: [12, 12, 18, 45, 8, 8, 12, 20, 8],
+      columnWidths: [12, 12, 18, 45, 8, 8, 14, 12, 20, 8],
     })));
   }, [operatorTasks, getClientName, getOperationName]);
 
@@ -1117,6 +1119,7 @@ if (nextRecord) {
         case 'designation': return t.order.designation;
         case 'quantity': return String(t.order.quantity);
         case 'priority': return t.order.priority || '';
+        case 'complexity': return t.order.technicalComplexity || '';
         case 'globalStatus': return getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId);
         case 'machine': return getMachineName(t.step);
         case 'status': return getStepProgressStatus(t.step, productionRecords);
@@ -1124,7 +1127,7 @@ if (nextRecord) {
         default: return '';
       }
     };
-    const keys = ['displayOrder','startDate','endDate','orderNumber','client','designation','quantity','priority','globalStatus','machine','status','operation'];
+    const keys = ['displayOrder','startDate','endDate','orderNumber','client','designation','quantity','priority','complexity','globalStatus','machine','status','operation'];
     const map: Record<string, string[]> = {};
     keys.forEach(k => { map[k] = [...new Set(allTasks.map((t: any) => get(t, k)).filter(Boolean))].sort(); });
     return map;
@@ -1147,6 +1150,7 @@ if (nextRecord) {
           case 'designation': return t.order.designation.toLowerCase().includes(needle);
           case 'quantity': return String(t.order.quantity).includes(needle);
           case 'priority': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.priority as string); }
+          case 'complexity': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.technicalComplexity || ''); }
           case 'globalStatus': { const vals = value.split('|').filter(Boolean); return vals.includes(getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId)); }
           case 'machine': return getMachineName(t.step) === value;
           case 'status': { const vals = value.split('|').filter(Boolean); return vals.includes(getStepProgressStatus(t.step, productionRecords)); }
@@ -1167,6 +1171,7 @@ if (nextRecord) {
           case 'designation': cmp = a.order.designation.localeCompare(b.order.designation, 'fr'); break;
           case 'quantity': cmp = a.order.quantity - b.order.quantity; break;
           case 'priority': cmp = (priorityRank[a.order.priority] ?? 9) - (priorityRank[b.order.priority] ?? 9); break;
+          case 'complexity': cmp = (a.order.technicalComplexity || '').localeCompare(b.order.technicalComplexity || '', 'fr'); break;
           case 'globalStatus': cmp = getOrderGlobalStatus(a.order.id, draftSteps, productionRecords, absenceOperationId).localeCompare(getOrderGlobalStatus(b.order.id, draftSteps, productionRecords, absenceOperationId), 'fr'); break;
           case 'machine': cmp = getMachineName(a.step).localeCompare(getMachineName(b.step), 'fr'); break;
           case 'status': cmp = getStepProgressStatus(a.step, productionRecords).localeCompare(getStepProgressStatus(b.step, productionRecords), 'fr'); break;
@@ -1362,6 +1367,9 @@ if (nextRecord) {
                     <TableHead className="w-[70px] text-xs text-center">
                       <ColumnHeader label="الأولوية" columnKey="priority" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['priority'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.priority} />
                     </TableHead>
+                    <TableHead className="w-[80px] text-xs text-center">
+                      <ColumnHeader label="مستوى التعقيد التقني" columnKey="complexity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['complexity'] || ''} onFilter={handleColFilter} allValues={TC_LEVELS as unknown as string[]} />
+                    </TableHead>
                     <TableHead className="w-[80px] text-xs">أجل التسليم</TableHead>
                     <TableHead className="w-[120px] text-xs">
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
@@ -1457,6 +1465,9 @@ if (nextRecord) {
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-center preserve-status-color">
                           <PriorityBadge priority={order.priority} />
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          <span className="text-xs" title={TC_LONG[order.technicalComplexity || ''] || ''}>{tcShort(order.technicalComplexity)}</span>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
                           <span className="text-xs">{formatDateFR(order.deliveryDeadline || order.plannedDeadline)}</span>

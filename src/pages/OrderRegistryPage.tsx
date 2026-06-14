@@ -23,6 +23,7 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import DesignationCell from '@/components/DesignationCell';
 import { useAuth } from '@/context/AuthContext';
+import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const CATEGORIES: OrderCategory[] = ['fabrication', 'prestation', 'divers', 'slamani'];
 
@@ -105,6 +106,7 @@ const OrderRegistryPage: React.FC = () => {
     designation: (o: Order) => o.designation,
     quantity: (o: Order) => o.quantity,
     priority: (o: Order) => o.priority || '',
+    complexity: (o: Order) => o.technicalComplexity || '',
     clientRepresentative: (o: Order) => o.clientRepresentative || '',
     observation: (o: Order) => o.observation || o.instructions || '',
     status: (o: Order) => cancelledMap.has(o.id)
@@ -172,6 +174,7 @@ const OrderRegistryPage: React.FC = () => {
         'التعيين': o.designation,
         'الكمية': o.quantity,
         'الأولوية': o.priority || '',
+        'مستوى التعقيد التقني': TC_LONG[o.technicalComplexity || ''] || '',
         'ممثل الزبون': o.clientRepresentative || '',
         'ملاحظات/تعليمات': o.instructions || o.observation || '',
         'الحالة': status,
@@ -234,6 +237,7 @@ const OrderRegistryPage: React.FC = () => {
                     <TableHead className="text-xs" style={{ minWidth: 200 }}><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="مستوى التعقيد التقني" columnKey="complexity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.complexity || ''} onFilter={handleFilter} allValues={TC_LEVELS as unknown as string[]} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDeadline} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="ممثل الزبون" columnKey="clientRepresentative" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.clientRepresentative || ''} onFilter={handleFilter} allValues={allValuesByKey.clientRepresentative} /></TableHead>
                     <TableHead className="text-xs"><ColumnHeader label="مخطط/نموذج" columnKey="drawingModel" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.drawingModel || ''} onFilter={handleFilter} allValues={allValuesByKey.drawingModel} /></TableHead>
@@ -248,7 +252,7 @@ const OrderRegistryPage: React.FC = () => {
                 <TableBody>
                   {displayed.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={15} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
+                      <TableCell colSpan={16} className="text-center text-sm text-muted-foreground py-8">لا توجد طلبيات</TableCell>
                     </TableRow>
                   )}
                   {displayed.map(o => {
@@ -275,6 +279,7 @@ const OrderRegistryPage: React.FC = () => {
                         <TableCell style={{ minWidth: 200 }}><DesignationCell orderId={o.id} designation={o.designation || '—'} className="text-sm whitespace-normal break-words block" /></TableCell>
                         <TableCell><span className="text-sm">{o.quantity ?? '—'}</span></TableCell>
                         <TableCell><PriorityBadge priority={o.priority} /></TableCell>
+                        <TableCell><span className="text-xs" title={TC_LONG[o.technicalComplexity || ''] || ''}>{tcShort(o.technicalComplexity)}</span></TableCell>
                         <TableCell><span className="text-xs">{o.deliveryDeadline || o.plannedDeadline ? formatDateFR(o.deliveryDeadline || o.plannedDeadline) : '—'}</span></TableCell>
                         <TableCell><span className="text-xs">{o.clientRepresentative || '—'}</span></TableCell>
                         <TableCell><span className="text-xs">{o.drawingModel || '—'}</span></TableCell>
