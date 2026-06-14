@@ -347,6 +347,7 @@ export type Database = {
           quantity: number
           reintegrated_at: string | null
           study_status: Database["public"]["Enums"]["resource_status"]
+          technical_complexity: string | null
           tooling_status: Database["public"]["Enums"]["resource_status"]
           updated_at: string
         }
@@ -378,6 +379,7 @@ export type Database = {
           quantity?: number
           reintegrated_at?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
+          technical_complexity?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
@@ -409,6 +411,7 @@ export type Database = {
           quantity?: number
           reintegrated_at?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
+          technical_complexity?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
           updated_at?: string
         }
