@@ -1150,6 +1150,7 @@ if (nextRecord) {
           case 'designation': return t.order.designation.toLowerCase().includes(needle);
           case 'quantity': return String(t.order.quantity).includes(needle);
           case 'priority': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.priority as string); }
+          case 'complexity': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.technicalComplexity || ''); }
           case 'globalStatus': { const vals = value.split('|').filter(Boolean); return vals.includes(getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId)); }
           case 'machine': return getMachineName(t.step) === value;
           case 'status': { const vals = value.split('|').filter(Boolean); return vals.includes(getStepProgressStatus(t.step, productionRecords)); }
