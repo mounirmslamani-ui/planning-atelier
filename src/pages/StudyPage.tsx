@@ -76,10 +76,11 @@ const StudyPage: React.FC = () => {
         case 'designation': return r.order.designation;
         case 'quantity': return String(r.order.quantity);
         case 'priority': return r.order.priority || '';
+        case 'complexity': return r.order.technicalComplexity || '';
         default: return '';
       }
     };
-    const keys = ['displayOrder','orderNumber','client','designation','quantity','priority'];
+    const keys = ['displayOrder','orderNumber','client','designation','quantity','priority','complexity'];
     const map: Record<string, string[]> = {};
     keys.forEach(k => { map[k] = [...new Set(list.map((r: any) => get(r, k)).filter(Boolean))].sort(); });
     return map;
