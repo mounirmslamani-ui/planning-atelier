@@ -167,7 +167,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const canDeleteOrder = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'محو الطلبية' }) === 'RW';
 
   // Per-sub-form RBAC
-  const canEditInfo = hasAccess({ tableau: 'Tous', formulaire: 'بطاقة متابعة إنجاز الطلبية', sous_formulaire: 'معلومات الطلب والزبون', champ_bouton: 'Tous' }) === 'RW';
+  const canEditInfo = hasAccess({ tableau: 'Tous', formulaire: 'بطاقة متابعة إنجاز الطلبية', sous_formulaire: 'معلومات الطلبية والزبون', champ_bouton: 'Tous' }) === 'RW';
   const canEditMaterial = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'المواد الأولية' }) === 'RW';
   const canEditTooling  = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'العدة' }) === 'RW';
   const canEditStudy    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'الدراسة' }) === 'RW';
