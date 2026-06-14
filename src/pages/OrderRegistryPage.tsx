@@ -105,6 +105,7 @@ const OrderRegistryPage: React.FC = () => {
     designation: (o: Order) => o.designation,
     quantity: (o: Order) => o.quantity,
     priority: (o: Order) => o.priority || '',
+    complexity: (o: Order) => o.technicalComplexity || '',
     clientRepresentative: (o: Order) => o.clientRepresentative || '',
     observation: (o: Order) => o.observation || o.instructions || '',
     status: (o: Order) => cancelledMap.has(o.id)
