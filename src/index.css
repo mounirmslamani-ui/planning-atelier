@@ -178,3 +178,19 @@
 input[type="time"]::-webkit-datetime-edit-ampm-field {
   display: none;
 }
+/* Force la couleur noire dans les champs disabled/readonly de la fiche طلبية */
+input:disabled,
+input[readonly],
+textarea:disabled,
+textarea[readonly],
+select:disabled,
+[data-disabled] input,
+[data-disabled] textarea,
+fieldset:disabled input,
+fieldset:disabled textarea,
+fieldset:disabled select,
+fieldset:disabled button[role="combobox"] {
+  color: hsl(var(--foreground)) !important;
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  opacity: 1 !important;
+}
