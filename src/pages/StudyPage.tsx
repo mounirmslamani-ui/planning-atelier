@@ -137,6 +137,7 @@ const StudyPage: React.FC = () => {
                 <TableCell className="text-sm"><DesignationCell orderId={r.order.id} designation={r.order.designation} /></TableCell>
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
+                <TableCell className="text-center text-xs" title={TC_LONG[r.order.technicalComplexity || ''] || ''}>{tcShort(r.order.technicalComplexity)}</TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
               </TableRow>
             ))}
