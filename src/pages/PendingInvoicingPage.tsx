@@ -208,6 +208,7 @@ const PendingInvoicingPage: React.FC = () => {
     quantity: (r: Row) => r.order.quantity,
     clientRepresentative: (r: Row) => r.order.clientRepresentative || '',
     priority: (r: Row) => r.order.priority || '',
+    complexity: (r: Row) => r.order.technicalComplexity || '',
     deliveryDeadline: (r: Row) => r.order.deliveryDeadline || '',
     statusLabel: (r: Row) => r.statusLabel,
     priceStatus: (r: Row) => r.priceStatus,
