@@ -198,12 +198,23 @@ const OrdersPage: React.FC = () => {
   }, [orders, steps, absenceOperationId, absenceOrderId]);
 
   // Sort by displayOrder ascending (playlist style).
-  const outOfActiveProductionIds = useMemo(() => buildOutOfActiveProductionSet(orders, {
-    qcEntries,
-    deliveryEntries,
-    deliveredOrders,
-    cancelledOrders,
-  }), [orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
+  // Une commande quitte سجل الطلبيات الجارية uniquement quand elle a
+  // au moins une décision QC conforme/conforme-derogation (ou si elle est déjà
+  // passée en livraison, livrée ou annulée). La simple présence d'une session
+  // QC en attente ne suffit pas — la commande doit rester visible ici tant
+  // qu'aucune décision conforme n'a été prise.
+  const outOfActiveProductionIds = useMemo(() => {
+    const ids = new Set<string>();
+    orders.forEach(o => {
+      if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
+      if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
+      if (deliveryEntries.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
+      if (qcEntries.some(q => q.orderId === o.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'))) {
+        ids.add(o.id);
+      }
+    });
+    return ids;
+  }, [orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
 
   const pendingQcOrderIds = useMemo(() => {
     const ids = new Set<string>();
