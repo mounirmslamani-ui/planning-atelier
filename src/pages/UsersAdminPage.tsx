@@ -296,11 +296,12 @@ const UsersAdminPage: React.FC = () => {
 };
 
 const ResetPasswordDialog: React.FC<{ target: Profile | null; onClose: () => void; onDone: () => void }> = ({ target, onClose, onDone }) => {
+  const [currentPwd, setCurrentPwd] = useState('');
   const [pwd, setPwd] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (!target) { setPwd(''); setConfirm(''); } }, [target]);
+  useEffect(() => { if (!target) { setCurrentPwd(''); setPwd(''); setConfirm(''); } }, [target]);
 
   const submit = async () => {
     if (!target) return;
