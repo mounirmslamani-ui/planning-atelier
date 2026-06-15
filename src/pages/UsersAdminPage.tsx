@@ -338,12 +338,20 @@ const ResetPasswordDialog: React.FC<{ target: Profile | null; onClose: () => voi
         <DialogHeader><DialogTitle>إعادة تعيين كلمة المرور — {target?.display_name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div>
+            <label className="mb-1 block text-sm">اسم المستخدم</label>
+            <Input value={target?.display_name ?? ''} readOnly className="bg-muted cursor-not-allowed" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm">كلمة المرور الحالية</label>
+            <PasswordField value={currentPwd} onChange={setCurrentPwd} />
+          </div>
+          <div>
             <label className="mb-1 block text-sm">كلمة المرور الجديدة</label>
-            <Input type="password" value={pwd} onChange={e => setPwd(e.target.value)} />
+            <PasswordField value={pwd} onChange={setPwd} />
           </div>
           <div>
             <label className="mb-1 block text-sm">تأكيد كلمة المرور</label>
-            <Input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} />
+            <PasswordField value={confirm} onChange={setConfirm} />
           </div>
         </div>
         <DialogFooter>
