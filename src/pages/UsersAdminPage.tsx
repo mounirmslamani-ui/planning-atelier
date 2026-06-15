@@ -7,7 +7,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
-import { UserPlus, UserMinus, UserX, KeyRound } from 'lucide-react';
+import { UserPlus, UserMinus, UserX, KeyRound, Eye, EyeOff } from 'lucide-react';
+
+const PasswordField: React.FC<{ value: string; onChange: (v: string) => void; id?: string }> = ({ value, onChange, id }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="ps-9"
+      />
+      <button
+        type="button"
+        onClick={() => setShow(s => !s)}
+        className="absolute inset-y-0 start-0 flex items-center px-2 text-muted-foreground hover:text-foreground"
+        tabIndex={-1}
+        aria-label={show ? 'إخفاء' : 'إظهار'}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+};
 
 interface Profile {
   id: string;
