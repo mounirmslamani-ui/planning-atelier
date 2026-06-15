@@ -208,13 +208,15 @@ const OrdersPage: React.FC = () => {
     orders.forEach(o => {
       if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
       if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
-      if (deliveryEntries.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
+      // Only an actual QC decision (conforme / conforme-derogation) removes the
+      // order from the active list. Legacy `delivery_entries` rows are NOT a
+      // proof of QC validation and must be ignored here.
       if (qcEntries.some(q => q.orderId === o.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'))) {
         ids.add(o.id);
       }
     });
     return ids;
-  }, [orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders]);
+  }, [orders, qcEntries, deliveredOrders, cancelledOrders]);
 
   const pendingQcOrderIds = useMemo(() => {
     const ids = new Set<string>();

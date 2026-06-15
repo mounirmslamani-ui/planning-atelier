@@ -37,51 +37,36 @@ const DeliveryPage: React.FC = () => {
 
   const allRows = React.useMemo<Row[]>(() => {
     const map = new Map<string, Row>();
-    const considerOrder = (orderId: string, fallbackDate: string, fallbackDecision: 'conforme' | 'conforme-derogation', fallbackId: string) => {
-      if (map.has(orderId)) return;
+    // STRICT rule: an order appears in "طلبيات جاهزة للتسليم" if and only if it
+    // has at least one QC session with decision = conforme / conforme-derogation.
+    // Legacy `delivery_entries` rows are ignored — they are not a proof of QC
+    // validation.
+    for (const q of qcEntries) {
+      if (q.decision !== 'conforme' && q.decision !== 'conforme-derogation') continue;
+      const orderId = q.orderId;
+      if (map.has(orderId)) continue;
       const order = getOrder(orderId);
-      if (!order) return;
-      // accepted from QC sessions
-      let acceptedFromQc = 0;
-      let hasQcAccept = false;
+      if (!order) continue;
+      let accepted = 0;
       for (const x of qcEntries) {
         if (x.orderId !== orderId) continue;
-        if (x.acceptedQty != null) { acceptedFromQc += x.acceptedQty; hasQcAccept = true; }
-        else if (x.decision === 'conforme' || x.decision === 'conforme-derogation') { acceptedFromQc += order.quantity; hasQcAccept = true; }
+        if (x.acceptedQty != null) accepted += x.acceptedQty;
+        else if (x.decision === 'conforme' || x.decision === 'conforme-derogation') accepted += order.quantity;
       }
-      // Legacy `delivery_entries` are full-order "ready-to-deliver" markers, NOT
-      // partial increments. Count at most ONE order.quantity even if multiple
-      // legacy rows exist for the same order (otherwise the deliverable balance
-      // is artificially inflated and the order reappears after shipment).
-      const hasLegacyDelivery = deliveryEntries.some(d => d.orderId === orderId);
-      const acceptedFromDelivery = hasLegacyDelivery ? order.quantity : 0;
-      // Use max so we don't double-count when both QC accept entries AND legacy
-      // deliveryEntries exist for the same order.
-      const accepted = Math.max(acceptedFromQc, acceptedFromDelivery);
-      if (accepted <= 0) return;
+      if (accepted <= 0) continue;
       const shipped = deliveredOrders
         .filter(d => d.orderId === orderId)
         .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
       const forceClosed = deliveredOrders.some(d => d.orderId === orderId && d.forceClosed);
       const deliverable = Math.max(0, accepted - shipped);
-      if (forceClosed || deliverable <= 0) return;
+      if (forceClosed || deliverable <= 0) continue;
       map.set(orderId, {
-        id: fallbackId, orderId, controlDate: fallbackDate,
-        decision: fallbackDecision, accepted, shipped, deliverable,
+        id: q.id, orderId, controlDate: q.controlDate,
+        decision: q.decision, accepted, shipped, deliverable,
       });
-    };
-
-    // 1) legacy deliveryEntries (orders moved to "ready to deliver" the old way)
-    for (const d of deliveryEntries) {
-      considerOrder(d.orderId, d.controlDate, d.decision, d.id);
-    }
-    // 2) QC entries with an accept decision (new-flow sessions)
-    for (const q of qcEntries) {
-      if (q.decision !== 'conforme' && q.decision !== 'conforme-derogation') continue;
-      considerOrder(q.orderId, q.controlDate, q.decision, q.id);
     }
     return Array.from(map.values());
-  }, [qcEntries, deliveryEntries, deliveredOrders, orders]);
+  }, [qcEntries, deliveredOrders, orders]);
 
 
   const filteredEntries = React.useMemo(

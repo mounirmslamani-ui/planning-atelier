@@ -109,7 +109,7 @@ const QualityControlPage: React.FC = () => {
       seen.add(entry.orderId);
       const order = getOrder(entry.orderId);
       if (!order) continue;
-      if (deliveryEntries.some(d => d.orderId === entry.orderId)) continue;
+      // Legacy `delivery_entries` rows are no longer authoritative — ignore them.
       if (deliveredOrders.some(d => d.orderId === entry.orderId)) continue;
       const controlled = qcEntries
         .filter(q => q.orderId === entry.orderId)
