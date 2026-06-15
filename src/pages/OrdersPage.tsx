@@ -22,7 +22,7 @@ import DesignationCell from '@/components/DesignationCell';
 import { isOrderBlocked, BLOCKED_TABLE_ROW_CLASS } from '@/lib/blockedSteps';
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import { computeLastSeriesNumbers } from '@/lib/lastSeriesNumbers';
-import { buildOutOfActiveProductionSet } from '@/lib/orderFlow';
+
 import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
