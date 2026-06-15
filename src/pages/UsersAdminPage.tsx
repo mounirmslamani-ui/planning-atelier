@@ -7,7 +7,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
-import { UserPlus, UserMinus, UserX, KeyRound } from 'lucide-react';
+import { UserPlus, UserMinus, UserX, KeyRound, Eye, EyeOff } from 'lucide-react';
+
+const PasswordField: React.FC<{ value: string; onChange: (v: string) => void; id?: string }> = ({ value, onChange, id }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="ps-9"
+      />
+      <button
+        type="button"
+        onClick={() => setShow(s => !s)}
+        className="absolute inset-y-0 start-0 flex items-center px-2 text-muted-foreground hover:text-foreground"
+        tabIndex={-1}
+        aria-label={show ? 'إخفاء' : 'إظهار'}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+};
 
 interface Profile {
   id: string;
@@ -272,11 +296,12 @@ const UsersAdminPage: React.FC = () => {
 };
 
 const ResetPasswordDialog: React.FC<{ target: Profile | null; onClose: () => void; onDone: () => void }> = ({ target, onClose, onDone }) => {
+  const [currentPwd, setCurrentPwd] = useState('');
   const [pwd, setPwd] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { if (!target) { setPwd(''); setConfirm(''); } }, [target]);
+  useEffect(() => { if (!target) { setCurrentPwd(''); setPwd(''); setConfirm(''); } }, [target]);
 
   const submit = async () => {
     if (!target) return;
@@ -313,12 +338,20 @@ const ResetPasswordDialog: React.FC<{ target: Profile | null; onClose: () => voi
         <DialogHeader><DialogTitle>إعادة تعيين كلمة المرور — {target?.display_name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div>
+            <label className="mb-1 block text-sm">اسم المستخدم</label>
+            <Input value={target?.display_name ?? ''} readOnly className="bg-muted cursor-not-allowed" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm">كلمة المرور الحالية</label>
+            <PasswordField value={currentPwd} onChange={setCurrentPwd} />
+          </div>
+          <div>
             <label className="mb-1 block text-sm">كلمة المرور الجديدة</label>
-            <Input type="password" value={pwd} onChange={e => setPwd(e.target.value)} />
+            <PasswordField value={pwd} onChange={setPwd} />
           </div>
           <div>
             <label className="mb-1 block text-sm">تأكيد كلمة المرور</label>
-            <Input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} />
+            <PasswordField value={confirm} onChange={setConfirm} />
           </div>
         </div>
         <DialogFooter>
