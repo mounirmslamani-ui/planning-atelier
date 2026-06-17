@@ -234,28 +234,14 @@ interface TaskItem {
 type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'priority' | 'complexity' | 'globalStatus' | 'machine' | 'status' | 'operation';
 
 /**
- * Append new steps (whose parent order is not yet ordered) to the END of each
- * operator's list, without reordering existing steps.
- * Steps with a known planning_order keep their relative position; new steps
- * just receive a stable sequential `step.order` so React keys are stable.
+ * Pass-through. `step.order` reflects the chronological position of the step
+ * INSIDE its parent commande (step_order in DB) and MUST NOT be rewritten with
+ * an operator-row index — that would break the "سابق" / phase-amont logic which
+ * sorts steps of a commande by `step.order`. Operator-row ordering is handled
+ * exclusively by `planning_order` (Pn) via `planningOrderMap`.
  */
 function appendUnorderedStepsAtEnd(allSteps: ProductionStep[]): ProductionStep[] {
-  // Group by operator and reassign step.order sequentially per operator,
-  // preserving the input order (which already reflects DB / planning_order order).
-  const byOperator = new Map<string, ProductionStep[]>();
-  allSteps.forEach(s => {
-    const key = s.operatorId || '__none__';
-    if (!byOperator.has(key)) byOperator.set(key, []);
-    byOperator.get(key)!.push(s);
-  });
-
-  const result: ProductionStep[] = [];
-  byOperator.forEach(group => {
-    group.forEach((s, idx) => {
-      result.push({ ...s, order: idx + 1 });
-    });
-  });
-  return result;
+  return allSteps;
 }
 
 
