@@ -738,7 +738,7 @@ export const ResourcesEditorTable: React.FC<{
   const complexity = order?.technicalComplexity || '';
   const complexityDescriptions: Record<string, string> = {
     level1: 'المعايير: عمليات تشغيل بسيطة: خرط بسيط، تسوية أسطح Surfaçage ، ثقب عادي، ... التجاوزات (Tolérances) تكون واسعة وغير حرجة.\nأمثلة: أعمدة بسيطة (Axes)، جلب برونزية (Bagues) بدون مجاري داخلية معقدة، فلانشات (Brides) قياسية.\nالتوجيه: يمكن إسنادها لأي عامل أو مبتدئ في الورشة. وقت ضبط الماكينة يكون سريعاً جداً.',
-    level2: 'المعايير: تتطلب انتباهاً أكبر. قد تحتوي على عدة مراحل تشغيل، أو تسنين أو قلوظة خاص.\nأمثلة: صواميل خاصة، أو قطع تتطلب تركيباً بسيطاً على الفرازة، مسننات مستقيمة الأسنان، مسننات السلسلة.',
+    level2: 'المعايير: تتطلب انتباهاً أكبر. قد تحتوي على عدة مراحل تشغيل، أو تسنين أو قلوظة خاص.\nأمثلة: صواميل خاصة، أو قطع تتطلب تركيباً بسيطاً على الفرازة، مسننات مستقيمة الأسنان، مسننات السلسلة.\nالتوجيه: تُسند للعمال متوسطي الخبرة أو تحت إشراف خفيف. وقت إعداد وضبط الماكينة يكون معتدلاً.',
     level3: 'المعايير: هندسة القطعة صعبة، والتجاوزات ضيقة جداً (تطابق دقيق Ajustements serrés). تتطلب تجهيزات تثبيت خاصة (Montages d\'usinage) أو عمليات مثل فتح التروس (Taillage d\'engrenages).\nأمثلة: تروس حلزونية (Pignons hélicoïdaux)، أعمدة مسننة طويلة (Arbres cannelés)، أو قوالب (Matrices) تتطلب دقة توازي صارمة.\nالتوجيه: تُسند حصراً للخراطين أو الفرازين المؤهلين. وقت إعداد الماكينة يكون طويلاً ويجب احتسابه في خطة الإنتاج.',
     level4: 'المعايير: دقة متناهية تصل إلى أجزاء من المئة من المليمتر، أشكال هندسية غير تقليدية، قطع رقيقة وقابلة للاهتزاز بسهولة. غالباً ما تتطلب دمجاً مع ماكينات التجليخ (Rectification).\nأمثلة: قوالب حقن البلاستيك المعقدة، أعمدة الدوران عالية الدقة (Broches)، أو قطع غيار حرجة.\nالتوجيه: تُسند فقط للخراطين أو الفرازين الخبراء.',
   };
@@ -776,7 +776,7 @@ export const ResourcesEditorTable: React.FC<{
             </select>
           </div>
           {complexity && complexityDescriptions[complexity] && (
-            <div className="rounded-md bg-muted/40 border border-border px-3 py-2 text-xs whitespace-pre-line leading-relaxed">
+            <div className="rounded-md bg-muted/40 border border-border px-3 py-2 text-xs whitespace-pre-line leading-relaxed" dir="rtl">
               {complexityDescriptions[complexity]}
             </div>
           )}
