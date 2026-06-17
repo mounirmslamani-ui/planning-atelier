@@ -614,14 +614,10 @@ const PlanningTableauPage: React.FC = () => {
     nextForcedWarningsOverride?: Record<string, boolean>,
     nextPlanningOrdersOverride?: Record<string, number>,
   ) => {
-    const reorderedTasks = tasks.map(({ step, order }, idx) => {
-      const reorderedStep: ProductionStep = {
-        ...step,
-        order: idx + 1,
-      };
-
-      return { order, step: reorderedStep };
-    });
+    // Do NOT rewrite `step.order` here: it represents the step's chronological
+    // position INSIDE its parent commande (step_order in DB). The operator-row
+    // ordering is persisted via `planning_order` (Pn) — handled by the caller.
+    const reorderedTasks = tasks.map(({ step, order }) => ({ order, step: { ...step } }));
 
     const dateUpdates = recalcStartDates(reorderedTasks, holidays);
     const dateUpdatesById = new Map(dateUpdates.map(s => [s.id, s]));
