@@ -343,7 +343,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           {qcRemaining > 0 && !qcForceClosed && !showQcForm && canSaveQc && (
             <Button size="sm" variant="outline" onClick={openQcForm}>
               <Plus className="w-4 h-4 ms-1" />
-              إضافة جلسة مراقبة
+              إضافة مراقبة جودة
             </Button>
           )}
           {qcRemaining > 0 && !qcForceClosed && canForceCloseQc && (
