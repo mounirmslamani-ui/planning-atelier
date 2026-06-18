@@ -54,8 +54,18 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const qcLock = useSubFormLock(canSaveQc);
   const delLock = useSubFormLock(canAddDelivery);
 
+  // Placeholder = auto-created entry with no real session data (no decision, no qty, not force-closed).
+  // It exists only to mark the order as "pending QC" for the QualityControlPage; never displayed here.
+  const isPlaceholderQc = (q: QualityControlEntry) =>
+    !q.decision && !q.controlledQty && !q.acceptedQty && !q.rejectedQty && !q.forceClosed;
   const orderQc = useMemo(
-    () => qcEntries.filter(q => q.orderId === order.id).sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
+    () => qcEntries
+      .filter(q => q.orderId === order.id && !isPlaceholderQc(q))
+      .sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
+    [qcEntries, order.id],
+  );
+  const placeholderQc = useMemo(
+    () => qcEntries.find(q => q.orderId === order.id && isPlaceholderQc(q)),
     [qcEntries, order.id],
   );
   const orderDelivered = useMemo(
@@ -122,6 +132,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
         rejectedQty: qcControlled - acceptedFinal,
         createdAt: new Date().toISOString(),
       });
+      if (placeholderQc) deleteQCEntry(placeholderQc.id);
       setShowQcForm(false);
       toast.success('تم تسجيل جلسة المراقبة');
     } finally {
@@ -146,6 +157,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           forceClosed: true,
           createdAt: new Date().toISOString(),
         });
+        if (placeholderQc) deleteQCEntry(placeholderQc.id);
         toast.success('تم إقفال مراقبة الجودة');
       },
       undefined,
@@ -331,7 +343,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           {qcRemaining > 0 && !qcForceClosed && !showQcForm && canSaveQc && (
             <Button size="sm" variant="outline" onClick={openQcForm}>
               <Plus className="w-4 h-4 ms-1" />
-              إضافة جلسة مراقبة
+              إضافة مراقبة جودة
             </Button>
           )}
           {qcRemaining > 0 && !qcForceClosed && canForceCloseQc && (
@@ -476,7 +488,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           {deliverable > 0 && !deliveryForceClosed && !showDelForm && hasConformeDecision && canAddDelivery && (
             <Button size="sm" variant="outline" onClick={openDelForm}>
               <Plus className="w-4 h-4 ms-1" />
-              إضافة جلسة تسليم
+              إضافة تسليم
             </Button>
           )}
           {deliveryRemaining > 0 && !deliveryForceClosed && canForceCloseDelivery && (
