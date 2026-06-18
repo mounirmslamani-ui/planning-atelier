@@ -54,8 +54,18 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const qcLock = useSubFormLock(canSaveQc);
   const delLock = useSubFormLock(canAddDelivery);
 
+  // Placeholder = auto-created entry with no real session data (no decision, no qty, not force-closed).
+  // It exists only to mark the order as "pending QC" for the QualityControlPage; never displayed here.
+  const isPlaceholderQc = (q: QualityControlEntry) =>
+    !q.decision && !q.controlledQty && !q.acceptedQty && !q.rejectedQty && !q.forceClosed;
   const orderQc = useMemo(
-    () => qcEntries.filter(q => q.orderId === order.id).sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
+    () => qcEntries
+      .filter(q => q.orderId === order.id && !isPlaceholderQc(q))
+      .sort((a, b) => a.controlDate.localeCompare(b.controlDate)),
+    [qcEntries, order.id],
+  );
+  const placeholderQc = useMemo(
+    () => qcEntries.find(q => q.orderId === order.id && isPlaceholderQc(q)),
     [qcEntries, order.id],
   );
   const orderDelivered = useMemo(
