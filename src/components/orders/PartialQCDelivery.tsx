@@ -488,7 +488,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           {deliverable > 0 && !deliveryForceClosed && !showDelForm && hasConformeDecision && canAddDelivery && (
             <Button size="sm" variant="outline" onClick={openDelForm}>
               <Plus className="w-4 h-4 ms-1" />
-              إضافة جلسة تسليم
+              إضافة تسليم
             </Button>
           )}
           {deliveryRemaining > 0 && !deliveryForceClosed && canForceCloseDelivery && (
