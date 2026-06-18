@@ -267,12 +267,59 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   </td>
                 </tr>
               )}
-              {orderQc.map(q => (
+              {orderQc.map(q => {
+                const editing = !qcLock.locked && !q.forceClosed;
+                return (
                 <tr key={q.id} className="border-t">
-                  <td className="p-2">{formatDateFR(q.controlDate)}</td>
-                  <td className="p-2 text-center">{q.controlledQty ?? qty}</td>
-                  <td className="p-2 text-center">{q.acceptedQty ?? (q.decision === 'conforme' || q.decision === 'conforme-derogation' ? qty : 0)}</td>
-                  <td className="p-2 text-xs">{q.decision ? decisionLabels[q.decision] : '—'}</td>
+                  <td className="p-2">
+                    {editing ? (
+                      <Input
+                        type="date"
+                        value={q.controlDate}
+                        onChange={e => updateQCEntry({ ...q, controlDate: e.target.value })}
+                        className="h-8 text-xs w-36"
+                      />
+                    ) : formatDateFR(q.controlDate)}
+                  </td>
+                  <td className="p-2 text-center">
+                    {editing ? (
+                      <Input
+                        type="number" min={0}
+                        value={q.controlledQty ?? 0}
+                        onChange={e => updateQCEntry({ ...q, controlledQty: Math.max(0, parseInt(e.target.value) || 0) })}
+                        className="h-8 text-xs text-center"
+                      />
+                    ) : (q.controlledQty ?? qty)}
+                  </td>
+                  <td className="p-2 text-center">
+                    {editing ? (
+                      <Input
+                        type="number" min={0}
+                        value={q.acceptedQty ?? 0}
+                        onChange={e => {
+                          const accepted = Math.max(0, parseInt(e.target.value) || 0);
+                          const ctrl = q.controlledQty ?? 0;
+                          updateQCEntry({ ...q, acceptedQty: accepted, rejectedQty: Math.max(0, ctrl - accepted) });
+                        }}
+                        className="h-8 text-xs text-center"
+                      />
+                    ) : (q.acceptedQty ?? (q.decision === 'conforme' || q.decision === 'conforme-derogation' ? qty : 0))}
+                  </td>
+                  <td className="p-2 text-xs">
+                    {editing ? (
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        value={q.decision || ''}
+                        onChange={e => updateQCEntry({ ...q, decision: (e.target.value || undefined) as QCDecision | undefined })}
+                      >
+                        <option value="">—</option>
+                        <option value="conforme">مطابق للمواصفات</option>
+                        <option value="reprise-retouche">إعادة/تعديل</option>
+                        <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
+                        <option value="non-conforme">غير مطابق للمواصفات</option>
+                      </select>
+                    ) : (q.decision ? decisionLabels[q.decision] : '—')}
+                  </td>
                   <td className="p-2 text-xs">
                     <Input
                       value={q.reworkNotes || ''}
@@ -293,7 +340,8 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {showQcForm && (
                 <tr className="border-t bg-primary/5">
                   <td className="p-2">
@@ -408,7 +456,16 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     />
                   </td>
                   <td className="p-2 text-center">
-                    {d.forceClosed ? <span className="text-xs italic text-blue-600">إقفال</span> : (d.deliveredQty ?? qty)}
+                    {d.forceClosed ? (
+                      <span className="text-xs italic text-blue-600">إقفال</span>
+                    ) : !delLock.locked ? (
+                      <Input
+                        type="number" min={0}
+                        value={d.deliveredQty ?? 0}
+                        onChange={e => updateDeliveredOrder({ ...d, deliveredQty: Math.max(0, parseInt(e.target.value) || 0) })}
+                        className="h-8 text-xs text-center"
+                      />
+                    ) : (d.deliveredQty ?? qty)}
                   </td>
                   <td className="p-2">
                     <Input
@@ -426,7 +483,20 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                       className="h-8 text-xs w-36"
                     />
                   </td>
-                  <td className="p-2 text-xs">{PRICE_META[d.salePriceStatus].emoji} {PRICE_META[d.salePriceStatus].label}</td>
+                  <td className="p-2 text-xs">
+                    {!delLock.locked && !d.forceClosed ? (
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        value={d.salePriceStatus}
+                        onChange={e => updateDeliveredOrder({ ...d, salePriceStatus: e.target.value as SalePriceStatus })}
+                      >
+                        <option value="gratuit">⚪ Gratuit</option>
+                        <option value="non-calcule">🔴 Prix non calculé</option>
+                        <option value="non-valide">🟠 Prix non validé</option>
+                        <option value="valide">🟢 Prix validé</option>
+                      </select>
+                    ) : (<>{PRICE_META[d.salePriceStatus].emoji} {PRICE_META[d.salePriceStatus].label}</>)}
+                  </td>
                   <td className="p-2">
                     <Input
                       value={d.observation || ''}
