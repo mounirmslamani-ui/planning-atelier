@@ -157,6 +157,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
           forceClosed: true,
           createdAt: new Date().toISOString(),
         });
+        if (placeholderQc) deleteQCEntry(placeholderQc.id);
         toast.success('تم إقفال مراقبة الجودة');
       },
       undefined,
