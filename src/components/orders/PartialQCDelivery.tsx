@@ -483,7 +483,20 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                       className="h-8 text-xs w-36"
                     />
                   </td>
-                  <td className="p-2 text-xs">{PRICE_META[d.salePriceStatus].emoji} {PRICE_META[d.salePriceStatus].label}</td>
+                  <td className="p-2 text-xs">
+                    {!delLock.locked && !d.forceClosed ? (
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        value={d.salePriceStatus}
+                        onChange={e => updateDeliveredOrder({ ...d, salePriceStatus: e.target.value as SalePriceStatus })}
+                      >
+                        <option value="gratuit">⚪ Gratuit</option>
+                        <option value="non-calcule">🔴 Prix non calculé</option>
+                        <option value="non-valide">🟠 Prix non validé</option>
+                        <option value="valide">🟢 Prix validé</option>
+                      </select>
+                    ) : (<>{PRICE_META[d.salePriceStatus].emoji} {PRICE_META[d.salePriceStatus].label}</>)}
+                  </td>
                   <td className="p-2">
                     <Input
                       value={d.observation || ''}
