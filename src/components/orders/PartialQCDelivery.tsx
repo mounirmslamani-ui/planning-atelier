@@ -456,7 +456,16 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     />
                   </td>
                   <td className="p-2 text-center">
-                    {d.forceClosed ? <span className="text-xs italic text-blue-600">إقفال</span> : (d.deliveredQty ?? qty)}
+                    {d.forceClosed ? (
+                      <span className="text-xs italic text-blue-600">إقفال</span>
+                    ) : !delLock.locked ? (
+                      <Input
+                        type="number" min={0}
+                        value={d.deliveredQty ?? 0}
+                        onChange={e => updateDeliveredOrder({ ...d, deliveredQty: Math.max(0, parseInt(e.target.value) || 0) })}
+                        className="h-8 text-xs text-center"
+                      />
+                    ) : (d.deliveredQty ?? qty)}
                   </td>
                   <td className="p-2">
                     <Input
