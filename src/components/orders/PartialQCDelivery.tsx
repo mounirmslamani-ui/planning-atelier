@@ -132,6 +132,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
         rejectedQty: qcControlled - acceptedFinal,
         createdAt: new Date().toISOString(),
       });
+      if (placeholderQc) deleteQCEntry(placeholderQc.id);
       setShowQcForm(false);
       toast.success('تم تسجيل جلسة المراقبة');
     } finally {
