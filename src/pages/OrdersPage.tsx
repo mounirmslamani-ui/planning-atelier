@@ -27,6 +27,7 @@ import { computeOrderStatusFromSteps } from '@/lib/resourceSynthesis';
 import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
@@ -101,7 +102,12 @@ const OrdersPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [localFilters, setFilters] = useState<Record<string, string>>({});
+  const { selectedClientName } = useGlobalClientFilter();
+  const filters = useMemo(
+    () => (selectedClientName ? { ...localFilters, client: `${selectedClientName}|` } : localFilters),
+    [localFilters, selectedClientName]
+  );
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 

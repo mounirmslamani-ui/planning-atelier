@@ -30,6 +30,7 @@ import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 import { useAuth } from '@/context/AuthContext';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
@@ -334,7 +335,12 @@ const PlanningTableauPage: React.FC = () => {
   const [planningOrderMap, setPlanningOrderMap] = useState<Record<string, number>>({});
 
   // Column filters for the operator tables
-  const [colFilters, setColFilters] = useState<Record<string, string>>({});
+  const [localColFilters, setColFilters] = useState<Record<string, string>>({});
+  const { selectedClientName } = useGlobalClientFilter();
+  const colFilters = useMemo(
+    () => (selectedClientName ? { ...localColFilters, client: `${selectedClientName}|` } : localColFilters),
+    [localColFilters, selectedClientName]
+  );
   const [colSortKey, setColSortKey] = useState<string | null>(null);
   const [colSortDir, setColSortDir] = useState<SortDirection>(null);
 
@@ -1128,7 +1134,7 @@ if (nextRecord) {
           case 'startDate': return t.step.startDate === value;
           case 'endDate': return t.step.endDate === value;
           case 'orderNumber': return t.order.orderNumber.toLowerCase().includes(needle);
-          case 'client': return getClientName(t.order.clientId).toLowerCase().includes(needle);
+          case 'client': { if (value.includes('|')) { const vals = value.split('|').filter(Boolean); return vals.includes(getClientName(t.order.clientId)); } return getClientName(t.order.clientId).toLowerCase().includes(needle); }
           case 'designation': return t.order.designation.toLowerCase().includes(needle);
           case 'quantity': return String(t.order.quantity).includes(needle);
           case 'priority': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.priority as string); }
