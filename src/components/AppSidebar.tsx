@@ -8,7 +8,7 @@ import {
   DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
   UserCog, Home,
 } from 'lucide-react';
-import { NavLink as RouterNavLink } from 'react-router-dom';
+
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
 import { supabase } from '@/integrations/supabase/client';
