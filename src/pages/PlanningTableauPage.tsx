@@ -30,6 +30,7 @@ import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 import { useAuth } from '@/context/AuthContext';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
