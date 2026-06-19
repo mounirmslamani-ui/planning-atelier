@@ -11,9 +11,16 @@ import { formatDateFR } from '@/lib/utils';
 import DesignationCell from '@/components/DesignationCell';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+
 const CancelledOrdersPage: React.FC = () => {
   const { cancelledOrders } = usePlanning();
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const { selectedClientName } = useGlobalClientFilter();
+  const [localFilters, setFilters] = useState<Record<string, string>>({});
+  const filters = useMemo(
+    () => (selectedClientName ? { ...localFilters, client: selectedClientName } : localFilters),
+    [localFilters, selectedClientName]
+  );
   const [activeCat, setActiveCat] = useState<OrderCategory>('fabrication');
 
   const sorted = useMemo(() => {
@@ -34,7 +41,7 @@ const CancelledOrdersPage: React.FC = () => {
       switch (k) {
         case 'orderNumber': return c.orderNumberSnapshot.toLowerCase().includes(val);
         case 'orderDate': return (c.orderDateSnapshot || '').includes(val);
-        case 'client': return (c.clientNameSnapshot || '').toLowerCase().includes(val);
+        case 'client': return (c.clientNameSnapshot || '').toLowerCase() === val || (c.clientNameSnapshot || '').toLowerCase().includes(val);
         case 'designation': return c.designationSnapshot.toLowerCase().includes(val);
         case 'cancelDate': return (c.cancelDate || '').includes(val);
         case 'reason': return c.reason.toLowerCase().includes(val);

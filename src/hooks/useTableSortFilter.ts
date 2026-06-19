@@ -11,14 +11,15 @@ export function useTableSortFilter<T>(rows: T[], accessors: Accessors<T>) {
   const { selectedClientName } = useGlobalClientFilter();
 
   // Overlay the global client filter onto the local filters when a client is
-  // selected globally and this table exposes a `clientName` accessor. The local
-  // value is preserved; the global filter simply takes precedence when active.
+  // selected globally. We support both `clientName` and `client` accessor keys
+  // (different tables use different names). Exact match via pipe form.
   const filters = useMemo(() => {
-    if (!selectedClientName || !accessors.clientName) return localFilters;
-    if (!selectedClientName || !accessors.clientName) return localFilters;
-    // Use the pipe-separated form so the underlying filter does an exact match
-    // (avoids unintended substring collisions between similar client names).
-    return { ...localFilters, clientName: `${selectedClientName}|` };
+    if (!selectedClientName) return localFilters;
+    const exact = `${selectedClientName}|`;
+    const overlay: Record<string, string> = { ...localFilters };
+    if (accessors.clientName) overlay.clientName = exact;
+    if (accessors.client) overlay.client = exact;
+    return overlay;
   }, [localFilters, selectedClientName, accessors]);
 
   const handleSort = (key: string, dir: SortDirection) => {
