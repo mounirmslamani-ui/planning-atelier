@@ -101,7 +101,12 @@ const OrdersPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [localFilters, setFilters] = useState<Record<string, string>>({});
+  const { selectedClientName } = useGlobalClientFilter();
+  const filters = useMemo(
+    () => (selectedClientName ? { ...localFilters, client: `${selectedClientName}|` } : localFilters),
+    [localFilters, selectedClientName]
+  );
   const [dragIndices, setDragIndices] = useState<number[] | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
