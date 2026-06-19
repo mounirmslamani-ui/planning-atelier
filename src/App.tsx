@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PlanningProvider } from "@/context/PlanningContext";
 import { OrderSheetProvider } from "@/context/OrderSheetContext";
+import { GlobalClientFilterProvider } from "@/context/GlobalClientFilterContext";
 import AuthGate from "@/components/AuthGate";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
+import WelcomePage from "./pages/WelcomePage";
 import OperatorsPage from "./pages/OperatorsPage";
 import OperationsPage from "./pages/OperationsPage";
 import ClientsPage from "./pages/ClientsPage";
@@ -43,9 +45,11 @@ const App = () => (
         <PlanningProvider>
           <BrowserRouter>
           <OrderSheetProvider>
+            <GlobalClientFilterProvider>
             <AppLayout>
               <Routes>
-                <Route path="/" element={<Navigate to="/planning-tableau" replace />} />
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={<WelcomePage />} />
                 <Route path="/planning-gantt" element={<Index />} />
                 <Route path="/operators" element={<OperatorsPage />} />
                 <Route path="/operations" element={<OperationsPage />} />
@@ -72,6 +76,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppLayout>
+            </GlobalClientFilterProvider>
           </OrderSheetProvider>
         </BrowserRouter>
         </PlanningProvider>

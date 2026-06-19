@@ -6,8 +6,9 @@ import {
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
   DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
-  UserCog,
+  UserCog, Home,
 } from 'lucide-react';
+
 import { usePlanning } from '@/context/PlanningContext';
 import { exportGlobalArchive } from '@/lib/globalArchiveExport';
 import { supabase } from '@/integrations/supabase/client';
@@ -207,6 +208,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
         </div>
       </nav>
       <div className="p-3 border-t border-sidebar-border space-y-2">
+        <NavLink
+          to="/home"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-heading font-semibold bg-accent !text-black hover:opacity-90 transition-opacity"
+          title="الواجهة الرئيسية"
+        >
+          <Home className="w-4 h-4" />
+          الواجهة
+        </NavLink>
         <button
           type="button"
           onClick={() => setReportOpen(true)}

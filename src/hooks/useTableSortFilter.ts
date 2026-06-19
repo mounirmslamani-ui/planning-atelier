@@ -1,12 +1,25 @@
 import { useState, useMemo } from 'react';
 import type { SortDirection } from '@/components/orders/ColumnHeader';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 
 export type Accessors<T> = Record<string, (row: T) => string | number | null | undefined>;
 
 export function useTableSortFilter<T>(rows: T[], accessors: Accessors<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [localFilters, setFilters] = useState<Record<string, string>>({});
+  const { selectedClientName } = useGlobalClientFilter();
+
+  // Overlay the global client filter onto the local filters when a client is
+  // selected globally and this table exposes a `clientName` accessor. The local
+  // value is preserved; the global filter simply takes precedence when active.
+  const filters = useMemo(() => {
+    if (!selectedClientName || !accessors.clientName) return localFilters;
+    if (!selectedClientName || !accessors.clientName) return localFilters;
+    // Use the pipe-separated form so the underlying filter does an exact match
+    // (avoids unintended substring collisions between similar client names).
+    return { ...localFilters, clientName: `${selectedClientName}|` };
+  }, [localFilters, selectedClientName, accessors]);
 
   const handleSort = (key: string, dir: SortDirection) => {
     if (dir === null) { setSortKey(null); setSortDir(null); }
