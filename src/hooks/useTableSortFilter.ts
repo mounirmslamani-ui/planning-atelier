@@ -15,7 +15,10 @@ export function useTableSortFilter<T>(rows: T[], accessors: Accessors<T>) {
   // value is preserved; the global filter simply takes precedence when active.
   const filters = useMemo(() => {
     if (!selectedClientName || !accessors.clientName) return localFilters;
-    return { ...localFilters, clientName: selectedClientName };
+    if (!selectedClientName || !accessors.clientName) return localFilters;
+    // Use the pipe-separated form so the underlying filter does an exact match
+    // (avoids unintended substring collisions between similar client names).
+    return { ...localFilters, clientName: `${selectedClientName}|` };
   }, [localFilters, selectedClientName, accessors]);
 
   const handleSort = (key: string, dir: SortDirection) => {
