@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Plus, X, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
@@ -12,10 +14,11 @@ import type { Order } from '@/types/planning';
 
 const WelcomePage: React.FC = () => {
   const { clients, orders, absenceOrderId } = usePlanning();
-  const { selectedClientId, setSelectedClient, clearSelectedClient } = useGlobalClientFilter();
+  const { selectedClientId, selectedClientName, setSelectedClient, clearSelectedClient } = useGlobalClientFilter();
   const { hasAccess } = useAuth();
   const canCreateOrder = hasAccess({ tableau: 'سجل الطلبيات', champ_bouton: 'طلبية جديدة' }) === 'RW';
   const [createDraft, setCreateDraft] = useState<Partial<Order> | null>(null);
+  const [open, setOpen] = useState(false);
 
   const sortedClients = useMemo(
     () => [...clients].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })),
@@ -23,11 +26,6 @@ const WelcomePage: React.FC = () => {
   );
 
   const realOrders = useMemo(() => orders.filter(o => o.id !== absenceOrderId), [orders, absenceOrderId]);
-
-  const handleClientChange = (id: string) => {
-    const c = clients.find(cl => cl.id === id);
-    if (c) setSelectedClient(c.id, c.name || '');
-  };
 
   const handleNewOrder = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -55,16 +53,39 @@ const WelcomePage: React.FC = () => {
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2">
-          <Select value={selectedClientId || ''} onValueChange={handleClientChange}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="اختر زبوناً" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortedClients.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" aria-expanded={open} className="w-64 justify-between">
+                <span className={cn('truncate', !selectedClientName && 'text-muted-foreground')}>
+                  {selectedClientName || 'اختر أو اكتب اسم الزبون'}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="ابحث عن زبون..." />
+                <CommandList>
+                  <CommandEmpty>لا يوجد زبون</CommandEmpty>
+                  <CommandGroup>
+                    {sortedClients.map(c => (
+                      <CommandItem
+                        key={c.id}
+                        value={c.name || ''}
+                        onSelect={() => {
+                          setSelectedClient(c.id, c.name || '');
+                          setOpen(false);
+                        }}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', selectedClientId === c.id ? 'opacity-100' : 'opacity-0')} />
+                        {c.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" size="sm" onClick={clearSelectedClient}>
             <X className="w-4 h-4 ml-1" />
             إلغاء
