@@ -51,13 +51,17 @@ const StudyPage: React.FC = () => {
 
   const filteredRows = useMemo(() => {
     let list = rows.map(r => ({ ...r, order: orders.find(o => o.id === r.orderId)! })).filter(r => r.order);
-    Object.entries(filters).forEach(([key, val]) => {
+    const effective = selectedClientName ? { ...filters, client: selectedClientName } : filters;
+    Object.entries(effective).forEach(([key, val]) => {
       if (!val) return;
       const lv = val.toLowerCase();
       list = list.filter(r => {
         if (key === 'displayOrder') return String(r.order.displayOrder ?? '').includes(val);
         if (key === 'orderNumber') return r.order.orderNumber.toLowerCase().includes(lv);
-        if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
+        if (key === 'client') {
+          if (selectedClientName) return getClientName(r.order.clientId) === selectedClientName;
+          return getClientName(r.order.clientId).toLowerCase().includes(lv);
+        }
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
         if (key === 'quantity') return String(r.order.quantity).includes(val);
         if (key === 'priority') { const vals = val.split('|').filter(Boolean); return vals.includes(r.order.priority as string); }
@@ -66,7 +70,8 @@ const StudyPage: React.FC = () => {
       });
     });
     return list;
-  }, [rows, orders, filters, getClientName]);
+  }, [rows, orders, filters, getClientName, selectedClientName]);
+
 
   const allValuesByKey = useMemo(() => {
     const list = rows.map(r => ({ ...r, order: orders.find(o => o.id === r.orderId)! })).filter(r => r.order);
