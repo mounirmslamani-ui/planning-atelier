@@ -10,6 +10,7 @@ import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
 import DesignationCell from '@/components/DesignationCell';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
