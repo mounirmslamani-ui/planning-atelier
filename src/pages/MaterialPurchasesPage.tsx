@@ -20,6 +20,7 @@ const MaterialPurchasesPage: React.FC = () => {
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+  const { selectedClientName } = useGlobalClientFilter();
 
   const rows = useMemo(() => {
     const isMaterialBlocked = (status: any) => status === 'non-disponible' || status === 'partiel';
