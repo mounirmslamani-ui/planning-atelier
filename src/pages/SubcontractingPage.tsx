@@ -69,8 +69,9 @@ const SubcontractingPage: React.FC = () => {
 
   const filteredRows = useMemo(() => {
     let result = subcontractingRows.filter(r => !r.done);
+    const effective = selectedClientName ? { ...filters, client: selectedClientName } : filters;
 
-    Object.entries(filters).forEach(([key, val]) => {
+    Object.entries(effective).forEach(([key, val]) => {
       if (!val) return;
       const lv = val.toLowerCase();
       result = result.filter(r => {
@@ -78,7 +79,9 @@ const SubcontractingPage: React.FC = () => {
           case 'displayOrder': return String(r.order.displayOrder ?? '').includes(lv);
           case 'orderNumber': return r.order.orderNumber.toLowerCase().includes(lv);
           case 'orderDate': return r.order.orderDate.includes(lv);
-          case 'client': return getClientName(r.order.clientId).toLowerCase().includes(lv);
+          case 'client':
+            if (selectedClientName) return getClientName(r.order.clientId) === selectedClientName;
+            return getClientName(r.order.clientId).toLowerCase().includes(lv);
           case 'designation': return r.order.designation.toLowerCase().includes(lv);
           case 'quantity': return String(r.order.quantity).includes(lv);
           case 'priority': return (r.order.priority || '').toLowerCase().includes(lv);
@@ -89,6 +92,7 @@ const SubcontractingPage: React.FC = () => {
         }
       });
     });
+
 
     if (sortKey && sortDir) {
       const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
