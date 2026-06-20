@@ -118,7 +118,7 @@ const SubcontractingPage: React.FC = () => {
     }
 
     return result;
-  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab]);
+  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab, selectedClientName]);
 
   const subTabs = useMemo(() => {
     const counts = new Map<string, number>();
