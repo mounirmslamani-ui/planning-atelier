@@ -10,6 +10,7 @@ import { formatDateFR } from '@/lib/utils';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 const ToolingPurchasesPage: React.FC = () => {
