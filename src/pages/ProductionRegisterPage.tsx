@@ -35,6 +35,7 @@ const fmtHM = (minutes?: number | null) => {
 
 const ProductionRegisterPage: React.FC = () => {
   const { productionRecords, operators, operations, orders, clients } = usePlanning();
+  const { selectedClientName } = useGlobalClientFilter();
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const getOrder = (id: string) => orders.find(o => o.id === id);
