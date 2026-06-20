@@ -20,6 +20,7 @@ const SubcontractingPage: React.FC = () => {
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [activeSubTab, setActiveSubTab] = useState<string>('__all__');
+  const { selectedClientName } = useGlobalClientFilter();
 
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
   const getSubcontractorName = useCallback((id: string | undefined) => {
