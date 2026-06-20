@@ -116,6 +116,14 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
     return Array.from(set);
   }, [tabRecords]);
 
+  const globalClientKeys = useMemo(() => {
+    if (!selectedClientName) return null;
+    const set = new Set<string>();
+    clients.filter(c => c.name === selectedClientName).forEach(c => set.add(c.id));
+    set.add(`__snap__${selectedClientName}`);
+    return set;
+  }, [selectedClientName, clients]);
+
   const filteredRecords = useMemo(() => {
     return tabRecords.filter(r => {
       if (filterMonths.size > 0) {
@@ -123,10 +131,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
         if (!filterMonths.has(key)) return false;
       }
-      if (filterClients.size > 0) {
+      const activeClientFilter = globalClientKeys ?? (filterClients.size > 0 ? filterClients : null);
+      if (activeClientFilter) {
         const order = getOrder(r.orderId);
         const clientKey = order ? order.clientId : `__snap__${r.clientNameSnapshot ?? ''}`;
-        if (!filterClients.has(clientKey)) return false;
+        if (!activeClientFilter.has(clientKey)) return false;
       }
       if (filterOrders.size > 0) {
         if (!filterOrders.has(r.orderId)) return false;
@@ -136,7 +145,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
       }
       return true;
     });
-  }, [tabRecords, filterMonths, filterClients, filterOrders, filterOperations, orders]);
+  }, [tabRecords, filterMonths, filterClients, filterOrders, filterOperations, orders, globalClientKeys]);
 
   const sortedRecords = useMemo(() => {
     const arr = [...filteredRecords];
