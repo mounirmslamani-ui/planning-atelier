@@ -10,6 +10,7 @@ import { formatDateFR } from '@/lib/utils';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 
 const ToolingPurchasesPage: React.FC = () => {
@@ -19,6 +20,7 @@ const ToolingPurchasesPage: React.FC = () => {
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
+  const { selectedClientName } = useGlobalClientFilter();
 
   const rows = useMemo(() => {
     const isToolingBlocked = (status: any) => status === 'non-disponible' || status === 'partiel';
@@ -45,13 +47,17 @@ const ToolingPurchasesPage: React.FC = () => {
 
   const filteredRows = useMemo(() => {
     let list = [...rows];
-    Object.entries(filters).forEach(([key, val]) => {
+    const effective = selectedClientName ? { ...filters, client: selectedClientName } : filters;
+    Object.entries(effective).forEach(([key, val]) => {
       if (!val) return;
       const lv = val.toLowerCase();
       list = list.filter((r: any) => {
         if (key === 'displayOrder') return String(r.order.displayOrder ?? '').includes(val);
         if (key === 'orderNumber') return r.order.orderNumber.toLowerCase().includes(lv);
-        if (key === 'client') return getClientName(r.order.clientId).toLowerCase().includes(lv);
+        if (key === 'client') {
+          if (selectedClientName) return getClientName(r.order.clientId) === selectedClientName;
+          return getClientName(r.order.clientId).toLowerCase().includes(lv);
+        }
         if (key === 'designation') return r.order.designation.toLowerCase().includes(lv);
         if (key === 'quantity') return String(r.order.quantity).includes(val);
         if (key === 'priority') { const vals = val.split('|').filter(Boolean); return vals.includes(r.order.priority as string); }
@@ -59,7 +65,8 @@ const ToolingPurchasesPage: React.FC = () => {
       });
     });
     return list;
-  }, [rows, filters, getClientName]);
+  }, [rows, filters, getClientName, selectedClientName]);
+
 
   const allValuesByKey = useMemo(() => {
     const get = (r: any, k: string) => {

@@ -10,6 +10,7 @@ import { formatDateFR } from '@/lib/utils';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 
 type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
@@ -19,6 +20,7 @@ const SubcontractingPage: React.FC = () => {
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [activeSubTab, setActiveSubTab] = useState<string>('__all__');
+  const { selectedClientName } = useGlobalClientFilter();
 
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
   const getSubcontractorName = useCallback((id: string | undefined) => {
@@ -67,8 +69,9 @@ const SubcontractingPage: React.FC = () => {
 
   const filteredRows = useMemo(() => {
     let result = subcontractingRows.filter(r => !r.done);
+    const effective = selectedClientName ? { ...filters, client: selectedClientName } : filters;
 
-    Object.entries(filters).forEach(([key, val]) => {
+    Object.entries(effective).forEach(([key, val]) => {
       if (!val) return;
       const lv = val.toLowerCase();
       result = result.filter(r => {
@@ -76,7 +79,9 @@ const SubcontractingPage: React.FC = () => {
           case 'displayOrder': return String(r.order.displayOrder ?? '').includes(lv);
           case 'orderNumber': return r.order.orderNumber.toLowerCase().includes(lv);
           case 'orderDate': return r.order.orderDate.includes(lv);
-          case 'client': return getClientName(r.order.clientId).toLowerCase().includes(lv);
+          case 'client':
+            if (selectedClientName) return getClientName(r.order.clientId) === selectedClientName;
+            return getClientName(r.order.clientId).toLowerCase().includes(lv);
           case 'designation': return r.order.designation.toLowerCase().includes(lv);
           case 'quantity': return String(r.order.quantity).includes(lv);
           case 'priority': return (r.order.priority || '').toLowerCase().includes(lv);
@@ -87,6 +92,7 @@ const SubcontractingPage: React.FC = () => {
         }
       });
     });
+
 
     if (sortKey && sortDir) {
       const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
@@ -112,7 +118,7 @@ const SubcontractingPage: React.FC = () => {
     }
 
     return result;
-  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab]);
+  }, [subcontractingRows, filters, sortKey, sortDir, getClientName, getSubcontractorName, activeSubTab, selectedClientName]);
 
   const subTabs = useMemo(() => {
     const counts = new Map<string, number>();
