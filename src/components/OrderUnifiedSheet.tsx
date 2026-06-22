@@ -482,6 +482,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
                   <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
                 </fieldset>
+                {!createMode && (
+                  <PartialQCSendSection order={order} />
+                )}
                 <div className="flex justify-end gap-2 pt-2">
                   <stepsLock.EditButton />
                 </div>
