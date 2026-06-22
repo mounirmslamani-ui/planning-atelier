@@ -241,6 +241,9 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             <span>الإجمالي: <b className="text-foreground">{qty}</b></span>
             <span>مراقَب: <b className="text-foreground">{controlled}</b></span>
             <span>مقبول: <b className="text-foreground">{accepted}</b></span>
+            {pending > 0 && (
+              <span>في الانتظار: <b className="text-amber-600">{pending}</b></span>
+            )}
             <span>متبقّي: <b className={qcRemaining > 0 ? 'text-amber-600' : 'text-green-600'}>{qcRemaining}</b></span>
             {qcForceClosed && (
               <span className="inline-flex items-center gap-1 text-blue-600">
