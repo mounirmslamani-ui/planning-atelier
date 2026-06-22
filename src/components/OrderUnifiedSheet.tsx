@@ -25,6 +25,7 @@ import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEdit
 import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
+import { getQCControlled, getQCPending } from '@/lib/orderFlow';
 
 
 interface Props {
