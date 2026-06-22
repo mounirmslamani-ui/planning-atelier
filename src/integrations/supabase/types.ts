@@ -694,6 +694,7 @@ export type Database = {
           force_closed: boolean
           id: string
           order_id: string
+          pending_qty: number | null
           rejected_qty: number | null
           rework_notes: string | null
         }
@@ -706,6 +707,7 @@ export type Database = {
           force_closed?: boolean
           id?: string
           order_id: string
+          pending_qty?: number | null
           rejected_qty?: number | null
           rework_notes?: string | null
         }
@@ -718,6 +720,7 @@ export type Database = {
           force_closed?: boolean
           id?: string
           order_id?: string
+          pending_qty?: number | null
           rejected_qty?: number | null
           rework_notes?: string | null
         }

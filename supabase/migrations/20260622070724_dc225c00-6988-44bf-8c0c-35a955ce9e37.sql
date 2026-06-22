@@ -1,0 +1,1 @@
+ALTER TABLE public.quality_control_entries ADD COLUMN IF NOT EXISTS pending_qty INTEGER;
