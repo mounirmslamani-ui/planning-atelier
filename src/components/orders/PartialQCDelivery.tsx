@@ -11,9 +11,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import { formatDateFR } from '@/lib/utils';
 import {
-  getQCControlled, getQCAccepted, getQCRemaining, isQCForceClosed,
+  getQCControlled, getQCAccepted, getQCRemaining, getQCPending, isQCForceClosed,
   getDeliveredQty, getDeliverableRemaining, isDeliveryForceClosed, getDeliveryRemaining,
 } from '@/lib/orderFlow';
+import { Badge } from '@/components/ui/badge';
 import type { Order, QCDecision, QualityControlEntry, DeliveredOrder, SalePriceStatus } from '@/types/planning';
 
 const decisionLabels: Record<QCDecision, string> = {
@@ -54,10 +55,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const qcLock = useSubFormLock(canSaveQc);
   const delLock = useSubFormLock(canAddDelivery);
 
-  // Placeholder = auto-created entry with no real session data (no decision, no qty, not force-closed).
+  // Placeholder = auto-created entry with no real session data (no decision, no qty, not force-closed, no pending).
   // It exists only to mark the order as "pending QC" for the QualityControlPage; never displayed here.
   const isPlaceholderQc = (q: QualityControlEntry) =>
-    !q.decision && !q.controlledQty && !q.acceptedQty && !q.rejectedQty && !q.forceClosed;
+    !q.decision && !q.controlledQty && !q.acceptedQty && !q.rejectedQty && !q.forceClosed && !q.pendingQty;
+  // A pending row = partial lot sent to QC, awaiting a decision.
+  const isPendingQc = (q: QualityControlEntry) =>
+    !q.decision && !q.controlledQty && !q.forceClosed && (q.pendingQty ?? 0) > 0;
   const orderQc = useMemo(
     () => qcEntries
       .filter(q => q.orderId === order.id && !isPlaceholderQc(q))
@@ -76,6 +80,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const qty = order.quantity;
   const controlled = getQCControlled(order.id, qcEntries, qty);
   const accepted = getQCAccepted(order.id, qcEntries, qty);
+  const pending = getQCPending(order.id, qcEntries);
   const qcRemaining = getQCRemaining(order, qcEntries);
   const qcForceClosed = isQCForceClosed(order.id, qcEntries);
 
@@ -236,6 +241,9 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             <span>الإجمالي: <b className="text-foreground">{qty}</b></span>
             <span>مراقَب: <b className="text-foreground">{controlled}</b></span>
             <span>مقبول: <b className="text-foreground">{accepted}</b></span>
+            {pending > 0 && (
+              <span>في الانتظار: <b className="text-amber-600">{pending}</b></span>
+            )}
             <span>متبقّي: <b className={qcRemaining > 0 ? 'text-amber-600' : 'text-green-600'}>{qcRemaining}</b></span>
             {qcForceClosed && (
               <span className="inline-flex items-center gap-1 text-blue-600">
@@ -269,8 +277,12 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
               )}
               {orderQc.map(q => {
                 const editing = !qcLock.locked && !q.forceClosed;
+                const pendingRow = isPendingQc(q);
+                const pendingMax = q.pendingQty ?? 0;
+                const displayControlled = q.controlledQty ?? (pendingRow ? pendingMax : 0);
+                const displayAccepted = q.acceptedQty ?? (pendingRow ? pendingMax : 0);
                 return (
-                <tr key={q.id} className="border-t">
+                <tr key={q.id} className={`border-t ${pendingRow ? 'bg-amber-50/40' : ''}`}>
                   <td className="p-2">
                     {editing ? (
                       <Input
@@ -284,9 +296,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-center">
                     {editing ? (
                       <Input
-                        type="number" min={0}
-                        value={q.controlledQty ?? 0}
-                        onChange={e => updateQCEntry({ ...q, controlledQty: Math.max(0, parseInt(e.target.value) || 0) })}
+                        type="number" min={0} max={pendingRow ? pendingMax : undefined}
+                        value={displayControlled}
+                        onChange={e => {
+                          let v = Math.max(0, parseInt(e.target.value) || 0);
+                          if (pendingRow) v = Math.min(v, pendingMax);
+                          updateQCEntry({ ...q, controlledQty: v });
+                        }}
                         className="h-8 text-xs text-center"
                       />
                     ) : (q.controlledQty ?? qty)}
@@ -295,10 +311,10 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     {editing ? (
                       <Input
                         type="number" min={0}
-                        value={q.acceptedQty ?? 0}
+                        value={displayAccepted}
                         onChange={e => {
                           const accepted = Math.max(0, parseInt(e.target.value) || 0);
-                          const ctrl = q.controlledQty ?? 0;
+                          const ctrl = q.controlledQty ?? (pendingRow ? pendingMax : 0);
                           updateQCEntry({ ...q, acceptedQty: accepted, rejectedQty: Math.max(0, ctrl - accepted) });
                         }}
                         className="h-8 text-xs text-center"
@@ -306,9 +322,14 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     ) : (q.acceptedQty ?? (q.decision === 'conforme' || q.decision === 'conforme-derogation' ? qty : 0))}
                   </td>
                   <td className="p-2 text-xs">
+                    {pendingRow && (
+                      <Badge variant="outline" className="me-2 border-amber-400 text-amber-700 bg-amber-50">
+                        في انتظار المراقبة ({pendingMax})
+                      </Badge>
+                    )}
                     {editing ? (
                       <select
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        className="w-full mt-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                         value={q.decision || ''}
                         onChange={e => updateQCEntry({ ...q, decision: (e.target.value || undefined) as QCDecision | undefined })}
                       >
@@ -329,11 +350,11 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     />
                   </td>
                   <td className="p-2">
-                    {canDeleteSession && (
+                    {(canDeleteSession || pendingRow) && (
                       <Button
                         size="icon" variant="ghost"
                         className="h-7 w-7 text-destructive"
-                        onClick={() => askDelete('جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
+                        onClick={() => askDelete(pendingRow ? 'اللوت في انتظار المراقبة' : 'جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

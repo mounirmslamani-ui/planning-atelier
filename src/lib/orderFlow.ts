@@ -85,9 +85,17 @@ export function isQCForceClosed(orderId: string, qc: QualityControlEntry[]): boo
   return qc.some(q => q.orderId === orderId && q.forceClosed);
 }
 
+export function getQCPending(orderId: string, qc: QualityControlEntry[]): number {
+  return qc
+    .filter(q => q.orderId === orderId && !q.decision && !q.controlledQty && !q.forceClosed)
+    .reduce((s, q) => s + (q.pendingQty ?? 0), 0);
+}
+
 export function getQCRemaining(order: Order, qc: QualityControlEntry[]): number {
   if (isQCForceClosed(order.id, qc)) return 0;
-  return Math.max(0, fullQty(order) - getQCControlled(order.id, qc, order.quantity));
+  const controlled = getQCControlled(order.id, qc, order.quantity);
+  const pending = getQCPending(order.id, qc);
+  return Math.max(0, fullQty(order) - controlled - pending);
 }
 
 /** True when the order's QC is fully done (controlled = qty) or force-closed. */

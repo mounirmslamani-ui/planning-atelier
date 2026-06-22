@@ -397,6 +397,7 @@ export function mapQCEntryFromDB(row: any): QualityControlEntry {
     controlledQty: row.controlled_qty ?? undefined,
     acceptedQty: row.accepted_qty ?? undefined,
     rejectedQty: row.rejected_qty ?? undefined,
+    pendingQty: row.pending_qty ?? undefined,
     forceClosed: !!row.force_closed,
   };
 }
@@ -411,6 +412,7 @@ export function mapQCEntryToDB(e: QualityControlEntry) {
     controlled_qty: e.controlledQty ?? null,
     accepted_qty: e.acceptedQty ?? null,
     rejected_qty: e.rejectedQty ?? null,
+    pending_qty: e.pendingQty ?? null,
     force_closed: !!e.forceClosed,
   };
 }

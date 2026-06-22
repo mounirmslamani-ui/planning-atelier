@@ -25,6 +25,7 @@ import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEdit
 import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
+import { getQCControlled, getQCPending } from '@/lib/orderFlow';
 
 
 interface Props {
@@ -106,6 +107,88 @@ const QCEntryRow: React.FC<QCEntryRowProps> = ({ q, onSave }) => {
     </tr>
   );
 };
+
+// ─────── Partial send to QC (steps tab) ───────
+
+const PartialQCSendSection: React.FC<{ order: Order }> = ({ order }) => {
+  const { qcEntries, addQCSession } = usePlanning();
+  const { hasAccess } = useAuth();
+  const canSend = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
+  const controlled = getQCControlled(order.id, qcEntries, order.quantity);
+  const pending = getQCPending(order.id, qcEntries);
+  const remaining = Math.max(0, order.quantity - controlled - pending);
+  const [showForm, setShowForm] = useState(false);
+  const [qty, setQty] = useState<number>(remaining);
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [submitting, setSubmitting] = useState(false);
+
+  React.useEffect(() => { setQty(remaining); }, [remaining]);
+
+  if (!canSend) return null;
+
+  const submit = () => {
+    if (submitting) return;
+    if (qty <= 0 || qty > remaining) {
+      toast.error(`الكمية يجب أن تكون بين 1 و ${remaining}`);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      addQCSession({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        controlDate: date,
+        pendingQty: qty,
+        createdAt: new Date().toISOString(),
+      });
+      toast.success(`تم إرسال ${qty} قطعة إلى مراقبة الجودة`);
+      setShowForm(false);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="border rounded-md p-3 bg-amber-50/30">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h4 className="font-semibold text-sm">إرسال جزئي لمراقبة الجودة</h4>
+          <div className="text-xs text-muted-foreground mt-1">
+            الإجمالي: <b className="text-foreground">{order.quantity}</b> ·
+            {' '}مراقَب: <b className="text-foreground">{controlled}</b> ·
+            {' '}في الانتظار: <b className="text-amber-700">{pending}</b> ·
+            {' '}متاح للإرسال: <b className={remaining > 0 ? 'text-green-700' : 'text-muted-foreground'}>{remaining}</b>
+          </div>
+        </div>
+        {!showForm && remaining > 0 && (
+          <Button size="sm" variant="outline" onClick={() => { setQty(remaining); setShowForm(true); }}>
+            إرسال جزئي
+          </Button>
+        )}
+      </div>
+      {showForm && (
+        <div className="mt-3 flex items-end gap-2 flex-wrap">
+          <div>
+            <Label className="text-xs">تاريخ الإرسال</Label>
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-8 text-xs w-36" />
+          </div>
+          <div>
+            <Label className="text-xs">الكمية المرسلة</Label>
+            <Input
+              type="number" min={1} max={remaining}
+              value={qty}
+              onChange={e => setQty(Math.max(0, parseInt(e.target.value) || 0))}
+              className="h-8 text-xs w-28 text-center"
+            />
+          </div>
+          <Button size="sm" onClick={submit} disabled={submitting}>تأكيد الإرسال</Button>
+          <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>إلغاء</Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft, onCreated }) => {
   const {
@@ -482,6 +565,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
                   <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
                 </fieldset>
+                {!createMode && (
+                  <PartialQCSendSection order={order} />
+                )}
                 <div className="flex justify-end gap-2 pt-2">
                   <stepsLock.EditButton />
                 </div>
