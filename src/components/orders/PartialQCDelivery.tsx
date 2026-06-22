@@ -11,9 +11,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import { formatDateFR } from '@/lib/utils';
 import {
-  getQCControlled, getQCAccepted, getQCRemaining, isQCForceClosed,
+  getQCControlled, getQCAccepted, getQCRemaining, getQCPending, isQCForceClosed,
   getDeliveredQty, getDeliverableRemaining, isDeliveryForceClosed, getDeliveryRemaining,
 } from '@/lib/orderFlow';
+import { Badge } from '@/components/ui/badge';
 import type { Order, QCDecision, QualityControlEntry, DeliveredOrder, SalePriceStatus } from '@/types/planning';
 
 const decisionLabels: Record<QCDecision, string> = {
