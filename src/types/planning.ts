@@ -214,6 +214,8 @@ export interface QualityControlEntry {
   acceptedQty?: number;
   /** Quantity rejected (controlledQty − acceptedQty), kept for traceability. */
   rejectedQty?: number;
+  /** Quantity sent partially to QC and awaiting a control decision. */
+  pendingQty?: number;
   /** Administrator override: closes the QC as fully done even if remaining > 0. */
   forceClosed?: boolean;
 }
