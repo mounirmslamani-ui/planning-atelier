@@ -108,7 +108,6 @@ const QCEntryRow: React.FC<QCEntryRowProps> = ({ q, onSave }) => {
 };
 
 // ─────── Partial send to QC (steps tab) ───────
-import { getQCControlled, getQCPending } from '@/lib/orderFlow';
 
 const PartialQCSendSection: React.FC<{ order: Order }> = ({ order }) => {
   const { qcEntries, addQCSession } = usePlanning();
