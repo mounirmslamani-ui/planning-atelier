@@ -277,8 +277,12 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
               )}
               {orderQc.map(q => {
                 const editing = !qcLock.locked && !q.forceClosed;
+                const pendingRow = isPendingQc(q);
+                const pendingMax = q.pendingQty ?? 0;
+                const displayControlled = q.controlledQty ?? (pendingRow ? pendingMax : 0);
+                const displayAccepted = q.acceptedQty ?? (pendingRow ? pendingMax : 0);
                 return (
-                <tr key={q.id} className="border-t">
+                <tr key={q.id} className={`border-t ${pendingRow ? 'bg-amber-50/40' : ''}`}>
                   <td className="p-2">
                     {editing ? (
                       <Input
@@ -292,9 +296,13 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   <td className="p-2 text-center">
                     {editing ? (
                       <Input
-                        type="number" min={0}
-                        value={q.controlledQty ?? 0}
-                        onChange={e => updateQCEntry({ ...q, controlledQty: Math.max(0, parseInt(e.target.value) || 0) })}
+                        type="number" min={0} max={pendingRow ? pendingMax : undefined}
+                        value={displayControlled}
+                        onChange={e => {
+                          let v = Math.max(0, parseInt(e.target.value) || 0);
+                          if (pendingRow) v = Math.min(v, pendingMax);
+                          updateQCEntry({ ...q, controlledQty: v });
+                        }}
                         className="h-8 text-xs text-center"
                       />
                     ) : (q.controlledQty ?? qty)}
@@ -303,10 +311,10 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     {editing ? (
                       <Input
                         type="number" min={0}
-                        value={q.acceptedQty ?? 0}
+                        value={displayAccepted}
                         onChange={e => {
                           const accepted = Math.max(0, parseInt(e.target.value) || 0);
-                          const ctrl = q.controlledQty ?? 0;
+                          const ctrl = q.controlledQty ?? (pendingRow ? pendingMax : 0);
                           updateQCEntry({ ...q, acceptedQty: accepted, rejectedQty: Math.max(0, ctrl - accepted) });
                         }}
                         className="h-8 text-xs text-center"
@@ -314,9 +322,14 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     ) : (q.acceptedQty ?? (q.decision === 'conforme' || q.decision === 'conforme-derogation' ? qty : 0))}
                   </td>
                   <td className="p-2 text-xs">
+                    {pendingRow && (
+                      <Badge variant="outline" className="me-2 border-amber-400 text-amber-700 bg-amber-50">
+                        في انتظار المراقبة ({pendingMax})
+                      </Badge>
+                    )}
                     {editing ? (
                       <select
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                        className="w-full mt-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                         value={q.decision || ''}
                         onChange={e => updateQCEntry({ ...q, decision: (e.target.value || undefined) as QCDecision | undefined })}
                       >
@@ -337,11 +350,11 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                     />
                   </td>
                   <td className="p-2">
-                    {canDeleteSession && (
+                    {(canDeleteSession || pendingRow) && (
                       <Button
                         size="icon" variant="ghost"
                         className="h-7 w-7 text-destructive"
-                        onClick={() => askDelete('جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
+                        onClick={() => askDelete(pendingRow ? 'اللوت في انتظار المراقبة' : 'جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
