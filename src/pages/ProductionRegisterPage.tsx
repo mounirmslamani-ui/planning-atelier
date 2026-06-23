@@ -536,7 +536,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">ساعة البداية</label>
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
+                    maxLength={5}
+                    placeholder="HH:MM"
                     value={editRecord.startTime}
                     onChange={e => setEditRecord({ ...editRecord, startTime: e.target.value })}
                     className="h-8 text-xs font-mono"
@@ -545,7 +549,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">ساعة النهاية</label>
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
+                    maxLength={5}
+                    placeholder="HH:MM"
                     value={editRecord.endTime}
                     onChange={e => setEditRecord({ ...editRecord, endTime: e.target.value })}
                     className="h-8 text-xs font-mono"
