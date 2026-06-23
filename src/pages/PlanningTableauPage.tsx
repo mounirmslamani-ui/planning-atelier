@@ -423,14 +423,28 @@ const PlanningTableauPage: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from('production_steps')
-        .select('id, planning_order');
-      if (cancelled || error || !data) return;
+      // Pagination explicite : la limite max-rows PostgREST (≤1000) tronquerait
+      // silencieusement la requête sinon. On ajoute aussi un tri déterministe sur `id`
+      // pour que la pagination renvoie un ordre stable d'une page à l'autre.
+      const PAGE = 1000;
+      let from = 0;
+      const rows: { id: string; planning_order: number | null }[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from('production_steps')
+          .select('id, planning_order')
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (cancelled || error || !data) return;
+        rows.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      if (cancelled) return;
       setPlanningOrderMap(prev => {
         const next = { ...prev };
         let changed = false;
-        data.forEach((row: { id: string; planning_order: number | null }) => {
+        rows.forEach((row) => {
           if (row.planning_order != null && next[row.id] == null) {
             next[row.id] = row.planning_order;
             changed = true;
@@ -441,6 +455,7 @@ const PlanningTableauPage: React.FC = () => {
     })();
     return () => { cancelled = true; };
   }, [steps]);
+
 
   /** Persist a batch of {stepId -> planning_order} updates to DB and local map. */
   const persistPlanningOrders = useCallback(async (updates: Record<string, number>) => {
