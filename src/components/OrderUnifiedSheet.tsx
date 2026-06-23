@@ -113,7 +113,7 @@ const QCEntryRow: React.FC<QCEntryRowProps> = ({ q, onSave }) => {
 const PartialQCSendSection: React.FC<{ order: Order }> = ({ order }) => {
   const { qcEntries, addQCSession } = usePlanning();
   const { hasAccess } = useAuth();
-  const canSend = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
+  const canSend = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراقبة الجودة والتسليم', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
   const controlled = getQCControlled(order.id, qcEntries, order.quantity);
   const pending = getQCPending(order.id, qcEntries);
   const remaining = Math.max(0, order.quantity - controlled - pending);
