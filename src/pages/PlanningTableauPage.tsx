@@ -408,14 +408,14 @@ const PlanningTableauPage: React.FC = () => {
   // instantly, the context is the source of truth — always re-sync the draft.
   useEffect(() => {
     const syncedDraftSteps = appendUnorderedStepsAtEnd(steps);
-    setDraftOrders(orders);
+    setDraftOrders(activeOrders);
     setDraftSteps(syncedDraftSteps);
     if (!draftInitialized.current) {
       setForcedPhaseAmontWarnings({});
-      history.reset(createPlanningSnapshot(syncedDraftSteps, orders, {}, false));
+      history.reset(createPlanningSnapshot(syncedDraftSteps, activeOrders, {}, false));
       draftInitialized.current = true;
     }
-  }, [steps, orders, history]);
+  }, [steps, activeOrders, history]);
 
   // ─── Pn (planning_order) : chargement additif depuis la base ───
   // IMPORTANT : on ne remplace JAMAIS la map locale (elle est autoritative après un D&D).
