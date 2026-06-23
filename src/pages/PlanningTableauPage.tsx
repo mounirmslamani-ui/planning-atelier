@@ -323,14 +323,23 @@ const PlanningTableauPage: React.FC = () => {
     absenceOperationId, absenceOrderId, updateStep, updateOrder,
     holidays, productionRecords, addProductionRecord,
     qcEntries, addQCEntry,
+    deliveredOrders, cancelledOrders,
   } = usePlanning();
+  // Local active scope: exclude orders already delivered or cancelled. The global
+  // `orders` array is intentionally raw (cf. supabase-data.ts) so other pages
+  // (delivered orders register, production records history) can resolve them.
+  const activeOrders = useMemo(() => {
+    const dIds = new Set(deliveredOrders.map(d => d.orderId));
+    const cIds = new Set(cancelledOrders.map(c => c.orderId));
+    return orders.filter(o => !dIds.has(o.id) && !cIds.has(o.id));
+  }, [orders, deliveredOrders, cancelledOrders]);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [numDays, setNumDays] = useState(() => {
     const saved = localStorage.getItem(NUMDAYS_STORAGE_KEY);
     return saved ? parseInt(saved, 10) || 5 : 5;
   });
   const [numDaysInput, setNumDaysInput] = useState(String(numDays));
-  const [draftOrders, setDraftOrders] = useState<Order[]>(orders);
+  const [draftOrders, setDraftOrders] = useState<Order[]>(activeOrders);
   // Pn per step: position dans le planning propre à chaque opérateur (persisté en DB)
   const [planningOrderMap, setPlanningOrderMap] = useState<Record<string, number>>({});
 
