@@ -572,7 +572,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Si l'heure de début et l'heure de fin sont renseignées, la durée réelle est recalculée automatiquement (fin − début − pause).
+                إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)
               </p>
             </div>
           )}
