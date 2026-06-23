@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
+import { useAuth } from '@/context/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download, Pencil, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
@@ -11,6 +14,8 @@ import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
 import DesignationCell from '@/components/DesignationCell';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
@@ -34,8 +39,78 @@ const fmtHM = (minutes?: number | null) => {
 };
 
 const ProductionRegisterPage: React.FC = () => {
-  const { productionRecords, operators, operations, orders, clients } = usePlanning();
+  const { productionRecords, operators, operations, orders, clients, updateProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
+  const { isAdmin } = useAuth();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+
+  const [editRecord, setEditRecord] = useState<{
+    id: string;
+    workDate: string;
+    startTime: string;
+    endTime: string;
+    pauseHHMM: string;
+    actualDuration: string;
+  } | null>(null);
+
+  const parseHHMM = (s: string): number | null => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  };
+
+  const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
+    const dt = recordDisplayDate(rec);
+    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const hh = Math.floor(rec.actualDuration / 60);
+    const mm = rec.actualDuration % 60;
+    const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
+    const pM = (rec.pauseMinutes ?? 0) % 60;
+    setEditRecord({
+      id: rec.id,
+      workDate: dateStr,
+      startTime: rec.startTime ?? '',
+      endTime: rec.endTime ?? '',
+      pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
+      actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
+    });
+  }, []);
+
+  // Recalcule actual_duration côté UI dès que start/end/pause changent (fin − début − pause).
+  const editComputedDuration = useMemo(() => {
+    if (!editRecord) return null;
+    const s = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
+    const e = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
+    const p = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    if (s !== null && e !== null && e > s) {
+      const dur = Math.max(0, e - s - p);
+      return `${String(Math.floor(dur / 60)).padStart(2, '0')}:${String(dur % 60).padStart(2, '0')}`;
+    }
+    return null;
+  }, [editRecord]);
+
+  const saveEdit = useCallback(() => {
+    if (!editRecord) return;
+    const rec = productionRecords.find(r => r.id === editRecord.id);
+    if (!rec) return;
+    let dur = parseHHMM(editRecord.actualDuration) ?? 0;
+    const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
+    const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
+    const pauseMin = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    if (startMin !== null && endMin !== null && endMin > startMin) {
+      dur = Math.max(0, endMin - startMin - pauseMin);
+    }
+    if (dur <= 0) return;
+    updateProductionRecord({
+      ...rec,
+      workDate: editRecord.workDate,
+      startTime: editRecord.startTime || undefined,
+      endTime: editRecord.endTime || undefined,
+      pauseMinutes: pauseMin || undefined,
+      actualDuration: dur,
+    });
+    setEditRecord(null);
+  }, [editRecord, productionRecords, updateProductionRecord]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const getOrder = (id: string) => orders.find(o => o.id === id);
@@ -386,7 +461,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       المدة الفعلية <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  
+                  {isAdmin && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -406,6 +481,31 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(rec)} title="Modifier">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => confirm(
+                                'Supprimer cet enregistrement ?',
+                                () => deleteProductionRecord(rec.id),
+                                {
+                                  description: "Cette suppression peut désynchroniser le statut de la commande si elle a déjà été transférée en contrôle qualité ou livraison. Continuer ?",
+                                  variant: 'destructive',
+                                }
+                              )}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -415,6 +515,82 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         </>
       )}
 
+      {/* Edit Dialog (admin only) */}
+      <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Modifier l'enregistrement</DialogTitle>
+          </DialogHeader>
+          {editRecord && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">تاريخ الأشغال</label>
+                <Input
+                  type="date"
+                  value={editRecord.workDate}
+                  onChange={e => setEditRecord({ ...editRecord, workDate: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ساعة البداية</label>
+                  <Input
+                    type="time"
+                    value={editRecord.startTime}
+                    onChange={e => setEditRecord({ ...editRecord, startTime: e.target.value })}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ساعة النهاية</label>
+                  <Input
+                    type="time"
+                    value={editRecord.endTime}
+                    onChange={e => setEditRecord({ ...editRecord, endTime: e.target.value })}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">الوقت المستقطع (HH:mm)</label>
+                  <Input
+                    value={editRecord.pauseHHMM}
+                    onChange={e => setEditRecord({ ...editRecord, pauseHHMM: e.target.value })}
+                    placeholder="00:30"
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">المدة الفعلية (hh:mm)</label>
+                  <Input
+                    value={editComputedDuration ?? editRecord.actualDuration}
+                    onChange={e => setEditRecord({ ...editRecord, actualDuration: e.target.value })}
+                    placeholder="1:30"
+                    className="h-8 text-xs font-mono"
+                    readOnly={editComputedDuration !== null}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Si l'heure de début et l'heure de fin sont renseignées, la durée réelle est recalculée automatiquement (fin − début − pause).
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>إلغاء</Button>
+            <Button size="sm" onClick={saveEdit}>حفظ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };
