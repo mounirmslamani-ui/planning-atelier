@@ -41,7 +41,10 @@ const fmtHM = (minutes?: number | null) => {
 const ProductionRegisterPage: React.FC = () => {
   const { productionRecords, operators, operations, orders, clients, updateProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasAccess } = useAuth();
+  const canEditRecord = isAdmin || hasAccess({ tableau: 'سجل الأعمال المنجزة', formulaire: '', sous_formulaire: '', champ_bouton: 'تعديل التسجيل' }) === 'RW';
+  const canDeleteRecord = isAdmin || hasAccess({ tableau: 'سجل الأعمال المنجزة', formulaire: '', sous_formulaire: '', champ_bouton: 'حذف التسجيل' }) === 'RW';
+  const showActionsCol = canEditRecord || canDeleteRecord;
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
   const [editRecord, setEditRecord] = useState<{
@@ -461,7 +464,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       المدة الفعلية <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  {isAdmin && <TableHead className="w-20 text-center">Actions</TableHead>}
+                  {showActionsCol && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -481,28 +484,32 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
-                      {isAdmin && (
+                      {showActionsCol && (
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(rec)} title="Modifier">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => confirm(
-                                'Supprimer cet enregistrement ?',
-                                () => deleteProductionRecord(rec.id),
-                                {
-                                  description: "Cette suppression peut désynchroniser le statut de la commande si elle a déjà été transférée en contrôle qualité ou livraison. Continuer ?",
-                                  variant: 'destructive',
-                                }
-                              )}
-                              title="Supprimer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                            </Button>
+                            {canEditRecord && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(rec)} title="Modifier">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            {canDeleteRecord && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => confirm(
+                                  'Supprimer cet enregistrement ?',
+                                  () => deleteProductionRecord(rec.id),
+                                  {
+                                    description: "Cette suppression peut désynchroniser le statut de la commande si elle a déjà été transférée en contrôle qualité ou livraison. Continuer ?",
+                                    variant: 'destructive',
+                                  }
+                                )}
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
