@@ -507,40 +507,91 @@ export function mapCancelledOrderToDB(c: CancelledOrder) {
   };
 }
 
+/**
+ * Fetch all rows from a Supabase SELECT, bypassing the PostgREST max-rows server cap (default 1000).
+ * The caller provides a `builder` factory that returns a fresh query builder (already configured
+ * with `.select(...).order(...).eq(...)` etc., but WITHOUT `.range()`/`.limit()`). This helper
+ * then iterates with `.range(from, from+pageSize-1)` until a short page is returned.
+ *
+ * Safety cap at 100 000 rows to prevent runaway loops on misconfigured callers.
+ */
+async function fetchAllPaginated<T = any>(
+  label: string,
+  builder: () => any,
+  pageSize: number = 1000,
+): Promise<T[]> {
+  const all: T[] = [];
+  const HARD_CAP = 100_000;
+  let from = 0;
+  while (from < HARD_CAP) {
+    const to = from + pageSize - 1;
+    const { data, error } = await builder().range(from, to);
+    if (error) {
+      console.error(`[fetchAllPaginated] ${label} failed at range ${from}-${to}:`, error);
+      throw error;
+    }
+    const page = (data || []) as T[];
+    all.push(...page);
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 export async function fetchAllData() {
   // Fetch everything in parallel. The `orders` array is returned raw — pages that need
   // to exclude delivered/cancelled orders apply their own local filter (cf. PlanningTableauPage
   // `activeOrders` memo). This keeps delivered/cancelled orders available for lookup
   // (delivered orders register, production records history, F176/26-style references…).
+  //
+  // IMPORTANT: tables that may exceed 1000 rows are fetched with `fetchAllPaginated` to
+  // bypass the PostgREST max-rows server cap (default 1000). A bare `.range(0, 9999)` does
+  // NOT bypass that cap — it silently truncates. Cf. bug F173/26 (26/06/2026).
   const [
     { data: equipments },
     { data: operators },
     { data: subcontractors },
     { data: operations },
     { data: clients },
-    { data: orders },
-    { data: steps },
+    orders,
+    steps,
     { data: holidays },
-    { data: records },
-    { data: qcEntries },
+    records,
+    qcEntries,
     { data: deliveryEntries },
-    { data: deliveredOrders },
-    { data: cancelledOrders },
+    deliveredOrders,
+    cancelledOrders,
   ] = await Promise.all([
     supabase.from('equipments').select('*'),
     supabase.from('operators').select('*'),
     supabase.from('subcontractors').select('*'),
     supabase.from('operations').select('*'),
     supabase.from('clients').select('*'),
-    supabase.from('orders').select('*').order('created_at', { ascending: false }).range(0, 9999),
-    supabase.from('production_steps').select('*').order('order_id', { ascending: true }).order('step_order', { ascending: true }).order('created_at', { ascending: true }).range(0, 9999),
+    fetchAllPaginated<any>('orders', () =>
+      supabase.from('orders').select('*').order('created_at', { ascending: false })
+    ),
+    fetchAllPaginated<any>('production_steps', () =>
+      supabase.from('production_steps').select('*')
+        .order('order_id', { ascending: true })
+        .order('step_order', { ascending: true })
+        .order('created_at', { ascending: true })
+    ),
     supabase.from('holidays').select('*'),
-    supabase.from('production_records').select('*').order('created_at', { ascending: false }).range(0, 9999),
-    supabase.from('quality_control_entries').select('*').order('created_at', { ascending: false }).range(0, 9999),
+    fetchAllPaginated<any>('production_records', () =>
+      supabase.from('production_records').select('*').order('created_at', { ascending: false })
+    ),
+    fetchAllPaginated<any>('quality_control_entries', () =>
+      supabase.from('quality_control_entries').select('*').order('created_at', { ascending: false })
+    ),
     supabase.from('delivery_entries').select('*').order('created_at', { ascending: false }).range(0, 9999),
-    (supabase.from as any)('delivered_orders').select('*').range(0, 49999),
-    (supabase.from as any)('cancelled_orders').select('*').range(0, 49999),
+    fetchAllPaginated<any>('delivered_orders', () =>
+      (supabase.from as any)('delivered_orders').select('*')
+    ),
+    fetchAllPaginated<any>('cancelled_orders', () =>
+      (supabase.from as any)('cancelled_orders').select('*')
+    ),
   ]);
+
 
   return {
     equipments: (equipments || []).map(mapEquipmentFromDB),
