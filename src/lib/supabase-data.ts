@@ -508,6 +508,25 @@ export function mapCancelledOrderToDB(c: CancelledOrder) {
 }
 
 export async function fetchAllData() {
+  // Step 1: fetch archives first to identify inactive orders.
+  // These tables are exclusion sets only — never injected as records; we just need their order_ids.
+  // .range(0, 49999) protects against future growth well beyond the PostgREST default 1000-row cap.
+  const [
+    { data: deliveredOrders },
+    { data: cancelledOrders },
+  ] = await Promise.all([
+    (supabase.from as any)('delivered_orders').select('*').range(0, 49999),
+    (supabase.from as any)('cancelled_orders').select('*').range(0, 49999),
+  ]);
+
+  const deliveredIds = new Set((deliveredOrders || []).map((d: any) => d.order_id));
+  const cancelledIds = new Set((cancelledOrders || []).map((c: any) => c.order_id));
+
+  // Step 2: fetch the rest in parallel.
+  // - orders: full fetch, filtered client-side to active scope (~282 rows today).
+  // - production_records / production_steps / quality_control_entries / delivery_entries:
+  //   .range(0, 9999) safety buffer + explicit order. To be scoped to active orders only
+  //   in a follow-up, once ProductionRegisterPage is decoupled from the global context.
   const [
     { data: equipments },
     { data: operators },
@@ -520,23 +539,22 @@ export async function fetchAllData() {
     { data: records },
     { data: qcEntries },
     { data: deliveryEntries },
-    { data: deliveredOrders },
-    { data: cancelledOrders },
   ] = await Promise.all([
     supabase.from('equipments').select('*'),
     supabase.from('operators').select('*'),
     supabase.from('subcontractors').select('*'),
     supabase.from('operations').select('*'),
     supabase.from('clients').select('*'),
-    supabase.from('orders').select('*'),
-    supabase.from('production_steps').select('*').order('order_id', { ascending: true }).order('step_order', { ascending: true }).order('created_at', { ascending: true }),
+    supabase.from('orders').select('*').order('created_at', { ascending: false }).range(0, 9999),
+    supabase.from('production_steps').select('*').order('order_id', { ascending: true }).order('step_order', { ascending: true }).order('created_at', { ascending: true }).range(0, 9999),
     supabase.from('holidays').select('*'),
-    supabase.from('production_records').select('*'),
-    supabase.from('quality_control_entries').select('*'),
-    supabase.from('delivery_entries').select('*'),
-    (supabase.from as any)('delivered_orders').select('*'),
-    (supabase.from as any)('cancelled_orders').select('*'),
+    supabase.from('production_records').select('*').order('created_at', { ascending: false }).range(0, 9999),
+    supabase.from('quality_control_entries').select('*').order('created_at', { ascending: false }).range(0, 9999),
+    supabase.from('delivery_entries').select('*').order('created_at', { ascending: false }).range(0, 9999),
   ]);
+
+  // Filter orders to active scope (not delivered, not cancelled).
+  const activeOrders = (orders || []).filter((o: any) => !deliveredIds.has(o.id) && !cancelledIds.has(o.id));
 
   return {
     equipments: (equipments || []).map(mapEquipmentFromDB),
@@ -544,7 +562,7 @@ export async function fetchAllData() {
     subcontractors: (subcontractors || []).map(mapSubcontractorFromDB),
     operations: (operations || []).map(mapOperationFromDB),
     clients: (clients || []).map(mapClientFromDB),
-    orders: (orders || []).map(mapOrderFromDB),
+    orders: activeOrders.map(mapOrderFromDB),
     steps: (steps || []).map(mapStepFromDB).sort((a, b) => {
       if (a.orderId !== b.orderId) return a.orderId < b.orderId ? -1 : 1;
       if ((a.order ?? 0) !== (b.order ?? 0)) return (a.order ?? 0) - (b.order ?? 0);
@@ -558,6 +576,7 @@ export async function fetchAllData() {
     cancelledOrders: (cancelledOrders || []).map(mapCancelledOrderFromDB),
   };
 }
+
 
 // ───────────────────── DB CRUD (fire-and-forget) ─────────────────────
 
