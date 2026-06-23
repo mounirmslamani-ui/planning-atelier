@@ -461,7 +461,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       المدة الفعلية <SortIcon field="duration" />
                     </button>
                   </TableHead>
-                  
+                  {isAdmin && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -481,6 +481,31 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
                       <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDialog(rec)} title="Modifier">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => confirm(
+                                'Supprimer cet enregistrement ?',
+                                () => deleteProductionRecord(rec.id),
+                                {
+                                  description: "Cette suppression peut désynchroniser le statut de la commande si elle a déjà été transférée en contrôle qualité ou livraison. Continuer ?",
+                                  variant: 'destructive',
+                                }
+                              )}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -490,6 +515,82 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         </>
       )}
 
+      {/* Edit Dialog (admin only) */}
+      <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Modifier l'enregistrement</DialogTitle>
+          </DialogHeader>
+          {editRecord && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">تاريخ الأشغال</label>
+                <Input
+                  type="date"
+                  value={editRecord.workDate}
+                  onChange={e => setEditRecord({ ...editRecord, workDate: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ساعة البداية</label>
+                  <Input
+                    type="time"
+                    value={editRecord.startTime}
+                    onChange={e => setEditRecord({ ...editRecord, startTime: e.target.value })}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">ساعة النهاية</label>
+                  <Input
+                    type="time"
+                    value={editRecord.endTime}
+                    onChange={e => setEditRecord({ ...editRecord, endTime: e.target.value })}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">الوقت المستقطع (HH:mm)</label>
+                  <Input
+                    value={editRecord.pauseHHMM}
+                    onChange={e => setEditRecord({ ...editRecord, pauseHHMM: e.target.value })}
+                    placeholder="00:30"
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">المدة الفعلية (hh:mm)</label>
+                  <Input
+                    value={editComputedDuration ?? editRecord.actualDuration}
+                    onChange={e => setEditRecord({ ...editRecord, actualDuration: e.target.value })}
+                    placeholder="1:30"
+                    className="h-8 text-xs font-mono"
+                    readOnly={editComputedDuration !== null}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Si l'heure de début et l'heure de fin sont renseignées, la durée réelle est recalculée automatiquement (fin − début − pause).
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>إلغاء</Button>
+            <Button size="sm" onClick={saveEdit}>حفظ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        variant={confirmState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };
