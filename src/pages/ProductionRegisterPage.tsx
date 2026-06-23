@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { usePlanning } from '@/context/PlanningContext';
+import { useAuth } from '@/context/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download, Pencil, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
@@ -11,6 +14,8 @@ import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
 import DesignationCell from '@/components/DesignationCell';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 
 type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
 type SortDir = 'asc' | 'desc';
