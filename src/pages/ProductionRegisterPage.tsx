@@ -519,7 +519,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
       <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm">Modifier l'enregistrement</DialogTitle>
+            <DialogTitle className="text-sm">تعديل التسجيل</DialogTitle>
           </DialogHeader>
           {editRecord && (
             <div className="space-y-3">
@@ -536,7 +536,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">ساعة البداية</label>
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
+                    maxLength={5}
+                    placeholder="HH:MM"
                     value={editRecord.startTime}
                     onChange={e => setEditRecord({ ...editRecord, startTime: e.target.value })}
                     className="h-8 text-xs font-mono"
@@ -545,7 +549,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">ساعة النهاية</label>
                   <Input
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
+                    maxLength={5}
+                    placeholder="HH:MM"
                     value={editRecord.endTime}
                     onChange={e => setEditRecord({ ...editRecord, endTime: e.target.value })}
                     className="h-8 text-xs font-mono"
@@ -572,7 +580,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Si l'heure de début et l'heure de fin sont renseignées, la durée réelle est recalculée automatiquement (fin − début − pause).
+                إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)
               </p>
             </div>
           )}
