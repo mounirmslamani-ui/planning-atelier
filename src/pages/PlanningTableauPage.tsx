@@ -364,7 +364,7 @@ const PlanningTableauPage: React.FC = () => {
   const setOrderDirty = (_: boolean) => {};
 
   const history = useHistoryStack<PlanningDraftSnapshot>({
-    initialPresent: createPlanningSnapshot(appendUnorderedStepsAtEnd(steps), orders, {}, false),
+    initialPresent: createPlanningSnapshot(appendUnorderedStepsAtEnd(steps), activeOrders, {}, false),
     limit: PLANNING_HISTORY_LIMIT,
     isEqual: areSnapshotsEqual,
   });
