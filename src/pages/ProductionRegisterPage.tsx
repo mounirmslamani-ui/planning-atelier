@@ -39,8 +39,78 @@ const fmtHM = (minutes?: number | null) => {
 };
 
 const ProductionRegisterPage: React.FC = () => {
-  const { productionRecords, operators, operations, orders, clients } = usePlanning();
+  const { productionRecords, operators, operations, orders, clients, updateProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
+  const { isAdmin } = useAuth();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
+
+  const [editRecord, setEditRecord] = useState<{
+    id: string;
+    workDate: string;
+    startTime: string;
+    endTime: string;
+    pauseHHMM: string;
+    actualDuration: string;
+  } | null>(null);
+
+  const parseHHMM = (s: string): number | null => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+  };
+
+  const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
+    const dt = recordDisplayDate(rec);
+    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const hh = Math.floor(rec.actualDuration / 60);
+    const mm = rec.actualDuration % 60;
+    const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
+    const pM = (rec.pauseMinutes ?? 0) % 60;
+    setEditRecord({
+      id: rec.id,
+      workDate: dateStr,
+      startTime: rec.startTime ?? '',
+      endTime: rec.endTime ?? '',
+      pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
+      actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
+    });
+  }, []);
+
+  // Recalcule actual_duration côté UI dès que start/end/pause changent (fin − début − pause).
+  const editComputedDuration = useMemo(() => {
+    if (!editRecord) return null;
+    const s = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
+    const e = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
+    const p = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    if (s !== null && e !== null && e > s) {
+      const dur = Math.max(0, e - s - p);
+      return `${String(Math.floor(dur / 60)).padStart(2, '0')}:${String(dur % 60).padStart(2, '0')}`;
+    }
+    return null;
+  }, [editRecord]);
+
+  const saveEdit = useCallback(() => {
+    if (!editRecord) return;
+    const rec = productionRecords.find(r => r.id === editRecord.id);
+    if (!rec) return;
+    let dur = parseHHMM(editRecord.actualDuration) ?? 0;
+    const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
+    const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
+    const pauseMin = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    if (startMin !== null && endMin !== null && endMin > startMin) {
+      dur = Math.max(0, endMin - startMin - pauseMin);
+    }
+    if (dur <= 0) return;
+    updateProductionRecord({
+      ...rec,
+      workDate: editRecord.workDate,
+      startTime: editRecord.startTime || undefined,
+      endTime: editRecord.endTime || undefined,
+      pauseMinutes: pauseMin || undefined,
+      actualDuration: dur,
+    });
+    setEditRecord(null);
+  }, [editRecord, productionRecords, updateProductionRecord]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const getOrder = (id: string) => orders.find(o => o.id === id);
