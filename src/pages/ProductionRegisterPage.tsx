@@ -519,7 +519,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
       <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm">Modifier l'enregistrement</DialogTitle>
+            <DialogTitle className="text-sm">تعديل التسجيل</DialogTitle>
           </DialogHeader>
           {editRecord && (
             <div className="space-y-3">
