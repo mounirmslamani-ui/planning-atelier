@@ -508,6 +508,31 @@ export function mapCancelledOrderToDB(c: CancelledOrder) {
 }
 
 /**
+ * ⚠️ RÈGLE PROJET PERMANENTE — PAGINATION SUPABASE OBLIGATOIRE ⚠️
+ *
+ * Toute requête `supabase.from(...).select(...)` sur une table qui peut atteindre, dépasser
+ * ou approcher 1000 lignes DOIT passer par `fetchAllPaginated`. Ne jamais utiliser `.range()`
+ * seul, `.limit(n)` arbitraire, ni une requête sans pagination explicite : PostgREST applique
+ * un plafond serveur (`max-rows`, défaut 1000) qui tronque silencieusement le résultat et
+ * fait disparaître les lignes les plus anciennes/récentes selon le `.order()`.
+ *
+ * Tables actuellement concernées en priorité (volumes au 24/06/2026) :
+ *   - production_records       (1026 — dépassée)
+ *   - orders                   (1013 — dépassée)
+ *   - quality_control_entries  (967  — critique)
+ *   - production_steps         (956  — critique)
+ *   - delivered_orders         (714  — sous surveillance)
+ *   - clients                  (127  — surveillance long terme)
+ *
+ * Tables actuellement à faible volume (operators, equipments, subcontractors, holidays,
+ * operations, profiles, rights_catalog, user_rights, audit_log, delivery_entries) :
+ * la règle reste valable dès que leur volume approche 1000 lignes.
+ *
+ * Cette règle s'applique à tout nouveau code dans `supabase-data.ts` ET dans les pages
+ * (cf. PlanningTableauPage qui charge `production_steps` directement).
+ *
+ * ────────────────────────────────────────────────────────────────────────────────────────
+ *
  * Fetch all rows from a Supabase SELECT, bypassing the PostgREST max-rows server cap (default 1000).
  * The caller provides a `builder` factory that returns a fresh query builder (already configured
  * with `.select(...).order(...).eq(...)` etc., but WITHOUT `.range()`/`.limit()`). This helper
