@@ -498,10 +498,10 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                                 size="icon"
                                 className="h-7 w-7"
                                 onClick={() => confirm(
-                                  'Supprimer cet enregistrement ?',
+                                  `هل تؤكد حذف هذا الإنجاز (الطلبية ${info.orderNumber} — المرحلة ${info.operationName}) ؟`,
                                   () => deleteProductionRecord(rec.id),
                                   {
-                                    description: "Cette suppression peut désynchroniser le statut de la commande si elle a déjà été transférée en contrôle qualité ou livraison. Continuer ?",
+                                    description: 'قد يؤدي حذف هذا الإنجاز إلى عدم تطابق بين سجل الإنتاج والتخطيط. تأكد قبل المتابعة.',
                                     variant: 'destructive',
                                   }
                                 )}

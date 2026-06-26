@@ -172,7 +172,7 @@ const SubcontractorsPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer ce sous-traitant ?', () => deleteSubcontractor(s.id))}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm(`هل تؤكد حذف المناول "${s.companyName}" ؟`, () => deleteSubcontractor(s.id))}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>

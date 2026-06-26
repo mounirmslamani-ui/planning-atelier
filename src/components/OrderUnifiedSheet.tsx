@@ -609,9 +609,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                         variant="destructive"
                         onClick={() =>
                           confirm(
-                            'هل أنت متأكد من محو هذه الطلبية نهائياً؟',
+                            `هل تؤكد حذف الطلبية ${order.orderNumber} ؟`,
                             () => { deleteOrder(order.id); onOpenChange(false); },
-                            { variant: 'destructive' }
+                            {
+                              description: 'سيتم حذف الطلبية وجميع مراحلها وسجلات إنتاجها نهائياً. هذا الإجراء لا يمكن التراجع عنه.',
+                              variant: 'destructive',
+                            }
                           )
                         }
                       >

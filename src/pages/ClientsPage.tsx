@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useConfirm } from '@/hooks/use-confirm';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +27,7 @@ const CLIENT_CLASSES: { value: ClientClass; label: string; description: string; 
 
 const ClientsPage: React.FC = () => {
   const { clients, addClient, updateClient, deleteClient } = usePlanning();
+  const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [scoreDialogOpen, setScoreDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
@@ -139,7 +142,11 @@ const ClientsPage: React.FC = () => {
                       <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteClient(c.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => confirm(
+                        `هل تؤكد حذف الزبون "${c.name}" ؟`,
+                        () => deleteClient(c.id),
+                        { description: 'سيتم حذف جميع البيانات المرتبطة بهذا الزبون نهائياً.', variant: 'destructive' }
+                      )}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
                       </Button>
                     </div>
@@ -202,6 +209,14 @@ const ClientsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        variant={confirmState.variant}
+      />
     </div>
   );
 };
