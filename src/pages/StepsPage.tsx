@@ -136,7 +136,7 @@ const StepsPage: React.FC = () => {
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer cette étape ?', () => deleteStep(s.id))}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => confirm(`هل تؤكد حذف المرحلة "${getOperationName(s.operationId)}" ؟`, () => deleteStep(s.id))}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
