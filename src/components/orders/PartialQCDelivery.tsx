@@ -536,7 +536,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                       <Button
                         size="icon" variant="ghost"
                         className="h-7 w-7 text-destructive"
-                        onClick={() => askDelete('جلسة التسليم', () => { deleteDeliveredOrder(d.id); toast.success('تم الحذف'); })}
+                        onClick={() => confirm(`هل تؤكد حذف جلسة التسليم بتاريخ ${formatDateFR(d.deliveryDate)} (الكمية: ${d.deliveredQty ?? qty}) ؟`, () => { deleteDeliveredOrder(d.id); toast.success('تم الحذف'); }, { variant: 'destructive' })}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
