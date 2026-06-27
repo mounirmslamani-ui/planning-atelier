@@ -83,7 +83,7 @@ const HolidaysPage: React.FC = () => {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(h)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => confirm('Êtes-vous sûr de vouloir supprimer ce jour férié ?', () => deleteHoliday(h.id))}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm(`هل تؤكد حذف العطلة "${h.name}" بتاريخ ${formatDateFR(h.date)} ؟`, () => deleteHoliday(h.id))}>
                       <Trash2 className="w-3.5 h-3.5 text-destructive" />
                     </Button>
                   </div>
