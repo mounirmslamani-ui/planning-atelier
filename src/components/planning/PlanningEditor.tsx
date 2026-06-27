@@ -680,7 +680,10 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                         className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded"
                         onClick={() => {
                           const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
-                          e.setRemovePrompt({ rowId: row.id, label: `#${row.order} — ${opName}` });
+                          const operatorName = row.assignType === 'subcontractor'
+                            ? (e.subcontractors.find(s => s.id === row.option1)?.companyName || '—')
+                            : (e.operators.find(o => o.id === row.option1)?.name || '—');
+                          e.setRemovePrompt({ rowId: row.id, label: `المرحلة #${row.order} — ${opName} (العامل: ${operatorName})` });
                         }}
                         disabled={e.isLocked}
                       >
