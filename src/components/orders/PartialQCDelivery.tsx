@@ -354,7 +354,12 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                       <Button
                         size="icon" variant="ghost"
                         className="h-7 w-7 text-destructive"
-                        onClick={() => askDelete(pendingRow ? 'اللوت في انتظار المراقبة' : 'جلسة المراقبة', () => { deleteQCEntry(q.id); toast.success('تم الحذف'); })}
+                        onClick={() => {
+                          const title = pendingRow
+                            ? `هل تؤكد حذف اللوت في انتظار المراقبة بتاريخ ${formatDateFR(q.controlDate)} (الكمية: ${pendingMax}) ؟`
+                            : `هل تؤكد حذف جلسة المراقبة بتاريخ ${formatDateFR(q.controlDate)} (المراقَب: ${q.controlledQty ?? qty}) ؟`;
+                          confirm(title, () => { deleteQCEntry(q.id); toast.success('تم الحذف'); }, { variant: 'destructive' });
+                        }}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
