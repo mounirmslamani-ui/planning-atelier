@@ -43,7 +43,39 @@ const ContactDetailsPopover: React.FC<Props> = ({ companyName, phones, addresses
           <div className="font-semibold text-sm border-b pb-1.5">{companyName}</div>
           <Section icon={<Phone className="w-3 h-3" />} title="الهواتف" items={phones} />
           <Section icon={<Mail className="w-3 h-3" />} title="البريد الإلكتروني" items={emails} />
-          <Section icon={<MapPin className="w-3 h-3" />} title="العناوين" items={addresses} />
+          {addrList.length > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <MapPin className="w-3 h-3" /><span>العناوين</span>
+              </div>
+              <ul className="text-xs space-y-1.5 pr-4">
+                {addrList.map((it, i) => {
+                  const d = (addressDetails || [])[i] || {};
+                  return (
+                    <li key={i} className="space-y-0.5">
+                      <div>• {it}</div>
+                      {(d.nature || d.gps) && (
+                        <div className="pr-3 space-y-0.5 text-[11px] text-muted-foreground">
+                          {d.nature && <div>طبيعة العنوان : <span className="text-foreground">{d.nature}</span></div>}
+                          {d.gps && (
+                            <div className="flex items-center gap-1">
+                              <Navigation className="w-3 h-3" />
+                              <span>موقع GPS : </span>
+                              {isUrl(d.gps) ? (
+                                <a href={d.gps} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all" dir="ltr">{d.gps}</a>
+                              ) : (
+                                <span className="text-foreground break-all" dir="ltr">{d.gps}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
           {reps.length > 0 && (
             <div className="space-y-2 pt-2 border-t">
               <div className="text-xs font-semibold text-muted-foreground">الممثلون</div>
