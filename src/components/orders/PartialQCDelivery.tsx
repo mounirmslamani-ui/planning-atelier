@@ -45,7 +45,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
 
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const { hasAccess } = useAuth();
-  const canSaveQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
+  const canSaveQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراقبة الجودة والتسليم', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
   const canForceCloseQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال مراقبة الجودة يدوياً' }) === 'RW';
   const canAddDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'التسليم' }) === 'RW';
   const canForceCloseDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال التسليم يدوياً' }) === 'RW';
