@@ -9,9 +9,10 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, Star, Download } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { Client, ClientClass, Representative } from '@/types/planning';
+import type { Client, ClientClass, Representative, AddressDetail } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
 import StringListEditor from '@/components/StringListEditor';
+import AddressesEditor from '@/components/AddressesEditor';
 import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
@@ -36,18 +37,21 @@ const ClientsPage: React.FC = () => {
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [phones, setPhones] = useState<string[]>([]);
   const [addresses, setAddresses] = useState<string[]>([]);
+  const [addressDetails, setAddressDetails] = useState<AddressDetail[]>([]);
   const [emails, setEmails] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClientClass | ''>('');
 
   const openNew = () => {
     setEditing(null); setName(''); setRepresentatives([]);
-    setPhones([]); setAddresses([]); setEmails([]);
+    setPhones([]); setAddresses([]); setAddressDetails([]); setEmails([]);
     setDialogOpen(true);
   };
   const openEdit = (c: Client) => {
     setEditing(c); setName(c.name);
     setRepresentatives(c.representatives || []);
-    setPhones(c.phones || []); setAddresses(c.addresses || []); setEmails(c.emails || []);
+    setPhones(c.phones || []); setAddresses(c.addresses || []);
+    setAddressDetails(c.addressDetails || []);
+    setEmails(c.emails || []);
     setDialogOpen(true);
   };
   const openScore = (c: Client) => { setScoringClient(c); setSelectedClass(c.clientClass || ''); setScoreDialogOpen(true); };
@@ -55,11 +59,26 @@ const ClientsPage: React.FC = () => {
   const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 
   const handleSave = () => {
+    // Keep addressDetails aligned by index with kept addresses
+    const keptIdx: number[] = [];
+    const cleanedAddresses: string[] = [];
+    (addresses || []).forEach((a, i) => {
+      const t = a.trim();
+      if (t) { cleanedAddresses.push(t); keptIdx.push(i); }
+    });
+    const cleanedDetails: AddressDetail[] = keptIdx.map(i => {
+      const d = addressDetails[i] || {};
+      return {
+        nature: d.nature || undefined,
+        gps: d.gps?.trim() || undefined,
+      };
+    });
     const payload = {
       name,
       representatives,
       phones: cleanArr(phones),
-      addresses: cleanArr(addresses),
+      addresses: cleanedAddresses,
+      addressDetails: cleanedDetails,
       emails: cleanArr(emails),
     };
     if (editing) updateClient({ ...editing, ...payload });
@@ -134,6 +153,7 @@ const ClientsPage: React.FC = () => {
                         phones={c.phones}
                         emails={c.emails}
                         addresses={c.addresses}
+                        addressDetails={c.addressDetails}
                         representatives={c.representatives}
                       />
                       <Button variant="ghost" size="icon" onClick={() => openScore(c)} title="Classifier">
@@ -168,12 +188,16 @@ const ClientsPage: React.FC = () => {
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">
-              <div className="text-sm font-semibold">معلومات الاتصال (مستوى المؤسسة)</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="text-sm font-semibold">بيانات الاتصال</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <StringListEditor label="أرقام الهاتف" value={phones} onChange={setPhones} type="tel" placeholder="+213 ..." />
                 <StringListEditor label="البريد الإلكتروني" value={emails} onChange={setEmails} type="email" placeholder="contact@..." />
-                <StringListEditor label="العناوين" value={addresses} onChange={setAddresses} placeholder="العنوان الفيزيائي" />
               </div>
+              <AddressesEditor
+                addresses={addresses}
+                details={addressDetails}
+                onChange={(a, d) => { setAddresses(a); setAddressDetails(d); }}
+              />
             </div>
             <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
           </div>

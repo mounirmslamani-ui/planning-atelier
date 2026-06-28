@@ -85,6 +85,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          address_details: Json
           addresses: string[]
           client_class: Database["public"]["Enums"]["client_class"] | null
           created_at: string
@@ -96,6 +97,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address_details?: Json
           addresses?: string[]
           client_class?: Database["public"]["Enums"]["client_class"] | null
           created_at?: string
@@ -107,6 +109,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address_details?: Json
           addresses?: string[]
           client_class?: Database["public"]["Enums"]["client_class"] | null
           created_at?: string

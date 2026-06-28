@@ -149,6 +149,7 @@ export function mapClientFromDB(row: any): Client {
     representatives: Array.isArray(row.representatives) ? row.representatives : [],
     phones: row.phones || [],
     addresses: row.addresses || [],
+    addressDetails: Array.isArray(row.address_details) ? row.address_details : [],
     emails: row.emails || [],
   };
 }
@@ -161,6 +162,7 @@ export function mapClientToDB(c: Client) {
     representatives: (c.representatives || []) as any,
     phones: c.phones || [],
     addresses: c.addresses || [],
+    address_details: (c.addressDetails || []) as any,
     emails: c.emails || [],
   };
 }
