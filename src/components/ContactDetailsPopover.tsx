@@ -1,13 +1,14 @@
 import React from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Eye, Phone, Mail, MapPin, User } from 'lucide-react';
-import type { Representative } from '@/types/planning';
+import { Eye, Phone, Mail, MapPin, User, Navigation } from 'lucide-react';
+import type { Representative, AddressDetail } from '@/types/planning';
 
 interface Props {
   companyName: string;
   phones?: string[];
   addresses?: string[];
+  addressDetails?: AddressDetail[];
   emails?: string[];
   representatives?: Representative[];
 }
@@ -26,8 +27,10 @@ const Section: React.FC<{ icon: React.ReactNode; title: string; items?: string[]
   );
 };
 
-const ContactDetailsPopover: React.FC<Props> = ({ companyName, phones, addresses, emails, representatives }) => {
+const ContactDetailsPopover: React.FC<Props> = ({ companyName, phones, addresses, addressDetails, emails, representatives }) => {
   const reps = representatives || [];
+  const addrList = (addresses || []).filter(Boolean);
+  const isUrl = (s: string) => /^https?:\/\//i.test(s.trim());
   return (
     <Popover>
       <PopoverTrigger asChild>
