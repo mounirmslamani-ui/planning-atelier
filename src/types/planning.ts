@@ -55,6 +55,13 @@ export interface Operation {
 
 export type ClientClass = 'A' | 'B' | 'C' | 'D' | 'E';
 
+export type AddressNature = 'مصنع' | 'ملحقة' | 'ورشة' | 'إدارة' | 'مخزن';
+
+export interface AddressDetail {
+  nature?: AddressNature | '';
+  gps?: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -62,6 +69,7 @@ export interface Client {
   representatives?: Representative[];
   phones?: string[];
   addresses?: string[];
+  addressDetails?: AddressDetail[];
   emails?: string[];
 }
 
