@@ -153,6 +153,7 @@ const ClientsPage: React.FC = () => {
                         phones={c.phones}
                         emails={c.emails}
                         addresses={c.addresses}
+                        addressDetails={c.addressDetails}
                         representatives={c.representatives}
                       />
                       <Button variant="ghost" size="icon" onClick={() => openScore(c)} title="Classifier">
