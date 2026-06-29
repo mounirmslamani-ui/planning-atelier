@@ -34,6 +34,7 @@ const ClientsPage: React.FC = () => {
   const [editing, setEditing] = useState<Client | null>(null);
   const [scoringClient, setScoringClient] = useState<Client | null>(null);
   const [name, setName] = useState('');
+  const [activity, setActivity] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [phones, setPhones] = useState<string[]>([]);
   const [addresses, setAddresses] = useState<string[]>([]);
@@ -42,12 +43,13 @@ const ClientsPage: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClientClass | ''>('');
 
   const openNew = () => {
-    setEditing(null); setName(''); setRepresentatives([]);
+    setEditing(null); setName(''); setActivity(''); setRepresentatives([]);
     setPhones([]); setAddresses([]); setAddressDetails([]); setEmails([]);
     setDialogOpen(true);
   };
   const openEdit = (c: Client) => {
     setEditing(c); setName(c.name);
+    setActivity(c.activity || '');
     setRepresentatives(c.representatives || []);
     setPhones(c.phones || []); setAddresses(c.addresses || []);
     setAddressDetails(c.addressDetails || []);
