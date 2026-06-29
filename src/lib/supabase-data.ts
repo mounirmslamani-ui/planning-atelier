@@ -142,11 +142,17 @@ export function mapOperationToDB(op: Operation) {
 // ───────────────────── Client ─────────────────────
 
 export function mapClientFromDB(row: any): Client {
+  const reps = Array.isArray(row.representatives) ? row.representatives : [];
   return {
     id: row.id,
     name: row.name,
     clientClass: row.client_class as ClientClass | undefined,
-    representatives: Array.isArray(row.representatives) ? row.representatives : [],
+    activity: row.activity || undefined,
+    representatives: reps.map((r: any) => {
+      // Strip legacy `addresses` field from representatives
+      const { addresses: _legacy, ...rest } = r || {};
+      return rest;
+    }),
     phones: row.phones || [],
     addresses: row.addresses || [],
     addressDetails: Array.isArray(row.address_details) ? row.address_details : [],
@@ -159,7 +165,11 @@ export function mapClientToDB(c: Client) {
     id: c.id,
     name: c.name,
     client_class: c.clientClass || null,
-    representatives: (c.representatives || []) as any,
+    activity: c.activity || null,
+    representatives: ((c.representatives || []) as any).map((r: any) => {
+      const { addresses: _legacy, ...rest } = r || {};
+      return rest;
+    }),
     phones: c.phones || [],
     addresses: c.addresses || [],
     address_details: (c.addressDetails || []) as any,
