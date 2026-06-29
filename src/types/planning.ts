@@ -67,6 +67,7 @@ export interface Client {
   id: string;
   name: string;
   clientClass?: ClientClass;
+  activity?: string;
   representatives?: Representative[];
   phones?: string[];
   addresses?: string[];
