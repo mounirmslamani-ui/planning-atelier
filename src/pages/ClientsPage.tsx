@@ -187,9 +187,15 @@ const ClientsPage: React.FC = () => {
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un client</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">اسم الزبون</label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">اسم الزبون</label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">النشاط</label>
+                <Input value={activity} onChange={e => setActivity(e.target.value)} placeholder="نشاط المؤسسة" />
+              </div>
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">
               <div className="text-sm font-semibold">بيانات الاتصال</div>
