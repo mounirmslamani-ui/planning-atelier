@@ -6,6 +6,7 @@ import type { Representative, AddressDetail } from '@/types/planning';
 
 interface Props {
   companyName: string;
+  activity?: string;
   phones?: string[];
   addresses?: string[];
   addressDetails?: AddressDetail[];
