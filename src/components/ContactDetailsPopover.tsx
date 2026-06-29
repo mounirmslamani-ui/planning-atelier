@@ -90,7 +90,7 @@ const ContactDetailsPopover: React.FC<Props> = ({ companyName, activity, phones,
                   </div>
                   <Section icon={<Phone className="w-3 h-3" />} title="هاتف" items={r.phones} />
                   <Section icon={<Mail className="w-3 h-3" />} title="بريد إلكتروني" items={r.emails} />
-                  <Section icon={<MapPin className="w-3 h-3" />} title="عنوان" items={r.addresses?.length ? r.addresses : addresses} />
+                  
                 </div>
               ))}
             </div>
