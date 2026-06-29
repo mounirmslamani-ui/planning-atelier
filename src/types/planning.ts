@@ -30,7 +30,8 @@ export interface Representative {
   id: string;
   name: string;
   phones: string[];
-  addresses: string[];
+  /** @deprecated removed from UI — kept optional for backward compatibility with legacy data */
+  addresses?: string[];
   emails: string[];
 }
 
