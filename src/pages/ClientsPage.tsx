@@ -77,6 +77,7 @@ const ClientsPage: React.FC = () => {
     });
     const payload = {
       name,
+      activity: activity.trim() || undefined,
       representatives,
       phones: cleanArr(phones),
       addresses: cleanedAddresses,
