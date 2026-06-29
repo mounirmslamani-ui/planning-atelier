@@ -153,6 +153,7 @@ const ClientsPage: React.FC = () => {
                     <div className="flex gap-1">
                       <ContactDetailsPopover
                         companyName={c.name}
+                        activity={c.activity}
                         phones={c.phones}
                         emails={c.emails}
                         addresses={c.addresses}
