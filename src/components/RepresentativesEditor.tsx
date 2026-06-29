@@ -13,7 +13,6 @@ const newRep = (): Representative => ({
   id: crypto.randomUUID(),
   name: '',
   phones: [],
-  addresses: [],
   emails: [],
 });
 
@@ -29,25 +28,25 @@ const RepresentativesEditor: React.FC<Props> = ({ value, onChange }) => {
     setOpenId(r.id);
   };
 
-  const addItem = (id: string, field: 'phones' | 'addresses' | 'emails') => {
+  const addItem = (id: string, field: 'phones' | 'emails') => {
     const rep = value.find(r => r.id === id);
     if (!rep) return;
-    update(id, { [field]: [...rep[field], ''] } as any);
+    update(id, { [field]: [...(rep[field] || []), ''] } as any);
   };
-  const setItem = (id: string, field: 'phones' | 'addresses' | 'emails', idx: number, v: string) => {
+  const setItem = (id: string, field: 'phones' | 'emails', idx: number, v: string) => {
     const rep = value.find(r => r.id === id);
     if (!rep) return;
-    const arr = [...rep[field]];
+    const arr = [...(rep[field] || [])];
     arr[idx] = v;
     update(id, { [field]: arr } as any);
   };
-  const removeItem = (id: string, field: 'phones' | 'addresses' | 'emails', idx: number) => {
+  const removeItem = (id: string, field: 'phones' | 'emails', idx: number) => {
     const rep = value.find(r => r.id === id);
     if (!rep) return;
-    update(id, { [field]: rep[field].filter((_, i) => i !== idx) } as any);
+    update(id, { [field]: (rep[field] || []).filter((_, i) => i !== idx) } as any);
   };
 
-  const renderList = (rep: Representative, field: 'phones' | 'addresses' | 'emails', label: string, type: string = 'text', placeholder?: string) => (
+  const renderList = (rep: Representative, field: 'phones' | 'emails', label: string, type: string = 'text', placeholder?: string) => (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
         <label className="text-xs font-medium text-muted-foreground">{label}</label>
@@ -55,8 +54,8 @@ const RepresentativesEditor: React.FC<Props> = ({ value, onChange }) => {
           <Plus className="w-3 h-3" />
         </Button>
       </div>
-      {rep[field].length === 0 && <p className="text-xs italic text-muted-foreground">—</p>}
-      {rep[field].map((v, i) => (
+      {(rep[field] || []).length === 0 && <p className="text-xs italic text-muted-foreground">—</p>}
+      {(rep[field] || []).map((v, i) => (
         <div key={i} className="flex gap-1">
           <Input
             type={type}
@@ -107,7 +106,6 @@ const RepresentativesEditor: React.FC<Props> = ({ value, onChange }) => {
               {isOpen && (
                 <div className="p-3 space-y-3">
                   {renderList(rep, 'phones', 'أرقام الهاتف', 'tel', '+213 ...')}
-                  {renderList(rep, 'addresses', 'العناوين', 'text', 'العنوان الفيزيائي')}
                   {renderList(rep, 'emails', 'البريد الإلكتروني', 'email', 'name@example.com')}
                 </div>
               )}
