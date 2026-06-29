@@ -6,6 +6,7 @@ import type { Representative, AddressDetail } from '@/types/planning';
 
 interface Props {
   companyName: string;
+  activity?: string;
   phones?: string[];
   addresses?: string[];
   addressDetails?: AddressDetail[];
@@ -27,7 +28,7 @@ const Section: React.FC<{ icon: React.ReactNode; title: string; items?: string[]
   );
 };
 
-const ContactDetailsPopover: React.FC<Props> = ({ companyName, phones, addresses, addressDetails, emails, representatives }) => {
+const ContactDetailsPopover: React.FC<Props> = ({ companyName, activity, phones, addresses, addressDetails, emails, representatives }) => {
   const reps = representatives || [];
   const addrList = (addresses || []).filter(Boolean);
   const isUrl = (s: string) => /^https?:\/\//i.test(s.trim());
@@ -40,7 +41,10 @@ const ContactDetailsPopover: React.FC<Props> = ({ companyName, phones, addresses
       </PopoverTrigger>
       <PopoverContent className="w-96 max-h-[70vh] overflow-y-auto" align="end">
         <div className="space-y-3">
-          <div className="font-semibold text-sm border-b pb-1.5">{companyName}</div>
+          <div className="border-b pb-1.5 space-y-0.5">
+            <div className="font-semibold text-sm">{companyName}</div>
+            {activity && <div className="text-xs text-muted-foreground">النشاط : <span className="text-foreground">{activity}</span></div>}
+          </div>
           <Section icon={<Phone className="w-3 h-3" />} title="الهواتف" items={phones} />
           <Section icon={<Mail className="w-3 h-3" />} title="البريد الإلكتروني" items={emails} />
           {addrList.length > 0 && (
@@ -86,7 +90,7 @@ const ContactDetailsPopover: React.FC<Props> = ({ companyName, phones, addresses
                   </div>
                   <Section icon={<Phone className="w-3 h-3" />} title="هاتف" items={r.phones} />
                   <Section icon={<Mail className="w-3 h-3" />} title="بريد إلكتروني" items={r.emails} />
-                  <Section icon={<MapPin className="w-3 h-3" />} title="عنوان" items={r.addresses?.length ? r.addresses : addresses} />
+                  
                 </div>
               ))}
             </div>

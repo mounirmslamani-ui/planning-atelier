@@ -85,6 +85,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          activity: string | null
           address_details: Json
           addresses: string[]
           client_class: Database["public"]["Enums"]["client_class"] | null
@@ -97,6 +98,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activity?: string | null
           address_details?: Json
           addresses?: string[]
           client_class?: Database["public"]["Enums"]["client_class"] | null
@@ -109,6 +111,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activity?: string | null
           address_details?: Json
           addresses?: string[]
           client_class?: Database["public"]["Enums"]["client_class"] | null

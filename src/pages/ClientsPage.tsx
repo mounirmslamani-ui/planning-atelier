@@ -34,6 +34,7 @@ const ClientsPage: React.FC = () => {
   const [editing, setEditing] = useState<Client | null>(null);
   const [scoringClient, setScoringClient] = useState<Client | null>(null);
   const [name, setName] = useState('');
+  const [activity, setActivity] = useState('');
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [phones, setPhones] = useState<string[]>([]);
   const [addresses, setAddresses] = useState<string[]>([]);
@@ -42,12 +43,13 @@ const ClientsPage: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClientClass | ''>('');
 
   const openNew = () => {
-    setEditing(null); setName(''); setRepresentatives([]);
+    setEditing(null); setName(''); setActivity(''); setRepresentatives([]);
     setPhones([]); setAddresses([]); setAddressDetails([]); setEmails([]);
     setDialogOpen(true);
   };
   const openEdit = (c: Client) => {
     setEditing(c); setName(c.name);
+    setActivity(c.activity || '');
     setRepresentatives(c.representatives || []);
     setPhones(c.phones || []); setAddresses(c.addresses || []);
     setAddressDetails(c.addressDetails || []);
@@ -75,6 +77,7 @@ const ClientsPage: React.FC = () => {
     });
     const payload = {
       name,
+      activity: activity.trim() || undefined,
       representatives,
       phones: cleanArr(phones),
       addresses: cleanedAddresses,
@@ -150,6 +153,7 @@ const ClientsPage: React.FC = () => {
                     <div className="flex gap-1">
                       <ContactDetailsPopover
                         companyName={c.name}
+                        activity={c.activity}
                         phones={c.phones}
                         emails={c.emails}
                         addresses={c.addresses}
@@ -183,9 +187,15 @@ const ClientsPage: React.FC = () => {
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un client</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">اسم الزبون</label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">اسم الزبون</label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du client" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">النشاط</label>
+                <Input value={activity} onChange={e => setActivity(e.target.value)} placeholder="نشاط المؤسسة" />
+              </div>
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">
               <div className="text-sm font-semibold">بيانات الاتصال</div>
