@@ -219,7 +219,14 @@ const ClientsPage: React.FC = () => {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">النشاط</label>
-                <Input value={activity} onChange={e => setActivity(e.target.value)} placeholder="نشاط المؤسسة" />
+                <Select value={activity || undefined} onValueChange={(v) => setActivity(v)}>
+                  <SelectTrigger><SelectValue placeholder="اختر نشاط المؤسسة" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {ACTIVITY_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">
