@@ -10,7 +10,7 @@ import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { generateOrderCode } from '@/lib/orderRegistry';
-import type { Order } from '@/types/planning';
+import type { Order, OrderCategory } from '@/types/planning';
 
 const WelcomePage: React.FC = () => {
   const { clients, orders, absenceOrderId } = usePlanning();
@@ -27,10 +27,10 @@ const WelcomePage: React.FC = () => {
 
   const realOrders = useMemo(() => orders.filter(o => o.id !== absenceOrderId), [orders, absenceOrderId]);
 
-  const handleNewOrder = () => {
+  const handleNewOrder = (category: OrderCategory) => {
     const today = new Date().toISOString().split('T')[0];
     setCreateDraft({
-      orderNumber: generateOrderCode('fabrication', realOrders),
+      orderNumber: generateOrderCode(category, realOrders),
       orderDate: today,
       clientId: selectedClientId || '',
       designation: '',
@@ -43,7 +43,7 @@ const WelcomePage: React.FC = () => {
       materialStatus: 'non-disponible',
       toolingStatus: 'non-disponible',
       studyStatus: 'non-disponible',
-      category: 'fabrication',
+      category,
     });
   };
 
@@ -93,10 +93,20 @@ const WelcomePage: React.FC = () => {
         </div>
 
         {canCreateOrder && (
-          <Button onClick={handleNewOrder} size="sm">
-            <Plus className="w-4 h-4 mr-1" />
-            <span className="font-bold">طلبية جديدة</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => handleNewOrder('fabrication')} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="font-bold">طلبية جديدة F</span>
+            </Button>
+            <Button onClick={() => handleNewOrder('prestation')} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="font-bold">طلبية جديدة P</span>
+            </Button>
+            <Button onClick={() => handleNewOrder('divers')} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="font-bold">طلبية جديدة D</span>
+            </Button>
+          </div>
         )}
       </div>
 
