@@ -7,6 +7,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const ACTIVITY_OPTIONS = [
+  'صناعة غذائية',
+  'صناعة صيدلانية وشبه صيدلانية',
+  'صناعة مستحضرات التجميل والعناية الشخصية',
+  'صناعة المنظفات المنزلية',
+  'تحويل الورق والطباعة',
+  'تحويل البلاستيك',
+  'تحويل الخشب ومشتقاته',
+  'بناء وأشغال عمومية',
+  'صناعة ميكانيكية',
+  'هندسة وخدمات صناعية',
+  'خدمات نقل ومواصلات',
+  'تجارة قطع وآلات صناعية',
+  'صناعة النسيج والملابس',
+  'الصناعة الكيميائية والبتروكيميائية',
+  'صناعة الزجاج والسيراميك',
+  'الطاقة المتجددة والتقليدية',
+  'إدارة ومعالجة المياه والنفايات',
+  'استغلال المناجم ومقالع الأحجار',
+  'صناعة الأسمنت والآجر ومواد البناء والطرقات',
+  'الفلاحة والري',
+  'أخرى',
+] as const;
 import { Plus, Pencil, Trash2, Star, Download } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { Client, ClientClass, Representative, AddressDetail } from '@/types/planning';
@@ -194,7 +219,14 @@ const ClientsPage: React.FC = () => {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">النشاط</label>
-                <Input value={activity} onChange={e => setActivity(e.target.value)} placeholder="نشاط المؤسسة" />
+                <Select value={activity || undefined} onValueChange={(v) => setActivity(v)}>
+                  <SelectTrigger><SelectValue placeholder="اختر نشاط المؤسسة" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {ACTIVITY_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">
