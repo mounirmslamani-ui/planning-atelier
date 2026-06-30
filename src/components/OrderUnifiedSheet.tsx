@@ -196,7 +196,7 @@ const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initi
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
 updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntry,
     updateDeliveredOrder, addDeliveredOrder, deleteDeliveryEntry,
-    absenceOperationId, deleteOrder,
+    absenceOperationId, deleteOrder, cancelledOrders, deleteCancelledOrder,
   } = usePlanning();
 
   const existingOrder = useMemo(() => orders.find(o => o.id === orderId) || null, [orders, orderId]);
@@ -270,7 +270,8 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
   const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
   const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
-  const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered);
+  const orderCancelled = createMode ? undefined : cancelledOrders.find(c => c.orderId === order.id);
+  const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered || orderCancelled);
 
 
   const merged: Order = { ...order, ...draft };
