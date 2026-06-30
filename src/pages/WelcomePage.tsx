@@ -27,10 +27,10 @@ const WelcomePage: React.FC = () => {
 
   const realOrders = useMemo(() => orders.filter(o => o.id !== absenceOrderId), [orders, absenceOrderId]);
 
-  const handleNewOrder = () => {
+  const handleNewOrder = (category: OrderCategory) => {
     const today = new Date().toISOString().split('T')[0];
     setCreateDraft({
-      orderNumber: generateOrderCode('fabrication', realOrders),
+      orderNumber: generateOrderCode(category, realOrders),
       orderDate: today,
       clientId: selectedClientId || '',
       designation: '',
@@ -43,7 +43,7 @@ const WelcomePage: React.FC = () => {
       materialStatus: 'non-disponible',
       toolingStatus: 'non-disponible',
       studyStatus: 'non-disponible',
-      category: 'fabrication',
+      category,
     });
   };
 
