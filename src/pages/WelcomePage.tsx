@@ -10,7 +10,7 @@ import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { generateOrderCode } from '@/lib/orderRegistry';
-import type { Order } from '@/types/planning';
+import type { Order, OrderCategory } from '@/types/planning';
 
 const WelcomePage: React.FC = () => {
   const { clients, orders, absenceOrderId } = usePlanning();
