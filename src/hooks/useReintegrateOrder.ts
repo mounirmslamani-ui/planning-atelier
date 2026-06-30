@@ -21,8 +21,8 @@ import type { Order } from '@/types/planning';
  */
 export function useReintegrateOrder() {
   const {
-    orders, qcEntries, deliveryEntries, deliveredOrders,
-    deleteQCEntry, deleteDeliveryEntry, deleteDeliveredOrder,
+    orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders,
+    deleteQCEntry, deleteDeliveryEntry, deleteDeliveredOrder, deleteCancelledOrder,
     updateOrder,
   } = usePlanning();
 
@@ -50,7 +50,13 @@ export function useReintegrateOrder() {
       if (!d.invoiceNumber) {
         deleteDeliveredOrder(d.id);
       }
-      // else: keep the row intact (invoice_number + delivery_date preserved)
+    // else: keep the row intact (invoice_number + delivery_date preserved)
+    }
+
+    // 3bis. Si la commande était annulée, supprimer son entrée dans cancelledOrders
+    const cancelledEntry = cancelledOrders.find(c => c.orderId === orderId);
+    if (cancelledEntry) {
+      deleteCancelledOrder(cancelledEntry.id);
     }
 
     // 4. Bump priority + mark as "Reprise/Retouche" in the observation
@@ -64,7 +70,7 @@ export function useReintegrateOrder() {
 
     toast.success(`Commande ${order.orderNumber} réintégrée dans 'الطلبيات الحالية' (P1 — Reprise)`);
     setPending(null);
-  }, [pending, orders, qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry, deleteDeliveryEntry, deleteDeliveredOrder, updateOrder]);
+  }, [pending, orders, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, deleteQCEntry, deleteDeliveryEntry, deleteDeliveredOrder, deleteCancelledOrder, updateOrder]);
 
   return { pending, requestReintegrate, confirmReintegrate, cancelReintegrate };
 }
