@@ -93,10 +93,20 @@ const WelcomePage: React.FC = () => {
         </div>
 
         {canCreateOrder && (
-          <Button onClick={handleNewOrder} size="sm">
-            <Plus className="w-4 h-4 mr-1" />
-            <span className="font-bold">طلبية جديدة</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => handleNewOrder('fabrication')} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="font-bold">طلبية جديدة F</span>
+            </Button>
+            <Button onClick={() => handleNewOrder('prestation')} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="font-bold">طلبية جديدة P</span>
+            </Button>
+            <Button onClick={() => handleNewOrder('divers')} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="font-bold">طلبية جديدة D</span>
+            </Button>
+          </div>
         )}
       </div>
 
