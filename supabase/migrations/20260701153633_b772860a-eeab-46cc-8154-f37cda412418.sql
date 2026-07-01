@@ -1,0 +1,1 @@
+ALTER TABLE public.subcontractors ADD COLUMN address_details jsonb NOT NULL DEFAULT '[]'::jsonb;

@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
-import type { Subcontractor, Representative } from '@/types/planning';
+import type { Subcontractor, Representative, AddressDetail } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
 import StringListEditor from '@/components/StringListEditor';
+import AddressesEditor from '@/components/AddressesEditor';
 import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
@@ -29,6 +30,7 @@ const SubcontractorsPage: React.FC = () => {
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [phones, setPhones] = useState<string[]>([]);
   const [addresses, setAddresses] = useState<string[]>([]);
+  const [addressDetails, setAddressDetails] = useState<AddressDetail[]>([]);
   const [emails, setEmails] = useState<string[]>([]);
 
   const openNew = () => {
@@ -37,7 +39,7 @@ const SubcontractorsPage: React.FC = () => {
     setMainActivity(operations.find(o => o.category === 'subcontractor')?.id || '');
     setSecondaryActivities([]);
     setRepresentatives([]);
-    setPhones([]); setAddresses([]); setEmails([]);
+    setPhones([]); setAddresses([]); setAddressDetails([]); setEmails([]);
     setDialogOpen(true);
   };
 
@@ -47,13 +49,26 @@ const SubcontractorsPage: React.FC = () => {
     setMainActivity(resolveOperationId(s.mainActivity, operations, 'subcontractor') || operations.find(o => o.category === 'subcontractor')?.id || '');
     setSecondaryActivities(s.secondaryActivities.map(act => resolveOperationId(act, operations, 'subcontractor')).filter(Boolean));
     setRepresentatives(s.representatives || []);
-    setPhones(s.phones || []); setAddresses(s.addresses || []); setEmails(s.emails || []);
+    setPhones(s.phones || []); setAddresses(s.addresses || []); setAddressDetails(s.addressDetails || []); setEmails(s.emails || []);
     setDialogOpen(true);
   };
 
   const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 
   const handleSave = () => {
+    const keptIdx: number[] = [];
+    const cleanedAddresses: string[] = [];
+    (addresses || []).forEach((a, i) => {
+      const t = a.trim();
+      if (t) { cleanedAddresses.push(t); keptIdx.push(i); }
+    });
+    const cleanedDetails: AddressDetail[] = keptIdx.map(i => {
+      const d = addressDetails[i] || {};
+      return {
+        nature: d.nature || undefined,
+        gps: d.gps?.trim() || undefined,
+      };
+    });
     const data: Subcontractor = {
       id: editing?.id || crypto.randomUUID(),
       companyName,
@@ -61,7 +76,8 @@ const SubcontractorsPage: React.FC = () => {
       secondaryActivities,
       representatives,
       phones: cleanArr(phones),
-      addresses: cleanArr(addresses),
+      addresses: cleanedAddresses,
+      addressDetails: cleanedDetails,
       emails: cleanArr(emails),
     };
     if (editing) updateSubcontractor(data);
@@ -167,6 +183,7 @@ const SubcontractorsPage: React.FC = () => {
                       phones={s.phones}
                       emails={s.emails}
                       addresses={s.addresses}
+                      addressDetails={s.addressDetails}
                       representatives={s.representatives}
                     />
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
@@ -239,14 +256,18 @@ const SubcontractorsPage: React.FC = () => {
               </div>
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">
-              <div className="text-sm font-semibold">معلومات الاتصال (مستوى المؤسسة)</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="text-sm font-semibold">بيانات الاتصال</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <StringListEditor label="أرقام الهاتف" value={phones} onChange={setPhones} type="tel" placeholder="+213 ..." />
                 <StringListEditor label="البريد الإلكتروني" value={emails} onChange={setEmails} type="email" placeholder="contact@..." />
-                <StringListEditor label="العناوين" value={addresses} onChange={setAddresses} placeholder="العنوان الفيزيائي" />
               </div>
+              <AddressesEditor
+                addresses={addresses}
+                details={addressDetails}
+                onChange={(a, d) => { setAddresses(a); setAddressDetails(d); }}
+              />
             </div>
-            <RepresentativesEditor value={representatives} onChange={setRepresentatives} />
+            <RepresentativesEditor value={representatives} onChange={setRepresentatives} label="ممثلو المناول" />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
