@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
-import type { Subcontractor, Representative } from '@/types/planning';
+import type { Subcontractor, Representative, AddressDetail } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
 import StringListEditor from '@/components/StringListEditor';
+import AddressesEditor from '@/components/AddressesEditor';
 import ContactDetailsPopover from '@/components/ContactDetailsPopover';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
@@ -29,6 +30,7 @@ const SubcontractorsPage: React.FC = () => {
   const [representatives, setRepresentatives] = useState<Representative[]>([]);
   const [phones, setPhones] = useState<string[]>([]);
   const [addresses, setAddresses] = useState<string[]>([]);
+  const [addressDetails, setAddressDetails] = useState<AddressDetail[]>([]);
   const [emails, setEmails] = useState<string[]>([]);
 
   const openNew = () => {
