@@ -769,6 +769,7 @@ export type Database = {
       }
       subcontractors: {
         Row: {
+          address_details: Json
           addresses: string[]
           company_name: string
           created_at: string
@@ -781,6 +782,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address_details?: Json
           addresses?: string[]
           company_name: string
           created_at?: string
@@ -793,6 +795,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address_details?: Json
           addresses?: string[]
           company_name?: string
           created_at?: string
