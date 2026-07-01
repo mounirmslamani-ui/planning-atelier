@@ -104,6 +104,7 @@ export function mapSubcontractorFromDB(row: any): Subcontractor {
     representatives: Array.isArray(row.representatives) ? row.representatives : [],
     phones: row.phones || [],
     addresses: row.addresses || [],
+    addressDetails: Array.isArray(row.address_details) ? row.address_details : [],
     emails: row.emails || [],
   };
 }
@@ -117,6 +118,7 @@ export function mapSubcontractorToDB(sub: Subcontractor) {
     representatives: (sub.representatives || []) as any,
     phones: sub.phones || [],
     addresses: sub.addresses || [],
+    address_details: (sub.addressDetails || []) as any,
     emails: sub.emails || [],
   };
 }

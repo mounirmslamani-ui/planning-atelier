@@ -7,6 +7,7 @@ import { Plus, Trash2, X, ChevronDown, ChevronRight, User } from 'lucide-react';
 interface Props {
   value: Representative[];
   onChange: (next: Representative[]) => void;
+  label?: string;
 }
 
 const newRep = (): Representative => ({
@@ -16,7 +17,7 @@ const newRep = (): Representative => ({
   emails: [],
 });
 
-const RepresentativesEditor: React.FC<Props> = ({ value, onChange }) => {
+const RepresentativesEditor: React.FC<Props> = ({ value, onChange, label = 'ممثلو الزبون' }) => {
   const [openId, setOpenId] = useState<string | null>(value[0]?.id || null);
 
   const update = (id: string, patch: Partial<Representative>) =>
@@ -75,7 +76,7 @@ const RepresentativesEditor: React.FC<Props> = ({ value, onChange }) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">ممثلو الزبون / المناول</label>
+        <label className="text-sm font-medium">{label}</label>
         <Button type="button" variant="outline" size="sm" onClick={add}>
           <Plus className="w-3 h-3 ml-1" /> ممثل جديد
         </Button>

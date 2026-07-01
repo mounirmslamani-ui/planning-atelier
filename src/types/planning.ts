@@ -43,6 +43,7 @@ export interface Subcontractor {
   representatives?: Representative[];
   phones?: string[];
   addresses?: string[];
+  addressDetails?: AddressDetail[];
   emails?: string[];
 }
 

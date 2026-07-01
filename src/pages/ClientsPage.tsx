@@ -210,7 +210,7 @@ const ClientsPage: React.FC = () => {
       {/* Edit/Add dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-heading">{editing ? 'Modifier' : 'Ajouter'} un client</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-heading">{editing ? 'تحديث بيانات زبون' : 'Ajouter un client'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
