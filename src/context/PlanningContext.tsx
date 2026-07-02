@@ -452,6 +452,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Wrapped setOrders that also syncs to DB
   const setOrdersWrapped = useCallback((newOrders: Order[]) => {
+    lastLocalWriteAt.current = Date.now();
     setOrders(newOrders);
     // Bulk update all non-ABS orders
     const toSync = newOrders.filter(o => o.orderNumber !== 'ABS');
