@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { UserPlus, UserMinus, UserX, KeyRound, Eye, EyeOff } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 
 const PasswordField: React.FC<{ value: string; onChange: (v: string) => void; id?: string }> = ({ value, onChange, id }) => {
   const [show, setShow] = useState(false);
