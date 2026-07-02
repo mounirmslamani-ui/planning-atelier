@@ -93,7 +93,7 @@ const OperatorsPage: React.FC = () => {
     mainEquipment: (o: Operator) => o.mainEquipment ? getEquipName(o.mainEquipment) : '',
     secondaryEquipments: (o: Operator) => (o.secondaryEquipments || []).map(getEquipName).join(', '),
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(operators, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(operators, accessors);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
