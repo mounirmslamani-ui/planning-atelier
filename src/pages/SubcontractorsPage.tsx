@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { Subcontractor, Representative, AddressDetail } from '@/types/planning';
 import RepresentativesEditor from '@/components/RepresentativesEditor';
 import StringListEditor from '@/components/StringListEditor';
@@ -219,15 +220,12 @@ const SubcontractorsPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">المناولة الأساسية</label>
-              <select
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              <SearchableSelect
                 value={mainActivity}
-                onChange={e => setMainActivity(e.target.value)}
-              >
-                {operations.filter(o => o.category === 'subcontractor').map(o => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
+                onValueChange={setMainActivity}
+                dir="rtl"
+                options={operations.filter(o => o.category === 'subcontractor').map(o => ({ value: o.id, label: o.name }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">مناولات أخرى</label>
@@ -240,16 +238,16 @@ const SubcontractorsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex gap-2">
-                <select
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                <SearchableSelect
+                  className="flex-1"
                   value={newSecondary}
-                  onChange={e => setNewSecondary(e.target.value)}
-                >
-                  <option value="">Sélectionner...</option>
-                  {operations.filter(o => o.category === 'subcontractor' && o.id !== mainActivity && !secondaryActivities.includes(o.id)).map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                  ))}
-                </select>
+                  onValueChange={setNewSecondary}
+                  placeholder="Sélectionner..."
+                  options={[
+                    { value: '', label: 'Sélectionner...' },
+                    ...operations.filter(o => o.category === 'subcontractor' && o.id !== mainActivity && !secondaryActivities.includes(o.id)).map(o => ({ value: o.id, label: o.name })),
+                  ]}
+                />
                 <Button variant="outline" size="sm" onClick={addSecondary} disabled={!newSecondary}>
                   <Plus className="w-3 h-3" />
                 </Button>

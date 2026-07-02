@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { Plus, X } from 'lucide-react';
 import type { AddressDetail, AddressNature } from '@/types/planning';
 
@@ -59,17 +59,14 @@ const AddressesEditor: React.FC<Props> = ({ addresses, details, onChange }) => {
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-1">
-              <Select
+              <SearchableSelect
                 value={m.nature || ''}
-                onValueChange={(val) => setMeta(i, { nature: val as AddressNature })}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="طبيعة العنوان" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NATURES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                </SelectContent>
-              </Select>
+                onValueChange={(val) => setMeta(i, { nature: (val || undefined) as AddressNature | undefined })}
+                placeholder="طبيعة العنوان"
+                className="h-8 text-xs"
+                dir="rtl"
+                options={NATURES.map(n => ({ value: n, label: n }))}
+              />
               <Input
                 value={m.gps || ''}
                 placeholder="موقع GPS (رابط أو إحداثيات)"

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { CancelledOrder } from '@/types/planning';
 
 export const CANCEL_REASONS = [
@@ -52,12 +52,12 @@ const CancelOrderDialog: React.FC<Props> = ({ open, onClose, onConfirm, orderLab
           </div>
           <div className="space-y-1">
             <Label className="text-xs">سبب الإلغاء</Label>
-            <Select value={reason} onValueChange={setReason}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CANCEL_REASONS.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={reason}
+              onValueChange={setReason}
+              dir="rtl"
+              options={CANCEL_REASONS.map(r => ({ value: r, label: r }))}
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">ملاحظة</Label>
