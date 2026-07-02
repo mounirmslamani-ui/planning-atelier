@@ -20,27 +20,29 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
+  const baseList = useMemo(() => steps
+    .filter(s => s.subcontractorId && s.operationId !== absenceOperationId)
+    .map(s => {
+      const order = orders.find(o => o.id === s.orderId);
+      const client = order ? clients.find(c => c.id === order.clientId) : null;
+      const operation = operations.find(o => o.id === s.operationId);
+      const sub = subcontractors.find(sc => sc.id === s.subcontractorId);
+      return {
+        ...s,
+        orderNumber: order?.orderNumber || '—',
+        orderDate: order?.orderDate || '',
+        clientName: client?.name || '—',
+        designation: order?.designation || '',
+        quantity: order?.quantity || 0,
+        priority: order?.priority,
+        plannedDeadline: order?.plannedDeadline || '',
+        operationName: operation?.name || '',
+        subcontractorName: sub?.companyName || '—',
+      };
+    }), [steps, orders, clients, operations, subcontractors, absenceOperationId]);
+
   const subSteps = useMemo(() => {
-    let result = steps
-      .filter(s => s.subcontractorId && s.operationId !== absenceOperationId)
-      .map(s => {
-        const order = orders.find(o => o.id === s.orderId);
-        const client = order ? clients.find(c => c.id === order.clientId) : null;
-        const operation = operations.find(o => o.id === s.operationId);
-        const sub = subcontractors.find(sc => sc.id === s.subcontractorId);
-        return {
-          ...s,
-          orderNumber: order?.orderNumber || '—',
-          orderDate: order?.orderDate || '',
-          clientName: client?.name || '—',
-          designation: order?.designation || '',
-          quantity: order?.quantity || 0,
-          priority: order?.priority,
-          plannedDeadline: order?.plannedDeadline || '',
-          operationName: operation?.name || '',
-          subcontractorName: sub?.companyName || '—',
-        };
-      });
+    let result = [...baseList];
 
     // Apply filters
     Object.entries(filters).forEach(([key, val]) => {
