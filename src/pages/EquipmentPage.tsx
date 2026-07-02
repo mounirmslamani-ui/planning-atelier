@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { Equipment, EquipmentType, EquipmentState } from '@/types/planning';
 
 const EQUIPMENT_TYPES: EquipmentType[] = [
