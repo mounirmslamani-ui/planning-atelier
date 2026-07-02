@@ -66,7 +66,7 @@ const DeliveredOrdersPage: React.FC = () => {
     invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
     observation: (d: DeliveredOrder) => d.observation || '',
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(filteredDelivered, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(filteredDelivered, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('طلبيات مسلمة', processed.map(entry => {
