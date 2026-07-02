@@ -214,18 +214,8 @@ const PendingInvoicingPage: React.FC = () => {
     priceStatus: (r: Row) => r.priceStatus,
   }), []);
 
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } =
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } =
     useTableSortFilter<Row>(buttonFilteredRows, accessors);
-
-  const allValuesByKey = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    (Object.keys(accessors) as (keyof typeof accessors)[]).forEach(k => {
-      map[k as string] = [...new Set(buttonFilteredRows.map(r => {
-        const v = accessors[k](r); return v == null ? '' : String(v);
-      }).filter(Boolean))].sort();
-    });
-    return map;
-  }, [buttonFilteredRows, accessors]);
 
   const isFilteredOrSorted = sortKey !== null || Object.values(filters).some(Boolean);
 
