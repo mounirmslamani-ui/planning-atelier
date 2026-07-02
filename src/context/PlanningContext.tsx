@@ -299,8 +299,19 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (loading) return;
     const interval = window.setInterval(async () => {
+      // Ne pas lancer de rafraîchissement si une modification locale vient d'avoir lieu :
+      // fetchAllData peut prendre plusieurs secondes (pagination des grosses tables) et
+      // lire un état antérieur à une écriture en cours, ce qui écraserait ensuite la
+      // modification locale de l'utilisateur. On saute simplement ce cycle, le suivant
+      // aura lieu 60 secondes plus tard.
+      if (Date.now() - lastLocalWriteAt.current < 8000) return;
+      const fetchStartedAt = Date.now();
       try {
         const data = await fetchAllData();
+        // Si une modification locale a eu lieu PENDANT ce fetch, les données récupérées
+        // sont potentiellement obsolètes : on les ignore pour ne pas écraser l'édition
+        // en cours. Le prochain cycle réessaiera.
+        if (lastLocalWriteAt.current >= fetchStartedAt) return;
         setEquipments(data.equipments);
         setOperators(data.operators);
         setSubcontractors(data.subcontractors);
@@ -323,7 +334,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
-
       } catch (err) {
         console.error('[PlanningContext] Periodic refresh failed:', err);
       }
