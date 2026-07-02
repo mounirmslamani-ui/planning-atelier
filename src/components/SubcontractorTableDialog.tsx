@@ -121,7 +121,7 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
     startDate: (r: any) => r.startDate,
     endDate: (r: any) => r.endDate,
   }), []);
-  const allValuesByKey = useMemo(() => computeAllValuesByKey(subSteps, accessors, filters), [subSteps, accessors, filters]);
+  const allValuesByKey = useMemo(() => computeAllValuesByKey(baseList, accessors, filters), [baseList, accessors, filters]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
