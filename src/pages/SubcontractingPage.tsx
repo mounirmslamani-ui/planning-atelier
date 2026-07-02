@@ -11,6 +11,7 @@ import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 
 type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'plannedDeadline' | 'subcontractingDeadline' | 'subcontractor';
 
@@ -137,27 +138,25 @@ const SubcontractingPage: React.FC = () => {
 
   const totalActive = useMemo(() => subcontractingRows.filter(r => !r.done).length, [subcontractingRows]);
 
+  const subAccessors = useMemo(() => ({
+    displayOrder: (r: any) => String(r.order.displayOrder ?? ''),
+    orderNumber: (r: any) => r.order.orderNumber,
+    orderDate: (r: any) => r.order.orderDate,
+    client: (r: any) => getClientName(r.order.clientId),
+    designation: (r: any) => r.order.designation,
+    quantity: (r: any) => String(r.order.quantity),
+    priority: (r: any) => r.order.priority || '',
+    subcontractor: (r: any) => getSubcontractorName(r.subcontractorId),
+    plannedDeadline: (r: any) => r.order.plannedDeadline,
+    subcontractingDeadline: (r: any) => r.deadline,
+  }), [getClientName, getSubcontractorName]);
+
   const allValuesByKey = useMemo(() => {
-    const get = (r: any, k: string) => {
-      switch (k) {
-        case 'displayOrder': return String(r.order.displayOrder ?? '');
-        case 'orderNumber': return r.order.orderNumber;
-        case 'orderDate': return r.order.orderDate;
-        case 'client': return getClientName(r.order.clientId);
-        case 'designation': return r.order.designation;
-        case 'quantity': return String(r.order.quantity);
-        case 'priority': return r.order.priority || '';
-        case 'subcontractor': return getSubcontractorName(r.subcontractorId);
-        case 'plannedDeadline': return r.order.plannedDeadline;
-        case 'subcontractingDeadline': return r.deadline;
-        default: return '';
-      }
-    };
-    const keys = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','subcontractor','plannedDeadline','subcontractingDeadline'];
-    const map: Record<string, string[]> = {};
-    keys.forEach(k => { map[k] = [...new Set(subcontractingRows.filter(r => !r.done).map((r: any) => get(r, k)).filter(Boolean))].sort(); });
-    return map;
-  }, [subcontractingRows, getClientName, getSubcontractorName]);
+    const base = subcontractingRows.filter(r => !r.done);
+    const effective = selectedClientName ? { ...filters, client: `${selectedClientName}|` } : filters;
+    return computeAllValuesByKey(base, subAccessors, effective);
+  }, [subcontractingRows, subAccessors, filters, selectedClientName]);
+
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
