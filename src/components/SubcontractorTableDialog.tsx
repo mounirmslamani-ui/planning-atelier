@@ -106,6 +106,21 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
     { key: 'endDate', label: 'تاريخ النهاية' },
   ];
 
+  const accessors = useMemo(() => ({
+    orderNumber: (r: any) => r.orderNumber,
+    orderDate: (r: any) => r.orderDate,
+    client: (r: any) => r.clientName,
+    designation: (r: any) => r.designation,
+    quantity: (r: any) => String(r.quantity),
+    priority: (r: any) => r.priority || '',
+    plannedDeadline: (r: any) => r.plannedDeadline,
+    operation: (r: any) => r.operationName,
+    subcontractor: (r: any) => r.subcontractorName,
+    startDate: (r: any) => r.startDate,
+    endDate: (r: any) => r.endDate,
+  }), []);
+  const allValuesByKey = useMemo(() => computeAllValuesByKey(subSteps, accessors, filters), [subSteps, accessors, filters]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[80vh] overflow-auto">
@@ -118,7 +133,7 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
               <TableRow>
                 {cols.map(c => (
                   <TableHead key={c.key}>
-                    <ColumnHeader label={c.label} columnKey={c.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[c.key] || ''} onFilter={handleFilter} />
+                    <ColumnHeader label={c.label} columnKey={c.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[c.key] || ''} onFilter={handleFilter} allValues={allValuesByKey[c.key]} />
                   </TableHead>
                 ))}
               </TableRow>
