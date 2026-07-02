@@ -255,16 +255,16 @@ const OperatorsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex gap-2">
-                <select 
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
-                  value={newSecEquip} 
-                  onChange={e => setNewSecEquip(e.target.value)}
-                >
-                  <option value="">Sélectionner...</option>
-                  {equipments.filter(eq => eq.id !== mainEquipment && !secondaryEquipments.includes(eq.id)).map(eq => (
-                    <option key={eq.id} value={eq.id}>{eq.designation} ({eq.type})</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  className="flex-1"
+                  value={newSecEquip}
+                  onValueChange={setNewSecEquip}
+                  placeholder="Sélectionner..."
+                  options={[
+                    { value: '', label: 'Sélectionner...' },
+                    ...equipments.filter(eq => eq.id !== mainEquipment && !secondaryEquipments.includes(eq.id)).map(eq => ({ value: eq.id, label: `${eq.designation} (${eq.type})` })),
+                  ]}
+                />
                 <Button variant="outline" size="sm" onClick={addSecEquip} disabled={!newSecEquip}>
                   <Plus className="w-3 h-3" />
                 </Button>
