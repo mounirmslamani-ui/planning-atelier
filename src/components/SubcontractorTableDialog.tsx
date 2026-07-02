@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import DesignationCell from '@/components/DesignationCell';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
