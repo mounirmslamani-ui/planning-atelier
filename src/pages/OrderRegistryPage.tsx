@@ -120,17 +120,7 @@ const OrderRegistryPage: React.FC = () => {
     invoiceNumber: (o: Order) => deliveredMap.get(o.id)?.invoiceNumber || '',
   }), [clients, cancelledMap, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId, qcMap, deliveredMap]);
 
-  const { processed: displayed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(baseList, accessors);
-
-  const allValuesByKey = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    (Object.keys(accessors) as (keyof typeof accessors)[]).forEach(k => {
-      map[k as string] = [...new Set(baseList.map(o => {
-        const v = accessors[k](o); return v == null ? '' : String(v);
-      }).filter(Boolean))].sort();
-    });
-    return map;
-  }, [baseList, accessors]);
+  const { processed: displayed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(baseList, accessors);
 
 
 
