@@ -128,7 +128,7 @@ const ClientsPage: React.FC = () => {
     addresses: (c: Client) => (c.addresses || []).join(' '),
     representatives: (c: Client) => (c.representatives || []).map(r => r.name).join(' '),
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(clients, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(clients, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('الزبائن', processed.map(c => ({
