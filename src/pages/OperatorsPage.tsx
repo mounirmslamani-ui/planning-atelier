@@ -93,7 +93,7 @@ const OperatorsPage: React.FC = () => {
     mainEquipment: (o: Operator) => o.mainEquipment ? getEquipName(o.mainEquipment) : '',
     secondaryEquipments: (o: Operator) => (o.secondaryEquipments || []).map(getEquipName).join(', '),
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(operators, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(operators, accessors);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
@@ -113,11 +113,11 @@ const OperatorsPage: React.FC = () => {
         <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="الاسم" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="اختصاص" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="مهارات أخرى" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="الآلة الرئيسية" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="آلات أخرى" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="الاسم" columnKey="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.name || ''} onFilter={handleFilter} allValues={allValuesByKey.name} /></TableHead>
+              <TableHead><ColumnHeader label="اختصاص" columnKey="mainFunction" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainFunction || ''} onFilter={handleFilter} allValues={allValuesByKey.mainFunction} /></TableHead>
+              <TableHead><ColumnHeader label="مهارات أخرى" columnKey="secondaryFunctions" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryFunctions || ''} onFilter={handleFilter} allValues={allValuesByKey.secondaryFunctions} /></TableHead>
+              <TableHead><ColumnHeader label="الآلة الرئيسية" columnKey="mainEquipment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainEquipment || ''} onFilter={handleFilter} allValues={allValuesByKey.mainEquipment} /></TableHead>
+              <TableHead><ColumnHeader label="آلات أخرى" columnKey="secondaryEquipments" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryEquipments || ''} onFilter={handleFilter} allValues={allValuesByKey.secondaryEquipments} /></TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>

@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import DesignationCell from '@/components/DesignationCell';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
@@ -19,27 +20,29 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
   const [sortDir, setSortDir] = useState<SortDirection>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
+  const baseList = useMemo(() => steps
+    .filter(s => s.subcontractorId && s.operationId !== absenceOperationId)
+    .map(s => {
+      const order = orders.find(o => o.id === s.orderId);
+      const client = order ? clients.find(c => c.id === order.clientId) : null;
+      const operation = operations.find(o => o.id === s.operationId);
+      const sub = subcontractors.find(sc => sc.id === s.subcontractorId);
+      return {
+        ...s,
+        orderNumber: order?.orderNumber || '—',
+        orderDate: order?.orderDate || '',
+        clientName: client?.name || '—',
+        designation: order?.designation || '',
+        quantity: order?.quantity || 0,
+        priority: order?.priority,
+        plannedDeadline: order?.plannedDeadline || '',
+        operationName: operation?.name || '',
+        subcontractorName: sub?.companyName || '—',
+      };
+    }), [steps, orders, clients, operations, subcontractors, absenceOperationId]);
+
   const subSteps = useMemo(() => {
-    let result = steps
-      .filter(s => s.subcontractorId && s.operationId !== absenceOperationId)
-      .map(s => {
-        const order = orders.find(o => o.id === s.orderId);
-        const client = order ? clients.find(c => c.id === order.clientId) : null;
-        const operation = operations.find(o => o.id === s.operationId);
-        const sub = subcontractors.find(sc => sc.id === s.subcontractorId);
-        return {
-          ...s,
-          orderNumber: order?.orderNumber || '—',
-          orderDate: order?.orderDate || '',
-          clientName: client?.name || '—',
-          designation: order?.designation || '',
-          quantity: order?.quantity || 0,
-          priority: order?.priority,
-          plannedDeadline: order?.plannedDeadline || '',
-          operationName: operation?.name || '',
-          subcontractorName: sub?.companyName || '—',
-        };
-      });
+    let result = [...baseList];
 
     // Apply filters
     Object.entries(filters).forEach(([key, val]) => {
@@ -105,6 +108,21 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
     { key: 'endDate', label: 'تاريخ النهاية' },
   ];
 
+  const accessors = useMemo(() => ({
+    orderNumber: (r: any) => r.orderNumber,
+    orderDate: (r: any) => r.orderDate,
+    client: (r: any) => r.clientName,
+    designation: (r: any) => r.designation,
+    quantity: (r: any) => String(r.quantity),
+    priority: (r: any) => r.priority || '',
+    plannedDeadline: (r: any) => r.plannedDeadline,
+    operation: (r: any) => r.operationName,
+    subcontractor: (r: any) => r.subcontractorName,
+    startDate: (r: any) => r.startDate,
+    endDate: (r: any) => r.endDate,
+  }), []);
+  const allValuesByKey = useMemo(() => computeAllValuesByKey(baseList, accessors, filters), [baseList, accessors, filters]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[80vh] overflow-auto">
@@ -117,7 +135,7 @@ const SubcontractorTableDialog: React.FC<SubcontractorTableDialogProps> = ({ ope
               <TableRow>
                 {cols.map(c => (
                   <TableHead key={c.key}>
-                    <ColumnHeader label={c.label} columnKey={c.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[c.key] || ''} onFilter={handleFilter} />
+                    <ColumnHeader label={c.label} columnKey={c.key} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[c.key] || ''} onFilter={handleFilter} allValues={allValuesByKey[c.key]} />
                   </TableHead>
                 ))}
               </TableRow>

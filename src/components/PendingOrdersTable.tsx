@@ -3,6 +3,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import DesignationCell from '@/components/DesignationCell';
 import type { Order } from '@/types/planning';
@@ -67,18 +68,30 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));
 
+  const baseList = useMemo(() => orders.filter(o => o.id !== absenceOrderId).filter(filterFn), [orders, absenceOrderId, filterFn]);
+  const accessors = useMemo(() => ({
+    orderNumber: (o: Order) => o.orderNumber,
+    orderDate: (o: Order) => o.orderDate,
+    client: (o: Order) => getClientName(o.clientId),
+    designation: (o: Order) => o.designation,
+    quantity: (o: Order) => String(o.quantity),
+    priority: (o: Order) => o.priority || '',
+    plannedDeadline: (o: Order) => o.plannedDeadline,
+  }), [getClientName]);
+  const allValuesByKey = useMemo(() => computeAllValuesByKey(baseList, accessors, filters), [baseList, accessors, filters]);
+
   return (
 <div className="rounded-lg border bg-card overflow-auto">
       <table className="w-full caption-bottom text-sm">
         <TableHeader>
           <TableRow>
             <TableHead className="w-12 text-center">#</TableHead>
-            <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} /></TableHead>
-            <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} /></TableHead>
-            <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} /></TableHead>
-            <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} /></TableHead>
-            <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} /></TableHead>
-            <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} /></TableHead>
+            <TableHead><ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderDate || ''} onFilter={handleFilter} allValues={allValuesByKey.orderDate} /></TableHead>
+            <TableHead><ColumnHeader label="الزبون" columnKey="client" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.client || ''} onFilter={handleFilter} allValues={allValuesByKey.client} /></TableHead>
+            <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
+            <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
+            <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+            <TableHead><ColumnHeader label="أجل التسليم الموعود" columnKey="plannedDeadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.plannedDeadline || ''} onFilter={handleFilter} allValues={allValuesByKey.plannedDeadline} /></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

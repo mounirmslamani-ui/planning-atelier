@@ -105,7 +105,7 @@ const SubcontractorsPage: React.FC = () => {
     addresses: (s: Subcontractor) => (s.addresses || []).join(' '),
     representatives: (s: Subcontractor) => (s.representatives || []).map(r => r.name).join(' '),
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(subcontractors, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('المناولون', processed.map(s => ({
@@ -142,13 +142,13 @@ const SubcontractorsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead><ColumnHeader label="اسم المناول" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="المناولة الأساسية" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="مناولات أخرى" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="الهاتف" columnKey="phones" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.phones || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="العنوان الإلكتروني" columnKey="emails" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.emails || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="العنوان" columnKey="addresses" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.addresses || ''} onFilter={handleFilter} /></TableHead>
-              <TableHead><ColumnHeader label="الممثلون" columnKey="representatives" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.representatives || ''} onFilter={handleFilter} /></TableHead>
+              <TableHead><ColumnHeader label="اسم المناول" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} allValues={allValuesByKey.companyName} /></TableHead>
+              <TableHead><ColumnHeader label="المناولة الأساسية" columnKey="mainActivity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.mainActivity || ''} onFilter={handleFilter} allValues={allValuesByKey.mainActivity} /></TableHead>
+              <TableHead><ColumnHeader label="مناولات أخرى" columnKey="secondaryActivities" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.secondaryActivities || ''} onFilter={handleFilter} allValues={allValuesByKey.secondaryActivities} /></TableHead>
+              <TableHead><ColumnHeader label="الهاتف" columnKey="phones" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.phones || ''} onFilter={handleFilter} allValues={allValuesByKey.phones} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان الإلكتروني" columnKey="emails" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.emails || ''} onFilter={handleFilter} allValues={allValuesByKey.emails} /></TableHead>
+              <TableHead><ColumnHeader label="العنوان" columnKey="addresses" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.addresses || ''} onFilter={handleFilter} allValues={allValuesByKey.addresses} /></TableHead>
+              <TableHead><ColumnHeader label="الممثلون" columnKey="representatives" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.representatives || ''} onFilter={handleFilter} allValues={allValuesByKey.representatives} /></TableHead>
               <TableHead className="w-32">عمليات</TableHead>
             </TableRow>
           </TableHeader>
