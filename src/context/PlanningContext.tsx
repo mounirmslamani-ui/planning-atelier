@@ -156,6 +156,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const undoStack = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
   const autoResyncInFlight = useRef(false);
+  const lastLocalWriteAt = useRef(0);
   const [historyTrigger, setHistoryTrigger] = useState(0);
 
   const takeSnapshot = useCallback((): Snapshot => ({
@@ -175,6 +176,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, equipments]);
 
   const pushUndo = useCallback(() => {
+    lastLocalWriteAt.current = Date.now();
     const snap = takeSnapshot();
     undoStack.current = [...undoStack.current.slice(-(MAX_HISTORY - 1)), snap];
     redoStack.current = [];
@@ -297,8 +299,19 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (loading) return;
     const interval = window.setInterval(async () => {
+      // Ne pas lancer de rafraîchissement si une modification locale vient d'avoir lieu :
+      // fetchAllData peut prendre plusieurs secondes (pagination des grosses tables) et
+      // lire un état antérieur à une écriture en cours, ce qui écraserait ensuite la
+      // modification locale de l'utilisateur. On saute simplement ce cycle, le suivant
+      // aura lieu 60 secondes plus tard.
+      if (Date.now() - lastLocalWriteAt.current < 8000) return;
+      const fetchStartedAt = Date.now();
       try {
         const data = await fetchAllData();
+        // Si une modification locale a eu lieu PENDANT ce fetch, les données récupérées
+        // sont potentiellement obsolètes : on les ignore pour ne pas écraser l'édition
+        // en cours. Le prochain cycle réessaiera.
+        if (lastLocalWriteAt.current >= fetchStartedAt) return;
         setEquipments(data.equipments);
         setOperators(data.operators);
         setSubcontractors(data.subcontractors);
@@ -321,7 +334,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
-
       } catch (err) {
         console.error('[PlanningContext] Periodic refresh failed:', err);
       }
@@ -450,6 +462,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Wrapped setOrders that also syncs to DB
   const setOrdersWrapped = useCallback((newOrders: Order[]) => {
+    lastLocalWriteAt.current = Date.now();
     setOrders(newOrders);
     // Bulk update all non-ABS orders
     const toSync = newOrders.filter(o => o.orderNumber !== 'ABS');
