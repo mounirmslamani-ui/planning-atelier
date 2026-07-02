@@ -31,6 +31,7 @@ import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 import { useAuth } from '@/context/AuthContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
@@ -1119,31 +1120,27 @@ if (nextRecord) {
     Array.from(new Set(operatorTasks.flatMap(group => group.tasks.map(task => getMachineName(task.step))))).filter(value => value && value !== '—').sort((a, b) => a.localeCompare(b, 'fr'))
   ), [operatorTasks, getMachineName]);
 
+  const planningAccessors = useMemo(() => ({
+    displayOrder: (t: any) => String(t.order.displayOrder ?? ''),
+    startDate: (t: any) => t.step.startDate || '',
+    endDate: (t: any) => t.step.endDate || '',
+    orderNumber: (t: any) => t.order.orderNumber,
+    client: (t: any) => getClientName(t.order.clientId),
+    designation: (t: any) => t.order.designation,
+    quantity: (t: any) => String(t.order.quantity),
+    priority: (t: any) => t.order.priority || '',
+    complexity: (t: any) => t.order.technicalComplexity || '',
+    globalStatus: (t: any) => getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId),
+    machine: (t: any) => getMachineName(t.step),
+    status: (t: any) => getStepProgressStatus(t.step, productionRecords),
+    operation: (t: any) => getOperationName(t.step.operationId),
+  }), [getClientName, getMachineName, getOperationName, draftSteps, productionRecords, absenceOperationId]);
+
   const allValuesByKey = useMemo(() => {
     const allTasks = operatorTasks.flatMap(g => g.tasks);
-    const get = (t: any, k: string) => {
-      switch (k) {
-        case 'displayOrder': return String(t.order.displayOrder ?? '');
-        case 'startDate': return t.step.startDate || '';
-        case 'endDate': return t.step.endDate || '';
-        case 'orderNumber': return t.order.orderNumber;
-        case 'client': return getClientName(t.order.clientId);
-        case 'designation': return t.order.designation;
-        case 'quantity': return String(t.order.quantity);
-        case 'priority': return t.order.priority || '';
-        case 'complexity': return t.order.technicalComplexity || '';
-        case 'globalStatus': return getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId);
-        case 'machine': return getMachineName(t.step);
-        case 'status': return getStepProgressStatus(t.step, productionRecords);
-        case 'operation': return getOperationName(t.step.operationId);
-        default: return '';
-      }
-    };
-    const keys = ['displayOrder','startDate','endDate','orderNumber','client','designation','quantity','priority','complexity','globalStatus','machine','status','operation'];
-    const map: Record<string, string[]> = {};
-    keys.forEach(k => { map[k] = [...new Set(allTasks.map((t: any) => get(t, k)).filter(Boolean))].sort(); });
-    return map;
-  }, [operatorTasks, getClientName, getMachineName, getOperationName, draftSteps, productionRecords, absenceOperationId]);
+    return computeAllValuesByKey(allTasks, planningAccessors, colFilters);
+  }, [operatorTasks, planningAccessors, colFilters]);
+
 
   // Apply filters to tasks within a group
   const filterTasks = useCallback((tasks: TaskItem[]): TaskItem[] => {

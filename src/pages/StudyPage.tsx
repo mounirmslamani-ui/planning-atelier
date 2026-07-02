@@ -13,6 +13,7 @@ import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 
 const StudyPage: React.FC = () => {
   const { orders, clients, steps, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
@@ -73,25 +74,22 @@ const StudyPage: React.FC = () => {
   }, [rows, orders, filters, getClientName, selectedClientName]);
 
 
+  const studyAccessors = useMemo(() => ({
+    displayOrder: (r: any) => String(r.order.displayOrder ?? ''),
+    orderNumber: (r: any) => r.order.orderNumber,
+    client: (r: any) => getClientName(r.order.clientId),
+    designation: (r: any) => r.order.designation,
+    quantity: (r: any) => String(r.order.quantity),
+    priority: (r: any) => r.order.priority || '',
+    complexity: (r: any) => r.order.technicalComplexity || '',
+  }), [getClientName]);
+
   const allValuesByKey = useMemo(() => {
     const list = rows.map(r => ({ ...r, order: orders.find(o => o.id === r.orderId)! })).filter(r => r.order);
-    const get = (r: any, k: string) => {
-      switch (k) {
-        case 'displayOrder': return String(r.order.displayOrder ?? '');
-        case 'orderNumber': return r.order.orderNumber;
-        case 'client': return getClientName(r.order.clientId);
-        case 'designation': return r.order.designation;
-        case 'quantity': return String(r.order.quantity);
-        case 'priority': return r.order.priority || '';
-        case 'complexity': return r.order.technicalComplexity || '';
-        default: return '';
-      }
-    };
-    const keys = ['displayOrder','orderNumber','client','designation','quantity','priority','complexity'];
-    const map: Record<string, string[]> = {};
-    keys.forEach(k => { map[k] = [...new Set(list.map((r: any) => get(r, k)).filter(Boolean))].sort(); });
-    return map;
-  }, [rows, orders, getClientName]);
+    const effective = selectedClientName ? { ...filters, client: `${selectedClientName}|` } : filters;
+    return computeAllValuesByKey(list, studyAccessors, effective);
+  }, [rows, orders, studyAccessors, filters, selectedClientName]);
+
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));

@@ -12,6 +12,7 @@ import { exportTableToExcel } from '@/lib/excelExport';
 import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 
 const MaterialPurchasesPage: React.FC = () => {
   const { orders, clients, steps, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
@@ -68,23 +69,20 @@ const MaterialPurchasesPage: React.FC = () => {
   }, [rows, filters, getClientName, selectedClientName]);
 
 
+  const purchaseAccessors = useMemo(() => ({
+    displayOrder: (r: any) => String(r.order.displayOrder ?? ''),
+    orderNumber: (r: any) => r.order.orderNumber,
+    client: (r: any) => getClientName(r.order.clientId),
+    designation: (r: any) => r.order.designation,
+    quantity: (r: any) => String(r.order.quantity),
+    priority: (r: any) => r.order.priority || '',
+  }), [getClientName]);
+
   const allValuesByKey = useMemo(() => {
-    const get = (r: any, k: string) => {
-      switch (k) {
-        case 'displayOrder': return String(r.order.displayOrder ?? '');
-        case 'orderNumber': return r.order.orderNumber;
-        case 'client': return getClientName(r.order.clientId);
-        case 'designation': return r.order.designation;
-        case 'quantity': return String(r.order.quantity);
-        case 'priority': return r.order.priority || '';
-        default: return '';
-      }
-    };
-    const keys = ['displayOrder','orderNumber','client','designation','quantity','priority'];
-    const map: Record<string, string[]> = {};
-    keys.forEach(k => { map[k] = [...new Set(rows.map((r: any) => get(r, k)).filter(Boolean))].sort(); });
-    return map;
-  }, [rows, getClientName]);
+    const effective = selectedClientName ? { ...filters, client: `${selectedClientName}|` } : filters;
+    return computeAllValuesByKey(rows, purchaseAccessors, effective);
+  }, [rows, purchaseAccessors, filters, selectedClientName]);
+
 
   const handleSort = (key: string, dir: SortDirection) => { setSortKey(key); setSortDir(dir); };
   const handleFilter = (key: string, value: string) => setFilters(prev => ({ ...prev, [key]: value }));

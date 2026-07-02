@@ -121,18 +121,7 @@ const QualityControlPage: React.FC = () => {
     }
     return list;
   }, [qcEntries, orders, deliveryEntries, deliveredOrders]);
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(activeQcEntries, accessors);
-
-
-  const allValuesByKey = React.useMemo(() => {
-    const map: Record<string, string[]> = {};
-    (Object.keys(accessors) as (keyof typeof accessors)[]).forEach(k => {
-      map[k as string] = [...new Set(qcEntries.map(e => {
-        const v = accessors[k](e); return v == null ? '' : String(v);
-      }).filter(Boolean))].sort();
-    });
-    return map;
-  }, [qcEntries]);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(activeQcEntries, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('مراقبة الجودة', processed.map(entry => {

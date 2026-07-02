@@ -88,17 +88,7 @@ const DeliveryPage: React.FC = () => {
     controlDate: (e: Row) => e.controlDate,
     decision: (e: Row) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(filteredEntries, accessors);
-
-  const allValuesByKey = React.useMemo(() => {
-    const map: Record<string, string[]> = {};
-    (Object.keys(accessors) as (keyof typeof accessors)[]).forEach(k => {
-      map[k as string] = [...new Set(filteredEntries.map(e => {
-        const v = accessors[k](e); return v == null ? '' : String(v);
-      }).filter(Boolean))].sort();
-    });
-    return map;
-  }, [filteredEntries]);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(filteredEntries, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('طلبيات جاهزة للتسليم', processed.map(entry => {

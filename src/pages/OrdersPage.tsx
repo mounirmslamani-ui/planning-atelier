@@ -28,6 +28,7 @@ import { getExportFilename } from '@/lib/excelExport';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
+import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
@@ -425,19 +426,19 @@ const OrdersPage: React.FC = () => {
   const hasActiveFilters = sortKey !== null || Object.values(filters).some(v => v);
 
   // Excel-style unique values per column for ColumnHeader checkbox lists.
-  const allValuesByKey = useMemo(() => {
-    const map: Record<string, string[]> = {};
+  // Contextual: each column's list reflects all OTHER active filters.
+  const orderAccessors = useMemo(() => {
     const keys: ColumnKey[] = ['displayOrder','orderNumber','orderDate','client','designation','quantity','priority','complexity','globalStatus','remainingSteps','deliveryDeadline','clientRepresentative','instructions','drawingModel','atelierTime','study','material','tooling','observation'];
-    keys.forEach(k => {
-      const set = new Set<string>();
-      baseSorted.forEach(o => { const v = getColValue(o, k); if (v) set.add(v); });
-      map[k] = Array.from(set);
-    });
-    const planSet = new Set<string>();
-    baseSorted.forEach(o => planSet.add(hasStepsMap.get(o.id) ? 'محددة' : 'غير محددة'));
-    map['planning'] = Array.from(planSet);
-    return map;
-  }, [baseSorted, getColValue, hasStepsMap]);
+    const acc: Record<string, (o: Order) => string> = {};
+    keys.forEach(k => { acc[k] = (o: Order) => getColValue(o, k); });
+    acc['planning'] = (o: Order) => hasStepsMap.get(o.id) ? 'محددة' : 'غير محددة';
+    return acc;
+  }, [getColValue, hasStepsMap]);
+
+  const allValuesByKey = useMemo(() => {
+    return computeAllValuesByKey(baseSorted, orderAccessors, filters);
+  }, [baseSorted, orderAccessors, filters]);
+
 
   const columns: { key: ColumnKey; label: string; className?: string }[] = [
     { key: 'orderNumber', label: 'رقم الطلبية', className: 'w-[90px]' },
