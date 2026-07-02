@@ -234,16 +234,15 @@ const OperatorsPage: React.FC = () => {
             {/* Equipment sections */}
             <div>
               <label className="text-sm font-medium mb-1 block">الآلة الرئيسية</label>
-              <select 
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                value={mainEquipment} 
-                onChange={e => setMainEquipment(e.target.value)}
-              >
-                <option value="">— Aucun —</option>
-                {equipments.map(eq => (
-                  <option key={eq.id} value={eq.id}>{eq.designation} ({eq.type})</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={mainEquipment}
+                onValueChange={setMainEquipment}
+                placeholder="— Aucun —"
+                options={[
+                  { value: '', label: '— Aucun —' },
+                  ...equipments.map(eq => ({ value: eq.id, label: `${eq.designation} (${eq.type})` })),
+                ]}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">آلات أخرى</label>
