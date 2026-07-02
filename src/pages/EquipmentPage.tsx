@@ -154,15 +154,11 @@ const EquipmentPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">الحالة</label>
-              <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              <SearchableSelect
                 value={state}
-                onChange={e => setState(e.target.value as EquipmentState)}
-              >
-                {EQUIPMENT_STATES.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+                onValueChange={v => setState(v as EquipmentState)}
+                options={EQUIPMENT_STATES.map(s => ({ value: s, label: s }))}
+              />
             </div>
           </div>
           <DialogFooter>
