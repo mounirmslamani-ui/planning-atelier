@@ -15,6 +15,7 @@ import {
   getDeliveredQty, getDeliverableRemaining, isDeliveryForceClosed, getDeliveryRemaining,
 } from '@/lib/orderFlow';
 import { Badge } from '@/components/ui/badge';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { Order, QCDecision, QualityControlEntry, DeliveredOrder, SalePriceStatus } from '@/types/planning';
 
 const decisionLabels: Record<QCDecision, string> = {
@@ -328,17 +329,19 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                       </Badge>
                     )}
                     {editing ? (
-                      <select
-                        className="w-full mt-1 rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                      <SearchableSelect
+                        className="w-full mt-1 h-8 text-xs px-2 py-1.5"
                         value={q.decision || ''}
-                        onChange={e => updateQCEntry({ ...q, decision: (e.target.value || undefined) as QCDecision | undefined })}
-                      >
-                        <option value="">—</option>
-                        <option value="conforme">مطابق للمواصفات</option>
-                        <option value="reprise-retouche">إعادة/تعديل</option>
-                        <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
-                        <option value="non-conforme">غير مطابق للمواصفات</option>
-                      </select>
+                        onValueChange={v => updateQCEntry({ ...q, decision: (v || undefined) as QCDecision | undefined })}
+                        placeholder="—"
+                        options={[
+                          { value: '', label: '—' },
+                          { value: 'conforme', label: 'مطابق للمواصفات' },
+                          { value: 'reprise-retouche', label: 'إعادة/تعديل' },
+                          { value: 'conforme-derogation', label: 'مطابق للمواصفات بصفة استثنائية' },
+                          { value: 'non-conforme', label: 'غير مطابق للمواصفات' },
+                        ]}
+                      />
                     ) : (q.decision ? decisionLabels[q.decision] : '—')}
                   </td>
                   <td className="p-2 text-xs">
@@ -386,17 +389,19 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                       className="h-8 text-xs text-center" />
                   </td>
                   <td className="p-2">
-                    <select
-                      className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                    <SearchableSelect
+                      className="w-full h-8 text-xs px-2 py-1.5"
                       value={qcDecision}
-                      onChange={e => setQcDecision(e.target.value as QCDecision)}
-                    >
-                      <option value="">— Choisir —</option>
-                      <option value="conforme">مطابق للمواصفات</option>
-                      <option value="reprise-retouche">إعادة/تعديل</option>
-                      <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
-                      <option value="non-conforme">غير مطابق للمواصفات</option>
-                    </select>
+                      onValueChange={v => setQcDecision(v as QCDecision)}
+                      placeholder="— Choisir —"
+                      options={[
+                        { value: '', label: '— Choisir —' },
+                        { value: 'conforme', label: 'مطابق للمواصفات' },
+                        { value: 'reprise-retouche', label: 'إعادة/تعديل' },
+                        { value: 'conforme-derogation', label: 'مطابق للمواصفات بصفة استثنائية' },
+                        { value: 'non-conforme', label: 'غير مطابق للمواصفات' },
+                      ]}
+                    />
                   </td>
                   <td className="p-2">
                     <Input value={qcNotes} onChange={e => setQcNotes(e.target.value)} placeholder="ملاحظات..." className="h-8 text-xs" />
@@ -511,16 +516,17 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
                   </td>
                   <td className="p-2 text-xs">
                     {!delLock.locked && !d.forceClosed ? (
-                      <select
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                      <SearchableSelect
+                        className="w-full h-8 text-xs px-2 py-1.5"
                         value={d.salePriceStatus}
-                        onChange={e => updateDeliveredOrder({ ...d, salePriceStatus: e.target.value as SalePriceStatus })}
-                      >
-                        <option value="gratuit">⚪ Gratuit</option>
-                        <option value="non-calcule">🔴 Prix non calculé</option>
-                        <option value="non-valide">🟠 Prix non validé</option>
-                        <option value="valide">🟢 Prix validé</option>
-                      </select>
+                        onValueChange={v => updateDeliveredOrder({ ...d, salePriceStatus: v as SalePriceStatus })}
+                        options={[
+                          { value: 'gratuit', label: '⚪ Gratuit' },
+                          { value: 'non-calcule', label: '🔴 Prix non calculé' },
+                          { value: 'non-valide', label: '🟠 Prix non validé' },
+                          { value: 'valide', label: '🟢 Prix validé' },
+                        ]}
+                      />
                     ) : (<>{PRICE_META[d.salePriceStatus].emoji} {PRICE_META[d.salePriceStatus].label}</>)}
                   </td>
                   <td className="p-2">

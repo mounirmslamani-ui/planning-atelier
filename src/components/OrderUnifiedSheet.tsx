@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { Printer, RotateCcw, FileText, Ban, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePlanning } from '@/context/PlanningContext';
@@ -74,17 +74,19 @@ const QCEntryRow: React.FC<QCEntryRowProps> = ({ q, onSave }) => {
         />
       </td>
       <td className="p-2">
-        <select
-          className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+        <SearchableSelect
+          className="w-full h-8 text-xs px-2 py-1.5"
           value={localDecision}
-          onChange={e => setLocalDecision(e.target.value as QCDecision)}
-        >
-          <option value="">— Choisir —</option>
-          <option value="conforme">مطابق للمواصفات</option>
-          <option value="reprise-retouche">إعادة/تعديل</option>
-          <option value="conforme-derogation">مطابق للمواصفات بصفة استثنائية</option>
-          <option value="non-conforme">غير مطابق للمواصفات</option>
-        </select>
+          onValueChange={(v) => setLocalDecision(v as QCDecision | '')}
+          placeholder="— Choisir —"
+          options={[
+            { value: '', label: '— Choisir —' },
+            { value: 'conforme', label: 'مطابق للمواصفات' },
+            { value: 'reprise-retouche', label: 'إعادة/تعديل' },
+            { value: 'conforme-derogation', label: 'مطابق للمواصفات بصفة استثنائية' },
+            { value: 'non-conforme', label: 'غير مطابق للمواصفات' },
+          ]}
+        />
         {localDecision && (
           <span className="block mt-1 text-[10px] text-muted-foreground">
             {decisionLabels[localDecision as QCDecision]}
@@ -409,16 +411,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   </div>
                   <div>
                     <Label>الزبون</Label>
-                    <Select
+                    <SearchableSelect
                       value={merged.clientId || ''}
                       onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}
                       disabled={infoLock.locked}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                      options={clients.map(c => ({ value: c.id, label: c.name }))}
+                    />
                   </div>
                   <div>
                     <Label>ممثل الزبون</Label>
@@ -438,18 +436,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                       }
                       if (reps.length > 1) {
                         return (
-                          <Select
+                          <SearchableSelect
                             value={merged.clientRepresentative || ''}
                             onValueChange={v => setDraft(d => ({ ...d, clientRepresentative: v }))}
                             disabled={infoLock.locked}
-                          >
-                            <SelectTrigger><SelectValue placeholder="— اختر ممثلاً —" /></SelectTrigger>
-                            <SelectContent>
-                              {reps.map(r => (
-                                <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder="— اختر ممثلاً —"
+                            dir="rtl"
+                            options={reps.map(r => ({ value: r.name, label: r.name }))}
+                          />
                         );
                       }
                       return (
@@ -477,18 +471,15 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   </div>
                   <div>
                     <Label>الأولوية</Label>
-                    <Select
+                    <SearchableSelect
                       value={merged.priority || 'undetermined'}
                       onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}
                       disabled={infoLock.locked}
-                    >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {(['P1', 'P2', 'P3', 'P4', 'undetermined'] as OrderPriority[]).map(p => (
-                          <SelectItem key={p} value={p}>{p === 'undetermined' ? 'غير محدد' : p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={(['P1', 'P2', 'P3', 'P4', 'undetermined'] as OrderPriority[]).map(p => ({
+                        value: p,
+                        label: p === 'undetermined' ? 'غير محدد' : p,
+                      }))}
+                    />
                   </div>
                   <div>
                     <Label>أجل التسليم</Label>
@@ -500,18 +491,18 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   </div>
                   <div>
                     <Label>مخطط / نموذج</Label>
-                    <Select
+                    <SearchableSelect
                       value={merged.drawingModel || ''}
                       onValueChange={v => setDraft(d => ({ ...d, drawingModel: v }))}
                       disabled={infoLock.locked}
-                    >
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="مخطط">مخطط</SelectItem>
-                        <SelectItem value="نموذج">نموذج</SelectItem>
-                        <SelectItem value="مخطط+نموذج">مخطط+نموذج</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="—"
+                      dir="rtl"
+                      options={[
+                        { value: 'مخطط', label: 'مخطط' },
+                        { value: 'نموذج', label: 'نموذج' },
+                        { value: 'مخطط+نموذج', label: 'مخطط+نموذج' },
+                      ]}
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <Label>ملف الطلبية</Label>

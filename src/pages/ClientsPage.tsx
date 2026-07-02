@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchableSelect from '@/components/ui/searchable-select';
 
 const ACTIVITY_OPTIONS = [
   'صناعة غذائية',
@@ -219,14 +219,13 @@ const ClientsPage: React.FC = () => {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">النشاط</label>
-                <Select value={activity || undefined} onValueChange={(v) => setActivity(v)}>
-                  <SelectTrigger><SelectValue placeholder="اختر نشاط المؤسسة" /></SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {ACTIVITY_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={activity || ''}
+                  onValueChange={(v) => setActivity(v)}
+                  placeholder="اختر نشاط المؤسسة"
+                  dir="rtl"
+                  options={ACTIVITY_OPTIONS.map(opt => ({ value: opt, label: opt }))}
+                />
               </div>
             </div>
             <div className="border rounded-md p-3 space-y-3 bg-muted/30">

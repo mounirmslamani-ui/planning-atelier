@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 import { UserPlus, UserMinus, UserX, KeyRound, Eye, EyeOff } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 
 const PasswordField: React.FC<{ value: string; onChange: (v: string) => void; id?: string }> = ({ value, onChange, id }) => {
   const [show, setShow] = useState(false);
@@ -249,13 +250,12 @@ const UsersAdminPage: React.FC = () => {
                   const lvl = (r?.niveau_acces ?? 'denied') as AccessLevel;
                   return (
                     <td key={p.id} className="p-2 text-center">
-                      <select
+                      <SearchableSelect
                         value={lvl}
-                        onChange={e => changeLevel(p.id, row, e.target.value as AccessLevel)}
-                        className="rounded border border-input bg-background px-2 py-1 text-sm"
-                      >
-                        {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-                      </select>
+                        onValueChange={v => changeLevel(p.id, row, v as AccessLevel)}
+                        className="h-8 text-sm px-2 py-1"
+                        options={LEVELS.map(l => ({ value: l.value, label: l.label }))}
+                      />
                     </td>
                   );
                 })}

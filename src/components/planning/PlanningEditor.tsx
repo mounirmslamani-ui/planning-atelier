@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { isLinkedToOperation } from '@/lib/operationLinks';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
+import SearchableSelect from '@/components/ui/searchable-select';
 
 export interface OperationRow {
   id: string;
@@ -558,27 +559,25 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                 <tr key={row.id} className={`border-t ${blocked ? `${BLOCKED_MODAL_ROW_CLASS} [&_*]:!text-blocked-foreground` : ''}`}>
                   <td className="p-1.5 font-medium">{row.order}</td>
                   <td className="p-1.5">
-                    <select
-                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                    <SearchableSelect
+                      className="h-8 text-xs px-2"
                       value={row.operationId}
-                      onChange={ev => e.updateRow(row.id, 'operationId', ev.target.value)}
+                      onValueChange={v => e.updateRow(row.id, 'operationId', v)}
                       disabled={e.isLocked}
-                    >
-                      {e.operations.filter(o => o.id !== e.absenceOperationId && o.category === row.assignType).map(o => (
-                        <option key={o.id} value={o.id}>{o.name}</option>
-                      ))}
-                    </select>
+                      options={e.operations.filter(o => o.id !== e.absenceOperationId && o.category === row.assignType).map(o => ({ value: o.id, label: o.name }))}
+                    />
                   </td>
                   <td className="p-1.5">
-                    <select
-                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                    <SearchableSelect
+                      className="h-8 text-xs px-2"
                       value={row.assignType}
-                      onChange={ev => e.updateRow(row.id, 'assignType', ev.target.value)}
+                      onValueChange={v => e.updateRow(row.id, 'assignType', v)}
                       disabled={e.isLocked}
-                    >
-                      <option value="operator">ورشة</option>
-                      <option value="subcontractor">مناولة</option>
-                    </select>
+                      options={[
+                        { value: 'operator', label: 'ورشة' },
+                        { value: 'subcontractor', label: 'مناولة' },
+                      ]}
+                    />
                   </td>
                   <td className="p-1.5">
                     <div className="flex items-center gap-1">
@@ -595,15 +594,17 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                     </div>
                   </td>
                   <td className="p-1.5">
-                    <select
-                      className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                    <SearchableSelect
+                      className="h-8 text-xs px-2"
                       value={row.option1}
-                      onChange={ev => e.updateRow(row.id, 'option1', ev.target.value)}
+                      onValueChange={v => e.updateRow(row.id, 'option1', v)}
                       disabled={e.isLocked}
-                    >
-                      <option value="">{placeholder}</option>
-                      {assignees.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                      placeholder={placeholder}
+                      options={[
+                        { value: '', label: placeholder },
+                        ...assignees.map(o => ({ value: o.value, label: o.label })),
+                      ]}
+                    />
                   </td>
                   <td className="p-1.5 text-xs font-medium">
                     {(() => {
@@ -612,20 +613,20 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                           ? 'done'
                           : row.subcontractingInProgress ? 'in-progress' : 'not-started';
                         return (
-                          <select
-                            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                          <SearchableSelect
+                            className="h-8 text-xs px-2"
                             value={value}
-                            onChange={ev => {
-                              const v = ev.target.value;
+                            onValueChange={v => {
                               e.updateRow(row.id, 'subcontractingDone', v === 'done');
                               e.updateRow(row.id, 'subcontractingInProgress', v === 'in-progress');
                             }}
                             disabled={e.isLocked}
-                          >
-                            <option value="not-started">{PROGRESS_AR['Non entamée']}</option>
-                            <option value="in-progress">{PROGRESS_AR['En cours']}</option>
-                            <option value="done">{PROGRESS_AR['Terminée']}</option>
-                          </select>
+                            options={[
+                              { value: 'not-started', label: PROGRESS_AR['Non entamée'] },
+                              { value: 'in-progress', label: PROGRESS_AR['En cours'] },
+                              { value: 'done', label: PROGRESS_AR['Terminée'] },
+                            ]}
+                          />
                         );
                       }
                       const st = e.getRowProgressStatus(row);
@@ -762,21 +763,23 @@ export const ResourcesEditorTable: React.FC<{
         <div className="rounded-md border bg-card p-3 space-y-2">
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium whitespace-nowrap">مستوى التعقيد التقني</label>
-            <select
-              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm flex-1 max-w-md"
+            <SearchableSelect
+              className="flex-1 max-w-md h-9 text-sm px-2 py-1.5"
               value={complexity}
               disabled={e.isLocked}
-              onChange={ev => {
-                const v = ev.target.value;
+              onValueChange={v => {
                 updateOrder({ ...order, technicalComplexity: (v || undefined) as any });
               }}
-            >
-              <option value="">— اختر المستوى —</option>
-              <option value="level1">{complexityLabels.level1}</option>
-              <option value="level2">{complexityLabels.level2}</option>
-              <option value="level3">{complexityLabels.level3}</option>
-              <option value="level4">{complexityLabels.level4}</option>
-            </select>
+              placeholder="— اختر المستوى —"
+              dir="rtl"
+              options={[
+                { value: '', label: '— اختر المستوى —' },
+                { value: 'level1', label: complexityLabels.level1 },
+                { value: 'level2', label: complexityLabels.level2 },
+                { value: 'level3', label: complexityLabels.level3 },
+                { value: 'level4', label: complexityLabels.level4 },
+              ]}
+            />
           </div>
           {complexity && complexityDescriptions[complexity] && (
             <div className="rounded-md bg-muted/40 border border-border px-3 py-2 text-xs whitespace-pre-line leading-relaxed" dir="rtl">

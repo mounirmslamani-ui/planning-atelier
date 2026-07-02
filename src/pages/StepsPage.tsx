@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { ProductionStep, Holiday } from '@/types/planning';
 import { addWorkMinutes, workMinutesBetween } from '@/lib/workTime';
 
@@ -154,9 +155,11 @@ const StepsPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Commande</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.orderId} onChange={e => updateForm('orderId', e.target.value)}>
-                {realOrders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
-              </select>
+              <SearchableSelect
+                value={form.orderId}
+                onValueChange={v => updateForm('orderId', v)}
+                options={realOrders.map(o => ({ value: o.id, label: `${o.orderNumber} — ${o.designation}` }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Assigner à</label>
@@ -177,20 +180,26 @@ const StepsPage: React.FC = () => {
                 </button>
               </div>
               {assignType === 'operator' ? (
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operatorId} onChange={e => updateForm('operatorId', e.target.value)}>
-                  {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  value={form.operatorId}
+                  onValueChange={v => updateForm('operatorId', v)}
+                  options={operators.map(o => ({ value: o.id, label: o.name }))}
+                />
               ) : (
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.subcontractorId || ''} onChange={e => updateForm('subcontractorId', e.target.value)}>
-                  {subcontractors.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
-                </select>
+                <SearchableSelect
+                  value={form.subcontractorId || ''}
+                  onValueChange={v => updateForm('subcontractorId', v)}
+                  options={subcontractors.map(s => ({ value: s.id, label: s.companyName }))}
+                />
               )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">العملية</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.operationId} onChange={e => updateForm('operationId', e.target.value)}>
-                {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-              </select>
+              <SearchableSelect
+                value={form.operationId}
+                onValueChange={v => updateForm('operationId', v)}
+                options={operations.filter(o => o.id !== absenceOperationId).map(o => ({ value: o.id, label: o.name }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Ordre chronologique</label>
@@ -224,12 +233,17 @@ const StepsPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Dépend de (étape)</label>
-              <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={form.dependsOn || ''} onChange={e => updateForm('dependsOn', e.target.value || undefined)}>
-                <option value="">Aucune dépendance</option>
-                {steps.filter(s => s.id !== editing?.id).map(s => (
-                  <option key={s.id} value={s.id}>#{s.order} — {getOrderNumber(s.orderId)}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={form.dependsOn || ''}
+                onValueChange={v => updateForm('dependsOn', v || undefined)}
+                options={[
+                  { value: '', label: 'Aucune dépendance' },
+                  ...steps.filter(s => s.id !== editing?.id).map(s => ({
+                    value: s.id,
+                    label: `#${s.order} — ${getOrderNumber(s.orderId)}`,
+                  })),
+                ]}
+              />
             </div>
           </div>
           <DialogFooter>

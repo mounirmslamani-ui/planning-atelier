@@ -7,6 +7,7 @@ import type { OperationToSchedule } from '@/lib/scheduler';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SearchableSelect from '@/components/ui/searchable-select';
 import SubcontractorTableDialog from '@/components/SubcontractorTableDialog';
 import PurchaseRowDialog from '@/components/PurchaseRowDialog';
 import {
@@ -1194,9 +1195,11 @@ const GanttChart: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Commande</label>
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.orderId} onChange={e => updateEditForm('orderId', e.target.value)}>
-                  {orders.map(o => <option key={o.id} value={o.id}>{o.orderNumber} — {o.designation}</option>)}
-                </select>
+                <SearchableSelect
+                  value={editForm.orderId}
+                  onValueChange={v => updateEditForm('orderId', v)}
+                  options={orders.map(o => ({ value: o.id, label: `${o.orderNumber} — ${o.designation}` }))}
+                />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Assigner à</label>
@@ -1217,20 +1220,26 @@ const GanttChart: React.FC = () => {
                   </button>
                 </div>
                 {!editForm.subcontractorId ? (
-                  <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operatorId} onChange={e => updateEditForm('operatorId', e.target.value)}>
-                    {operators.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={editForm.operatorId}
+                    onValueChange={v => updateEditForm('operatorId', v)}
+                    options={operators.map(o => ({ value: o.id, label: o.name }))}
+                  />
                 ) : (
-                  <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.subcontractorId} onChange={e => updateEditForm('subcontractorId', e.target.value)}>
-                    {subcontractors.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={editForm.subcontractorId}
+                    onValueChange={v => updateEditForm('subcontractorId', v)}
+                    options={subcontractors.map(s => ({ value: s.id, label: s.companyName }))}
+                  />
                 )}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">العملية</label>
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.operationId} onChange={e => updateEditForm('operationId', e.target.value)}>
-                  {operations.filter(o => o.id !== absenceOperationId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
+                <SearchableSelect
+                  value={editForm.operationId}
+                  onValueChange={v => updateEditForm('operationId', v)}
+                  options={operations.filter(o => o.id !== absenceOperationId).map(o => ({ value: o.id, label: o.name }))}
+                />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Ordre chronologique</label>
@@ -1258,13 +1267,17 @@ const GanttChart: React.FC = () => {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Dépend de (étape)</label>
-                <select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={editForm.dependsOn || ''} onChange={e => updateEditForm('dependsOn', e.target.value || undefined)}>
-                  <option value="">Aucune dépendance</option>
-                  {steps.filter(s => s.id !== editForm.id).map(s => {
-                    const o = orders.find(ord => ord.id === s.orderId);
-                    return <option key={s.id} value={s.id}>#{s.order} — {o?.orderNumber || '—'}</option>;
-                  })}
-                </select>
+                <SearchableSelect
+                  value={editForm.dependsOn || ''}
+                  onValueChange={v => updateEditForm('dependsOn', v || undefined)}
+                  options={[
+                    { value: '', label: 'Aucune dépendance' },
+                    ...steps.filter(s => s.id !== editForm.id).map(s => {
+                      const o = orders.find(ord => ord.id === s.orderId);
+                      return { value: s.id, label: `#${s.order} — ${o?.orderNumber || '—'}` };
+                    }),
+                  ]}
+                />
               </div>
             </div>
           )}

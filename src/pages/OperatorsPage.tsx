@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { Operator } from '@/types/planning';
 import ColumnHeader from '@/components/orders/ColumnHeader';
 import { useTableSortFilter } from '@/hooks/useTableSortFilter';
@@ -196,15 +197,12 @@ const OperatorsPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">اختصاص</label>
-              <select 
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                value={mainFunction} 
-                onChange={e => setMainFunction(e.target.value)}
-              >
-                  {operatorOps.map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={mainFunction}
+                onValueChange={setMainFunction}
+                dir="rtl"
+                options={operatorOps.map(o => ({ value: o.id, label: o.name }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">مهارات أخرى</label>
@@ -217,16 +215,16 @@ const OperatorsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex gap-2">
-                <select 
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
-                  value={newSecondary} 
-                  onChange={e => setNewSecondary(e.target.value)}
-                >
-                  <option value="">Sélectionner...</option>
-                  {operatorOps.filter(o => o.id !== mainFunction && !secondaryFunctions.includes(o.id)).map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  className="flex-1"
+                  value={newSecondary}
+                  onValueChange={setNewSecondary}
+                  placeholder="Sélectionner..."
+                  options={[
+                    { value: '', label: 'Sélectionner...' },
+                    ...operatorOps.filter(o => o.id !== mainFunction && !secondaryFunctions.includes(o.id)).map(o => ({ value: o.id, label: o.name })),
+                  ]}
+                />
                 <Button variant="outline" size="sm" onClick={addSecondary} disabled={!newSecondary}>
                   <Plus className="w-3 h-3" />
                 </Button>
@@ -236,16 +234,15 @@ const OperatorsPage: React.FC = () => {
             {/* Equipment sections */}
             <div>
               <label className="text-sm font-medium mb-1 block">الآلة الرئيسية</label>
-              <select 
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                value={mainEquipment} 
-                onChange={e => setMainEquipment(e.target.value)}
-              >
-                <option value="">— Aucun —</option>
-                {equipments.map(eq => (
-                  <option key={eq.id} value={eq.id}>{eq.designation} ({eq.type})</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={mainEquipment}
+                onValueChange={setMainEquipment}
+                placeholder="— Aucun —"
+                options={[
+                  { value: '', label: '— Aucun —' },
+                  ...equipments.map(eq => ({ value: eq.id, label: `${eq.designation} (${eq.type})` })),
+                ]}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">آلات أخرى</label>
@@ -258,16 +255,16 @@ const OperatorsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex gap-2">
-                <select 
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
-                  value={newSecEquip} 
-                  onChange={e => setNewSecEquip(e.target.value)}
-                >
-                  <option value="">Sélectionner...</option>
-                  {equipments.filter(eq => eq.id !== mainEquipment && !secondaryEquipments.includes(eq.id)).map(eq => (
-                    <option key={eq.id} value={eq.id}>{eq.designation} ({eq.type})</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  className="flex-1"
+                  value={newSecEquip}
+                  onValueChange={setNewSecEquip}
+                  placeholder="Sélectionner..."
+                  options={[
+                    { value: '', label: 'Sélectionner...' },
+                    ...equipments.filter(eq => eq.id !== mainEquipment && !secondaryEquipments.includes(eq.id)).map(eq => ({ value: eq.id, label: `${eq.designation} (${eq.type})` })),
+                  ]}
+                />
                 <Button variant="outline" size="sm" onClick={addSecEquip} disabled={!newSecEquip}>
                   <Plus className="w-3 h-3" />
                 </Button>

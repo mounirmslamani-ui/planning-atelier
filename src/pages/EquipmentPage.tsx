@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 import type { Equipment, EquipmentType, EquipmentState } from '@/types/planning';
 
 const EQUIPMENT_TYPES: EquipmentType[] = [
@@ -141,15 +142,11 @@ const EquipmentPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">فئة</label>
-              <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              <SearchableSelect
                 value={type}
-                onChange={e => setType(e.target.value as EquipmentType)}
-              >
-                {EQUIPMENT_TYPES.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+                onValueChange={v => setType(v as EquipmentType)}
+                options={EQUIPMENT_TYPES.map(t => ({ value: t, label: t }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">سعة</label>
@@ -157,15 +154,11 @@ const EquipmentPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">الحالة</label>
-              <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              <SearchableSelect
                 value={state}
-                onChange={e => setState(e.target.value as EquipmentState)}
-              >
-                {EQUIPMENT_STATES.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+                onValueChange={v => setState(v as EquipmentState)}
+                options={EQUIPMENT_STATES.map(s => ({ value: s, label: s }))}
+              />
             </div>
           </div>
           <DialogFooter>
