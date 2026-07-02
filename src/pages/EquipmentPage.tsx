@@ -142,15 +142,11 @@ const EquipmentPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">فئة</label>
-              <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              <SearchableSelect
                 value={type}
-                onChange={e => setType(e.target.value as EquipmentType)}
-              >
-                {EQUIPMENT_TYPES.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+                onValueChange={v => setType(v as EquipmentType)}
+                options={EQUIPMENT_TYPES.map(t => ({ value: t, label: t }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">سعة</label>
