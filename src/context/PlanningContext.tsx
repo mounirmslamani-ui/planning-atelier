@@ -176,6 +176,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }), [operators, subcontractors, operations, clients, orders, steps, holidays, productionRecords, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, equipments]);
 
   const pushUndo = useCallback(() => {
+    lastLocalWriteAt.current = Date.now();
     const snap = takeSnapshot();
     undoStack.current = [...undoStack.current.slice(-(MAX_HISTORY - 1)), snap];
     redoStack.current = [];
