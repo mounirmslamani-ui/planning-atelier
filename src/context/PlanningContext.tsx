@@ -156,6 +156,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const undoStack = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
   const autoResyncInFlight = useRef(false);
+  const lastLocalWriteAt = useRef(0);
   const [historyTrigger, setHistoryTrigger] = useState(0);
 
   const takeSnapshot = useCallback((): Snapshot => ({
