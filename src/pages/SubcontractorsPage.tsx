@@ -105,7 +105,7 @@ const SubcontractorsPage: React.FC = () => {
     addresses: (s: Subcontractor) => (s.addresses || []).join(' '),
     representatives: (s: Subcontractor) => (s.representatives || []).map(r => r.name).join(' '),
   };
-  const { processed, sortKey, sortDir, filters, handleSort, handleFilter } = useTableSortFilter(subcontractors, accessors);
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(subcontractors, accessors);
 
   const handleExportExcel = () => {
     exportTableToExcel('المناولون', processed.map(s => ({
