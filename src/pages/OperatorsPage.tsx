@@ -197,15 +197,12 @@ const OperatorsPage: React.FC = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">اختصاص</label>
-              <select 
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                value={mainFunction} 
-                onChange={e => setMainFunction(e.target.value)}
-              >
-                  {operatorOps.map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
+              <SearchableSelect
+                value={mainFunction}
+                onValueChange={setMainFunction}
+                dir="rtl"
+                options={operatorOps.map(o => ({ value: o.id, label: o.name }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">مهارات أخرى</label>
