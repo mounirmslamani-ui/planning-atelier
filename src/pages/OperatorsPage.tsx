@@ -215,16 +215,16 @@ const OperatorsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex gap-2">
-                <select 
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
-                  value={newSecondary} 
-                  onChange={e => setNewSecondary(e.target.value)}
-                >
-                  <option value="">Sélectionner...</option>
-                  {operatorOps.filter(o => o.id !== mainFunction && !secondaryFunctions.includes(o.id)).map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  className="flex-1"
+                  value={newSecondary}
+                  onValueChange={setNewSecondary}
+                  placeholder="Sélectionner..."
+                  options={[
+                    { value: '', label: 'Sélectionner...' },
+                    ...operatorOps.filter(o => o.id !== mainFunction && !secondaryFunctions.includes(o.id)).map(o => ({ value: o.id, label: o.name })),
+                  ]}
+                />
                 <Button variant="outline" size="sm" onClick={addSecondary} disabled={!newSecondary}>
                   <Plus className="w-3 h-3" />
                 </Button>
