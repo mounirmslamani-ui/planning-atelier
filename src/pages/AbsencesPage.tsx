@@ -194,15 +194,11 @@ const AbsencesPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1 block">العامل</label>
-              <select
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              <SearchableSelect
                 value={absOperatorId}
-                onChange={e => setAbsOperatorId(e.target.value)}
-              >
-                {operators.map(op => (
-                  <option key={op.id} value={op.id}>{op.name}</option>
-                ))}
-              </select>
+                onValueChange={setAbsOperatorId}
+                options={operators.map(op => ({ value: op.id, label: op.name }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
