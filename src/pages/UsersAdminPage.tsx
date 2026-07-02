@@ -250,13 +250,12 @@ const UsersAdminPage: React.FC = () => {
                   const lvl = (r?.niveau_acces ?? 'denied') as AccessLevel;
                   return (
                     <td key={p.id} className="p-2 text-center">
-                      <select
+                      <SearchableSelect
                         value={lvl}
-                        onChange={e => changeLevel(p.id, row, e.target.value as AccessLevel)}
-                        className="rounded border border-input bg-background px-2 py-1 text-sm"
-                      >
-                        {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-                      </select>
+                        onValueChange={v => changeLevel(p.id, row, v as AccessLevel)}
+                        className="h-8 text-sm px-2 py-1"
+                        options={LEVELS.map(l => ({ value: l.value, label: l.label }))}
+                      />
                     </td>
                   );
                 })}
