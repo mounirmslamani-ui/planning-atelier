@@ -120,30 +120,17 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
-        <span
+          href={folderLink}
+          target="_blank"
+          rel="noopener noreferrer"
           onContextMenu={handleContextMenu}
           onPointerDown={e => e.stopPropagation()}
-          onClick={e => {
-            e.stopPropagation();
-            // On simule un vrai clic utilisateur sur un <a target="_blank">.
-            // Important : NE PAS utiliser window.open(url, '_blank', 'noopener,noreferrer'),
-            // car avec le flag "noopener", Chrome/Firefox renvoient null et n'exécutent
-            // aucun script/redirection injecté → l'onglet reste blanc.
-            // Un anchor.click() déclenche une vraie navigation native vers Drive.
-            const a = document.createElement('a');
-            a.href = folderLink;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }}
+          onClick={e => e.stopPropagation()}
           className={combinedClassName}
           title={`Ouvrir : ${folderLink}`}
         >
           {designation}
-        </span>
+        </a>
       </PopoverAnchor>
       <PopoverContent className="w-80" onClick={e => e.stopPropagation()} onContextMenu={e => e.preventDefault()}>
         <div className="space-y-2">
