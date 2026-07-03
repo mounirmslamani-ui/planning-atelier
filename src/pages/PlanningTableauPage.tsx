@@ -1070,6 +1070,19 @@ if (nextRecord) {
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
 
+  const handleGrantExtraTime = useCallback((stepId: string, extraMinutes: number) => {
+    const step = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
+    if (!step) return;
+    const currentEnd = new Date(`${step.endDate}T${step.endTime}`);
+    const newEnd = addWorkMinutes(currentEnd, extraMinutes, holidays);
+    updateStep({
+      ...step,
+      estimatedDuration: step.estimatedDuration + extraMinutes,
+      endDate: newEnd.toISOString().split('T')[0],
+      endTime: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
+    });
+  }, [draftSteps, steps, holidays, updateStep]);
+
 
 
   // Export to Excel
