@@ -1810,6 +1810,7 @@ if (nextRecord) {
             productionRecords={productionRecords}
             operatorOpenSteps={operatorOpenSteps}
             initialStartTimeOverride={pendingRelaisStart && pendingRelaisStart.operatorId === relaisDialog.operatorId ? pendingRelaisStart.startTime : undefined}
+            onGrantExtraTime={handleGrantExtraTime}
           />
         );
       })()}
