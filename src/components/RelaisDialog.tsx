@@ -166,7 +166,7 @@ const RelaisDialog: React.FC<Props> = ({
   open, mode, operatorId, operatorName,
   currentStep, currentOrder, currentStepTotalDoneAlready,
   nextStep: initialNextStep, nextOrder: initialNextOrder, nextStepTotalDoneAlready: initialNextDone,
-  onConfirm, onCancel, operations, productionRecords, operatorOpenSteps, initialStartTimeOverride,
+  onConfirm, onGrantExtraTime, onCancel, operations, productionRecords, operatorOpenSteps, initialStartTimeOverride,
 }) => {
   const { clients } = usePlanning();
 
