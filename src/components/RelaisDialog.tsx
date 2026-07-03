@@ -212,6 +212,8 @@ const RelaisDialog: React.FC<Props> = ({
   const [rightConfirmed, setRightConfirmed] = useState(false);
   const [leftPayload, setLeftPayload] = useState<RelaisFinishedRecord | null>(null);
   const [rightPayload, setRightPayload] = useState<RelaisNextRecord | null>(null);
+  const [expiryAlertOpen, setExpiryAlertOpen] = useState(false);
+  const [expiryAcknowledgedStepId, setExpiryAcknowledgedStepId] = useState<string | null>(null);
 
   // Reset on open
   useEffect(() => {
