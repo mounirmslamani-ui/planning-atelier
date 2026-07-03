@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
+import StepDurationExpiredDialog from '@/components/StepDurationExpiredDialog';
 import type { Operation, Order, ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type RelaisMode = 'debut_poste' | 'relais' | 'fin_poste';
@@ -49,6 +50,7 @@ interface Props {
   nextOrder: Order | null;
   nextStepTotalDoneAlready: number;
   onConfirm: (result: RelaisResult) => void;
+  onGrantExtraTime: (stepId: string, extraMinutes: number) => void;
   onCancel: () => void;
   operations: Operation[];
   productionRecords: ProductionRecord[];
@@ -164,7 +166,7 @@ const RelaisDialog: React.FC<Props> = ({
   open, mode, operatorId, operatorName,
   currentStep, currentOrder, currentStepTotalDoneAlready,
   nextStep: initialNextStep, nextOrder: initialNextOrder, nextStepTotalDoneAlready: initialNextDone,
-  onConfirm, onCancel, operations, productionRecords, operatorOpenSteps, initialStartTimeOverride,
+  onConfirm, onGrantExtraTime, onCancel, operations, productionRecords, operatorOpenSteps, initialStartTimeOverride,
 }) => {
   const { clients } = usePlanning();
 
@@ -210,6 +212,8 @@ const RelaisDialog: React.FC<Props> = ({
   const [rightConfirmed, setRightConfirmed] = useState(false);
   const [leftPayload, setLeftPayload] = useState<RelaisFinishedRecord | null>(null);
   const [rightPayload, setRightPayload] = useState<RelaisNextRecord | null>(null);
+  const [expiryAlertOpen, setExpiryAlertOpen] = useState(false);
+  const [expiryAcknowledgedStepId, setExpiryAcknowledgedStepId] = useState<string | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -227,6 +231,8 @@ const RelaisDialog: React.FC<Props> = ({
     setRightConfirmed(false);
     setLeftPayload(null);
     setRightPayload(null);
+    setExpiryAlertOpen(false);
+    setExpiryAcknowledgedStepId(null);
   }, [open, initialStart, mode]);
 
   // Auto-update pause when start/end change unless user edited it
@@ -260,8 +266,9 @@ const RelaisDialog: React.FC<Props> = ({
   const nextRemaining = nextStep ? Math.max(0, nextStep.estimatedDuration - nextTotalDone) : 0;
 
   // ───────── Handlers ─────────
-  const handleLeftConfirm = () => {
+  const handleLeftConfirm = (statusOverride?: 'done' | 'continue') => {
     if (!currentStep || !currentOrder || actualDuration === null) return;
+    const finalStatus = statusOverride ?? workStatus;
     const payload: RelaisFinishedRecord = {
       stepId: currentStep.id,
       orderId: currentOrder.id,
@@ -272,10 +279,35 @@ const RelaisDialog: React.FC<Props> = ({
       endTime,
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
       actualDuration,
-      workStatus: mode === 'fin_poste' ? workStatus : workStatus,
+      workStatus: finalStatus,
     };
+    setWorkStatus(finalStatus);
     setLeftPayload(payload);
     setLeftConfirmed(true);
+  };
+
+  // Trigger expiry alert when allocated duration is fully consumed while status is not 'done'
+  useEffect(() => {
+    if (!currentStep) return;
+    if (workStatus === 'done') return;
+    if (leftConfirmed) return;
+    if (actualDuration === null) return;
+    if (expiryAcknowledgedStepId === currentStep.id) return;
+    const realRemaining = currentStep.estimatedDuration - currentStepTotalDoneAlready - actualDuration;
+    if (realRemaining <= 0) setExpiryAlertOpen(true);
+  }, [currentStep, currentStepTotalDoneAlready, actualDuration, workStatus, leftConfirmed, expiryAcknowledgedStepId]);
+
+  const handleFinishStepFromAlert = () => {
+    handleLeftConfirm('done');
+    setExpiryAcknowledgedStepId(currentStep?.id ?? null);
+    setExpiryAlertOpen(false);
+  };
+
+  const handleGrantExtraTimeFromAlert = (extraMinutes: number) => {
+    if (!currentStep) return;
+    onGrantExtraTime(currentStep.id, extraMinutes);
+    setExpiryAcknowledgedStepId(currentStep.id);
+    setExpiryAlertOpen(false);
   };
 
   const handleRightConfirm = () => {
@@ -312,6 +344,7 @@ const RelaisDialog: React.FC<Props> = ({
   const showRight = mode !== 'fin_poste';
 
   return (
+    <>
     <Dialog open={open} onOpenChange={o => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-5xl" dir="rtl">
         <DialogHeader>
@@ -392,7 +425,7 @@ const RelaisDialog: React.FC<Props> = ({
                   <div className="pt-3 flex gap-2">
                     <Button
                       type="button"
-                      onClick={handleLeftConfirm}
+                      onClick={() => handleLeftConfirm()}
                       disabled={leftConfirmed || durationError}
                       className="flex-1"
                     >
@@ -495,6 +528,12 @@ const RelaisDialog: React.FC<Props> = ({
 
       </DialogContent>
     </Dialog>
+    <StepDurationExpiredDialog
+      open={expiryAlertOpen}
+      onFinishStep={handleFinishStepFromAlert}
+      onGrantExtraTime={handleGrantExtraTimeFromAlert}
+    />
+    </>
   );
 };
 
