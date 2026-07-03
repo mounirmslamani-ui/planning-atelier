@@ -50,6 +50,7 @@ interface Props {
   nextOrder: Order | null;
   nextStepTotalDoneAlready: number;
   onConfirm: (result: RelaisResult) => void;
+  onGrantExtraTime: (stepId: string, extraMinutes: number) => void;
   onCancel: () => void;
   operations: Operation[];
   productionRecords: ProductionRecord[];
