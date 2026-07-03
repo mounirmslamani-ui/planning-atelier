@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
+import StepDurationExpiredDialog from '@/components/StepDurationExpiredDialog';
 import type { Operation, Order, ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type RelaisMode = 'debut_poste' | 'relais' | 'fin_poste';
