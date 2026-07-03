@@ -51,13 +51,8 @@ const StepDurationExpiredDialog: React.FC<Props> = ({ open, onFinishStep, onGran
   };
 
   return (
-    <AlertDialog open={open}>
-      <AlertDialogContent
-        dir="rtl"
-        onEscapeKeyDown={e => e.preventDefault()}
-        onPointerDownOutside={e => e.preventDefault()}
-        onInteractOutside={e => e.preventDefault()}
-      >
+    <AlertDialog open={open} onOpenChange={() => { /* blocking: cannot close via escape / outside */ }}>
+      <AlertDialogContent dir="rtl">
         <AlertDialogHeader>
           <AlertDialogTitle>انتهت المدة المخصصة لهذه المرحلة</AlertDialogTitle>
         </AlertDialogHeader>
