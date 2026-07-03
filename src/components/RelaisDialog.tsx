@@ -266,8 +266,9 @@ const RelaisDialog: React.FC<Props> = ({
   const nextRemaining = nextStep ? Math.max(0, nextStep.estimatedDuration - nextTotalDone) : 0;
 
   // ───────── Handlers ─────────
-  const handleLeftConfirm = () => {
+  const handleLeftConfirm = (statusOverride?: 'done' | 'continue') => {
     if (!currentStep || !currentOrder || actualDuration === null) return;
+    const finalStatus = statusOverride ?? workStatus;
     const payload: RelaisFinishedRecord = {
       stepId: currentStep.id,
       orderId: currentOrder.id,
@@ -278,10 +279,35 @@ const RelaisDialog: React.FC<Props> = ({
       endTime,
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
       actualDuration,
-      workStatus: mode === 'fin_poste' ? workStatus : workStatus,
+      workStatus: finalStatus,
     };
+    setWorkStatus(finalStatus);
     setLeftPayload(payload);
     setLeftConfirmed(true);
+  };
+
+  // Trigger expiry alert when allocated duration is fully consumed while status is not 'done'
+  useEffect(() => {
+    if (!currentStep) return;
+    if (workStatus === 'done') return;
+    if (leftConfirmed) return;
+    if (actualDuration === null) return;
+    if (expiryAcknowledgedStepId === currentStep.id) return;
+    const realRemaining = currentStep.estimatedDuration - currentStepTotalDoneAlready - actualDuration;
+    if (realRemaining <= 0) setExpiryAlertOpen(true);
+  }, [currentStep, currentStepTotalDoneAlready, actualDuration, workStatus, leftConfirmed, expiryAcknowledgedStepId]);
+
+  const handleFinishStepFromAlert = () => {
+    handleLeftConfirm('done');
+    setExpiryAcknowledgedStepId(currentStep?.id ?? null);
+    setExpiryAlertOpen(false);
+  };
+
+  const handleGrantExtraTimeFromAlert = (extraMinutes: number) => {
+    if (!currentStep) return;
+    onGrantExtraTime(currentStep.id, extraMinutes);
+    setExpiryAcknowledgedStepId(currentStep.id);
+    setExpiryAlertOpen(false);
   };
 
   const handleRightConfirm = () => {
