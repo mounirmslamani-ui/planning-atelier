@@ -528,6 +528,12 @@ const RelaisDialog: React.FC<Props> = ({
 
       </DialogContent>
     </Dialog>
+    <StepDurationExpiredDialog
+      open={expiryAlertOpen}
+      onFinishStep={handleFinishStepFromAlert}
+      onGrantExtraTime={handleGrantExtraTimeFromAlert}
+    />
+    </>
   );
 };
 
