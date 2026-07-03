@@ -344,6 +344,7 @@ const RelaisDialog: React.FC<Props> = ({
   const showRight = mode !== 'fin_poste';
 
   return (
+    <>
     <Dialog open={open} onOpenChange={o => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-5xl" dir="rtl">
         <DialogHeader>
