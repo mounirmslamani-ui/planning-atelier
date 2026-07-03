@@ -231,6 +231,8 @@ const RelaisDialog: React.FC<Props> = ({
     setRightConfirmed(false);
     setLeftPayload(null);
     setRightPayload(null);
+    setExpiryAlertOpen(false);
+    setExpiryAcknowledgedStepId(null);
   }, [open, initialStart, mode]);
 
   // Auto-update pause when start/end change unless user edited it
