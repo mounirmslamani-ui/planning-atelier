@@ -424,7 +424,7 @@ const RelaisDialog: React.FC<Props> = ({
                   <div className="pt-3 flex gap-2">
                     <Button
                       type="button"
-                      onClick={handleLeftConfirm}
+                      onClick={() => handleLeftConfirm()}
                       disabled={leftConfirmed || durationError}
                       className="flex-1"
                     >
