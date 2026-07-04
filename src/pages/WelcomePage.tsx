@@ -1,15 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Plus, X, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, X, Check, ChevronsUpDown, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { generateOrderCode } from '@/lib/orderRegistry';
+import ClientContactDetailsContent from '@/components/ClientContactDetailsContent';
 import type { Order, OrderCategory } from '@/types/planning';
 
 const WelcomePage: React.FC = () => {
@@ -24,6 +25,38 @@ const WelcomePage: React.FC = () => {
     () => [...clients].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })),
     [clients],
   );
+
+  const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
+
+  const [showClientDetails, setShowClientDetails] = useState(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleToggleClientDetails = () => {
+    if (!selectedClient) return;
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setShowClientDetails(true);
+    hideTimerRef.current = setTimeout(() => {
+      setShowClientDetails(false);
+      hideTimerRef.current = null;
+    }, 120000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setShowClientDetails(false);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, [selectedClientId]);
 
   const realOrders = useMemo(() => orders.filter(o => o.id !== absenceOrderId), [orders, absenceOrderId]);
 
@@ -90,6 +123,16 @@ const WelcomePage: React.FC = () => {
             <X className="w-4 h-4 ml-1" />
             إلغاء
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={handleToggleClientDetails}
+            disabled={!selectedClient}
+            title="عرض تفاصيل الزبون"
+          >
+            <Eye className="w-4 h-4 text-primary" />
+          </Button>
         </div>
 
         {canCreateOrder && (
@@ -109,6 +152,20 @@ const WelcomePage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showClientDetails && selectedClient && (
+        <div className="rounded-md border bg-card p-4 max-w-2xl">
+          <ClientContactDetailsContent
+            companyName={selectedClient.name}
+            activity={selectedClient.activity}
+            phones={selectedClient.phones}
+            emails={selectedClient.emails}
+            addresses={selectedClient.addresses}
+            addressDetails={selectedClient.addressDetails}
+            representatives={selectedClient.representatives}
+          />
+        </div>
+      )}
 
       <OrderUnifiedSheet
         orderId={null}
