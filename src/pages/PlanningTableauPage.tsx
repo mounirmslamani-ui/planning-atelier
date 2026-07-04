@@ -22,7 +22,7 @@ import { useConfirm } from '@/hooks/use-confirm';
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import type { ResourceStatus } from '@/types/planning';
 import { computeBlockedStepIds, BLOCKED_TABLE_BG_CLASS } from '@/lib/blockedSteps';
-import { getOrderGlobalStatus, getOrderQualityControlCheck, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
+import { getOrderGlobalStatus, getOrderQualityControlCheck, getOrderStepStatusDetails, getStepProgressStatus, isOrderReadyForQualityControl } from '@/lib/stepProgress';
 import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
@@ -1396,6 +1396,7 @@ if (nextRecord) {
                     <TableHead className="w-[120px] text-xs">
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
                     </TableHead>
+                    <TableHead className="w-[100px] min-w-[100px] text-xs text-center">عدد المراحل المتبقية</TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">ملاحظات</TableHead>
                     <TableHead className="w-[105px] text-xs">
                       <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
@@ -1511,6 +1512,17 @@ if (nextRecord) {
                             )}
                             <span className="text-xs">{getOperationName(step.operationId)}</span>
                           </div>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          {(() => {
+                            const remaining = getOrderStepStatusDetails(order.id, draftSteps, productionRecords, absenceOperationId)
+                              .filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+                            return (
+                              <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${remaining === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/30 bg-accent/10 text-accent'}`}>
+                                {remaining}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                         {/* Observation */}
                         <TableCell className="py-1.5 px-2 w-[200px] min-w-[200px] align-top">

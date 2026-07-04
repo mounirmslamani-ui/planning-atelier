@@ -120,7 +120,7 @@ const DesignationCell: React.FC<DesignationCellProps> = ({ orderId, designation,
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
-          href={folderLink}
+          <a href={folderLink}
           target="_blank"
           rel="noopener noreferrer"
           onContextMenu={handleContextMenu}

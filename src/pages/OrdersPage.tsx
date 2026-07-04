@@ -9,6 +9,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GripVertical, MoveVertical, ListPlus, Download } from 'lucide-react';
+import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority, ResourceStatus } from '@/types/planning';
 
@@ -556,7 +557,13 @@ const OrdersPage: React.FC = () => {
       case 'remainingSteps': {
         const n = remainingStepsMap.get(o.id) ?? 0;
         const hasSteps = hasStepsMap.get(o.id);
-        if (!hasSteps) return <span className="text-xs text-muted-foreground">—</span>;
+        if (!hasSteps) {
+          return (
+            <span title="المراحل غير محددة" className="inline-flex items-center justify-center">
+              <WarningTriangleIcon className="w-4 h-4" />
+            </span>
+          );
+        }
         return (
           <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${n === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/30 bg-accent/10 text-accent'}`}>
             {n}
