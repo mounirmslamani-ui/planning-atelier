@@ -1,0 +1,92 @@
+import React from 'react';
+import { Phone, Mail, MapPin, User, Navigation } from 'lucide-react';
+import type { Representative, AddressDetail } from '@/types/planning';
+
+interface Props {
+  companyName: string;
+  activity?: string;
+  phones?: string[];
+  addresses?: string[];
+  addressDetails?: AddressDetail[];
+  emails?: string[];
+  representatives?: Representative[];
+}
+
+const Section: React.FC<{ icon: React.ReactNode; title: string; items?: string[] }> = ({ icon, title, items }) => {
+  if (!items || items.filter(Boolean).length === 0) return null;
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+        {icon}<span>{title}</span>
+      </div>
+      <ul className="text-xs space-y-0.5 pr-4">
+        {items.filter(Boolean).map((it, i) => <li key={i}>• {it}</li>)}
+      </ul>
+    </div>
+  );
+};
+
+const ClientContactDetailsContent: React.FC<Props> = ({ companyName, activity, phones, addresses, addressDetails, emails, representatives }) => {
+  const reps = representatives || [];
+  const addrList = (addresses || []).filter(Boolean);
+  const isUrl = (s: string) => /^https?:\/\//i.test(s.trim());
+  return (
+    <div className="space-y-3">
+      <div className="border-b pb-1.5 space-y-0.5">
+        <div className="font-semibold text-sm">{companyName}</div>
+        {activity && <div className="text-xs text-muted-foreground">النشاط : <span className="text-foreground">{activity}</span></div>}
+      </div>
+      <Section icon={<Phone className="w-3 h-3" />} title="الهواتف" items={phones} />
+      <Section icon={<Mail className="w-3 h-3" />} title="البريد الإلكتروني" items={emails} />
+      {addrList.length > 0 && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <MapPin className="w-3 h-3" /><span>العناوين</span>
+          </div>
+          <ul className="text-xs space-y-1.5 pr-4">
+            {addrList.map((it, i) => {
+              const d = (addressDetails || [])[i] || {};
+              return (
+                <li key={i} className="space-y-0.5">
+                  <div>• {it}</div>
+                  {(d.nature || d.gps) && (
+                    <div className="pr-3 space-y-0.5 text-[11px] text-muted-foreground">
+                      {d.nature && <div>طبيعة العنوان : <span className="text-foreground">{d.nature}</span></div>}
+                      {d.gps && (
+                        <div className="flex items-center gap-1">
+                          <Navigation className="w-3 h-3" />
+                          <span>موقع GPS : </span>
+                          {isUrl(d.gps) ? (
+                            <a href={d.gps} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all" dir="ltr">{d.gps}</a>
+                          ) : (
+                            <span className="text-foreground break-all" dir="ltr">{d.gps}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+      {reps.length > 0 && (
+        <div className="space-y-2 pt-2 border-t">
+          <div className="text-xs font-semibold text-muted-foreground">الممثلون</div>
+          {reps.map(r => (
+            <div key={r.id} className="rounded-md border p-2 space-y-1.5">
+              <div className="flex items-center gap-1.5 font-medium text-sm">
+                <User className="w-3.5 h-3.5" /> {r.name || '—'}
+              </div>
+              <Section icon={<Phone className="w-3 h-3" />} title="هاتف" items={r.phones} />
+              <Section icon={<Mail className="w-3 h-3" />} title="بريد إلكتروني" items={r.emails} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ClientContactDetailsContent;
