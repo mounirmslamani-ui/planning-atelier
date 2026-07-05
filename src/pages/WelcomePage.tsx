@@ -12,6 +12,7 @@ import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { generateOrderCode } from '@/lib/orderRegistry';
 import ClientContactDetailsContent from '@/components/ClientContactDetailsContent';
 import type { Order, OrderCategory } from '@/types/planning';
+import logoUrl from '@/assets/slamani-tasnie-logo.png';
 
 const WelcomePage: React.FC = () => {
   const { clients, orders, absenceOrderId } = usePlanning();
@@ -81,100 +82,113 @@ const WelcomePage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6" dir="rtl">
-      <PageHeader title="الواجهة" description="الصفحة الرئيسية للتطبيق" />
-
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" aria-expanded={open} className="w-64 justify-between">
-                <span className={cn('truncate', !selectedClientName && 'text-muted-foreground')}>
-                  {selectedClientName || 'اختر أو اكتب اسم الزبون'}
-                </span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-0" align="start">
-              <Command>
-                <CommandInput placeholder="ابحث عن زبون..." />
-                <CommandList>
-                  <CommandEmpty>لا يوجد زبون</CommandEmpty>
-                  <CommandGroup>
-                    {sortedClients.map(c => (
-                      <CommandItem
-                        key={c.id}
-                        value={c.name || ''}
-                        onSelect={() => {
-                          setSelectedClient(c.id, c.name || '');
-                          setOpen(false);
-                        }}
-                      >
-                        <Check className={cn('mr-2 h-4 w-4', selectedClientId === c.id ? 'opacity-100' : 'opacity-0')} />
-                        {c.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          <Button variant="outline" size="sm" onClick={clearSelectedClient}>
-            <X className="w-4 h-4 ml-1" />
-            إلغاء
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={handleToggleClientDetails}
-            disabled={!selectedClient}
-            title="عرض تفاصيل الزبون"
-          >
-            <Eye className="w-4 h-4 text-primary" />
-          </Button>
-        </div>
-
-        {canCreateOrder && (
-          <div className="flex items-center gap-2">
-            <Button onClick={() => handleNewOrder('fabrication')} size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              <span className="font-bold">طلبية جديدة F</span>
-            </Button>
-            <Button onClick={() => handleNewOrder('prestation')} size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              <span className="font-bold">طلبية جديدة P</span>
-            </Button>
-            <Button onClick={() => handleNewOrder('divers')} size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              <span className="font-bold">طلبية جديدة D</span>
-            </Button>
-          </div>
-        )}
+    <div className="relative p-6 space-y-6 overflow-hidden" dir="rtl">
+      <div
+        className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+        aria-hidden="true"
+      >
+        <img
+          src={logoUrl}
+          alt=""
+          className="w-[130%] max-w-none select-none opacity-10 grayscale"
+        />
       </div>
 
-      {showClientDetails && selectedClient && (
-        <div className="rounded-md border bg-card p-4 max-w-2xl">
-          <ClientContactDetailsContent
-            companyName={selectedClient.name}
-            activity={selectedClient.activity}
-            phones={selectedClient.phones}
-            emails={selectedClient.emails}
-            addresses={selectedClient.addresses}
-            addressDetails={selectedClient.addressDetails}
-            representatives={selectedClient.representatives}
-          />
-        </div>
-      )}
+      <div className="relative z-10 space-y-6">
+        <PageHeader title="الواجهة" description="الصفحة الرئيسية للتطبيق" />
 
-      <OrderUnifiedSheet
-        orderId={null}
-        open={!!createDraft}
-        onOpenChange={(open) => { if (!open) setCreateDraft(null); }}
-        createMode
-        initialDraft={createDraft || undefined}
-        onCreated={() => setCreateDraft(null)}
-      />
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" aria-expanded={open} className="w-64 justify-between">
+                  <span className={cn('truncate', !selectedClientName && 'text-muted-foreground')}>
+                    {selectedClientName || 'اختر أو اكتب اسم الزبون'}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="ابحث عن زبون..." />
+                  <CommandList>
+                    <CommandEmpty>لا يوجد زبون</CommandEmpty>
+                    <CommandGroup>
+                      {sortedClients.map(c => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name || ''}
+                          onSelect={() => {
+                            setSelectedClient(c.id, c.name || '');
+                            setOpen(false);
+                          }}
+                        >
+                          <Check className={cn('mr-2 h-4 w-4', selectedClientId === c.id ? 'opacity-100' : 'opacity-0')} />
+                          {c.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <Button variant="outline" size="sm" onClick={clearSelectedClient}>
+              <X className="w-4 h-4 ml-1" />
+              إلغاء
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={handleToggleClientDetails}
+              disabled={!selectedClient}
+              title="عرض تفاصيل الزبون"
+            >
+              <Eye className="w-4 h-4 text-primary" />
+            </Button>
+          </div>
+
+          {canCreateOrder && (
+            <div className="flex items-center gap-2">
+              <Button onClick={() => handleNewOrder('fabrication')} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                <span className="font-bold">طلبية جديدة F</span>
+              </Button>
+              <Button onClick={() => handleNewOrder('prestation')} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                <span className="font-bold">طلبية جديدة P</span>
+              </Button>
+              <Button onClick={() => handleNewOrder('divers')} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                <span className="font-bold">طلبية جديدة D</span>
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {showClientDetails && selectedClient && (
+          <div className="rounded-md border bg-card p-4 max-w-2xl">
+            <ClientContactDetailsContent
+              companyName={selectedClient.name}
+              activity={selectedClient.activity}
+              phones={selectedClient.phones}
+              emails={selectedClient.emails}
+              addresses={selectedClient.addresses}
+              addressDetails={selectedClient.addressDetails}
+              representatives={selectedClient.representatives}
+            />
+          </div>
+        )}
+
+        <OrderUnifiedSheet
+          orderId={null}
+          open={!!createDraft}
+          onOpenChange={(open) => { if (!open) setCreateDraft(null); }}
+          createMode
+          initialDraft={createDraft || undefined}
+          onCreated={() => setCreateDraft(null)}
+        />
+      </div>
     </div>
   );
 };
