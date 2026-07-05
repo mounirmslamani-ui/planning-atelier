@@ -1597,7 +1597,7 @@ if (nextRecord) {
                     );
                   })}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </div>
           );
