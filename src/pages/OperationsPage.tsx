@@ -45,15 +45,15 @@ const OperationsPage: React.FC = () => {
   };
 
   const renderTable = (title: string, items: Operation[], cat: OperationCategory) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex-none flex items-center justify-between">
         <h2 className="text-base font-heading font-semibold text-foreground">{title}</h2>
         <Button onClick={() => openNew(cat)} size="sm" variant="outline">
           <Plus className="w-4 h-4 mr-1" /> Ajouter
         </Button>
       </div>
-      <div className="bg-card rounded-lg border">
-        <Table>
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
@@ -84,7 +84,7 @@ const OperationsPage: React.FC = () => {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
     </div>
   );
