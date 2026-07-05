@@ -294,6 +294,7 @@ const OrderRegistryPage: React.FC = () => {
             </div>
           </TabsContent>
         ))}
+      </div>
       </Tabs>
       <CancelOrderDialog
         open={!!cancelTarget}
