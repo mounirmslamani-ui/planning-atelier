@@ -95,7 +95,7 @@ const WelcomePage: React.FC = () => {
         <img
           src={logoUrl}
           alt=""
-          className="w-[60%] max-w-none select-none opacity-100 mix-blend-multiply"
+          className="w-[50%] max-w-none select-none opacity-100 mix-blend-multiply"
         />
       </div>
 
