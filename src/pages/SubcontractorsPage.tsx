@@ -140,7 +140,7 @@ const SubcontractorsPage: React.FC = () => {
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
-        <Table>
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead><ColumnHeader label="اسم المناول" columnKey="companyName" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.companyName || ''} onFilter={handleFilter} allValues={allValuesByKey.companyName} /></TableHead>
