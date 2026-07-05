@@ -82,15 +82,15 @@ const WelcomePage: React.FC = () => {
   };
 
   return (
-+ <div className="relative min-h-screen p-6 space-y-6 overflow-hidden" dir="rtl">
+<div className="relative min-h-screen p-6 space-y-6 overflow-hidden" dir="rtl">
       <div
-        className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+        className="pointer-events-none absolute inset-0 z-0 flex items-center justify-end"
         aria-hidden="true"
       >
         <img
           src={logoUrl}
           alt=""
-          className="w-[130%] max-w-none select-none opacity-10 grayscale"
+          className="w-[118%] max-w-none select-none opacity-90 mix-blend-multiply"
         />
       </div>
 
