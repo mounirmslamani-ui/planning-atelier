@@ -147,7 +147,7 @@ const StudyPage: React.FC = () => {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </table>
       </div>
     </div>
   );
