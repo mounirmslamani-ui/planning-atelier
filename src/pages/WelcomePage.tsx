@@ -14,6 +14,15 @@ import ClientContactDetailsContent from '@/components/ClientContactDetailsConten
 import type { Order, OrderCategory } from '@/types/planning';
 import logoUrl from '@/assets/slamani-tasnie-logo-bg.png';
 
+const OrderCountBox: React.FC<{ label: string; count: number }> = ({ label, count }) => (
+  <div className="flex flex-col items-center gap-2">
+    <span className="text-sm font-medium text-foreground text-center">{label}</span>
+    <div className="w-36 h-36 rounded-2xl bg-accent text-accent-foreground flex items-center justify-center text-7xl font-bold shadow-sm">
+      {count}
+    </div>
+  </div>
+);
+
 const WelcomePage: React.FC = () => {
   const { clients, orders, absenceOrderId } = usePlanning();
   const { selectedClientId, selectedClientName, setSelectedClient, clearSelectedClient } = useGlobalClientFilter();
@@ -28,6 +37,17 @@ const WelcomePage: React.FC = () => {
   );
 
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
+
+  const clientOrderCounts = useMemo(() => {
+    if (!selectedClientId) return null;
+    const clientOrders = orders.filter(o => o.id !== absenceOrderId && o.clientId === selectedClientId);
+    return {
+      fabrication: clientOrders.filter(o => o.category === 'fabrication').length,
+      prestation: clientOrders.filter(o => o.category === 'prestation').length,
+      divers: clientOrders.filter(o => o.category === 'divers').length,
+      total: clientOrders.length,
+    };
+  }, [orders, absenceOrderId, selectedClientId]);
 
   const [showClientDetails, setShowClientDetails] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -171,17 +191,36 @@ const WelcomePage: React.FC = () => {
           )}
         </div>
 
-        {showClientDetails && selectedClient && (
-          <div className="rounded-md border bg-card p-4 max-w-2xl">
-            <ClientContactDetailsContent
-              companyName={selectedClient.name}
-              activity={selectedClient.activity}
-              phones={selectedClient.phones}
-              emails={selectedClient.emails}
-              addresses={selectedClient.addresses}
-              addressDetails={selectedClient.addressDetails}
-              representatives={selectedClient.representatives}
-            />
+        {selectedClient && (
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            {clientOrderCounts && (
+              <div className="flex items-start gap-6 flex-wrap">
+                {clientOrderCounts.fabrication > 0 && (
+                  <OrderCountBox label="عدد الطلبيات الحالية Fabrication" count={clientOrderCounts.fabrication} />
+                )}
+                {clientOrderCounts.prestation > 0 && (
+                  <OrderCountBox label="عدد الطلبيات الحالية Prestation" count={clientOrderCounts.prestation} />
+                )}
+                {clientOrderCounts.divers > 0 && (
+                  <OrderCountBox label="عدد الطلبيات الحالية Divers" count={clientOrderCounts.divers} />
+                )}
+                <OrderCountBox label="العدد الكلي للطلبيات الحالية" count={clientOrderCounts.total} />
+              </div>
+            )}
+
+            {showClientDetails && (
+              <div className="rounded-md border bg-card p-4 max-w-2xl">
+                <ClientContactDetailsContent
+                  companyName={selectedClient.name}
+                  activity={selectedClient.activity}
+                  phones={selectedClient.phones}
+                  emails={selectedClient.emails}
+                  addresses={selectedClient.addresses}
+                  addressDetails={selectedClient.addressDetails}
+                  representatives={selectedClient.representatives}
+                />
+              </div>
+            )}
           </div>
         )}
 
