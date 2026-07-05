@@ -205,7 +205,7 @@ const SubcontractorsPage: React.FC = () => {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
