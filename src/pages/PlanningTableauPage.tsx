@@ -1288,7 +1288,7 @@ if (nextRecord) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-6 overflow-auto pt-3">
+      <div className="min-h-0 flex-1 flex flex-col pt-3">
         {operatorTasks.length === 0 && (
           <p className="text-center text-muted-foreground py-12">Aucune tâche planifiée pour cette période</p>
         )}
