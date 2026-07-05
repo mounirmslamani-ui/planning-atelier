@@ -95,7 +95,7 @@ const OperationsPage: React.FC = () => {
         <PageHeader title="العمليات" description="Définir les opérations pour les opérateurs et les sous-traitants" />
       </div>
 
-      <div className="min-h-0 flex-1 space-y-8 overflow-auto">
+      <div className="min-h-0 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden">
         {renderTable('Opérations opérateurs', operatorOps, 'operator')}
         {renderTable('Opérations sous-traitants', subcontractorOps, 'subcontractor')}
       </div>
