@@ -218,7 +218,7 @@ const OrderRegistryPage: React.FC = () => {
 
 <div className="relative flex-1 min-h-0">
 {CATEGORIES.map(c => (
-  <TabsContent key={c} value={c} className="absolute inset-0 mt-0 flex flex-col">
+  <TabsContent key={c} value={c} className="absolute inset-0 mt-0 flex flex-col data-[state=inactive]:hidden">
 
             <div className="min-h-0 flex-1 overflow-auto rounded-lg border" dir="rtl">
               <table className="w-full caption-bottom text-sm">
