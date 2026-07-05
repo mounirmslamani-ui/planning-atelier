@@ -184,13 +184,15 @@ const OrderRegistryPage: React.FC = () => {
 
 
   return (
-   <div className="p-6 space-y-4">
-      <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
+   <div className="flex h-full min-h-0 flex-col overflow-hidden p-6">
+      <div className="flex-none bg-background pb-3">
+        <PageHeader title="سجل الطلبيات" description="السجل الكامل للطلبيات (4 فئات)" />
+      </div>
 
 
 
-      <Tabs value={activeCat} onValueChange={v => setActiveCat(v as OrderCategory)}>
-<div className="flex flex-wrap items-center gap-2 mb-2">
+      <Tabs value={activeCat} onValueChange={v => setActiveCat(v as OrderCategory)} className="flex flex-1 min-h-0 flex-col">
+<div className="flex-none flex flex-wrap items-center gap-2 mb-2">
    <div className="flex-1" />
   {canCreateOrder && (
     <Button onClick={handleAdd} size="sm"><Plus className="w-4 h-4 mr-1" /> <span className="font-bold">طلبية جديدة</span></Button>
@@ -198,7 +200,7 @@ const OrderRegistryPage: React.FC = () => {
     <Button size="sm" variant="outline" onClick={handleExportExcel}><Download className="w-4 h-4 ml-1" />تصدير Excel</Button>
 </div>
 
-<div className="flex justify-end mb-2">
+<div className="flex-none flex justify-end mb-2">
   <TabsList>
     {CATEGORIES.map(c => (
       <TabsTrigger key={c} value={c}>
@@ -215,9 +217,9 @@ const OrderRegistryPage: React.FC = () => {
 </div>
 
 {CATEGORIES.map(c => (
-  <TabsContent key={c} value={c} className="mt-4 space-y-3">
+  <TabsContent key={c} value={c} className="mt-4 flex-1 min-h-0 flex flex-col">
 
-            <div className="border rounded-lg overflow-auto" dir="rtl">
+            <div className="min-h-0 flex-1 overflow-auto rounded-lg border" dir="rtl">
               <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow className="bg-muted/50">

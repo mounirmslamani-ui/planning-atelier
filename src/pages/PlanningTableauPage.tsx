@@ -3,7 +3,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatDateFR, formatDateTimeFR } from '@/lib/utils';
@@ -1288,7 +1288,7 @@ if (nextRecord) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-6 overflow-auto pt-3">
+      <div className="min-h-0 flex-1 flex flex-col pt-3">
         {operatorTasks.length === 0 && (
           <p className="text-center text-muted-foreground py-12">Aucune tâche planifiée pour cette période</p>
         )}
@@ -1315,8 +1315,8 @@ if (nextRecord) {
           const hasFinishedShift = localStorage.getItem(`fin-poste-${operatorId}-${todayISO()}`) === '1';
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
-          <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
-            <div className="bg-muted py-2 px-4 flex items-center justify-between gap-3">
+          <div key={group.operator.id} className="flex h-full min-h-0 flex-col bg-card rounded-lg border overflow-hidden">
+            <div className="flex-none bg-muted py-2 px-4 flex items-center justify-between gap-3">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-2 flex-wrap">
                 {!hasRecordToday && (
@@ -1352,8 +1352,8 @@ if (nextRecord) {
 
             </div>
 
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8 px-1 text-center">
@@ -1597,7 +1597,7 @@ if (nextRecord) {
                     );
                   })}
                 </TableBody>
-              </Table>
+              </table>
             </div>
           </div>
           );

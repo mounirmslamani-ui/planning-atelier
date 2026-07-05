@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Operation, OperationCategory } from '@/types/planning';
@@ -45,15 +45,15 @@ const OperationsPage: React.FC = () => {
   };
 
   const renderTable = (title: string, items: Operation[], cat: OperationCategory) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex-none flex items-center justify-between">
         <h2 className="text-base font-heading font-semibold text-foreground">{title}</h2>
         <Button onClick={() => openNew(cat)} size="sm" variant="outline">
           <Plus className="w-4 h-4 mr-1" /> Ajouter
         </Button>
       </div>
-      <div className="bg-card rounded-lg border">
-        <Table>
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
+        <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
@@ -84,7 +84,7 @@ const OperationsPage: React.FC = () => {
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
     </div>
   );
@@ -95,7 +95,7 @@ const OperationsPage: React.FC = () => {
         <PageHeader title="العمليات" description="Définir les opérations pour les opérateurs et les sous-traitants" />
       </div>
 
-      <div className="min-h-0 flex-1 space-y-8 overflow-auto">
+      <div className="min-h-0 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden">
         {renderTable('Opérations opérateurs', operatorOps, 'operator')}
         {renderTable('Opérations sous-traitants', subcontractorOps, 'subcontractor')}
       </div>
