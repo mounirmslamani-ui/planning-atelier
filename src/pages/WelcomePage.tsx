@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -29,15 +29,39 @@ const WelcomePage: React.FC = () => {
 
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
 
-   const [showClientDetails, setShowClientDetails] = useState(false);
+  const [showClientDetails, setShowClientDetails] = useState(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleToggleClientDetails = () => {
     if (!selectedClient) return;
-    setShowClientDetails(prev => !prev);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setShowClientDetails(prev => {
+      const next = !prev;
+      if (next) {
+        hideTimerRef.current = setTimeout(() => {
+          setShowClientDetails(false);
+          hideTimerRef.current = null;
+        }, 60000);
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     setShowClientDetails(false);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
   }, [selectedClientId]);
 
   const realOrders = useMemo(() => orders.filter(o => o.id !== absenceOrderId), [orders, absenceOrderId]);
