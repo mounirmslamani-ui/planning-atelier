@@ -1352,8 +1352,8 @@ if (nextRecord) {
 
             </div>
 
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="min-h-0 flex-1 overflow-auto">
+              <table className="w-full caption-bottom text-sm">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8 px-1 text-center">
