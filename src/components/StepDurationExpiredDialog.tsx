@@ -25,6 +25,12 @@ function parseDurationHHMM(value: string): number | null {
   return h * 60 + m;
 }
 
+// Auto-inserts ":" as the user types digits, so the user never types it manually
+function formatMaskedDuration(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
 const StepDurationExpiredDialog: React.FC<Props> = ({ open, onFinishStep, onGrantExtraTime }) => {
   const [view, setView] = useState<'choice' | 'extra'>('choice');
   const [extraValue, setExtraValue] = useState('');
@@ -72,7 +78,7 @@ const StepDurationExpiredDialog: React.FC<Props> = ({ open, onFinishStep, onGran
               <Label className="text-xs">المدة الإضافية (hh:mm)</Label>
               <Input
                 value={extraValue}
-                onChange={e => { setExtraValue(e.target.value); setError(null); }}
+                                onChange={e => { setExtraValue(formatMaskedDuration(e.target.value)); setError(null); }}
                 placeholder="hh:mm"
                 className="w-32 text-center font-mono"
                 autoFocus
