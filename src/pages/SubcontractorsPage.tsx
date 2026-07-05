@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, X, Download } from 'lucide-react';
 import SearchableSelect from '@/components/ui/searchable-select';
