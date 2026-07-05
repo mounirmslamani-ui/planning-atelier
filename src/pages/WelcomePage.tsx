@@ -84,7 +84,7 @@ const WelcomePage: React.FC = () => {
   return (
 <div className="relative min-h-screen p-6 space-y-6 overflow-hidden" dir="rtl">
       <div
-        className="pointer-events-none absolute inset-0 z-0 flex items-center justify-end"
+        className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
         aria-hidden="true"
       >
         <img
