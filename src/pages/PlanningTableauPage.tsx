@@ -1315,8 +1315,8 @@ if (nextRecord) {
           const hasFinishedShift = localStorage.getItem(`fin-poste-${operatorId}-${todayISO()}`) === '1';
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
-          <div key={group.operator.id} className="bg-card rounded-lg border overflow-hidden">
-            <div className="bg-muted py-2 px-4 flex items-center justify-between gap-3">
+          <div key={group.operator.id} className="flex h-full min-h-0 flex-col bg-card rounded-lg border overflow-hidden">
+            <div className="flex-none bg-muted py-2 px-4 flex items-center justify-between gap-3">
               <h3 className="flex-1 text-center text-lg font-heading font-bold text-[hsl(0,72%,51%)]">{group.operator.name}</h3>
               <div className="flex items-center gap-2 flex-wrap">
                 {!hasRecordToday && (
