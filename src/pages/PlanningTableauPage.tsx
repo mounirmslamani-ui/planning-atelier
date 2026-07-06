@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHistoryStack } from '@/hooks/useHistoryStack';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
+import { isReintegratedOrder } from '@/lib/reintegration';
 import DesignationCell from '@/components/DesignationCell';
 import RelaisDialog, { type RelaisResult, type RelaisMode } from '@/components/RelaisDialog';
 import { useAuth } from '@/context/AuthContext';
