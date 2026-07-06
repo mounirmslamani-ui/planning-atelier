@@ -1271,18 +1271,27 @@ if (nextRecord) {
         <span></span>
         {operatorTasks.map(group => {
           const isActive = (selectedTabOperatorId ?? operatorTasks[0]?.operator.id) === group.operator.id;
+          const opId = group.operator.id;
+          const tabHasRecordToday = productionRecords.some(r => r.operatorId === opId && r.workDate === todayISO())
+            || localStorage.getItem(`relais-started-${opId}-${todayISO()}`) !== null;
+          const tabHasFinishedShift = localStorage.getItem(`fin-poste-${opId}-${todayISO()}`) === '1';
+          // Shift state color: gray (finished) > green (started) > orange (waiting)
+          const shiftBg = tabHasFinishedShift
+            ? '#AEA9A9'
+            : tabHasRecordToday
+              ? '#77A845'
+              : '#B85C36';
           return (
             <button
               key={group.operator.id}
               onClick={() => setSelectedTabOperatorId(group.operator.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-background hover:bg-muted text-foreground border'
+              style={{ backgroundColor: shiftBg, color: '#fff' }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors border ${
+                isActive ? 'ring-2 ring-offset-1 ring-primary shadow-sm' : 'opacity-80 hover:opacity-100'
               }`}
             >
               {group.operator.name}
-              <span className="ml-1.5 opacity-70">({group.tasks.length})</span>
+              <span className="ml-1.5 opacity-90">({group.tasks.length})</span>
             </button>
           );
         })}
