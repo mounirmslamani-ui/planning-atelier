@@ -333,7 +333,7 @@ const PlanningTableauPage: React.FC = () => {
   const activeOrders = useMemo(() => {
     const dIds = new Set(deliveredOrders.map(d => d.orderId));
     const cIds = new Set(cancelledOrders.map(c => c.orderId));
-    return orders.filter(o => !dIds.has(o.id) && !cIds.has(o.id));
+    return orders.filter(o => isReintegratedOrder(o) || (!dIds.has(o.id) && !cIds.has(o.id)));
   }, [orders, deliveredOrders, cancelledOrders]);
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const [numDays, setNumDays] = useState(() => {
