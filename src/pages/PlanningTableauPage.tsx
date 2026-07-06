@@ -1377,13 +1377,6 @@ if (nextRecord) {
                     <TableHead className="w-14 px-1 text-center text-xs text-muted-foreground/70">
                       <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.displayOrder} />
                     </TableHead>
-                    <TableHead className="w-[95px] text-xs">
-                      <ColumnHeader label="تاريخ البداية" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.startDate} />
-                    </TableHead>
-                    <TableHead className="w-[95px] text-xs">
-                      <ColumnHeader label="تاريخ النهاية" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.endDate} />
-                    </TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">المدة</TableHead>
                     <TableHead className="w-[80px] text-xs">
                       <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.orderNumber} />
                     </TableHead>
