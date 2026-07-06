@@ -1400,6 +1400,13 @@ if (nextRecord) {
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
                     </TableHead>
                     <TableHead className="w-[100px] min-w-[100px] text-xs text-center">عدد المراحل المتبقية</TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="تاريخ البداية" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.startDate} />
+                    </TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="تاريخ النهاية" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.endDate} />
+                    </TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">المدة</TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">ملاحظات</TableHead>
                     <TableHead className="w-[105px] text-xs">
                       <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
