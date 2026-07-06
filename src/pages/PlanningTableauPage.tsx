@@ -1383,7 +1383,7 @@ if (nextRecord) {
                     <TableHead className="w-[95px] text-xs">
                       <ColumnHeader label="تاريخ النهاية" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.endDate} />
                     </TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">المدة</TableHead>
                     <TableHead className="w-[80px] text-xs">
                       <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.orderNumber} />
                     </TableHead>
