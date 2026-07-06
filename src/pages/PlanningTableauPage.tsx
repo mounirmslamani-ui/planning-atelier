@@ -1091,7 +1091,6 @@ if (nextRecord) {
     exportSheetsToExcel('Planning', operatorTasks.map(group => ({
       name: group.operator.name,
       rows: group.tasks.map(({ step, order }): ExcelRow => ({
-        'تاريخ البداية': formatDateFR(step.startDate),
         'رقم الطلبية': order.orderNumber,
         Client: getClientName(order.clientId),
         Désignation: order.designation,
@@ -1100,9 +1099,11 @@ if (nextRecord) {
         'مستوى التعقيد التقني': TC_LONG[order.technicalComplexity || ''] || '',
         Délai: formatDateFR(order.deliveryDeadline || order.plannedDeadline),
         Opération: getOperationName(step.operationId),
-        Durée: formatMinutesToHM(step.estimatedDuration),
+        'تاريخ البداية': formatDateFR(step.startDate),
+        'تاريخ النهاية': formatDateFR(step.endDate),
+        'المدة': formatMinutesToHM(step.estimatedDuration),
       })),
-      columnWidths: [12, 12, 18, 45, 8, 8, 14, 12, 20, 8],
+      columnWidths: [12, 18, 45, 8, 8, 14, 12, 20, 12, 12, 8],
     })));
   }, [operatorTasks, getClientName, getOperationName]);
 
@@ -1377,13 +1378,6 @@ if (nextRecord) {
                     <TableHead className="w-14 px-1 text-center text-xs text-muted-foreground/70">
                       <ColumnHeader label="الترتيب" columnKey="displayOrder" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['displayOrder'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.displayOrder} />
                     </TableHead>
-                    <TableHead className="w-[95px] text-xs">
-                      <ColumnHeader label="تاريخ البداية" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.startDate} />
-                    </TableHead>
-                    <TableHead className="w-[95px] text-xs">
-                      <ColumnHeader label="تاريخ النهاية" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.endDate} />
-                    </TableHead>
-                    <TableHead className="w-[55px] text-xs text-center">Durée</TableHead>
                     <TableHead className="w-[80px] text-xs">
                       <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.orderNumber} />
                     </TableHead>
@@ -1407,6 +1401,13 @@ if (nextRecord) {
                       <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
                     </TableHead>
                     <TableHead className="w-[100px] min-w-[100px] text-xs text-center">عدد المراحل المتبقية</TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="تاريخ البداية" columnKey="startDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['startDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.startDate} />
+                    </TableHead>
+                    <TableHead className="w-[95px] text-xs">
+                      <ColumnHeader label="تاريخ النهاية" columnKey="endDate" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['endDate'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.endDate} />
+                    </TableHead>
+                    <TableHead className="w-[55px] text-xs text-center">المدة</TableHead>
                     <TableHead className="w-[200px] min-w-[200px] text-xs">ملاحظات</TableHead>
                     <TableHead className="w-[105px] text-xs">
                       <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="globalStatus" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['globalStatus'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.globalStatus} />
@@ -1476,15 +1477,6 @@ if (nextRecord) {
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{formatDateFR(step.endDate)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
-                          <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
                           <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-sm" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
@@ -1533,6 +1525,15 @@ if (nextRecord) {
                               </span>
                             );
                           })()}
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{formatDateFR(step.endDate)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
                         </TableCell>
                         {/* Observation */}
                         <TableCell className="py-1.5 px-2 w-[200px] min-w-[200px] align-top">
