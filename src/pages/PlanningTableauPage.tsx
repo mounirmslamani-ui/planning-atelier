@@ -1091,7 +1091,6 @@ if (nextRecord) {
     exportSheetsToExcel('Planning', operatorTasks.map(group => ({
       name: group.operator.name,
       rows: group.tasks.map(({ step, order }): ExcelRow => ({
-        'تاريخ البداية': formatDateFR(step.startDate),
         'رقم الطلبية': order.orderNumber,
         Client: getClientName(order.clientId),
         Désignation: order.designation,
@@ -1100,9 +1099,11 @@ if (nextRecord) {
         'مستوى التعقيد التقني': TC_LONG[order.technicalComplexity || ''] || '',
         Délai: formatDateFR(order.deliveryDeadline || order.plannedDeadline),
         Opération: getOperationName(step.operationId),
-        Durée: formatMinutesToHM(step.estimatedDuration),
+        'تاريخ البداية': formatDateFR(step.startDate),
+        'تاريخ النهاية': formatDateFR(step.endDate),
+        'المدة': formatMinutesToHM(step.estimatedDuration),
       })),
-      columnWidths: [12, 12, 18, 45, 8, 8, 14, 12, 20, 8],
+      columnWidths: [12, 18, 45, 8, 8, 14, 12, 20, 12, 12, 8],
     })));
   }, [operatorTasks, getClientName, getOperationName]);
 
