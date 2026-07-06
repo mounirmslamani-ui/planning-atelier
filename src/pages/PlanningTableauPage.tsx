@@ -1476,15 +1476,6 @@ if (nextRecord) {
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
-                          <span className="text-xs">{formatDateFR(step.endDate)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2 text-center">
-                          <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
-                        </TableCell>
-                        <TableCell className="py-1.5 px-2">
                           <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} className="font-heading text-sm" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
