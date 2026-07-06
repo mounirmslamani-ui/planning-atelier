@@ -31,6 +31,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
+import { isReintegratedOrder } from '@/lib/reintegration';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
 
@@ -214,6 +215,7 @@ const OrdersPage: React.FC = () => {
   const outOfActiveProductionIds = useMemo(() => {
     const ids = new Set<string>();
     orders.forEach(o => {
+      if (isReintegratedOrder(o)) return;
       if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
       if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
       // Only an actual QC decision (conforme / conforme-derogation) removes the
