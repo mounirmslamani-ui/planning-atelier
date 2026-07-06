@@ -215,6 +215,7 @@ const OrdersPage: React.FC = () => {
   const outOfActiveProductionIds = useMemo(() => {
     const ids = new Set<string>();
     orders.forEach(o => {
+      if (isReintegratedOrder(o)) return;
       if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
       if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
       // Only an actual QC decision (conforme / conforme-derogation) removes the
