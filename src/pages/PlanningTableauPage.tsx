@@ -1526,6 +1526,15 @@ if (nextRecord) {
                             );
                           })()}
                         </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{formatDateFR(step.startDate)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className="text-xs">{formatDateFR(step.endDate)}</span>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-center">
+                          <span className="text-xs">{formatMinutesToHM(step.estimatedDuration)}</span>
+                        </TableCell>
                         {/* Observation */}
                         <TableCell className="py-1.5 px-2 w-[200px] min-w-[200px] align-top">
                           {order.notesUpdatedAt ? (
