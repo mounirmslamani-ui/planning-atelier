@@ -53,7 +53,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
     qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
-    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, absenceOperationId,
+    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, deleteProductionRecord, absenceOperationId,
   } = ctx;
 
   const currentOrder = order ? (orders.find(o => o.id === order.id) || order) : null;
@@ -488,12 +488,36 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const clientName = order ? (clients.find(c => c.id === order.clientId)?.name || '*******') : '';
 
+  const handleProgressStatusChange = (rowId: string, target: 'not-started' | 'in-progress' | 'done') => {
+    const row = rows.find(r => r.id === rowId);
+    if (!order || !row || !row.stepId || row.assignType !== 'operator' || !row.option1) return;
+    const existingRecords = productionRecords.filter(r => r.stepId === row.stepId);
+    existingRecords.forEach(r => deleteProductionRecord(r.id));
+    if (target === 'not-started') return;
+    const op = operations.find(o => o.id === row.operationId);
+    addProductionRecord({
+      id: crypto.randomUUID(),
+      stepId: row.stepId,
+      orderId: order.id,
+      operatorId: row.option1,
+      operationId: row.operationId,
+      actualDuration: 0,
+      validatedAt: new Date().toISOString(),
+      workStatus: target === 'done' ? 'done' : 'continue',
+      orderNumberSnapshot: order.orderNumber,
+      clientNameSnapshot: clientName,
+      designationSnapshot: order.designation,
+      quantitySnapshot: order.quantity,
+      operationNameSnapshot: op?.name,
+    });
+  };
+
   return {
     rows, setRows, isLocked, lockReason, blockedSet,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
-    handleColumnStatusChange,
+    handleColumnStatusChange, handleProgressStatusChange,
     forcePrompt, setForcePrompt,
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
@@ -630,19 +654,20 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                         );
                       }
                       const st = e.getRowProgressStatus(row);
-                      if (st === 'En cours' && row.stepId) {
-                        const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
-                        return (
-                          <button
-                            type="button"
-                            className="underline decoration-dotted text-primary hover:text-primary/80"
-                            onClick={() => e.setCloseStepPrompt({ rowId: row.id, label: `#${row.order} — ${opName}` })}
-                          >
-                            {PROGRESS_AR[st]}
-                          </button>
-                        );
-                      }
-                      return PROGRESS_AR[st];
+                      const progressValue = st === 'Terminée' ? 'done' : st === 'En cours' ? 'in-progress' : 'not-started';
+                      return (
+                        <SearchableSelect
+                          className="h-8 text-xs px-2"
+                          value={progressValue}
+                          onValueChange={v => e.handleProgressStatusChange(row.id, v as 'not-started' | 'in-progress' | 'done')}
+                          disabled={e.isLocked || !row.stepId}
+                          options={[
+                            { value: 'not-started', label: PROGRESS_AR['Non entamée'] },
+                            { value: 'in-progress', label: PROGRESS_AR['En cours'] },
+                            { value: 'done', label: PROGRESS_AR['Terminée'] },
+                          ]}
+                        />
+                      );
                     })()}
                   </td>
                   <td className="p-1.5 text-xs font-mono">{e.getRowActualDuration(row)}</td>
