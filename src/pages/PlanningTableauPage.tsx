@@ -556,6 +556,22 @@ const PlanningTableauPage: React.FC = () => {
     return operatorName || '—';
   }, [equipments, operators]);
 
+  const shiftStartedTodayByOperator = useMemo(() => {
+    const set = new Set<string>();
+    draftSteps.forEach(s => {
+      if (s.operatorId && s.shiftStartedDate === todayISO()) set.add(s.operatorId);
+    });
+    return set;
+  }, [draftSteps]);
+
+  const shiftEndedTodayByOperator = useMemo(() => {
+    const set = new Set<string>();
+    draftSteps.forEach(s => {
+      if (s.operatorId && s.shiftEndedDate === todayISO()) set.add(s.operatorId);
+    });
+    return set;
+  }, [draftSteps]);
+
   // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
@@ -1058,15 +1074,17 @@ if (nextRecord) {
   });
   const step = draftSteps.find(s => s.id === nextRecord.stepId);
   if (step) {
-    updateStep({ ...step, startTime: nextRecord.startTime });
+    updateStep({ ...step, startTime: nextRecord.startTime, shiftStartedDate: nextRecord.workDate });
   }
-  localStorage.setItem(`relais-started-${nextRecord.operatorId}-${nextRecord.workDate}`, nextRecord.startTime);
 }
 
     const closingOperatorId = relaisDialog?.operatorId;
     const closingMode = relaisDialog?.mode;
-    if (closingMode === 'fin_poste' && closingOperatorId) {
-      localStorage.setItem(`fin-poste-${closingOperatorId}-${todayISO()}`, '1');
+    if (closingMode === 'fin_poste' && closingOperatorId && finishedRecord) {
+      const closingStep = draftSteps.find(s => s.id === finishedRecord.stepId);
+      if (closingStep) {
+        updateStep({ ...closingStep, shiftEndedDate: todayISO() });
+      }
     }
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
@@ -1274,8 +1292,8 @@ if (nextRecord) {
           const isActive = (selectedTabOperatorId ?? operatorTasks[0]?.operator.id) === group.operator.id;
           const opId = group.operator.id;
           const tabHasRecordToday = productionRecords.some(r => r.operatorId === opId && r.workDate === todayISO())
-            || localStorage.getItem(`relais-started-${opId}-${todayISO()}`) !== null;
-          const tabHasFinishedShift = localStorage.getItem(`fin-poste-${opId}-${todayISO()}`) === '1';
+            || shiftStartedTodayByOperator.has(opId);
+          const tabHasFinishedShift = shiftEndedTodayByOperator.has(opId);
           // Shift state color: gray (finished) > green (started) > orange (waiting)
           const shiftBg = tabHasFinishedShift
             ? '#AEA9A9'
@@ -1322,8 +1340,8 @@ if (nextRecord) {
           }
           const operatorId = group.operator.id;
           const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO())
-            || localStorage.getItem(`relais-started-${operatorId}-${todayISO()}`) !== null;
-          const hasFinishedShift = localStorage.getItem(`fin-poste-${operatorId}-${todayISO()}`) === '1';
+            || shiftStartedTodayByOperator.has(operatorId);
+          const hasFinishedShift = shiftEndedTodayByOperator.has(operatorId);
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
           <div key={group.operator.id} className="flex h-full min-h-0 flex-col bg-card rounded-lg border overflow-hidden">

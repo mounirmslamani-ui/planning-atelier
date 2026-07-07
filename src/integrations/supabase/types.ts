@@ -535,6 +535,8 @@ export type Database = {
           planning_order: number | null
           raw_material_needs: string[]
           resource_notes: string | null
+          shift_ended_date: string | null
+          shift_started_date: string | null
           special_tooling_needs: string[]
           start_date: string | null
           start_time: string | null
@@ -571,6 +573,8 @@ export type Database = {
           planning_order?: number | null
           raw_material_needs?: string[]
           resource_notes?: string | null
+          shift_ended_date?: string | null
+          shift_started_date?: string | null
           special_tooling_needs?: string[]
           start_date?: string | null
           start_time?: string | null
@@ -607,6 +611,8 @@ export type Database = {
           planning_order?: number | null
           raw_material_needs?: string[]
           resource_notes?: string | null
+          shift_ended_date?: string | null
+          shift_started_date?: string | null
           special_tooling_needs?: string[]
           start_date?: string | null
           start_time?: string | null

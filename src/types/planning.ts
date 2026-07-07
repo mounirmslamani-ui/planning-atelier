@@ -179,6 +179,8 @@ export interface ProductionStep {
   resourceNotes?: string;
   /** Pn — numéro d'ordre propre à chaque opérateur dans le planning */
   planningOrder?: number;
+  shiftStartedDate?: string; // ISO date — posé par بداية دوام / تبديل الشغل
+  shiftEndedDate?: string; // ISO date — posé par نهاية دوام
 }
 
 export interface Holiday {
