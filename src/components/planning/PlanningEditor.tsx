@@ -53,7 +53,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
     qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
-    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, absenceOperationId,
+    addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, deleteProductionRecord, absenceOperationId,
   } = ctx;
 
   const currentOrder = order ? (orders.find(o => o.id === order.id) || order) : null;
