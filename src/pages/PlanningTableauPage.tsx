@@ -1292,8 +1292,8 @@ if (nextRecord) {
           const isActive = (selectedTabOperatorId ?? operatorTasks[0]?.operator.id) === group.operator.id;
           const opId = group.operator.id;
           const tabHasRecordToday = productionRecords.some(r => r.operatorId === opId && r.workDate === todayISO())
-            || localStorage.getItem(`relais-started-${opId}-${todayISO()}`) !== null;
-          const tabHasFinishedShift = localStorage.getItem(`fin-poste-${opId}-${todayISO()}`) === '1';
+            || shiftStartedTodayByOperator.has(opId);
+          const tabHasFinishedShift = shiftEndedTodayByOperator.has(opId);
           // Shift state color: gray (finished) > green (started) > orange (waiting)
           const shiftBg = tabHasFinishedShift
             ? '#AEA9A9'
@@ -1340,8 +1340,8 @@ if (nextRecord) {
           }
           const operatorId = group.operator.id;
           const hasRecordToday = productionRecords.some(r => r.operatorId === operatorId && r.workDate === todayISO())
-            || localStorage.getItem(`relais-started-${operatorId}-${todayISO()}`) !== null;
-          const hasFinishedShift = localStorage.getItem(`fin-poste-${operatorId}-${todayISO()}`) === '1';
+            || shiftStartedTodayByOperator.has(operatorId);
+          const hasFinishedShift = shiftEndedTodayByOperator.has(operatorId);
           const hasOpenStep = group.tasks.some(t => !isStepFinished(t.step, productionRecords));
           return (
           <div key={group.operator.id} className="flex h-full min-h-0 flex-col bg-card rounded-lg border overflow-hidden">
