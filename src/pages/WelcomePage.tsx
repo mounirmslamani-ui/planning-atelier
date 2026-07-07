@@ -10,6 +10,7 @@ import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import { generateOrderCode } from '@/lib/orderRegistry';
+import { isReintegratedOrder } from '@/lib/reintegration';
 import ClientContactDetailsContent from '@/components/ClientContactDetailsContent';
 import type { Order, OrderCategory } from '@/types/planning';
 import logoUrl from '@/assets/slamani-tasnie-logo-bg.png';
@@ -24,7 +25,7 @@ const OrderCountBox: React.FC<{ label: string; count: number }> = ({ label, coun
 );
 
 const WelcomePage: React.FC = () => {
-  const { clients, orders, absenceOrderId } = usePlanning();
+  const { clients, orders, absenceOrderId, qcEntries, deliveredOrders, cancelledOrders } = usePlanning();
   const { selectedClientId, selectedClientName, setSelectedClient, clearSelectedClient } = useGlobalClientFilter();
   const { hasAccess } = useAuth();
   const canCreateOrder = hasAccess({ tableau: 'سجل الطلبيات', champ_bouton: 'طلبية جديدة' }) === 'RW';
@@ -38,16 +39,34 @@ const WelcomePage: React.FC = () => {
 
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
 
+  // Même logique que سجل الطلبيات الجارية (OrdersPage.tsx) : une commande ne
+  // compte plus comme "en cours" une fois livrée, annulée, ou validée en QC
+  // (sauf si elle a été réintégrée depuis).
+  const outOfActiveProductionIds = useMemo(() => {
+    const ids = new Set<string>();
+    orders.forEach(o => {
+      if (isReintegratedOrder(o)) return;
+      if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
+      if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
+      if (qcEntries.some(q => q.orderId === o.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'))) {
+        ids.add(o.id);
+      }
+    });
+    return ids;
+  }, [orders, qcEntries, deliveredOrders, cancelledOrders]);
+
   const clientOrderCounts = useMemo(() => {
     if (!selectedClientId) return null;
-    const clientOrders = orders.filter(o => o.id !== absenceOrderId && o.clientId === selectedClientId);
+    const clientOrders = orders.filter(
+      o => o.id !== absenceOrderId && o.clientId === selectedClientId && !outOfActiveProductionIds.has(o.id)
+    );
     return {
       fabrication: clientOrders.filter(o => o.category === 'fabrication').length,
       prestation: clientOrders.filter(o => o.category === 'prestation').length,
       divers: clientOrders.filter(o => o.category === 'divers').length,
       total: clientOrders.length,
     };
-  }, [orders, absenceOrderId, selectedClientId]);
+  }, [orders, absenceOrderId, selectedClientId, outOfActiveProductionIds]);
 
   const [showClientDetails, setShowClientDetails] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
