@@ -488,12 +488,36 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const clientName = order ? (clients.find(c => c.id === order.clientId)?.name || '*******') : '';
 
+  const handleProgressStatusChange = (rowId: string, target: 'not-started' | 'in-progress' | 'done') => {
+    const row = rows.find(r => r.id === rowId);
+    if (!order || !row || !row.stepId || row.assignType !== 'operator' || !row.option1) return;
+    const existingRecords = productionRecords.filter(r => r.stepId === row.stepId);
+    existingRecords.forEach(r => deleteProductionRecord(r.id));
+    if (target === 'not-started') return;
+    const op = operations.find(o => o.id === row.operationId);
+    addProductionRecord({
+      id: crypto.randomUUID(),
+      stepId: row.stepId,
+      orderId: order.id,
+      operatorId: row.option1,
+      operationId: row.operationId,
+      actualDuration: 0,
+      validatedAt: new Date().toISOString(),
+      workStatus: target === 'done' ? 'done' : 'continue',
+      orderNumberSnapshot: order.orderNumber,
+      clientNameSnapshot: clientName,
+      designationSnapshot: order.designation,
+      quantitySnapshot: order.quantity,
+      operationNameSnapshot: op?.name,
+    });
+  };
+
   return {
     rows, setRows, isLocked, lockReason, blockedSet,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
-    handleColumnStatusChange,
+    handleColumnStatusChange, handleProgressStatusChange,
     forcePrompt, setForcePrompt,
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
