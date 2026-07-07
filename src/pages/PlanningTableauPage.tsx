@@ -556,6 +556,22 @@ const PlanningTableauPage: React.FC = () => {
     return operatorName || '—';
   }, [equipments, operators]);
 
+  const shiftStartedTodayByOperator = useMemo(() => {
+    const set = new Set<string>();
+    draftSteps.forEach(s => {
+      if (s.operatorId && s.shiftStartedDate === todayISO()) set.add(s.operatorId);
+    });
+    return set;
+  }, [draftSteps]);
+
+  const shiftEndedTodayByOperator = useMemo(() => {
+    const set = new Set<string>();
+    draftSteps.forEach(s => {
+      if (s.operatorId && s.shiftEndedDate === todayISO()) set.add(s.operatorId);
+    });
+    return set;
+  }, [draftSteps]);
+
   // Group DRAFT steps by operator (uses draftSteps instead of steps)
   const operatorTasks = useMemo(() => {
     if (workingDays.length === 0) return [];
@@ -1058,15 +1074,17 @@ if (nextRecord) {
   });
   const step = draftSteps.find(s => s.id === nextRecord.stepId);
   if (step) {
-    updateStep({ ...step, startTime: nextRecord.startTime });
+    updateStep({ ...step, startTime: nextRecord.startTime, shiftStartedDate: nextRecord.workDate });
   }
-  localStorage.setItem(`relais-started-${nextRecord.operatorId}-${nextRecord.workDate}`, nextRecord.startTime);
 }
 
     const closingOperatorId = relaisDialog?.operatorId;
     const closingMode = relaisDialog?.mode;
-    if (closingMode === 'fin_poste' && closingOperatorId) {
-      localStorage.setItem(`fin-poste-${closingOperatorId}-${todayISO()}`, '1');
+    if (closingMode === 'fin_poste' && closingOperatorId && finishedRecord) {
+      const closingStep = draftSteps.find(s => s.id === finishedRecord.stepId);
+      if (closingStep) {
+        updateStep({ ...closingStep, shiftEndedDate: todayISO() });
+      }
     }
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);

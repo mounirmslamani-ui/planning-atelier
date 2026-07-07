@@ -299,6 +299,8 @@ export function mapStepFromDB(row: any): ProductionStep {
     stepNotes: row.step_notes || undefined,
     resourceNotes: row.resource_notes || undefined,
     planningOrder: row.planning_order ?? undefined,
+    shiftStartedDate: row.shift_started_date || undefined,
+    shiftEndedDate: row.shift_ended_date || undefined,
   };
 }
 
@@ -339,6 +341,8 @@ export function mapStepToDB(s: ProductionStep) {
     step_notes: s.stepNotes ?? null,
     resource_notes: s.resourceNotes ?? null,
     planning_order: s.planningOrder ?? null,
+    shift_started_date: toISODateOrNull(s.shiftStartedDate),
+    shift_ended_date: toISODateOrNull(s.shiftEndedDate),
   };
 }
 
