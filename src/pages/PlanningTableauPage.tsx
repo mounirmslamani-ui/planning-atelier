@@ -1299,7 +1299,7 @@ if (nextRecord) {
             ? '#AEA9A9'
             : tabHasRecordToday
               ? '#77A845'
-              : '#B85C36';
+              : '#F39716';
           return (
             <button
               key={group.operator.id}
