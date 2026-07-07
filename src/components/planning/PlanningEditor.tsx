@@ -654,19 +654,20 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                         );
                       }
                       const st = e.getRowProgressStatus(row);
-                      if (st === 'En cours' && row.stepId) {
-                        const opName = e.operations.find(o => o.id === row.operationId)?.name || '?';
-                        return (
-                          <button
-                            type="button"
-                            className="underline decoration-dotted text-primary hover:text-primary/80"
-                            onClick={() => e.setCloseStepPrompt({ rowId: row.id, label: `#${row.order} — ${opName}` })}
-                          >
-                            {PROGRESS_AR[st]}
-                          </button>
-                        );
-                      }
-                      return PROGRESS_AR[st];
+                      const progressValue = st === 'Terminée' ? 'done' : st === 'En cours' ? 'in-progress' : 'not-started';
+                      return (
+                        <SearchableSelect
+                          className="h-8 text-xs px-2"
+                          value={progressValue}
+                          onValueChange={v => e.handleProgressStatusChange(row.id, v as 'not-started' | 'in-progress' | 'done')}
+                          disabled={e.isLocked || !row.stepId}
+                          options={[
+                            { value: 'not-started', label: PROGRESS_AR['Non entamée'] },
+                            { value: 'in-progress', label: PROGRESS_AR['En cours'] },
+                            { value: 'done', label: PROGRESS_AR['Terminée'] },
+                          ]}
+                        />
+                      );
                     })()}
                   </td>
                   <td className="p-1.5 text-xs font-mono">{e.getRowActualDuration(row)}</td>
