@@ -1052,16 +1052,6 @@ const PlanningTableauPage: React.FC = () => {
             createdAt: new Date().toISOString(),
           });
         }
-      } else {
-        // 'continue' — adjust remaining estimated duration for the step
-        const step = draftSteps.find(s => s.id === finishedRecord.stepId);
-        if (step) {
-          const totalDone = productionRecords
-            .filter(r => r.stepId === finishedRecord.stepId)
-            .reduce((sum, r) => sum + (r.actualDuration || 0), 0) + finishedRecord.actualDuration;
-          const remaining = Math.max(0, step.estimatedDuration - totalDone);
-          updateStep({ ...step, estimatedDuration: remaining });
-        }
       }
     }
 
@@ -1078,16 +1068,37 @@ if (nextRecord) {
   }
 }
 
+    // Fusionner toutes les mutations sur la même étape (finishedRecord.stepId)
+    // en UN SEUL updateStep pour éviter deux UPDATE concurrents dont l'ordre
+    // d'arrivée pouvait écraser shift_ended_date en base (bug onglet gris → vert).
     const closingOperatorId = relaisDialog?.operatorId;
     const closingMode = relaisDialog?.mode;
-    if (closingMode === 'fin_poste' && closingOperatorId && finishedRecord) {
-      const closingStep = draftSteps.find(s => s.id === finishedRecord.stepId);
-      if (closingStep) {
-        updateStep({ ...closingStep, shiftEndedDate: todayISO() });
+    if (finishedRecord) {
+      const baseStep = draftSteps.find(s => s.id === finishedRecord.stepId);
+      if (baseStep) {
+        let patched: ProductionStep = { ...baseStep };
+        let dirty = false;
+
+        if (finishedRecord.workStatus === 'continue') {
+          const totalDone = productionRecords
+            .filter(r => r.stepId === finishedRecord.stepId)
+            .reduce((sum, r) => sum + (r.actualDuration || 0), 0) + finishedRecord.actualDuration;
+          const remaining = Math.max(0, baseStep.estimatedDuration - totalDone);
+          patched = { ...patched, estimatedDuration: remaining };
+          dirty = true;
+        }
+
+        if (closingMode === 'fin_poste' && closingOperatorId) {
+          patched = { ...patched, shiftEndedDate: todayISO() };
+          dirty = true;
+        }
+
+        if (dirty) updateStep(patched);
       }
     }
     setRelaisDialog(null);
   }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep, relaisDialog]);
+
 
   const handleGrantExtraTime = useCallback((stepId: string, extraMinutes: number) => {
     const step = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
