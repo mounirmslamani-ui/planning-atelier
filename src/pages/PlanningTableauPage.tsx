@@ -1087,7 +1087,7 @@ if (nextRecord) {
       }
     }
     setRelaisDialog(null);
-  }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep]);
+  }, [addProductionRecord, draftSteps, steps, productionRecords, absenceOperationId, absenceOrderId, qcEntries, addQCEntry, updateStep, relaisDialog]);
 
   const handleGrantExtraTime = useCallback((stepId: string, extraMinutes: number) => {
     const step = draftSteps.find(s => s.id === stepId) || steps.find(s => s.id === stepId);
