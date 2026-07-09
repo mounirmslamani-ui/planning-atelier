@@ -215,13 +215,25 @@ const OrdersPage: React.FC = () => {
   const outOfActiveProductionIds = useMemo(() => {
     const ids = new Set<string>();
     orders.forEach(o => {
-      if (isReintegratedOrder(o)) return;
-      if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
-      if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
+      const reintegratedAt = o.reintegratedAt ? new Date(o.reintegratedAt).getTime() : null;
+      // For reintegrated orders, only post-reintegration events count.
+      const afterReintegration = (iso?: string | null) =>
+        !reintegratedAt || (!!iso && new Date(iso).getTime() >= reintegratedAt);
+
+      if (deliveredOrders.some(d => d.orderId === o.id && afterReintegration(d.createdAt ?? d.deliveryDate))) {
+        ids.add(o.id); return;
+      }
+      if (cancelledOrders.some(c => c.orderId === o.id && afterReintegration((c as any).createdAt ?? (c as any).cancelledAt))) {
+        ids.add(o.id); return;
+      }
       // Only an actual QC decision (conforme / conforme-derogation) removes the
       // order from the active list. Legacy `delivery_entries` rows are NOT a
       // proof of QC validation and must be ignored here.
-      if (qcEntries.some(q => q.orderId === o.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'))) {
+      if (qcEntries.some(q =>
+        q.orderId === o.id
+        && (q.decision === 'conforme' || q.decision === 'conforme-derogation')
+        && afterReintegration(q.createdAt ?? q.controlDate)
+      )) {
         ids.add(o.id);
       }
     });
