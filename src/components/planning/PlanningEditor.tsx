@@ -352,7 +352,18 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           reused = true;
         }
       }
-      if (reused) updateStep(s); else addStep(s);
+      if (reused) {
+        // Preserve the manual planning_order (Pn) set from the Planning Tableau —
+        // the scheduler-built step has no planningOrder, so passing it as-is would
+        // write NULL to DB and the step would fall to the bottom on next reload.
+        const existing = existingOrderSteps.find(es => es.id === s.id);
+        if (existing?.planningOrder != null && s.planningOrder == null) {
+          s.planningOrder = existing.planningOrder;
+        }
+        updateStep(s);
+      } else {
+        addStep(s);
+      }
     });
     updatedSteps.forEach(s => updateStep(s));
 
