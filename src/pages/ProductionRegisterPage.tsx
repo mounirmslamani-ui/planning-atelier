@@ -38,6 +38,35 @@ const fmtHM = (minutes?: number | null) => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 };
 
+// Formate une saisie de date en JJ/MM/AAAA (insertion automatique des "/")
+const formatDateTyping = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+  let out = day;
+  if (month) out += '/' + month;
+  if (year) out += '/' + year;
+  return out;
+};
+
+// Convertit JJ/MM/AAAA -> AAAA-MM-JJ (ISO), retourne '' si incomplet/invalide
+const ddmmyyyyToISO = (s: string): string => {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s.trim());
+  if (!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+};
+
+// Formate une saisie d'heure en HH:MM (insertion automatique du ":")
+const formatTimeTyping = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '').slice(0, 4);
+  const hh = digits.slice(0, 2);
+  const mm = digits.slice(2, 4);
+  let out = hh;
+  if (mm) out += ':' + mm;
+  return out;
+};
+
 const ProductionRegisterPage: React.FC = () => {
   const { productionRecords, operators, operations, orders, clients, updateProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
@@ -64,7 +93,7 @@ const ProductionRegisterPage: React.FC = () => {
 
   const openEditDialog = useCallback((rec: typeof productionRecords[0]) => {
     const dt = recordDisplayDate(rec);
-    const dateStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const dateStr = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
     const hh = Math.floor(rec.actualDuration / 60);
     const mm = rec.actualDuration % 60;
     const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
@@ -96,6 +125,8 @@ const ProductionRegisterPage: React.FC = () => {
     if (!editRecord) return;
     const rec = productionRecords.find(r => r.id === editRecord.id);
     if (!rec) return;
+    const isoWorkDate = ddmmyyyyToISO(editRecord.workDate);
+    if (!isoWorkDate) return;
     let dur = parseHHMM(editRecord.actualDuration) ?? 0;
     const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
     const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
@@ -106,7 +137,7 @@ const ProductionRegisterPage: React.FC = () => {
     if (dur <= 0) return;
     updateProductionRecord({
       ...rec,
-      workDate: editRecord.workDate,
+      workDate: isoWorkDate,
       startTime: editRecord.startTime || undefined,
       endTime: editRecord.endTime || undefined,
       pauseMinutes: pauseMin || undefined,
@@ -533,10 +564,13 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
               <div>
                 <label className="text-xs font-medium text-muted-foreground">تاريخ الأشغال</label>
                 <Input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="JJ/MM/AAAA"
+                  maxLength={10}
                   value={editRecord.workDate}
-                  onChange={e => setEditRecord({ ...editRecord, workDate: e.target.value })}
-                  className="h-8 text-xs"
+                  onChange={e => setEditRecord({ ...editRecord, workDate: formatDateTyping(e.target.value) })}
+                  className="h-8 text-xs font-mono"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -549,7 +583,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                     maxLength={5}
                     placeholder="HH:MM"
                     value={editRecord.startTime}
-                    onChange={e => setEditRecord({ ...editRecord, startTime: e.target.value })}
+                    onChange={e => setEditRecord({ ...editRecord, startTime: formatTimeTyping(e.target.value) })}
                     className="h-8 text-xs font-mono"
                   />
                 </div>
@@ -562,7 +596,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                     maxLength={5}
                     placeholder="HH:MM"
                     value={editRecord.endTime}
-                    onChange={e => setEditRecord({ ...editRecord, endTime: e.target.value })}
+                    onChange={e => setEditRecord({ ...editRecord, endTime: formatTimeTyping(e.target.value) })}
                     className="h-8 text-xs font-mono"
                   />
                 </div>
@@ -570,7 +604,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   <label className="text-xs font-medium text-muted-foreground">الوقت المستقطع (HH:mm)</label>
                   <Input
                     value={editRecord.pauseHHMM}
-                    onChange={e => setEditRecord({ ...editRecord, pauseHHMM: e.target.value })}
+                    onChange={e => setEditRecord({ ...editRecord, pauseHHMM: formatTimeTyping(e.target.value) })}
                     placeholder="00:30"
                     className="h-8 text-xs font-mono"
                   />
@@ -579,7 +613,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   <label className="text-xs font-medium text-muted-foreground">المدة الفعلية (hh:mm)</label>
                   <Input
                     value={editComputedDuration ?? editRecord.actualDuration}
-                    onChange={e => setEditRecord({ ...editRecord, actualDuration: e.target.value })}
+                    onChange={e => setEditRecord({ ...editRecord, actualDuration: formatTimeTyping(e.target.value) })}
                     placeholder="1:30"
                     className="h-8 text-xs font-mono"
                     readOnly={editComputedDuration !== null}
