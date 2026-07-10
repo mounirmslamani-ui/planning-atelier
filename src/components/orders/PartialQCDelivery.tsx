@@ -47,9 +47,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
   const { hasAccess } = useAuth();
   const canSaveQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراقبة الجودة والتسليم', champ_bouton: 'سجل مراقبة الجودة' }) === 'RW';
-  const canForceCloseQc = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال مراقبة الجودة يدوياً' }) === 'RW';
   const canAddDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'التسليم' }) === 'RW';
-  const canForceCloseDelivery = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إقفال التسليم يدوياً' }) === 'RW';
   const canDeleteSession = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'حذف جلسة' }) === 'RW';
 
   // Per-section RBAC locks (QC and Delivery sub-forms are independent)
@@ -146,30 +144,6 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
     }
   };
 
-  const forceCloseQC = () => {
-    confirm(
-      `هل تؤكد إقفال CQ يدوياً لهذه الطلبية ؟ (${controlled}/${qty} مراقَب)`,
-      () => {
-        // Insert a synthetic closing entry so the flag is persisted on a row.
-        addQCSession({
-          id: crypto.randomUUID(),
-          orderId: order.id,
-          controlDate: today,
-          decision: 'conforme',
-          reworkNotes: 'Clôture forcée (administrateur)',
-          controlledQty: 0,
-          acceptedQty: 0,
-          rejectedQty: 0,
-          forceClosed: true,
-          createdAt: new Date().toISOString(),
-        });
-        if (placeholderQc) deleteQCEntry(placeholderQc.id);
-        toast.success('تم إقفال مراقبة الجودة');
-      },
-      undefined,
-    );
-  };
-
   // ─── New delivery session form state ───
   const [showDelForm, setShowDelForm] = useState(false);
   const [delDate, setDelDate] = useState(today);
@@ -207,25 +181,6 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
     } finally {
       setIsSubmittingDel(false);
     }
-  };
-
-  const forceCloseDelivery = () => {
-    confirm(
-      `هل تؤكد إقفال التسليم يدوياً لهذه الطلبية ؟ (${shipped}/${qty} مسلَّم)`,
-      () => {
-        addDeliveredSession({
-          id: crypto.randomUUID(),
-          orderId: order.id,
-          deliveryDate: today,
-          salePriceStatus: 'non-calcule',
-          deliveredQty: 0,
-          forceClosed: true,
-          observation: 'Clôture forcée (administrateur)',
-        });
-        toast.success('تم إقفال التسليم');
-      },
-      undefined,
-    );
   };
 
   const askDelete = (label: string, fn: () => void) => {
@@ -425,12 +380,6 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
               إضافة مراقبة جودة
             </Button>
           )}
-          {qcRemaining > 0 && !qcForceClosed && canForceCloseQc && (
-            <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={forceCloseQC}>
-              <Lock className="w-4 h-4 ms-1" />
-              إقفال CQ يدوياً
-            </Button>
-          )}
         </div>
         </fieldset>
       </section>
@@ -591,12 +540,6 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
             <Button size="sm" variant="outline" onClick={openDelForm}>
               <Plus className="w-4 h-4 ms-1" />
               إضافة تسليم
-            </Button>
-          )}
-          {deliveryRemaining > 0 && !deliveryForceClosed && canForceCloseDelivery && (
-            <Button size="sm" variant="outline" className="text-blue-700 border-blue-300" onClick={forceCloseDelivery}>
-              <Lock className="w-4 h-4 ms-1" />
-              إقفال التسليم يدوياً
             </Button>
           )}
         </div>
