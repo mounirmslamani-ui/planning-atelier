@@ -490,7 +490,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return step ? getStepProgressStatus(step, productionRecords) : 'Non entamée';
   };
   const getRowActualDuration = (row: OperationRow): string => {
-    if (row.assignType === 'subcontractor') return 'NA';
+    if (row.assignType === 'subcontractor') return '';
     const total = getRowRecords(row).reduce((sum, record) => sum + record.actualDuration, 0);
     const hours = Math.floor(total / 60);
     const minutes = total % 60;
