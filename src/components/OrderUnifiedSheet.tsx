@@ -207,6 +207,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const pendingStepsCloseRef = React.useRef(false);
   
   const [printOpen, setPrintOpen] = useState(false);
 
@@ -308,15 +309,23 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   };
 
   const isInfoDirty = tab === 'info' && Object.keys(draft).length > 0;
+  const isPlanningDirty = (tab === 'resources' || tab === 'steps') && editor.rowsDirty;
+
+  React.useEffect(() => {
+    if (!editor.savePrompt && !editor.forcePrompt) {
+      pendingStepsCloseRef.current = false;
+    }
+  }, [editor.savePrompt, editor.forcePrompt]);
 
   const requestClose = (nextOpen: boolean) => {
     if (nextOpen) { onOpenChange(true); return; }
-    if (isInfoDirty) {
+    if (isInfoDirty || isPlanningDirty) {
       setShowUnsavedPrompt(true);
       return;
     }
     onOpenChange(false);
   };
+
 
   const confirmAndCloseInfo = () => {
     if (createMode) {
@@ -348,6 +357,31 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     setShowUnsavedPrompt(false);
     onOpenChange(false);
   };
+
+  const confirmAndCloseUnsaved = () => {
+    if (isInfoDirty) { confirmAndCloseInfo(); return; }
+    if (tab === 'resources') {
+      editor.saveResourcesOnly();
+      setShowUnsavedPrompt(false);
+      onOpenChange(false);
+      return;
+    }
+    if (tab === 'steps') {
+      const proceeded = editor.handlePlanifier();
+      setShowUnsavedPrompt(false);
+      if (proceeded) pendingStepsCloseRef.current = true;
+      return;
+    }
+    setShowUnsavedPrompt(false);
+    onOpenChange(false);
+  };
+
+  const discardAndCloseUnsaved = () => {
+    if (isInfoDirty) { discardAndCloseInfo(); return; }
+    setShowUnsavedPrompt(false);
+    onOpenChange(false);
+  };
+
 
   // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
   const handleQCSave = (
@@ -680,9 +714,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
       <UnsavedChangesDialog
         open={showUnsavedPrompt}
-        onConfirm={confirmAndCloseInfo}
+        onConfirm={confirmAndCloseUnsaved}
         onCancel={() => setShowUnsavedPrompt(false)}
-        onDiscard={discardAndCloseInfo}
+        onDiscard={discardAndCloseUnsaved}
       />
 
       {cancelTarget && (
@@ -698,7 +732,17 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       )}
 
       {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
-      <PlanningEditorDialogs editor={editor} order={order} onSaved={stepsLock.lock} />
+      <PlanningEditorDialogs
+        editor={editor}
+        order={order}
+        onSaved={() => {
+          stepsLock.lock();
+          if (pendingStepsCloseRef.current) {
+            pendingStepsCloseRef.current = false;
+            onOpenChange(false);
+          }
+        }}
+      />
 
       {/* Print sheet (A4) */}
       {printOpen && (

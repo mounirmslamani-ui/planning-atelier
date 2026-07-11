@@ -68,6 +68,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     : '';
 
   const [rows, setRows] = useState<OperationRow[]>([]);
+  const originalRowsRef = useRef<OperationRow[]>([]);
   
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
@@ -96,7 +97,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       });
 
     if (existingSteps.length > 0) {
-      setRows(existingSteps.map((s, i) => {
+      const initialRows = existingSteps.map((s, i) => {
         const isSub = !!s.subcontractorId;
         return {
           id: `row-${s.id}`,
@@ -117,9 +118,12 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
           subcontractingInProgress: isSub ? !!s.subcontractingInProgress : false,
         };
-      }));
+      });
+      setRows(initialRows);
+      originalRowsRef.current = initialRows.map(r => ({ ...r }));
     } else {
       setRows([]);
+      originalRowsRef.current = [];
     }
   }, [open, order?.id, steps, absenceOperationId]);
 
@@ -133,6 +137,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }
     return set;
   }, [rows]);
+
+  const rowsDirty = useMemo(() => JSON.stringify(rows) !== JSON.stringify(originalRowsRef.current), [rows]);
 
   const addRow = () => {
     if (!currentOrder) return;
@@ -239,19 +245,19 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return true;
   };
 
-  const handlePlanifier = () => {
-    if (!order) return;
-    if (isLocked) { toast.error(lockReason); return; }
+  const handlePlanifier = (): boolean => {
+    if (!order) return false;
+    if (isLocked) { toast.error(lockReason); return false; }
     const invalidRow = rows.find(r => {
       if (r.estimatedDuration && r.estimatedDuration > 0) return false;
       const existing = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
       const isFinished = existing ? getStepProgressStatus(existing, productionRecords) === 'Terminée' : false;
       return !isFinished;
     });
-    if (invalidRow) { toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`); return; }
+    if (invalidRow) { toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`); return false; }
     const noAssignee = rows.find(r => !r.option1);
-    if (noAssignee) { toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`); return; }
-    if (!validateRowsBeforeSave(rows)) return;
+    if (noAssignee) { toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`); return false; }
+    if (!validateRowsBeforeSave(rows)) return false;
 
     const finishedWithBadRes = rows.filter(r => {
       const step = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
@@ -261,9 +267,10 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     });
     if (finishedWithBadRes.length > 0) {
       setForcePrompt({ rowIds: finishedWithBadRes.map(r => r.id) });
-      return;
+      return true;
     }
     setSavePrompt(rows.map(r => ({ ...r })));
+    return true;
   };
 
   const doSave = (rowsToSave: OperationRow[]): boolean => {
@@ -435,6 +442,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     } else {
       toast.success('تم حفظ التخطيط');
     }
+    originalRowsRef.current = rows.map(r => ({ ...r }));
     return true;
   };
 
@@ -479,6 +487,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
     updateOrder(syntheticOrder);
     toast.success(`تم حفظ موارد ${updated} مرحلة`);
+    originalRowsRef.current = rows.map(r => ({ ...r }));
   };
 
   const getRowRecords = (row: OperationRow): ProductionRecord[] => {
@@ -525,7 +534,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   };
 
   return {
-    rows, setRows, isLocked, lockReason, blockedSet,
+    rows, setRows, isLocked, lockReason, blockedSet, rowsDirty,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
