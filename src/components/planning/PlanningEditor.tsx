@@ -245,19 +245,19 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return true;
   };
 
-  const handlePlanifier = () => {
-    if (!order) return;
-    if (isLocked) { toast.error(lockReason); return; }
+  const handlePlanifier = (): boolean => {
+    if (!order) return false;
+    if (isLocked) { toast.error(lockReason); return false; }
     const invalidRow = rows.find(r => {
       if (r.estimatedDuration && r.estimatedDuration > 0) return false;
       const existing = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
       const isFinished = existing ? getStepProgressStatus(existing, productionRecords) === 'Terminée' : false;
       return !isFinished;
     });
-    if (invalidRow) { toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`); return; }
+    if (invalidRow) { toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`); return false; }
     const noAssignee = rows.find(r => !r.option1);
-    if (noAssignee) { toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`); return; }
-    if (!validateRowsBeforeSave(rows)) return;
+    if (noAssignee) { toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`); return false; }
+    if (!validateRowsBeforeSave(rows)) return false;
 
     const finishedWithBadRes = rows.filter(r => {
       const step = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
@@ -267,9 +267,10 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     });
     if (finishedWithBadRes.length > 0) {
       setForcePrompt({ rowIds: finishedWithBadRes.map(r => r.id) });
-      return;
+      return true;
     }
     setSavePrompt(rows.map(r => ({ ...r })));
+    return true;
   };
 
   const doSave = (rowsToSave: OperationRow[]): boolean => {
