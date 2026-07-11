@@ -138,6 +138,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return set;
   }, [rows]);
 
+  const rowsDirty = useMemo(() => JSON.stringify(rows) !== JSON.stringify(originalRowsRef.current), [rows]);
+
   const addRow = () => {
     if (!currentOrder) return;
     setRows(prev => [...prev, {
