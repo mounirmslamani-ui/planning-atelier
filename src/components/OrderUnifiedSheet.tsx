@@ -23,7 +23,7 @@ import { useCancelOrder } from '@/hooks/useCancelOrder';
 import { useConfirm } from '@/hooks/use-confirm';
 import type { Order, OrderPriority, QCDecision, QualityControlEntry } from '@/types/planning';
 import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEditorDialogs } from '@/components/planning/PlanningEditor';
-import PartialQCDelivery from '@/components/orders/PartialQCDelivery';
+import PartialQCDelivery, { PartialQCDeliveryHandle } from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import { getQCControlled, getQCPending } from '@/lib/orderFlow';
@@ -208,6 +208,8 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   const pendingStepsCloseRef = React.useRef(false);
+  const qcRef = React.useRef<PartialQCDeliveryHandle>(null);
+  const [qcDirty, setQcDirty] = useState(false);
   
   const [printOpen, setPrintOpen] = useState(false);
 
@@ -316,10 +318,11 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const isInfoDirty = tab === 'info' && Object.keys(draft).length > 0;
   const isPlanningDirty = (tab === 'resources' || tab === 'steps') && editor.rowsDirty;
+  const isQcDirty = tab === 'qc' && qcDirty;
 
   const requestClose = (nextOpen: boolean) => {
     if (nextOpen) { onOpenChange(true); return; }
-    if (isInfoDirty || isPlanningDirty) {
+    if (isInfoDirty || isPlanningDirty || isQcDirty) {
       setShowUnsavedPrompt(true);
       return;
     }
@@ -372,12 +375,21 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       if (proceeded) pendingStepsCloseRef.current = true;
       return;
     }
+    if (tab === 'qc') {
+      const ok = qcRef.current?.confirmAndSubmit();
+      setShowUnsavedPrompt(false);
+      if (ok) onOpenChange(false);
+      return;
+    }
     setShowUnsavedPrompt(false);
     onOpenChange(false);
   };
 
   const discardAndCloseUnsaved = () => {
     if (isInfoDirty) { discardAndCloseInfo(); return; }
+    if (tab === 'qc') {
+      qcRef.current?.discardForms();
+    }
     setShowUnsavedPrompt(false);
     onOpenChange(false);
   };
@@ -646,10 +658,10 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
-                <PartialQCDelivery order={order} open={open} />
+                <PartialQCDelivery ref={qcRef} order={order} open={open} onDirtyChange={setQcDirty} />
                 <div className="border-t pt-3 flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
-                  <Button onClick={() => { toast.success('تم الحفظ'); onOpenChange(false); }}>تأكيد</Button>
+                  <Button variant="outline" onClick={() => requestClose(false)}>إلغاء</Button>
+                  <Button onClick={confirmAndCloseUnsaved}>تأكيد</Button>
                 </div>
 
 
