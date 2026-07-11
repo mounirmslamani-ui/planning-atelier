@@ -77,6 +77,10 @@ const ProductionRegisterPage: React.FC = () => {
   const showActionsCol = canEditRecord || canDeleteRecord;
   const { confirmState, confirm, handleConfirm, handleCancel } = useConfirm();
 
+  const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
+  const getOrder = (id: string) => orders.find(o => o.id === id);
+  const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
+
   const [editRecord, setEditRecord] = useState<{
     id: string;
     orderId: string;
@@ -134,17 +138,16 @@ const ProductionRegisterPage: React.FC = () => {
     [editRecord, productionRecords]
   );
 
-  // Retrouve, pour un opérateur donné, l'étape à utiliser sur une autre commande :
-  // priorité à la même opération ; sinon l'unique étape de l'opérateur sur cette commande ;
-  // sinon la première par ordre chronologique du planning.
-  const resolveTargetStep = useCallback((operatorId: string, targetOrderId: string, currentOperationId: string) => {
-    const candidates = steps.filter(s => s.orderId === targetOrderId && s.operatorId === operatorId);
-    if (candidates.length === 0) return null;
-    const sameOperation = candidates.find(s => s.operationId === currentOperationId);
-    if (sameOperation) return sameOperation;
-    if (candidates.length === 1) return candidates[0];
-    return [...candidates].sort((a, b) => (a.order || 0) - (b.order || 0))[0];
-  }, [steps]);
+  // Étapes de l'opérateur sur la commande actuellement choisie dans le dialogue.
+  // S'il y en a plusieurs, l'utilisateur doit choisir explicitement laquelle recevoir
+  // le travail (on ne devine jamais entre plusieurs opérations possibles).
+  const stepOptionsForSelectedOrder = useMemo(() => {
+    if (!editRecord || !editingRecord) return [];
+    return steps
+      .filter(s => s.orderId === editRecord.orderId && s.operatorId === editingRecord.operatorId)
+      .map(s => ({ value: s.id, label: getOperationName(s.operationId), searchText: getOperationName(s.operationId) }))
+      .sort((a, b) => a.searchText.localeCompare(b.searchText));
+  }, [editRecord?.orderId, editingRecord, steps]);
 
   // Commandes sorties de la production active (livrées, annulées, ou décision QC conforme),
   // sauf si réintégrées après cet événement — même critère que سجل الطلبيات الجارية (OrdersPage).
@@ -189,10 +192,23 @@ const ProductionRegisterPage: React.FC = () => {
 
   const handleOrderChange = useCallback((newOrderId: string) => {
     if (!editRecord || !editingRecord) return;
-    const step = resolveTargetStep(editingRecord.operatorId, newOrderId, editingRecord.operationId);
-    if (!step) return; // ne devrait pas arriver : la liste ne propose que des commandes résolubles
-    setEditRecord({ ...editRecord, orderId: newOrderId, operationId: step.operationId, stepId: step.id });
-  }, [editRecord, editingRecord, resolveTargetStep]);
+    const candidates = steps.filter(s => s.orderId === newOrderId && s.operatorId === editingRecord.operatorId);
+    if (candidates.length === 0) return; // ne devrait pas arriver : la liste ne propose que des commandes résolubles
+    // Une seule étape possible : on l'utilise directement.
+    // Plusieurs étapes : on présélectionne celle de même opération que l'enregistrement d'origine
+    // (meilleure supposition), mais le sélecteur d'étape reste affiché pour permettre de corriger.
+    const preferred = candidates.length === 1
+      ? candidates[0]
+      : (candidates.find(s => s.operationId === editingRecord.operationId) ?? candidates[0]);
+    setEditRecord({ ...editRecord, orderId: newOrderId, operationId: preferred.operationId, stepId: preferred.id });
+  }, [editRecord, editingRecord, steps]);
+
+  const handleStepChange = useCallback((newStepId: string) => {
+    if (!editRecord) return;
+    const step = steps.find(s => s.id === newStepId);
+    if (!step) return;
+    setEditRecord({ ...editRecord, stepId: step.id, operationId: step.operationId });
+  }, [editRecord, steps]);
 
   const saveEdit = useCallback(() => {
     if (!editRecord) return;
@@ -232,10 +248,6 @@ const ProductionRegisterPage: React.FC = () => {
     });
     setEditRecord(null);
   }, [editRecord, productionRecords, updateProductionRecord, orders]);
-
-  const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
-  const getOrder = (id: string) => orders.find(o => o.id === id);
-  const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || '—';
 
   const getRecordInfo = (rec: typeof productionRecords[0]) => {
     const order = getOrder(rec.orderId);
@@ -664,6 +676,21 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   </p>
                 )}
               </div>
+              {stepOptionsForSelectedOrder.length > 1 && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">العملية / المرحلة</label>
+                  <SearchableSelect
+                    className="h-8 text-xs px-2"
+                    value={editRecord.stepId}
+                    onValueChange={handleStepChange}
+                    options={stepOptionsForSelectedOrder}
+                    searchPlaceholder="بحث بالعملية..."
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    هذا العامل لديه أكثر من مرحلة على هذه الطلبية — تأكد من اختيار العملية الصحيحة
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-medium text-muted-foreground">تاريخ الأشغال</label>
                 <Input
