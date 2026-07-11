@@ -207,6 +207,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
+  const pendingStepsCloseRef = React.useRef(false);
   
   const [printOpen, setPrintOpen] = useState(false);
 
