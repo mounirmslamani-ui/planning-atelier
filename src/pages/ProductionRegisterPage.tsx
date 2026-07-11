@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SearchableSelect from '@/components/ui/searchable-select';
-import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download, Pencil, Trash2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
+import { X, Download, Pencil, Trash2 } from 'lucide-react';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
@@ -17,14 +15,8 @@ import DesignationCell from '@/components/DesignationCell';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
-
-type SortField = 'date' | 'orderNumber' | 'client' | 'designation' | 'quantity' | 'operation' | 'duration';
-type SortDir = 'asc' | 'desc';
-
-const MONTHS = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-];
+import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
+import { applyFilters, computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 
 // Date affichée = workDate (saisi) si présent, sinon date de validatedAt (rétrocompat).
 const recordDisplayDate = (rec: { workDate?: string; validatedAt: string }): Date => {
@@ -271,14 +263,24 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const validTab = activeTab && operatorsWithRecords.some(o => o.id === activeTab) ? activeTab : operatorsWithRecords[0]?.id || null;
 
-  const [filterMonths, setFilterMonths] = useState<Set<string>>(new Set());
-  const [filterClients, setFilterClients] = useState<Set<string>>(new Set());
-  const [filterOrders, setFilterOrders] = useState<Set<string>>(new Set());
-  const [filterOperations, setFilterOperations] = useState<Set<string>>(new Set());
+  // Filtres/tri des colonnes — même modèle que جدول البرمجة (PlanningTableauPage) :
+  // colFilters (clé de colonne -> valeur ou sélection "a|b|c"), colSortKey/colSortDir,
+  // superposition du filtre client global (سجل الطلبيات) sur la clé "client".
+  const [localColFilters, setLocalColFilters] = useState<Record<string, string>>({});
+  const colFilters = useMemo(
+    () => (selectedClientName ? { ...localColFilters, client: `${selectedClientName}|` } : localColFilters),
+    [localColFilters, selectedClientName]
+  );
+  const [colSortKey, setColSortKey] = useState<string | null>('date');
+  const [colSortDir, setColSortDir] = useState<SortDirection>('desc');
 
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
-
+  const handleColSort = useCallback((key: string, dir: SortDirection) => {
+    setColSortKey(dir ? key : null);
+    setColSortDir(dir);
+  }, []);
+  const handleColFilter = useCallback((key: string, value: string) => {
+    setLocalColFilters(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   const tabRecords = useMemo(() =>
     validTab
@@ -287,138 +289,51 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
     [productionRecords, validTab]
   );
 
-  const availableMonths = useMemo(() => {
-    const set = new Set<string>();
-    tabRecords.forEach(r => {
-      const d = recordDisplayDate(r);
-      set.add(`${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`);
-    });
-    return Array.from(set).sort().reverse();
-  }, [tabRecords]);
+  // Un accesseur par colonne, exprimé en valeur affichée — même principe que planningAccessors
+  // dans PlanningTableauPage — pour alimenter à la fois le tri, le filtre et la liste "Excel-style"
+  // de valeurs proposées dans le popover de chaque ColumnHeader.
+  type RegisterRecord = typeof productionRecords[0];
+  const regAccessors = useMemo(() => ({
+    orderNumber: (r: RegisterRecord) => getRecordInfo(r).orderNumber,
+    client: (r: RegisterRecord) => getRecordInfo(r).clientName,
+    designation: (r: RegisterRecord) => getRecordInfo(r).designation,
+    quantity: (r: RegisterRecord) => String(getRecordInfo(r).quantity ?? ''),
+    operation: (r: RegisterRecord) => getRecordInfo(r).operationName,
+    date: (r: RegisterRecord) => recordDisplayDate(r).toISOString().split('T')[0],
+    duration: (r: RegisterRecord) => (r.actualDuration / 60).toFixed(2),
+  }), [orders, clients, operations]);
 
-  const availableClients = useMemo(() => {
-    const map = new Map<string, string>();
-    tabRecords.forEach(r => {
-      const order = getOrder(r.orderId);
-      if (order) {
-        map.set(order.clientId, getClientName(order.clientId));
-      } else if (r.clientNameSnapshot) {
-        map.set(`__snap__${r.clientNameSnapshot}`, r.clientNameSnapshot);
-      }
-    });
-    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
-  }, [tabRecords, orders, clients]);
-
-  const availableOrders = useMemo(() => {
-    const map = new Map<string, string>();
-    tabRecords.forEach(r => {
-      const info = getRecordInfo(r);
-      map.set(r.orderId, info.orderNumber);
-    });
-    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
-  }, [tabRecords, orders]);
-
-  const availableOperations = useMemo(() => {
-    const set = new Set<string>();
-    tabRecords.forEach(r => set.add(r.operationId));
-    return Array.from(set);
-  }, [tabRecords]);
-
-  const globalClientKeys = useMemo(() => {
-    if (!selectedClientName) return null;
-    const set = new Set<string>();
-    clients.filter(c => c.name === selectedClientName).forEach(c => set.add(c.id));
-    set.add(`__snap__${selectedClientName}`);
-    return set;
-  }, [selectedClientName, clients]);
-
-  const filteredRecords = useMemo(() => {
-    return tabRecords.filter(r => {
-      if (filterMonths.size > 0) {
-        const d = recordDisplayDate(r);
-        const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
-        if (!filterMonths.has(key)) return false;
-      }
-      const activeClientFilter = globalClientKeys ?? (filterClients.size > 0 ? filterClients : null);
-      if (activeClientFilter) {
-        const order = getOrder(r.orderId);
-        const clientKey = order ? order.clientId : `__snap__${r.clientNameSnapshot ?? ''}`;
-        if (!activeClientFilter.has(clientKey)) return false;
-      }
-      if (filterOrders.size > 0) {
-        if (!filterOrders.has(r.orderId)) return false;
-      }
-      if (filterOperations.size > 0) {
-        if (!filterOperations.has(r.operationId)) return false;
-      }
-      return true;
-    });
-  }, [tabRecords, filterMonths, filterClients, filterOrders, filterOperations, orders, globalClientKeys]);
+  const allValuesByKey = useMemo(
+    () => computeAllValuesByKey(tabRecords, regAccessors, colFilters),
+    [tabRecords, regAccessors, colFilters]
+  );
 
   const sortedRecords = useMemo(() => {
-    const arr = [...filteredRecords];
-    const dir = sortDir === 'asc' ? 1 : -1;
-    arr.sort((a, b) => {
-      const ia = getRecordInfo(a);
-      const ib = getRecordInfo(b);
-      switch (sortField) {
-        case 'date':
-          return dir * (recordDisplayDate(a).getTime() - recordDisplayDate(b).getTime());
-        case 'orderNumber':
-          return dir * ia.orderNumber.localeCompare(ib.orderNumber);
-        case 'client':
-          return dir * ia.clientName.localeCompare(ib.clientName);
-        case 'designation':
-          return dir * ia.designation.localeCompare(ib.designation);
-        case 'quantity':
-          return dir * ((ia.quantity ?? 0) - (ib.quantity ?? 0));
-        case 'operation':
-          return dir * ia.operationName.localeCompare(ib.operationName);
-        case 'duration':
-          return dir * (a.actualDuration - b.actualDuration);
-        default:
-          return 0;
+    let out = applyFilters(tabRecords, regAccessors, colFilters);
+    if (colSortKey && colSortDir) {
+      const acc = regAccessors[colSortKey as keyof typeof regAccessors];
+      if (acc) {
+        out = [...out].sort((a, b) => {
+          const va = acc(a); const vb = acc(b);
+          if (va == null && vb == null) return 0;
+          if (va == null) return 1;
+          if (vb == null) return -1;
+          if (typeof va === 'number' && typeof vb === 'number') return colSortDir === 'asc' ? va - vb : vb - va;
+          const sa = String(va).toLowerCase(); const sb = String(vb).toLowerCase();
+          return colSortDir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+        });
       }
-    });
-    return arr;
-  }, [filteredRecords, sortField, sortDir, orders, clients, operations]);
+    }
+    return out;
+  }, [tabRecords, regAccessors, colFilters, colSortKey, colSortDir]);
 
   const totalHours = sortedRecords.reduce((sum, r) => sum + r.actualDuration, 0) / 60;
   const activeOperator = operators.find(o => o.id === validTab);
 
-  const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDir(field === 'date' ? 'desc' : 'asc');
-    }
-  };
-
-  const SortIcon: React.FC<{ field: SortField }> = ({ field }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
-    return sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
-  };
-
-  const hasActiveFilters = filterMonths.size > 0 || filterClients.size > 0 || filterOrders.size > 0 || filterOperations.size > 0;
-
-  const formatMonthLabel = (key: string) => {
-    const [year, month] = key.split('-');
-    return `${MONTHS[parseInt(month)]} ${year}`;
-  };
-
-  const toggleSetItem = (set: Set<string>, item: string): Set<string> => {
-    const next = new Set(set);
-    if (next.has(item)) next.delete(item);
-    else next.add(item);
-    return next;
-  };
+  const hasActiveFilters = Object.values(colFilters).some(Boolean);
 
   const clearAllFilters = () => {
-    setFilterMonths(new Set());
-    setFilterClients(new Set());
-    setFilterOrders(new Set());
-    setFilterOperations(new Set());
+    setLocalColFilters({});
   };
 
   const buildExportRows = useCallback((records: typeof productionRecords): ExcelRow[] => {
@@ -525,74 +440,28 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => toggleSort('orderNumber')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        رقم الطلبية <SortIcon field="orderNumber" />
-                      </button>
-                      <FilterPopover
-                        items={availableOrders}
-                        selected={filterOrders}
-                        onToggle={(v) => setFilterOrders(toggleSetItem(filterOrders, v))}
-                        onClear={() => setFilterOrders(new Set())}
-                      />
-                    </div>
+                    <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['orderNumber'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.orderNumber} />
                   </TableHead>
                   <TableHead>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => toggleSort('client')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        الزبون <SortIcon field="client" />
-                      </button>
-                      <FilterPopover
-                        items={availableClients}
-                        selected={filterClients}
-                        onToggle={(v) => setFilterClients(toggleSetItem(filterClients, v))}
-                        onClear={() => setFilterClients(new Set())}
-                      />
-                    </div>
+                    <ColumnHeader label="الزبون" columnKey="client" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['client'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.client} />
                   </TableHead>
                   <TableHead>
-                    <button onClick={() => toggleSort('designation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                      التعيين <SortIcon field="designation" />
-                    </button>
+                    <ColumnHeader label="التعيين" columnKey="designation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['designation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.designation} />
                   </TableHead>
                   <TableHead className="w-14 text-center">
-                    <button onClick={() => toggleSort('quantity')} className="flex items-center gap-1 mx-auto hover:text-foreground transition-colors">
-                      الكمية <SortIcon field="quantity" />
-                    </button>
+                    <ColumnHeader label="الكمية" columnKey="quantity" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['quantity'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.quantity} className="justify-center" />
                   </TableHead>
                   <TableHead>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => toggleSort('operation')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        العملية <SortIcon field="operation" />
-                      </button>
-                      <FilterPopover
-                        items={availableOperations.map(id => ({ value: id, label: getOperationName(id) }))}
-                        selected={filterOperations}
-                        onToggle={(v) => setFilterOperations(toggleSetItem(filterOperations, v))}
-                        onClear={() => setFilterOperations(new Set())}
-                      />
-                    </div>
+                    <ColumnHeader label="العملية" columnKey="operation" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['operation'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.operation} />
                   </TableHead>
                   <TableHead className="w-24">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => toggleSort('date')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                        تاريخ الأشغال <SortIcon field="date" />
-                      </button>
-                      <FilterPopover
-                        items={availableMonths.map(k => ({ value: k, label: formatMonthLabel(k) }))}
-                        selected={filterMonths}
-                        onToggle={(v) => setFilterMonths(toggleSetItem(filterMonths, v))}
-                        onClear={() => setFilterMonths(new Set())}
-                      />
-                    </div>
+                    <ColumnHeader label="تاريخ الأشغال" columnKey="date" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['date'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.date} />
                   </TableHead>
                   <TableHead className="w-16 text-center">ساعة البداية</TableHead>
                   <TableHead className="w-16 text-center">ساعة النهاية</TableHead>
                   <TableHead className="w-16 text-center">الوقت المستقطع</TableHead>
                   <TableHead className="w-20 text-right">
-                    <button onClick={() => toggleSort('duration')} className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors">
-                      المدة الفعلية <SortIcon field="duration" />
-                    </button>
+                    <ColumnHeader label="المدة الفعلية" columnKey="duration" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['duration'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.duration} className="justify-end" />
                   </TableHead>
                   {showActionsCol && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
@@ -771,43 +640,6 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         onCancel={handleCancel}
       />
     </div>
-  );
-};
-
-const FilterPopover: React.FC<{
-  items: { value: string; label: string }[];
-  selected: Set<string>;
-  onToggle: (value: string) => void;
-  onClear: () => void;
-}> = ({ items, selected, onToggle, onClear }) => {
-  const hasFilter = selected.size > 0;
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className={`p-0.5 rounded transition-colors ${hasFilter ? 'text-primary' : 'text-muted-foreground/50 hover:text-muted-foreground'}`}>
-          <Filter className="w-3 h-3" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-52 p-2" align="start">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium">Filtrer</span>
-          {hasFilter && (
-            <button onClick={onClear} className="text-[10px] text-destructive hover:underline">Tout effacer</button>
-          )}
-        </div>
-        <div className="max-h-48 overflow-auto space-y-1">
-          {items.map(item => (
-            <label key={item.value} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50 cursor-pointer text-xs">
-              <Checkbox
-                checked={selected.has(item.value)}
-                onCheckedChange={() => onToggle(item.value)}
-              />
-              {item.label}
-            </label>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 };
 
