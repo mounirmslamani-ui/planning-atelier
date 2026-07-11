@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,12 +32,18 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
   'valide': { emoji: '🟢', label: 'Prix validé' },
 };
 
+export interface PartialQCDeliveryHandle {
+  confirmAndSubmit: () => boolean;
+  discardForms: () => void;
+}
+
 interface Props {
   order: Order;
   open?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
+const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, open = true, onDirtyChange }, ref) => {
   const {
     qcEntries, deliveredOrders, deliveryEntries,
     addQCSession, updateQCEntry, deleteQCEntry,
@@ -111,16 +117,16 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
     setShowQcForm(true);
   };
 
-  const submitQcSession = () => {
-    if (isSubmittingQc) return;
-    if (!qcDecision) { toast.error('اختر القرار'); return; }
+  const submitQcSession = (): boolean => {
+    if (isSubmittingQc) return false;
+    if (!qcDecision) { toast.error('اختر القرار'); return false; }
     if (qcControlled <= 0 || qcControlled > qcRemaining) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${qcRemaining}`);
-      return;
+      return false;
     }
     if (qcAccepted < 0 || qcAccepted > qcControlled) {
       toast.error('الكمية المقبولة غير صحيحة');
-      return;
+      return false;
     }
     setIsSubmittingQc(true);
     try {
@@ -140,6 +146,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
       if (placeholderQc) deleteQCEntry(placeholderQc.id);
       setShowQcForm(false);
       toast.success('تم تسجيل جلسة المراقبة');
+      return true;
     } finally {
       setIsSubmittingQc(false);
     }
@@ -160,11 +167,11 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
     setShowDelForm(true);
   };
 
-  const submitDeliverySession = () => {
-    if (isSubmittingDel) return;
+  const submitDeliverySession = (): boolean => {
+    if (isSubmittingDel) return false;
     if (delQty <= 0 || delQty > deliverable) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${deliverable}`);
-      return;
+      return false;
     }
     setIsSubmittingDel(true);
     try {
@@ -179,6 +186,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
       });
       setShowDelForm(false);
       toast.success('تم تسجيل جلسة التسليم');
+      return true;
     } finally {
       setIsSubmittingDel(false);
     }
@@ -187,6 +195,23 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
   const askDelete = (label: string, fn: () => void) => {
     confirm(`هل أنت متأكد من حذف ${label} ؟`, fn, { variant: 'destructive' });
   };
+
+  useEffect(() => {
+    onDirtyChange?.(showQcForm || showDelForm);
+  }, [showQcForm, showDelForm, onDirtyChange]);
+
+  useImperativeHandle(ref, () => ({
+    confirmAndSubmit: () => {
+      let ok = true;
+      if (showQcForm) { if (submitQcSession()) qcLock.lock(); else ok = false; }
+      if (showDelForm) { if (submitDeliverySession()) delLock.lock(); else ok = false; }
+      return ok;
+    },
+    discardForms: () => {
+      setShowQcForm(false);
+      setShowDelForm(false);
+    },
+  }));
 
   return (
     <>
@@ -364,7 +389,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
                   </td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={() => { submitQcSession(); qcLock.lock(); }} disabled={isSubmittingQc}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={() => { if (submitQcSession()) qcLock.lock(); }} disabled={isSubmittingQc}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowQcForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -521,7 +546,7 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
                   <td className="p-2 text-xs text-muted-foreground">—</td>
                   <td className="p-2">
                     <div className="flex flex-col gap-1">
-                      <Button size="sm" className="h-7 text-xs" onClick={() => { submitDeliverySession(); delLock.lock(); }} disabled={isSubmittingDel}>حفظ</Button>
+                      <Button size="sm" className="h-7 text-xs" onClick={() => { if (submitDeliverySession()) delLock.lock(); }} disabled={isSubmittingDel}>حفظ</Button>
                       <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowDelForm(false)}>إلغاء</Button>
                     </div>
                   </td>
@@ -558,6 +583,8 @@ const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
       />
     </>
   );
-};
+});
+
+PartialQCDelivery.displayName = 'PartialQCDelivery';
 
 export default PartialQCDelivery;
