@@ -258,8 +258,8 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const canEditStudy    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'الدراسة' }) === 'RW';
   const canEditSteps    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراحل الإنجاز والتوقيت', champ_bouton: 'Tous' }) === 'RW';
   // Create mode: always allow (the order doesn't exist yet — no RBAC scope applies)
-  const infoLock  = useSubFormLock(createMode ? true : canEditInfo);
-  const stepsLock = useSubFormLock(canEditSteps);
+  const infoLock  = useSubFormLock(createMode ? true : canEditInfo, open);
+  const stepsLock = useSubFormLock(canEditSteps, open);
   // In create mode, info starts unlocked so the user can fill it in
   React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
 
@@ -549,6 +549,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   canEditTooling={canEditTooling}
                   canEditStudy={canEditStudy}
                   order={order}
+                  open={open}
                 />
               </TabsContent>
 
@@ -567,7 +568,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
-                <PartialQCDelivery order={order} />
+                <PartialQCDelivery order={order} open={open} />
                 <div className="border-t pt-3 flex justify-end gap-2">
                   <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
                   <Button onClick={() => { toast.success('تم الحفظ'); onOpenChange(false); }}>تأكيد</Button>
@@ -646,7 +647,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       )}
 
       {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
-      <PlanningEditorDialogs editor={editor} order={order} />
+      <PlanningEditorDialogs editor={editor} order={order} onSaved={stepsLock.lock} />
 
       {/* Print sheet (A4) */}
       {printOpen && (
