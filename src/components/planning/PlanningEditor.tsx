@@ -97,7 +97,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       });
 
     if (existingSteps.length > 0) {
-      setRows(existingSteps.map((s, i) => {
+      const initialRows = existingSteps.map((s, i) => {
         const isSub = !!s.subcontractorId;
         return {
           id: `row-${s.id}`,
@@ -118,9 +118,12 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
           subcontractingInProgress: isSub ? !!s.subcontractingInProgress : false,
         };
-      }));
+      });
+      setRows(initialRows);
+      originalRowsRef.current = initialRows.map(r => ({ ...r }));
     } else {
       setRows([]);
+      originalRowsRef.current = [];
     }
   }, [open, order?.id, steps, absenceOperationId]);
 
