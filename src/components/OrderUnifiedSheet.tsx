@@ -16,6 +16,7 @@ import { formatDateFR } from '@/lib/utils';
 import PriorityBadge from '@/components/orders/PriorityBadge';
 import OrderTrackingSheet from '@/components/OrderTrackingSheet';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import UnsavedChangesDialog from '@/components/UnsavedChangesDialog';
 import { useReintegrateOrder } from '@/hooks/useReintegrateOrder';
 import CancelOrderDialog from '@/components/orders/CancelOrderDialog';
 import { useCancelOrder } from '@/hooks/useCancelOrder';
@@ -205,6 +206,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   
   const [printOpen, setPrintOpen] = useState(false);
 
@@ -305,6 +307,48 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     else infoLock.lock();
   };
 
+  const isInfoDirty = tab === 'info' && Object.keys(draft).length > 0;
+
+  const requestClose = (nextOpen: boolean) => {
+    if (nextOpen) { onOpenChange(true); return; }
+    if (isInfoDirty) {
+      setShowUnsavedPrompt(true);
+      return;
+    }
+    onOpenChange(false);
+  };
+
+  const confirmAndCloseInfo = () => {
+    if (createMode) {
+      if (!merged.orderNumber || !merged.orderNumber.trim()) {
+        toast.error('رقم الطلبية مطلوب');
+        setShowUnsavedPrompt(false);
+        return;
+      }
+      const newOrder: Order = { ...merged, id: crypto.randomUUID() };
+      addOrder(newOrder);
+      onCreated?.(newOrder);
+      setDraft({});
+      toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
+      setShowUnsavedPrompt(false);
+      onOpenChange(false);
+      return;
+    }
+    updateOrder({ ...order, ...draft });
+    setDraft({});
+    infoLock.lock();
+    toast.success('تم حفظ معلومات الطلبية');
+    setShowUnsavedPrompt(false);
+    onOpenChange(false);
+  };
+
+  const discardAndCloseInfo = () => {
+    setDraft({});
+    if (!createMode) infoLock.lock();
+    setShowUnsavedPrompt(false);
+    onOpenChange(false);
+  };
+
   // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
   const handleQCSave = (
     q: QualityControlEntry,
@@ -336,7 +380,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={requestClose}>
         <DialogContent
           className="w-[1400px] h-[1123px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col p-0"
           dir="rtl"
