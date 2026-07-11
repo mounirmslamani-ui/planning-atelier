@@ -732,7 +732,17 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       )}
 
       {/* Planning editor confirmation dialogs (shared across steps/resources tabs) */}
-      <PlanningEditorDialogs editor={editor} order={order} onSaved={stepsLock.lock} />
+      <PlanningEditorDialogs
+        editor={editor}
+        order={order}
+        onSaved={() => {
+          stepsLock.lock();
+          if (pendingStepsCloseRef.current) {
+            pendingStepsCloseRef.current = false;
+            onOpenChange(false);
+          }
+        }}
+      />
 
       {/* Print sheet (A4) */}
       {printOpen && (
