@@ -487,6 +487,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
     updateOrder(syntheticOrder);
     toast.success(`تم حفظ موارد ${updated} مرحلة`);
+    originalRowsRef.current = rows.map(r => ({ ...r }));
   };
 
   const getRowRecords = (row: OperationRow): ProductionRecord[] => {
