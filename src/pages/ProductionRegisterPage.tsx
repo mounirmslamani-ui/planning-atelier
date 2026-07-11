@@ -6,6 +6,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Download, Pencil, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -68,7 +69,7 @@ const formatTimeTyping = (raw: string): string => {
 };
 
 const ProductionRegisterPage: React.FC = () => {
-  const { productionRecords, operators, operations, orders, clients, updateProductionRecord, deleteProductionRecord } = usePlanning();
+  const { productionRecords, operators, operations, orders, clients, steps, updateProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
   const { isAdmin, hasAccess } = useAuth();
   const canEditRecord = isAdmin || hasAccess({ tableau: 'سجل الأعمال المنجزة', formulaire: '', sous_formulaire: '', champ_bouton: 'تعديل التسجيل' }) === 'RW';
@@ -78,6 +79,9 @@ const ProductionRegisterPage: React.FC = () => {
 
   const [editRecord, setEditRecord] = useState<{
     id: string;
+    orderId: string;
+    operationId: string;
+    stepId: string;
     workDate: string;
     startTime: string;
     endTime: string;
@@ -100,6 +104,9 @@ const ProductionRegisterPage: React.FC = () => {
     const pM = (rec.pauseMinutes ?? 0) % 60;
     setEditRecord({
       id: rec.id,
+      orderId: rec.orderId,
+      operationId: rec.operationId,
+      stepId: rec.stepId,
       workDate: dateStr,
       startTime: rec.startTime ?? '',
       endTime: rec.endTime ?? '',
@@ -121,10 +128,52 @@ const ProductionRegisterPage: React.FC = () => {
     return null;
   }, [editRecord]);
 
+  // Enregistrement source (non modifié) — sert à retrouver l'opérateur concerné.
+  const editingRecord = useMemo(
+    () => editRecord ? productionRecords.find(r => r.id === editRecord.id) ?? null : null,
+    [editRecord, productionRecords]
+  );
+
+  // Retrouve, pour un opérateur donné, l'étape à utiliser sur une autre commande :
+  // priorité à la même opération ; sinon l'unique étape de l'opérateur sur cette commande ;
+  // sinon la première par ordre chronologique du planning.
+  const resolveTargetStep = useCallback((operatorId: string, targetOrderId: string, currentOperationId: string) => {
+    const candidates = steps.filter(s => s.orderId === targetOrderId && s.operatorId === operatorId);
+    if (candidates.length === 0) return null;
+    const sameOperation = candidates.find(s => s.operationId === currentOperationId);
+    if (sameOperation) return sameOperation;
+    if (candidates.length === 1) return candidates[0];
+    return [...candidates].sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+  }, [steps]);
+
+  // Commandes déjà attribuées à l'opérateur de l'enregistrement (y compris la commande actuelle,
+  // pour que le sélecteur affiche correctement la valeur en cours).
+  const assignableOrders = useMemo(() => {
+    if (!editingRecord) return [];
+    const orderIds = new Set(steps.filter(s => s.operatorId === editingRecord.operatorId).map(s => s.orderId));
+    orderIds.add(editingRecord.orderId);
+    return orders
+      .filter(o => orderIds.has(o.id))
+      .map(o => ({
+        value: o.id,
+        label: o.id === editingRecord.orderId ? `${o.orderNumber} — (الحالية)` : o.orderNumber,
+        searchText: o.orderNumber,
+      }))
+      .sort((a, b) => a.searchText.localeCompare(b.searchText));
+  }, [editingRecord, orders, steps]);
+
+  const handleOrderChange = useCallback((newOrderId: string) => {
+    if (!editRecord || !editingRecord) return;
+    const step = resolveTargetStep(editingRecord.operatorId, newOrderId, editingRecord.operationId);
+    if (!step) return; // ne devrait pas arriver : la liste ne propose que des commandes résolubles
+    setEditRecord({ ...editRecord, orderId: newOrderId, operationId: step.operationId, stepId: step.id });
+  }, [editRecord, editingRecord, resolveTargetStep]);
+
   const saveEdit = useCallback(() => {
     if (!editRecord) return;
     const rec = productionRecords.find(r => r.id === editRecord.id);
     if (!rec) return;
+    if (!editRecord.stepId) return;
     const isoWorkDate = ddmmyyyyToISO(editRecord.workDate);
     if (!isoWorkDate) return;
     let dur = parseHHMM(editRecord.actualDuration) ?? 0;
@@ -135,16 +184,29 @@ const ProductionRegisterPage: React.FC = () => {
       dur = Math.max(0, endMin - startMin - pauseMin);
     }
     if (dur <= 0) return;
+    // Si la commande a été changée, la durée et l'état (Terminée/En cours) ne comptent plus
+    // pour l'ancienne étape (stepId a changé) et sont désormais comptés pour la nouvelle —
+    // aucun calcul séparé n'est stocké par commande, tout est dérivé de stepId à la volée.
+    const targetOrder = orders.find(o => o.id === editRecord.orderId);
+    const targetOperationName = getOperationName(editRecord.operationId);
     updateProductionRecord({
       ...rec,
+      orderId: editRecord.orderId,
+      operationId: editRecord.operationId,
+      stepId: editRecord.stepId,
       workDate: isoWorkDate,
       startTime: editRecord.startTime || undefined,
       endTime: editRecord.endTime || undefined,
       pauseMinutes: pauseMin || undefined,
       actualDuration: dur,
+      orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
+      clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
+      designationSnapshot: targetOrder?.designation ?? rec.designationSnapshot,
+      quantitySnapshot: targetOrder?.quantity ?? rec.quantitySnapshot,
+      operationNameSnapshot: targetOperationName !== '—' ? targetOperationName : rec.operationNameSnapshot,
     });
     setEditRecord(null);
-  }, [editRecord, productionRecords, updateProductionRecord]);
+  }, [editRecord, productionRecords, updateProductionRecord, orders]);
 
   const getOperationName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const getOrder = (id: string) => orders.find(o => o.id === id);
@@ -561,6 +623,22 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           </DialogHeader>
           {editRecord && (
             <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">رقم الطلبية</label>
+                {assignableOrders.length > 1 ? (
+                  <SearchableSelect
+                    className="h-8 text-xs px-2"
+                    value={editRecord.orderId}
+                    onValueChange={handleOrderChange}
+                    options={assignableOrders}
+                    searchPlaceholder="بحث برقم الطلبية..."
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground py-1.5">
+                    {assignableOrders[0]?.searchText ?? '—'} (لا توجد طلبية أخرى مسندة لهذا العامل)
+                  </p>
+                )}
+              </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">تاريخ الأشغال</label>
                 <Input
