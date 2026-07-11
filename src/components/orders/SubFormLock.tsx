@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
 
@@ -13,11 +13,20 @@ import { Pencil } from 'lucide-react';
  *   When unlocked, it shows a non-interactive « جاري التعديل » indicator.
  *
  * Place the EditButton OUTSIDE the disabled fieldset so it remains clickable.
+ *
+ * `open` (optional, defaults to `true`) ties the lock to the host dialog/sheet's
+ * visibility: whenever it turns `false` (the form is closed/left), the lock is
+ * force-reset to `locked = true`, even if the user never clicked إنهاء التعديل.
+ * This prevents a form from being found already unlocked next time it's opened.
  */
-export function useSubFormLock(canEdit: boolean) {
+export function useSubFormLock(canEdit: boolean, open: boolean = true) {
   const [locked, setLocked] = useState(true);
   const unlock = useCallback(() => setLocked(false), []);
   const lock = useCallback(() => setLocked(true), []);
+
+  useEffect(() => {
+    if (!open) setLocked(true);
+  }, [open]);
 
   const EditButton: React.FC<{ className?: string; size?: 'sm' | 'default' | 'lg' | 'icon' }> = ({ className, size = 'default' }) => {
     if (!canEdit) return null;
