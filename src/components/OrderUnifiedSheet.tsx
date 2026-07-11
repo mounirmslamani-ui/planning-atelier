@@ -358,6 +358,31 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     onOpenChange(false);
   };
 
+  const confirmAndCloseUnsaved = () => {
+    if (isInfoDirty) { confirmAndCloseInfo(); return; }
+    if (tab === 'resources') {
+      editor.saveResourcesOnly();
+      setShowUnsavedPrompt(false);
+      onOpenChange(false);
+      return;
+    }
+    if (tab === 'steps') {
+      const proceeded = editor.handlePlanifier();
+      setShowUnsavedPrompt(false);
+      if (proceeded) pendingStepsCloseRef.current = true;
+      return;
+    }
+    setShowUnsavedPrompt(false);
+    onOpenChange(false);
+  };
+
+  const discardAndCloseUnsaved = () => {
+    if (isInfoDirty) { discardAndCloseInfo(); return; }
+    setShowUnsavedPrompt(false);
+    onOpenChange(false);
+  };
+
+
   // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
   const handleQCSave = (
     q: QualityControlEntry,
