@@ -534,7 +534,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   };
 
   return {
-    rows, setRows, isLocked, lockReason, blockedSet,
+    rows, setRows, isLocked, lockReason, blockedSet, rowsDirty,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
