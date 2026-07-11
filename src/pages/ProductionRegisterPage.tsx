@@ -69,7 +69,7 @@ const formatTimeTyping = (raw: string): string => {
 };
 
 const ProductionRegisterPage: React.FC = () => {
-  const { productionRecords, operators, operations, orders, clients, steps, updateProductionRecord, deleteProductionRecord } = usePlanning();
+  const { productionRecords, operators, operations, orders, clients, steps, deliveredOrders, cancelledOrders, qcEntries, updateProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
   const { isAdmin, hasAccess } = useAuth();
   const canEditRecord = isAdmin || hasAccess({ tableau: 'سجل الأعمال المنجزة', formulaire: '', sous_formulaire: '', champ_bouton: 'تعديل التسجيل' }) === 'RW';
@@ -146,21 +146,46 @@ const ProductionRegisterPage: React.FC = () => {
     return [...candidates].sort((a, b) => (a.order || 0) - (b.order || 0))[0];
   }, [steps]);
 
+  // Commandes sorties de la production active (livrées, annulées, ou décision QC conforme),
+  // sauf si réintégrées après cet événement — même critère que سجل الطلبيات الجارية (OrdersPage).
+  const inactiveOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    orders.forEach(o => {
+      const reintegratedAt = o.reintegratedAt ? new Date(o.reintegratedAt).getTime() : null;
+      const afterReintegration = (iso?: string | null) =>
+        !reintegratedAt || (!!iso && new Date(iso).getTime() >= reintegratedAt);
+      if (deliveredOrders.some(d => d.orderId === o.id && afterReintegration(d.createdAt ?? d.deliveryDate))) {
+        ids.add(o.id); return;
+      }
+      if (cancelledOrders.some(c => c.orderId === o.id && afterReintegration((c as any).createdAt ?? (c as any).cancelledAt))) {
+        ids.add(o.id); return;
+      }
+      if (qcEntries.some(q =>
+        q.orderId === o.id
+        && (q.decision === 'conforme' || q.decision === 'conforme-derogation')
+        && afterReintegration(q.createdAt ?? q.controlDate)
+      )) {
+        ids.add(o.id);
+      }
+    });
+    return ids;
+  }, [orders, deliveredOrders, cancelledOrders, qcEntries]);
+
   // Commandes déjà attribuées à l'opérateur de l'enregistrement (y compris la commande actuelle,
-  // pour que le sélecteur affiche correctement la valeur en cours).
+  // pour que le sélecteur affiche correctement la valeur en cours), limitées à la production active.
   const assignableOrders = useMemo(() => {
     if (!editingRecord) return [];
     const orderIds = new Set(steps.filter(s => s.operatorId === editingRecord.operatorId).map(s => s.orderId));
     orderIds.add(editingRecord.orderId);
     return orders
-      .filter(o => orderIds.has(o.id))
+      .filter(o => orderIds.has(o.id) && (o.id === editingRecord.orderId || !inactiveOrderIds.has(o.id)))
       .map(o => ({
         value: o.id,
         label: o.id === editingRecord.orderId ? `${o.orderNumber} — (الحالية)` : o.orderNumber,
         searchText: o.orderNumber,
       }))
       .sort((a, b) => a.searchText.localeCompare(b.searchText));
-  }, [editingRecord, orders, steps]);
+  }, [editingRecord, orders, steps, inactiveOrderIds]);
 
   const handleOrderChange = useCallback((newOrderId: string) => {
     if (!editRecord || !editingRecord) return;
