@@ -266,10 +266,10 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     setSavePrompt(rows.map(r => ({ ...r })));
   };
 
-  const doSave = (rowsToSave: OperationRow[]) => {
-    if (!order || !currentOrder) return;
+  const doSave = (rowsToSave: OperationRow[]): boolean => {
+    if (!order || !currentOrder) return false;
     const finalRows = rowsToSave.map((row, idx) => ({ ...row, order: idx + 1 }));
-    if (!validateRowsBeforeSave(finalRows)) return;
+    if (!validateRowsBeforeSave(finalRows)) return false;
 
     const deadline = order.deliveryDeadline || order.plannedDeadline || '9999-12-31';
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
@@ -308,7 +308,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         return `${op} (${why})`;
       }).join('، ');
       toast.error(`فشل التخطيط: لم تُحفظ أي تعديلات. ${reasons || ''}`);
-      return;
+      return false;
     }
 
     const orderByRowId = new Map<string, number>();
@@ -435,6 +435,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     } else {
       toast.success('تم حفظ التخطيط');
     }
+    return true;
   };
 
   /** Save resources only — no rescheduling. */
@@ -762,12 +763,13 @@ export const ResourcesEditorTable: React.FC<{
   canEditTooling?: boolean;
   canEditStudy?: boolean;
   order?: Order | null;
-}> = ({ editor, onCancel, canEditMaterial = true, canEditTooling = true, canEditStudy = true, order }) => {
+  open?: boolean;
+}> = ({ editor, onCancel, canEditMaterial = true, canEditTooling = true, canEditStudy = true, order, open = true }) => {
   const e = editor;
   const { updateOrder } = usePlanning();
-  const matLock = useSubFormLock(canEditMaterial);
-  const tooLock = useSubFormLock(canEditTooling);
-  const stuLock = useSubFormLock(canEditStudy);
+  const matLock = useSubFormLock(canEditMaterial, open);
+  const tooLock = useSubFormLock(canEditTooling, open);
+  const stuLock = useSubFormLock(canEditStudy, open);
   const matDisabled = e.isLocked || matLock.locked;
   const tooDisabled = e.isLocked || tooLock.locked;
   const stuDisabled = e.isLocked || stuLock.locked;
@@ -948,7 +950,7 @@ export const ResourcesEditorTable: React.FC<{
 };
 
 /** All confirmation/date prompt dialogs driven by the editor. */
-export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Order }> = ({ editor, order }) => {
+export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Order; onSaved?: () => void }> = ({ editor, order, onSaved }) => {
   const e = editor;
   return (
     <>
@@ -989,7 +991,7 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
           onConfirm={() => {
             const snapshot = e.savePrompt!;
             e.setSavePrompt(null);
-            e.doSave(snapshot);
+            if (e.doSave(snapshot)) onSaved?.();
           }}
           onCancel={() => e.setSavePrompt(null)}
         />
