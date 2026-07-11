@@ -309,15 +309,23 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   };
 
   const isInfoDirty = tab === 'info' && Object.keys(draft).length > 0;
+  const isPlanningDirty = (tab === 'resources' || tab === 'steps') && editor.rowsDirty;
+
+  React.useEffect(() => {
+    if (!editor.savePrompt && !editor.forcePrompt) {
+      pendingStepsCloseRef.current = false;
+    }
+  }, [editor.savePrompt, editor.forcePrompt]);
 
   const requestClose = (nextOpen: boolean) => {
     if (nextOpen) { onOpenChange(true); return; }
-    if (isInfoDirty) {
+    if (isInfoDirty || isPlanningDirty) {
       setShowUnsavedPrompt(true);
       return;
     }
     onOpenChange(false);
   };
+
 
   const confirmAndCloseInfo = () => {
     if (createMode) {
