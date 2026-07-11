@@ -678,6 +678,13 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
         variant={confirmState.variant}
       />
 
+      <UnsavedChangesDialog
+        open={showUnsavedPrompt}
+        onConfirm={confirmAndCloseInfo}
+        onCancel={() => setShowUnsavedPrompt(false)}
+        onDiscard={discardAndCloseInfo}
+      />
+
       {cancelTarget && (
         <CancelOrderDialog
           open={cancelTarget}
