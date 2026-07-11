@@ -34,9 +34,10 @@ const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
 
 interface Props {
   order: Order;
+  open?: boolean;
 }
 
-const PartialQCDelivery: React.FC<Props> = ({ order }) => {
+const PartialQCDelivery: React.FC<Props> = ({ order, open = true }) => {
   const {
     qcEntries, deliveredOrders, deliveryEntries,
     addQCSession, updateQCEntry, deleteQCEntry,
@@ -51,8 +52,8 @@ const PartialQCDelivery: React.FC<Props> = ({ order }) => {
   const canDeleteSession = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'حذف جلسة' }) === 'RW';
 
   // Per-section RBAC locks (QC and Delivery sub-forms are independent)
-  const qcLock = useSubFormLock(canSaveQc);
-  const delLock = useSubFormLock(canAddDelivery);
+  const qcLock = useSubFormLock(canSaveQc, open);
+  const delLock = useSubFormLock(canAddDelivery, open);
 
   // Placeholder = auto-created entry with no real session data (no decision, no qty, not force-closed, no pending).
   // It exists only to mark the order as "pending QC" for the QualityControlPage; never displayed here.
