@@ -714,9 +714,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
       <UnsavedChangesDialog
         open={showUnsavedPrompt}
-        onConfirm={confirmAndCloseInfo}
+        onConfirm={confirmAndCloseUnsaved}
         onCancel={() => setShowUnsavedPrompt(false)}
-        onDiscard={discardAndCloseInfo}
+        onDiscard={discardAndCloseUnsaved}
       />
 
       {cancelTarget && (
