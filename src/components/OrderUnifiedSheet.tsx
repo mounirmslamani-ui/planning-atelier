@@ -266,6 +266,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   // In create mode, info starts unlocked so the user can fill it in
   React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
 
+  React.useEffect(() => {
+    if (!editor.savePrompt && !editor.forcePrompt) {
+      pendingStepsCloseRef.current = false;
+    }
+  }, [editor.savePrompt, editor.forcePrompt]);
+
   if (!order) return null;
 
   const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
@@ -310,12 +316,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const isInfoDirty = tab === 'info' && Object.keys(draft).length > 0;
   const isPlanningDirty = (tab === 'resources' || tab === 'steps') && editor.rowsDirty;
-
-  React.useEffect(() => {
-    if (!editor.savePrompt && !editor.forcePrompt) {
-      pendingStepsCloseRef.current = false;
-    }
-  }, [editor.savePrompt, editor.forcePrompt]);
 
   const requestClose = (nextOpen: boolean) => {
     if (nextOpen) { onOpenChange(true); return; }
