@@ -442,6 +442,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     } else {
       toast.success('تم حفظ التخطيط');
     }
+    originalRowsRef.current = rows.map(r => ({ ...r }));
     return true;
   };
 
