@@ -101,6 +101,13 @@ function incrementTime(timeStr: string, deltaMinutes: number): string {
   return formatMinutesToHM(total);
 }
 
+// Auto-inserts ":" as the user types digits, so the user never types it manually
+function formatMaskedTime(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
 const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -133,7 +140,7 @@ const TimeField: React.FC<TimeFieldProps> = ({ value, onChange, disabled, classN
       <Input
         value={local}
         disabled={disabled}
-        onChange={e => setLocal(e.target.value)}
+        onChange={e => setLocal(formatMaskedTime(e.target.value))}
         onBlur={commit}
         onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
         className="w-20 text-center font-mono"
