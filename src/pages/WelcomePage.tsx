@@ -59,20 +59,72 @@ const WelcomePage: React.FC = () => {
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
 
   // Même logique que سجل الطلبيات الجارية (OrdersPage.tsx) : une commande ne
-  // compte plus comme "en cours" une fois livrée, annulée, ou validée en QC
-  // (sauf si elle a été réintégrée depuis).
+  // compte plus comme "en cours" une fois livrée, annulée, ou validée en QC.
+  // Pour les commandes réintégrées, seuls les événements postérieurs à
+  // reintegratedAt sont pris en compte.
   const outOfActiveProductionIds = useMemo(() => {
     const ids = new Set<string>();
     orders.forEach(o => {
-      if (isReintegratedOrder(o)) return;
-      if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
-      if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
-      if (qcEntries.some(q => q.orderId === o.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'))) {
+      const reintegratedAt = o.reintegratedAt ? new Date(o.reintegratedAt).getTime() : null;
+      const afterReintegration = (iso?: string | null) =>
+        !reintegratedAt || (!!iso && new Date(iso).getTime() >= reintegratedAt);
+
+      if (deliveredOrders.some(d => d.orderId === o.id && afterReintegration(d.createdAt ?? d.deliveryDate))) {
+        ids.add(o.id); return;
+      }
+      if (cancelledOrders.some(c => c.orderId === o.id && afterReintegration((c as any).createdAt ?? (c as any).cancelledAt))) {
+        ids.add(o.id); return;
+      }
+      if (qcEntries.some(q =>
+        q.orderId === o.id
+        && (q.decision === 'conforme' || q.decision === 'conforme-derogation')
+        && afterReintegration(q.createdAt ?? q.controlDate)
+      )) {
         ids.add(o.id);
       }
     });
     return ids;
   }, [orders, qcEntries, deliveredOrders, cancelledOrders]);
+
+  const pendingQcOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (!entry.decision || (entry.decision !== 'conforme' && entry.decision !== 'conforme-derogation')) {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
+
+  const reworkOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (entry.decision === 'reprise-retouche' || entry.decision === 'non-conforme') {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
+
+  const getClientName = (id: string) => {
+    if (!id) return '*******';
+    return clients.find(c => c.id === id)?.name || '*******';
+  };
+
+  const p1Orders = useMemo(() => {
+    const list = orders.filter(o =>
+      o.id !== absenceOrderId
+      && !outOfActiveProductionIds.has(o.id)
+      && o.priority === 'P1'
+      && (!selectedClientId || o.clientId === selectedClientId)
+    );
+    return list.sort((a, b) => {
+      const da = a.deliveryDeadline || a.plannedDeadline || '';
+      const db = b.deliveryDeadline || b.plannedDeadline || '';
+      if (da !== db) return da.localeCompare(db);
+      return (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999);
+    });
+  }, [orders, absenceOrderId, outOfActiveProductionIds, selectedClientId]);
 
   const clientOrderCounts = useMemo(() => {
     if (!selectedClientId) return null;
