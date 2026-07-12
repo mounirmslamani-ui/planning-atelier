@@ -3,17 +3,35 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, X, Check, ChevronsUpDown, Eye } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
+import DesignationCell from '@/components/DesignationCell';
 import { generateOrderCode } from '@/lib/orderRegistry';
-import { isReintegratedOrder } from '@/lib/reintegration';
+
+import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import ClientContactDetailsContent from '@/components/ClientContactDetailsContent';
 import type { Order, OrderCategory } from '@/types/planning';
 import logoUrl from '@/assets/slamani-tasnie-logo-bg.png';
+
+const globalStatusClass: Record<OrderGlobalStatus, string> = {
+  'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
+  'En cours': 'border-accent/30 bg-accent/10 text-accent',
+  'Terminée': 'border-primary/30 bg-primary/10 text-primary',
+};
+const globalStatusLabel: Record<OrderGlobalStatus, string> = {
+  'En attente': 'قيد الانتظار',
+  'En cours': 'قيد الإنجاز',
+  'Terminée': 'جاهزة',
+};
+function GlobalStatusBadge({ status }: { status: OrderGlobalStatus }) {
+  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{globalStatusLabel[status]}</span>;
+}
 
 const OrderCountBox: React.FC<{ label: string; count: number }> = ({ label, count }) => (
   <div className="flex flex-col items-center gap-2">
@@ -25,11 +43,12 @@ const OrderCountBox: React.FC<{ label: string; count: number }> = ({ label, coun
 );
 
 const WelcomePage: React.FC = () => {
-  const { clients, orders, absenceOrderId, qcEntries, deliveredOrders, cancelledOrders } = usePlanning();
+  const { clients, orders, absenceOrderId, absenceOperationId, steps, productionRecords, qcEntries, deliveredOrders, cancelledOrders } = usePlanning();
   const { selectedClientId, selectedClientName, setSelectedClient, clearSelectedClient } = useGlobalClientFilter();
   const { hasAccess } = useAuth();
   const canCreateOrder = hasAccess({ tableau: 'سجل الطلبيات', champ_bouton: 'طلبية جديدة' }) === 'RW';
   const [createDraft, setCreateDraft] = useState<Partial<Order> | null>(null);
+  const [p1SheetOrderId, setP1SheetOrderId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   const sortedClients = useMemo(
@@ -40,20 +59,72 @@ const WelcomePage: React.FC = () => {
   const selectedClient = useMemo(() => clients.find(c => c.id === selectedClientId), [clients, selectedClientId]);
 
   // Même logique que سجل الطلبيات الجارية (OrdersPage.tsx) : une commande ne
-  // compte plus comme "en cours" une fois livrée, annulée, ou validée en QC
-  // (sauf si elle a été réintégrée depuis).
+  // compte plus comme "en cours" une fois livrée, annulée, ou validée en QC.
+  // Pour les commandes réintégrées, seuls les événements postérieurs à
+  // reintegratedAt sont pris en compte.
   const outOfActiveProductionIds = useMemo(() => {
     const ids = new Set<string>();
     orders.forEach(o => {
-      if (isReintegratedOrder(o)) return;
-      if (deliveredOrders.some(d => d.orderId === o.id)) { ids.add(o.id); return; }
-      if (cancelledOrders.some(c => c.orderId === o.id)) { ids.add(o.id); return; }
-      if (qcEntries.some(q => q.orderId === o.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'))) {
+      const reintegratedAt = o.reintegratedAt ? new Date(o.reintegratedAt).getTime() : null;
+      const afterReintegration = (iso?: string | null) =>
+        !reintegratedAt || (!!iso && new Date(iso).getTime() >= reintegratedAt);
+
+      if (deliveredOrders.some(d => d.orderId === o.id && afterReintegration(d.createdAt ?? d.deliveryDate))) {
+        ids.add(o.id); return;
+      }
+      if (cancelledOrders.some(c => c.orderId === o.id && afterReintegration((c as any).createdAt ?? (c as any).cancelledAt))) {
+        ids.add(o.id); return;
+      }
+      if (qcEntries.some(q =>
+        q.orderId === o.id
+        && (q.decision === 'conforme' || q.decision === 'conforme-derogation')
+        && afterReintegration(q.createdAt ?? q.controlDate)
+      )) {
         ids.add(o.id);
       }
     });
     return ids;
   }, [orders, qcEntries, deliveredOrders, cancelledOrders]);
+
+  const pendingQcOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (!entry.decision || (entry.decision !== 'conforme' && entry.decision !== 'conforme-derogation')) {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
+
+  const reworkOrderIds = useMemo(() => {
+    const ids = new Set<string>();
+    qcEntries.forEach(entry => {
+      if (entry.decision === 'reprise-retouche' || entry.decision === 'non-conforme') {
+        ids.add(entry.orderId);
+      }
+    });
+    return ids;
+  }, [qcEntries]);
+
+  const getClientName = (id: string) => {
+    if (!id) return '*******';
+    return clients.find(c => c.id === id)?.name || '*******';
+  };
+
+  const p1Orders = useMemo(() => {
+    const list = orders.filter(o =>
+      o.id !== absenceOrderId
+      && !outOfActiveProductionIds.has(o.id)
+      && o.priority === 'P1'
+      && (!selectedClientId || o.clientId === selectedClientId)
+    );
+    return list.sort((a, b) => {
+      const da = a.deliveryDeadline || a.plannedDeadline || '';
+      const db = b.deliveryDeadline || b.plannedDeadline || '';
+      if (da !== db) return da.localeCompare(db);
+      return (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999);
+    });
+  }, [orders, absenceOrderId, outOfActiveProductionIds, selectedClientId]);
 
   const clientOrderCounts = useMemo(() => {
     if (!selectedClientId) return null;
@@ -243,6 +314,92 @@ const WelcomePage: React.FC = () => {
           </div>
         )}
 
+        <section className="space-y-2">
+          <h2 className="font-heading text-lg text-accent">
+            الطلبيات الجارية ذات الأولوية P1 ({p1Orders.length})
+          </h2>
+          {p1Orders.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-4">
+              لا توجد طلبيات جارية بالأولوية P1
+            </p>
+          ) : (
+            <div className="rounded-md border bg-card overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right py-1.5 px-2">رقم الطلبية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">التاريخ</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">الزبون</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">التعيين</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">الكمية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">أجل التسليم</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">متابعة تقدم إنجاز الطلبية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">عدد المراحل المتبقية</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {p1Orders.map(o => {
+                    const isRework = reworkOrderIds.has(o.id);
+                    const pendingQc = pendingQcOrderIds.has(o.id);
+                    const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+                    const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
+                    const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+                    return (
+                      <TableRow key={o.id}>
+                        <TableCell className="py-1.5 px-2">
+                          <button
+                            type="button"
+                            className="font-heading text-sm underline-offset-2 hover:underline text-primary"
+                            title="فتح بطاقة متابعة الطلبية"
+                            onClick={(e) => { e.stopPropagation(); setP1SheetOrderId(o.id); }}
+                          >
+                            {o.orderNumber}
+                          </button>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-xs">{formatDateFR(o.orderDate)}</TableCell>
+                        <TableCell className="py-1.5 px-2 text-sm">{getClientName(o.clientId)}</TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <DesignationCell orderId={o.id} designation={o.designation} className="text-sm whitespace-normal break-words block" />
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-sm">{o.quantity}</TableCell>
+                        <TableCell className="py-1.5 px-2 text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          {isRework ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center justify-center rounded-full border border-destructive/50 bg-destructive/15 text-destructive px-2 py-0.5 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                                  🔧 إعادة عاجلة
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Reprise urgente — retour de مراقبة الجودة après contrôle</TooltipContent>
+                            </Tooltip>
+                          ) : pendingQc ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center justify-center rounded-full border border-urgent-moderate/40 bg-urgent-moderate/10 text-urgent-moderate px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap">
+                                  ⏳ في انتظار المراقبة
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>En attente de contrôle qualité</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <GlobalStatusBadge status={status} />
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${remaining === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/30 bg-accent/10 text-accent'}`}>
+                            {remaining}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </section>
+
         <OrderUnifiedSheet
           orderId={null}
           open={!!createDraft}
@@ -250,6 +407,12 @@ const WelcomePage: React.FC = () => {
           createMode
           initialDraft={createDraft || undefined}
           onCreated={() => setCreateDraft(null)}
+        />
+
+        <OrderUnifiedSheet
+          orderId={p1SheetOrderId}
+          open={!!p1SheetOrderId}
+          onOpenChange={(open) => { if (!open) setP1SheetOrderId(null); }}
         />
       </div>
     </div>
