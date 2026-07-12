@@ -43,11 +43,12 @@ const OrderCountBox: React.FC<{ label: string; count: number }> = ({ label, coun
 );
 
 const WelcomePage: React.FC = () => {
-  const { clients, orders, absenceOrderId, qcEntries, deliveredOrders, cancelledOrders } = usePlanning();
+  const { clients, orders, absenceOrderId, absenceOperationId, steps, productionRecords, qcEntries, deliveredOrders, cancelledOrders } = usePlanning();
   const { selectedClientId, selectedClientName, setSelectedClient, clearSelectedClient } = useGlobalClientFilter();
   const { hasAccess } = useAuth();
   const canCreateOrder = hasAccess({ tableau: 'سجل الطلبيات', champ_bouton: 'طلبية جديدة' }) === 'RW';
   const [createDraft, setCreateDraft] = useState<Partial<Order> | null>(null);
+  const [p1SheetOrderId, setP1SheetOrderId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   const sortedClients = useMemo(
