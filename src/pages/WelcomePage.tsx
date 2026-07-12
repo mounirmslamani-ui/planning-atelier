@@ -3,17 +3,35 @@ import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, X, Check, ChevronsUpDown, Eye } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDateFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
+import DesignationCell from '@/components/DesignationCell';
 import { generateOrderCode } from '@/lib/orderRegistry';
 import { isReintegratedOrder } from '@/lib/reintegration';
+import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import ClientContactDetailsContent from '@/components/ClientContactDetailsContent';
 import type { Order, OrderCategory } from '@/types/planning';
 import logoUrl from '@/assets/slamani-tasnie-logo-bg.png';
+
+const globalStatusClass: Record<OrderGlobalStatus, string> = {
+  'En attente': 'border-muted-foreground/30 bg-muted text-muted-foreground',
+  'En cours': 'border-accent/30 bg-accent/10 text-accent',
+  'Terminée': 'border-primary/30 bg-primary/10 text-primary',
+};
+const globalStatusLabel: Record<OrderGlobalStatus, string> = {
+  'En attente': 'قيد الانتظار',
+  'En cours': 'قيد الإنجاز',
+  'Terminée': 'جاهزة',
+};
+function GlobalStatusBadge({ status }: { status: OrderGlobalStatus }) {
+  return <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${globalStatusClass[status]}`}>{globalStatusLabel[status]}</span>;
+}
 
 const OrderCountBox: React.FC<{ label: string; count: number }> = ({ label, count }) => (
   <div className="flex flex-col items-center gap-2">
