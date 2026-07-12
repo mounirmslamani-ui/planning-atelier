@@ -314,6 +314,92 @@ const WelcomePage: React.FC = () => {
           </div>
         )}
 
+        <section className="space-y-2">
+          <h2 className="font-heading text-lg text-accent">
+            الطلبيات الجارية ذات الأولوية P1 ({p1Orders.length})
+          </h2>
+          {p1Orders.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-4">
+              لا توجد طلبيات جارية بالأولوية P1
+            </p>
+          ) : (
+            <div className="rounded-md border bg-card overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right py-1.5 px-2">رقم الطلبية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">التاريخ</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">الزبون</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">التعيين</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">الكمية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">أجل التسليم</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">متابعة تقدم إنجاز الطلبية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">عدد المراحل المتبقية</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {p1Orders.map(o => {
+                    const isRework = reworkOrderIds.has(o.id);
+                    const pendingQc = pendingQcOrderIds.has(o.id);
+                    const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
+                    const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
+                    const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+                    return (
+                      <TableRow key={o.id}>
+                        <TableCell className="py-1.5 px-2">
+                          <button
+                            type="button"
+                            className="font-heading text-sm underline-offset-2 hover:underline text-primary"
+                            title="فتح بطاقة متابعة الطلبية"
+                            onClick={(e) => { e.stopPropagation(); setP1SheetOrderId(o.id); }}
+                          >
+                            {o.orderNumber}
+                          </button>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-xs">{formatDateFR(o.orderDate)}</TableCell>
+                        <TableCell className="py-1.5 px-2 text-sm">{getClientName(o.clientId)}</TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <DesignationCell orderId={o.id} designation={o.designation} className="text-sm whitespace-normal break-words block" />
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 text-sm">{o.quantity}</TableCell>
+                        <TableCell className="py-1.5 px-2 text-xs">{formatDateFR(o.deliveryDeadline || o.plannedDeadline)}</TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          {isRework ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center justify-center rounded-full border border-destructive/50 bg-destructive/15 text-destructive px-2 py-0.5 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                                  🔧 إعادة عاجلة
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Reprise urgente — retour de مراقبة الجودة après contrôle</TooltipContent>
+                            </Tooltip>
+                          ) : pendingQc ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center justify-center rounded-full border border-urgent-moderate/40 bg-urgent-moderate/10 text-urgent-moderate px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap">
+                                  ⏳ في انتظار المراقبة
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>En attente de contrôle qualité</TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <GlobalStatusBadge status={status} />
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2">
+                          <span className={`inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap ${remaining === 0 ? 'border-primary/30 bg-primary/10 text-primary' : 'border-accent/30 bg-accent/10 text-accent'}`}>
+                            {remaining}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </section>
+
         <OrderUnifiedSheet
           orderId={null}
           open={!!createDraft}
@@ -321,6 +407,12 @@ const WelcomePage: React.FC = () => {
           createMode
           initialDraft={createDraft || undefined}
           onCreated={() => setCreateDraft(null)}
+        />
+
+        <OrderUnifiedSheet
+          orderId={p1SheetOrderId}
+          open={!!p1SheetOrderId}
+          onOpenChange={(open) => { if (!open) setP1SheetOrderId(null); }}
         />
       </div>
     </div>
