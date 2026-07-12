@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 import DesignationCell from '@/components/DesignationCell';
 import { generateOrderCode } from '@/lib/orderRegistry';
-import { isReintegratedOrder } from '@/lib/reintegration';
+
 import { getOrderGlobalStatus, getOrderStepStatusDetails, type OrderGlobalStatus } from '@/lib/stepProgress';
 import ClientContactDetailsContent from '@/components/ClientContactDetailsContent';
 import type { Order, OrderCategory } from '@/types/planning';
