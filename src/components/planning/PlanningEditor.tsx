@@ -513,8 +513,28 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     const row = rows.find(r => r.id === rowId);
     if (!order || !row || !row.stepId || row.assignType !== 'operator' || !row.option1) return;
     const existingRecords = productionRecords.filter(r => r.stepId === row.stepId);
-    existingRecords.forEach(r => deleteProductionRecord(r.id));
-    if (target === 'not-started') return;
+
+    if (target === 'not-started') {
+      // Reset : on supprime uniquement les enregistrements "vides" (pas de durée ni de fin réelle).
+      // Les enregistrements avec durée/fin renseignées sont préservés (traçabilité du travail effectué).
+      existingRecords.forEach(r => {
+        const hasRealWork = (r.actualDuration ?? 0) > 0 || (r.endTime && r.endTime.trim() !== '');
+        if (!hasRealWork) deleteProductionRecord(r.id);
+      });
+      return;
+    }
+
+    const newStatus: 'done' | 'continue' = target === 'done' ? 'done' : 'continue';
+
+    if (existingRecords.length > 0) {
+      // Préserver les durées/horaires déjà enregistrés : on met simplement à jour le workStatus.
+      existingRecords.forEach(r => {
+        if (r.workStatus !== newStatus) updateProductionRecord({ ...r, workStatus: newStatus });
+      });
+      return;
+    }
+
+    // Aucun enregistrement existant : créer un placeholder.
     const op = operations.find(o => o.id === row.operationId);
     addProductionRecord({
       id: crypto.randomUUID(),
@@ -524,7 +544,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       operationId: row.operationId,
       actualDuration: 0,
       validatedAt: new Date().toISOString(),
-      workStatus: target === 'done' ? 'done' : 'continue',
+      workStatus: newStatus,
       orderNumberSnapshot: order.orderNumber,
       clientNameSnapshot: clientName,
       designationSnapshot: order.designation,
