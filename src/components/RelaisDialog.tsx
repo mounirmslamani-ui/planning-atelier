@@ -397,6 +397,7 @@ const RelaisDialog: React.FC<Props> = ({
                     <div>
                       <Label className="text-xs">الوقت المستقطع</Label>
                       <TimeField value={pauseTime} onChange={v => { setPauseManual(true); setPauseTime(v); }} disabled={leftConfirmed} />
+                    </div>
                   </div>
 
                   <div>
