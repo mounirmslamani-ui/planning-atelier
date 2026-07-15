@@ -201,6 +201,7 @@ export interface ProductionRecord {
   startTime?: string; // HH:mm
   endTime?: string;   // HH:mm
   pauseMinutes?: number;
+  pauseComment?: string;
   workStatus?: 'done' | 'continue';
   // Snapshots — preserved even if the source order is deleted later
   orderNumberSnapshot?: string;
