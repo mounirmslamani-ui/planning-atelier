@@ -83,6 +83,7 @@ const ProductionRegisterPage: React.FC = () => {
     endTime: string;
     pauseHHMM: string;
     actualDuration: string;
+    pauseComment: string;
   } | null>(null);
 
   const parseHHMM = (s: string): number | null => {
@@ -108,6 +109,7 @@ const ProductionRegisterPage: React.FC = () => {
       endTime: rec.endTime ?? '',
       pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
       actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
+      pauseComment: rec.pauseComment ?? '',
     });
   }, []);
 
@@ -231,6 +233,7 @@ const ProductionRegisterPage: React.FC = () => {
       startTime: editRecord.startTime || undefined,
       endTime: editRecord.endTime || undefined,
       pauseMinutes: pauseMin || undefined,
+      pauseComment: editRecord.pauseComment.trim() || undefined,
       actualDuration: dur,
       orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
       clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
@@ -618,6 +621,15 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                     readOnly={editComputedDuration !== null}
                   />
                 </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">ملاحظة الوقت المستقطع</label>
+                <Input
+                  value={editRecord.pauseComment}
+                  onChange={e => setEditRecord({ ...editRecord, pauseComment: e.target.value })}
+                  placeholder="سبب التوقف (اختياري)"
+                  className="h-8 text-xs"
+                />
               </div>
               <p className="text-[10px] text-muted-foreground">
                 إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)
