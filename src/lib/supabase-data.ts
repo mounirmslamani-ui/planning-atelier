@@ -628,7 +628,7 @@ export async function fetchAllData() {
     ),
     supabase.from('delivery_entries').select('*').order('created_at', { ascending: false }).range(0, 9999),
     fetchAllPaginated<any>('delivered_orders', () =>
-      (supabase.from as any)('delivered_orders').select('*').order('id', { ascending: true }
+      (supabase.from as any)('delivered_orders').select('*').order('id', { ascending: true })
     ),
     fetchAllPaginated<any>('cancelled_orders', () =>
       (supabase.from as any)('cancelled_orders').select('*').order('id', { ascending: true })
