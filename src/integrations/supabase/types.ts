@@ -444,6 +444,7 @@ export type Database = {
           operator_id: string
           order_id: string
           order_number_snapshot: string | null
+          pause_comment: string | null
           pause_minutes: number | null
           quantity_snapshot: number | null
           start_time: string | null
@@ -464,6 +465,7 @@ export type Database = {
           operator_id: string
           order_id: string
           order_number_snapshot?: string | null
+          pause_comment?: string | null
           pause_minutes?: number | null
           quantity_snapshot?: number | null
           start_time?: string | null
@@ -484,6 +486,7 @@ export type Database = {
           operator_id?: string
           order_id?: string
           order_number_snapshot?: string | null
+          pause_comment?: string | null
           pause_minutes?: number | null
           quantity_snapshot?: number | null
           start_time?: string | null

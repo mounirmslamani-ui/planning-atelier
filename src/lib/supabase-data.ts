@@ -371,6 +371,7 @@ export function mapRecordFromDB(row: any): ProductionRecord {
     startTime: row.start_time ? String(row.start_time).slice(0, 5) : undefined,
     endTime: row.end_time ? String(row.end_time).slice(0, 5) : undefined,
     pauseMinutes: row.pause_minutes ?? undefined,
+    pauseComment: row.pause_comment ?? undefined,
     workStatus: row.work_status || 'done',
     orderNumberSnapshot: row.order_number_snapshot ?? undefined,
     clientNameSnapshot: row.client_name_snapshot ?? undefined,
@@ -393,6 +394,7 @@ export function mapRecordToDB(r: ProductionRecord) {
     start_time: r.startTime ?? null,
     end_time: r.endTime ?? null,
     pause_minutes: r.pauseMinutes ?? null,
+    pause_comment: r.pauseComment ?? null,
     work_status: r.workStatus || 'done',
     order_number_snapshot: r.orderNumberSnapshot ?? null,
     client_name_snapshot: r.clientNameSnapshot ?? null,
@@ -628,7 +630,7 @@ export async function fetchAllData() {
     ),
     supabase.from('delivery_entries').select('*').order('created_at', { ascending: false }).range(0, 9999),
     fetchAllPaginated<any>('delivered_orders', () =>
-      (supabase.from as any)('delivered_orders').select('*').order('id', { ascending: true }
+      (supabase.from as any)('delivered_orders').select('*').order('id', { ascending: true })
     ),
     fetchAllPaginated<any>('cancelled_orders', () =>
       (supabase.from as any)('cancelled_orders').select('*').order('id', { ascending: true })

@@ -20,6 +20,7 @@ export interface RelaisFinishedRecord {
   startTime: string;
   endTime: string;
   pauseMinutes: number;
+  pauseComment?: string;
   actualDuration: number;
   workStatus: 'done' | 'continue';
 }
@@ -210,6 +211,7 @@ const RelaisDialog: React.FC<Props> = ({
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:00');
   const [pauseTime, setPauseTime] = useState('00:00');
+  const [pauseComment, setPauseComment] = useState('');
   const [pauseManual, setPauseManual] = useState(false);
   const [workStatus, setWorkStatus] = useState<'done' | 'continue'>('continue');
   const [rightStartTime, setRightStartTime] = useState('08:00');
@@ -231,6 +233,7 @@ const RelaisDialog: React.FC<Props> = ({
     setEndTime(now);
     setPauseTime(formatMinutesToHM(computeAutoPause(start, now)).replace(/^(\d):/, '0$1:'));
     setPauseManual(false);
+    setPauseComment('');
     setWorkStatus('continue');
     setRightStartTime(mode === 'debut_poste' ? '08:00' : now);
     setRightStartManual(false);
@@ -285,6 +288,7 @@ const RelaisDialog: React.FC<Props> = ({
       startTime,
       endTime,
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
+      pauseComment: pauseComment.trim() || undefined,
       actualDuration,
       workStatus: finalStatus,
     };
@@ -394,6 +398,17 @@ const RelaisDialog: React.FC<Props> = ({
                       <Label className="text-xs">الوقت المستقطع</Label>
                       <TimeField value={pauseTime} onChange={v => { setPauseManual(true); setPauseTime(v); }} disabled={leftConfirmed} />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">ملاحظة الوقت المستقطع</Label>
+                    <Input
+                      value={pauseComment}
+                      onChange={e => setPauseComment(e.target.value)}
+                      disabled={leftConfirmed}
+                      placeholder="سبب التوقف (اختياري)"
+                      className="h-8 text-xs"
+                    />
                   </div>
 
                   <div className="pt-2 space-y-1">

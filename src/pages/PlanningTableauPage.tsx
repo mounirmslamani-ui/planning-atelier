@@ -1033,6 +1033,7 @@ const PlanningTableauPage: React.FC = () => {
         startTime: finishedRecord.startTime,
         endTime: finishedRecord.endTime,
         pauseMinutes: finishedRecord.pauseMinutes,
+        pauseComment: finishedRecord.pauseComment,
         workStatus: finishedRecord.workStatus,
       };
       addProductionRecord(record);
