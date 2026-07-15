@@ -1,0 +1,1 @@
+ALTER TABLE public.production_records ADD COLUMN IF NOT EXISTS pause_comment text;
