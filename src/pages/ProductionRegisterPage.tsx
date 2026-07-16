@@ -5,6 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { X, Download, Pencil, Trash2 } from 'lucide-react';
@@ -624,12 +625,14 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">ملاحظة الوقت المستقطع</label>
-                <Input
+                <Textarea
                   value={editRecord.pauseComment}
                   onChange={e => setEditRecord({ ...editRecord, pauseComment: e.target.value })}
-                  placeholder="سبب التوقف (اختياري)"
-                  className="h-8 text-xs"
+                  placeholder="سبب التوقف"
+                  className="text-xs resize-none min-h-[60px]"
+                  rows={3}
                 />
+              </div>
               </div>
               <p className="text-[10px] text-muted-foreground">
                 إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)
