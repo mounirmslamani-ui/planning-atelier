@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SearchableSelect from '@/components/ui/searchable-select';
-import { X, Download, Pencil, Trash2 } from 'lucide-react';
+import { X, Download, Pencil, Trash2, Plus } from 'lucide-react';
+import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, parsePauseItems, pauseItemsTotalHHMM, pauseItemsTotalMinutes, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
@@ -84,7 +85,7 @@ const ProductionRegisterPage: React.FC = () => {
     endTime: string;
     pauseHHMM: string;
     actualDuration: string;
-    pauseComment: string;
+    pauseItems: PauseItem[];
   } | null>(null);
 
   const parseHHMM = (s: string): number | null => {
@@ -110,7 +111,7 @@ const ProductionRegisterPage: React.FC = () => {
       endTime: rec.endTime ?? '',
       pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
       actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
-      pauseComment: rec.pauseComment ?? '',
+      pauseItems: parsePauseItems(rec.pauseComment),
     });
   }, []);
 
@@ -119,12 +120,20 @@ const ProductionRegisterPage: React.FC = () => {
     if (!editRecord) return null;
     const s = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
     const e = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
-    const p = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    const p = editRecord.pauseItems.length > 0
+      ? pauseItemsTotalMinutes(editRecord.pauseItems)
+      : (parseHHMM(editRecord.pauseHHMM) ?? 0);
     if (s !== null && e !== null && e > s) {
       const dur = Math.max(0, e - s - p);
       return `${String(Math.floor(dur / 60)).padStart(2, '0')}:${String(dur % 60).padStart(2, '0')}`;
     }
     return null;
+  }, [editRecord]);
+
+  // Total automatique de la liste de pauses (hh:mm) si au moins une ligne, sinon null.
+  const editPauseAutoHHMM = useMemo(() => {
+    if (!editRecord || editRecord.pauseItems.length === 0) return null;
+    return pauseItemsTotalHHMM(editRecord.pauseItems);
   }, [editRecord]);
 
   // Enregistrement source (non modifié) — sert à retrouver l'opérateur concerné.
@@ -215,7 +224,9 @@ const ProductionRegisterPage: React.FC = () => {
     let dur = parseHHMM(editRecord.actualDuration) ?? 0;
     const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
     const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
-    const pauseMin = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    const pauseMin = editRecord.pauseItems.length > 0
+      ? pauseItemsTotalMinutes(editRecord.pauseItems)
+      : (parseHHMM(editRecord.pauseHHMM) ?? 0);
     if (startMin !== null && endMin !== null && endMin > startMin) {
       dur = Math.max(0, endMin - startMin - pauseMin);
     }
@@ -234,7 +245,7 @@ const ProductionRegisterPage: React.FC = () => {
       startTime: editRecord.startTime || undefined,
       endTime: editRecord.endTime || undefined,
       pauseMinutes: pauseMin || undefined,
-      pauseComment: editRecord.pauseComment.trim() || undefined,
+      pauseComment: serializePauseItems(editRecord.pauseItems) || undefined,
       actualDuration: dur,
       orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
       clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
@@ -606,10 +617,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">الوقت المستقطع (HH:mm)</label>
                   <Input
-                    value={editRecord.pauseHHMM}
+                    value={editPauseAutoHHMM ?? editRecord.pauseHHMM}
                     onChange={e => setEditRecord({ ...editRecord, pauseHHMM: formatTimeTyping(e.target.value) })}
                     placeholder="00:30"
                     className="h-8 text-xs font-mono"
+                    readOnly={editPauseAutoHHMM !== null}
                   />
                 </div>
                 <div>
@@ -623,16 +635,66 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">ملاحظة الوقت المستقطع</label>
-                <Textarea
-                  value={editRecord.pauseComment}
-                  onChange={e => setEditRecord({ ...editRecord, pauseComment: e.target.value })}
-                  placeholder="سبب التوقف"
-                  className="text-xs resize-none min-h-[60px]"
-                  rows={3}
-                />
-              </div>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditRecord({ ...editRecord, pauseItems: [...editRecord.pauseItems, newPauseItem()] })}
+                  className="h-7 text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 ml-1" /> إضافة وقت مستقطع
+                </Button>
+                {editRecord.pauseItems.map((it, idx) => (
+                  <div key={it.id} className="flex items-center gap-2">
+                    <Input
+                      value={it.duration}
+                      onChange={e => setEditRecord({
+                        ...editRecord,
+                        pauseItems: editRecord.pauseItems.map((p, i) => i === idx ? { ...p, duration: formatTimeTyping(e.target.value) } : p),
+                      })}
+                      placeholder="HH:MM"
+                      className="h-8 text-xs font-mono w-20"
+                    />
+                    <SearchableSelect
+                      dir="rtl"
+                      value={it.mode === 'custom' ? '...' : it.cause}
+                      options={PAUSE_SELECT_OPTIONS}
+                      placeholder="السبب"
+                      className="h-8 text-xs flex-1 min-w-[8rem] px-2"
+                      onValueChange={v => setEditRecord({
+                        ...editRecord,
+                        pauseItems: editRecord.pauseItems.map((p, i) => {
+                          if (i !== idx) return p;
+                          if (isCustomToken(v)) return { ...p, mode: 'custom', cause: p.mode === 'custom' ? p.cause : '' };
+                          return { ...p, mode: 'preset', cause: v };
+                        }),
+                      })}
+                    />
+                    {it.mode === 'custom' && (
+                      <Input
+                        value={it.cause}
+                        placeholder="سبب آخر"
+                        onChange={e => setEditRecord({
+                          ...editRecord,
+                          pauseItems: editRecord.pauseItems.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p),
+                        })}
+                        className="h-8 text-xs flex-1 min-w-[6rem]"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setEditRecord({
+                        ...editRecord,
+                        pauseItems: editRecord.pauseItems.filter((_, i) => i !== idx),
+                      })}
+                      className="p-1 rounded hover:bg-muted"
+                      aria-label="حذف"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                ))}
               </div>
               <p className="text-[10px] text-muted-foreground">
                 إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)

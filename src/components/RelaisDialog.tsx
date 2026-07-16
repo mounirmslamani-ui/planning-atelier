@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ChevronUp, ChevronDown, Check } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, Plus, Trash2 } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
 import StepDurationExpiredDialog from '@/components/StepDurationExpiredDialog';
+import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, pauseItemsTotalHHMM, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
 import type { Operation, Order, ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type RelaisMode = 'debut_poste' | 'relais' | 'fin_poste';
@@ -212,7 +214,7 @@ const RelaisDialog: React.FC<Props> = ({
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('08:00');
   const [pauseTime, setPauseTime] = useState('00:00');
-  const [pauseComment, setPauseComment] = useState('');
+  const [pauseItems, setPauseItems] = useState<PauseItem[]>([]);
   const [pauseManual, setPauseManual] = useState(false);
   const [workStatus, setWorkStatus] = useState<'done' | 'continue'>('continue');
   const [rightStartTime, setRightStartTime] = useState('08:00');
@@ -234,7 +236,7 @@ const RelaisDialog: React.FC<Props> = ({
     setEndTime(now);
     setPauseTime(formatMinutesToHM(computeAutoPause(start, now)).replace(/^(\d):/, '0$1:'));
     setPauseManual(false);
-    setPauseComment('');
+    setPauseItems([]);
     setWorkStatus('continue');
     setRightStartTime(mode === 'debut_poste' ? '08:00' : now);
     setRightStartManual(false);
@@ -252,6 +254,13 @@ const RelaisDialog: React.FC<Props> = ({
     const auto = computeAutoPause(startTime, endTime);
     setPauseTime(`${String(Math.floor(auto / 60)).padStart(2, '0')}:${String(auto % 60).padStart(2, '0')}`);
   }, [startTime, endTime, pauseManual]);
+
+  // When at least one pause line exists, لوقت المستقطع = somme automatique des lignes.
+  useEffect(() => {
+    if (pauseItems.length === 0) return;
+    setPauseManual(true);
+    setPauseTime(pauseItemsTotalHHMM(pauseItems));
+  }, [pauseItems]);
 
   // Sync right startTime with left endTime unless user edited it
   useEffect(() => {
@@ -289,7 +298,7 @@ const RelaisDialog: React.FC<Props> = ({
       startTime,
       endTime,
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
-      pauseComment: pauseComment.trim() || undefined,
+      pauseComment: serializePauseItems(pauseItems) || undefined,
       actualDuration,
       workStatus: finalStatus,
     };
@@ -397,20 +406,61 @@ const RelaisDialog: React.FC<Props> = ({
                     </div>
                     <div>
                       <Label className="text-xs">الوقت المستقطع</Label>
-                      <TimeField value={pauseTime} onChange={v => { setPauseManual(true); setPauseTime(v); }} disabled={leftConfirmed} />
+                      <TimeField value={pauseTime} onChange={v => { setPauseManual(true); setPauseTime(v); }} disabled={leftConfirmed || pauseItems.length > 0} />
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-xs">ملاحظة الوقت المستقطع</Label>
-                    <Textarea
-                      value={pauseComment}
-                      onChange={e => setPauseComment(e.target.value)}
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
                       disabled={leftConfirmed}
-                      placeholder="سبب التوقف"
-                      className="text-xs resize-none min-h-[60px]"
-                      rows={3}
-                    />
+                      onClick={() => setPauseItems(prev => [...prev, newPauseItem()])}
+                      className="h-7 text-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5 ml-1" /> إضافة وقت مستقطع
+                    </Button>
+                    {pauseItems.map((it, idx) => (
+                      <div key={it.id} className="flex items-center gap-2">
+                        <TimeField
+                          value={it.duration}
+                          disabled={leftConfirmed}
+                          onChange={v => setPauseItems(prev => prev.map((p, i) => i === idx ? { ...p, duration: v } : p))}
+                        />
+                        <SearchableSelect
+                          dir="rtl"
+                          value={it.mode === 'custom' ? '...' : it.cause}
+                          disabled={leftConfirmed}
+                          options={PAUSE_SELECT_OPTIONS}
+                          placeholder="السبب"
+                          className="h-8 text-xs flex-1 min-w-[8rem]"
+                          onValueChange={v => setPauseItems(prev => prev.map((p, i) => {
+                            if (i !== idx) return p;
+                            if (isCustomToken(v)) return { ...p, mode: 'custom', cause: p.mode === 'custom' ? p.cause : '' };
+                            return { ...p, mode: 'preset', cause: v };
+                          }))}
+                        />
+                        {it.mode === 'custom' && (
+                          <Input
+                            value={it.cause}
+                            disabled={leftConfirmed}
+                            placeholder="سبب آخر"
+                            onChange={e => setPauseItems(prev => prev.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p))}
+                            className="h-8 text-xs flex-1 min-w-[6rem]"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          disabled={leftConfirmed}
+                          onClick={() => setPauseItems(prev => prev.filter((_, i) => i !== idx))}
+                          className="p-1 rounded hover:bg-muted disabled:opacity-40"
+                          aria-label="حذف"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="pt-2 space-y-1">
