@@ -298,7 +298,7 @@ const RelaisDialog: React.FC<Props> = ({
       startTime,
       endTime,
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
-      pauseComment: pauseComment.trim() || undefined,
+      pauseComment: serializePauseItems(pauseItems) || undefined,
       actualDuration,
       workStatus: finalStatus,
     };
