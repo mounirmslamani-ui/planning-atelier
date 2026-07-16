@@ -120,7 +120,9 @@ const ProductionRegisterPage: React.FC = () => {
     if (!editRecord) return null;
     const s = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
     const e = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
-    const p = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    const p = editRecord.pauseItems.length > 0
+      ? pauseItemsTotalMinutes(editRecord.pauseItems)
+      : (parseHHMM(editRecord.pauseHHMM) ?? 0);
     if (s !== null && e !== null && e > s) {
       const dur = Math.max(0, e - s - p);
       return `${String(Math.floor(dur / 60)).padStart(2, '0')}:${String(dur % 60).padStart(2, '0')}`;
