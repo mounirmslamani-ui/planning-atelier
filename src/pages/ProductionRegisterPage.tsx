@@ -615,10 +615,11 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">الوقت المستقطع (HH:mm)</label>
                   <Input
-                    value={editRecord.pauseHHMM}
+                    value={editPauseAutoHHMM ?? editRecord.pauseHHMM}
                     onChange={e => setEditRecord({ ...editRecord, pauseHHMM: formatTimeTyping(e.target.value) })}
                     placeholder="00:30"
                     className="h-8 text-xs font-mono"
+                    readOnly={editPauseAutoHHMM !== null}
                   />
                 </div>
                 <div>
@@ -632,16 +633,66 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">ملاحظة الوقت المستقطع</label>
-                <Textarea
-                  value={editRecord.pauseComment}
-                  onChange={e => setEditRecord({ ...editRecord, pauseComment: e.target.value })}
-                  placeholder="سبب التوقف"
-                  className="text-xs resize-none min-h-[60px]"
-                  rows={3}
-                />
-              </div>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditRecord({ ...editRecord, pauseItems: [...editRecord.pauseItems, newPauseItem()] })}
+                  className="h-7 text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5 ml-1" /> إضافة وقت مستقطع
+                </Button>
+                {editRecord.pauseItems.map((it, idx) => (
+                  <div key={it.id} className="flex items-center gap-2">
+                    <Input
+                      value={it.duration}
+                      onChange={e => setEditRecord({
+                        ...editRecord,
+                        pauseItems: editRecord.pauseItems.map((p, i) => i === idx ? { ...p, duration: formatTimeTyping(e.target.value) } : p),
+                      })}
+                      placeholder="HH:MM"
+                      className="h-8 text-xs font-mono w-20"
+                    />
+                    <SearchableSelect
+                      dir="rtl"
+                      value={it.mode === 'custom' ? '...' : it.cause}
+                      options={PAUSE_SELECT_OPTIONS}
+                      placeholder="السبب"
+                      className="h-8 text-xs flex-1 min-w-[8rem] px-2"
+                      onValueChange={v => setEditRecord({
+                        ...editRecord,
+                        pauseItems: editRecord.pauseItems.map((p, i) => {
+                          if (i !== idx) return p;
+                          if (isCustomToken(v)) return { ...p, mode: 'custom', cause: p.mode === 'custom' ? p.cause : '' };
+                          return { ...p, mode: 'preset', cause: v };
+                        }),
+                      })}
+                    />
+                    {it.mode === 'custom' && (
+                      <Input
+                        value={it.cause}
+                        placeholder="سبب آخر"
+                        onChange={e => setEditRecord({
+                          ...editRecord,
+                          pauseItems: editRecord.pauseItems.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p),
+                        })}
+                        className="h-8 text-xs flex-1 min-w-[6rem]"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setEditRecord({
+                        ...editRecord,
+                        pauseItems: editRecord.pauseItems.filter((_, i) => i !== idx),
+                      })}
+                      className="p-1 rounded hover:bg-muted"
+                      aria-label="حذف"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                ))}
               </div>
               <p className="text-[10px] text-muted-foreground">
                 إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)
