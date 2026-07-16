@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
@@ -402,12 +403,13 @@ const RelaisDialog: React.FC<Props> = ({
 
                   <div>
                     <Label className="text-xs">ملاحظة الوقت المستقطع</Label>
-                    <Input
+                    <Textarea
                       value={pauseComment}
                       onChange={e => setPauseComment(e.target.value)}
                       disabled={leftConfirmed}
-                      placeholder="سبب التوقف (اختياري)"
-                      className="h-8 text-xs"
+                      placeholder="سبب التوقف"
+                      className="text-xs resize-none min-h-[60px]"
+                      rows={3}
                     />
                   </div>
 
