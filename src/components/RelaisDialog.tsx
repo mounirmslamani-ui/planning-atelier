@@ -255,6 +255,13 @@ const RelaisDialog: React.FC<Props> = ({
     setPauseTime(`${String(Math.floor(auto / 60)).padStart(2, '0')}:${String(auto % 60).padStart(2, '0')}`);
   }, [startTime, endTime, pauseManual]);
 
+  // When at least one pause line exists, لوقت المستقطع = somme automatique des lignes.
+  useEffect(() => {
+    if (pauseItems.length === 0) return;
+    setPauseManual(true);
+    setPauseTime(pauseItemsTotalHHMM(pauseItems));
+  }, [pauseItems]);
+
   // Sync right startTime with left endTime unless user edited it
   useEffect(() => {
     if (mode === 'debut_poste') return;
