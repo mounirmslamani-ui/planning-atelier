@@ -243,7 +243,7 @@ const ProductionRegisterPage: React.FC = () => {
       startTime: editRecord.startTime || undefined,
       endTime: editRecord.endTime || undefined,
       pauseMinutes: pauseMin || undefined,
-      pauseComment: editRecord.pauseComment.trim() || undefined,
+      pauseComment: serializePauseItems(editRecord.pauseItems) || undefined,
       actualDuration: dur,
       orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
       clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
