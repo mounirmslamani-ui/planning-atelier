@@ -85,7 +85,7 @@ const ProductionRegisterPage: React.FC = () => {
     endTime: string;
     pauseHHMM: string;
     actualDuration: string;
-    pauseComment: string;
+    pauseItems: PauseItem[];
   } | null>(null);
 
   const parseHHMM = (s: string): number | null => {
