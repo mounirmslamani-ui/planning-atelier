@@ -236,7 +236,7 @@ const RelaisDialog: React.FC<Props> = ({
     setEndTime(now);
     setPauseTime(formatMinutesToHM(computeAutoPause(start, now)).replace(/^(\d):/, '0$1:'));
     setPauseManual(false);
-    setPauseComment('');
+    setPauseItems([]);
     setWorkStatus('continue');
     setRightStartTime(mode === 'debut_poste' ? '08:00' : now);
     setRightStartManual(false);
