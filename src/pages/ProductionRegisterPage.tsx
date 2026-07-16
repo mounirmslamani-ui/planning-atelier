@@ -222,7 +222,9 @@ const ProductionRegisterPage: React.FC = () => {
     let dur = parseHHMM(editRecord.actualDuration) ?? 0;
     const startMin = editRecord.startTime ? parseHHMM(editRecord.startTime) : null;
     const endMin = editRecord.endTime ? parseHHMM(editRecord.endTime) : null;
-    const pauseMin = parseHHMM(editRecord.pauseHHMM) ?? 0;
+    const pauseMin = editRecord.pauseItems.length > 0
+      ? pauseItemsTotalMinutes(editRecord.pauseItems)
+      : (parseHHMM(editRecord.pauseHHMM) ?? 0);
     if (startMin !== null && endMin !== null && endMin > startMin) {
       dur = Math.max(0, endMin - startMin - pauseMin);
     }
