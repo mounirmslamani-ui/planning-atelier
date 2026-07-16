@@ -128,6 +128,12 @@ const ProductionRegisterPage: React.FC = () => {
     return null;
   }, [editRecord]);
 
+  // Total automatique de la liste de pauses (hh:mm) si au moins une ligne, sinon null.
+  const editPauseAutoHHMM = useMemo(() => {
+    if (!editRecord || editRecord.pauseItems.length === 0) return null;
+    return pauseItemsTotalHHMM(editRecord.pauseItems);
+  }, [editRecord]);
+
   // Enregistrement source (non modifié) — sert à retrouver l'opérateur concerné.
   const editingRecord = useMemo(
     () => editRecord ? productionRecords.find(r => r.id === editRecord.id) ?? null : null,
