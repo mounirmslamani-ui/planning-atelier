@@ -111,7 +111,7 @@ const ProductionRegisterPage: React.FC = () => {
       endTime: rec.endTime ?? '',
       pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
       actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
-      pauseComment: rec.pauseComment ?? '',
+      pauseItems: parsePauseItems(rec.pauseComment),
     });
   }, []);
 
