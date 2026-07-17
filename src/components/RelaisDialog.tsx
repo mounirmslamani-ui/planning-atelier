@@ -429,8 +429,6 @@ const RelaisDialog: React.FC<Props> = ({
                         />
                         <SearchableSelect
                           dir="rtl"
-                        <SearchableSelect
-                          dir="rtl"
                           value={it.mode === 'custom' ? '...' : it.cause}
                           disabled={leftConfirmed}
                           options={PAUSE_SELECT_OPTIONS}
