@@ -661,7 +661,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       value={it.mode === 'custom' ? '...' : it.cause}
                       options={PAUSE_SELECT_OPTIONS}
                       placeholder="السبب"
-                      className="h-8 text-xs flex-1 min-w-[8rem] px-2"
+                      className={it.mode === 'custom' ? 'h-8 text-xs w-16 shrink-0 px-2' : 'h-8 text-xs flex-1 min-w-[8rem] px-2'}
                       onValueChange={v => setEditRecord({
                         ...editRecord,
                         pauseItems: editRecord.pauseItems.map((p, i) => {
@@ -679,7 +679,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                           ...editRecord,
                           pauseItems: editRecord.pauseItems.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p),
                         })}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs flex-1"
                       />
                     )}
                     <button
