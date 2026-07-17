@@ -434,7 +434,7 @@ const RelaisDialog: React.FC<Props> = ({
                           disabled={leftConfirmed}
                           options={PAUSE_SELECT_OPTIONS}
                           placeholder="السبب"
-                          className="h-8 text-xs flex-1 min-w-[8rem]"
+                             className={it.mode === 'custom' ? 'h-8 text-xs w-16 shrink-0 px-2' : 'h-8 text-xs flex-1 min-w-[8rem]'}
                           onValueChange={v => setPauseItems(prev => prev.map((p, i) => {
                             if (i !== idx) return p;
                             if (isCustomToken(v)) return { ...p, mode: 'custom', cause: p.mode === 'custom' ? p.cause : '' };
@@ -447,7 +447,7 @@ const RelaisDialog: React.FC<Props> = ({
                             disabled={leftConfirmed}
                             placeholder="سبب آخر"
                             onChange={e => setPauseItems(prev => prev.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p))}
-                            className="h-8 text-xs"
+                            className="h-8 text-xs flex-1"
                           />
                         )}
                         <button
