@@ -5,8 +5,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { Plus, X, Check, ChevronsUpDown, Eye } from 'lucide-react';
-import { cn, formatDateFR } from '@/lib/utils';
+import { cn, formatDateFR, formatDateTimeFR } from '@/lib/utils';
 import { usePlanning } from '@/context/PlanningContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { useAuth } from '@/context/AuthContext';
@@ -125,6 +127,36 @@ const WelcomePage: React.FC = () => {
       return (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999);
     });
   }, [orders, absenceOrderId, outOfActiveProductionIds, selectedClientId]);
+
+  const p1StatusLabel = (o: Order) => {
+    if (reworkOrderIds.has(o.id)) return 'إعادة عاجلة';
+    if (pendingQcOrderIds.has(o.id)) return 'في انتظار المراقبة';
+    return globalStatusLabel[getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId)];
+  };
+  const p1RemainingCount = (o: Order) =>
+    getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId)
+      .filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+
+  const p1Accessors = {
+    orderNumber: (o: Order) => o.orderNumber || '',
+    orderDate: (o: Order) => o.orderDate || '',
+    client: (o: Order) => getClientName(o.clientId),
+    designation: (o: Order) => o.designation || '',
+    quantity: (o: Order) => o.quantity ?? 0,
+    deliveryDeadline: (o: Order) => o.deliveryDeadline || o.plannedDeadline || '',
+    status: (o: Order) => p1StatusLabel(o),
+    observation: (o: Order) => o.observation || '',
+    remaining: (o: Order) => p1RemainingCount(o),
+  };
+  const {
+    processed: p1Processed,
+    sortKey: p1SortKey,
+    sortDir: p1SortDir,
+    filters: p1Filters,
+    handleSort: p1HandleSort,
+    handleFilter: p1HandleFilter,
+    allValuesByKey: p1AllValuesByKey,
+  } = useTableSortFilter(p1Orders, p1Accessors);
 
   const clientOrderCounts = useMemo(() => {
     if (!selectedClientId) return null;
@@ -327,23 +359,41 @@ const WelcomePage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right py-1.5 px-2">رقم الطلبية</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">التاريخ</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">الزبون</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">التعيين</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">الكمية</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">أجل التسليم</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">متابعة تقدم إنجاز الطلبية</TableHead>
-                    <TableHead className="text-right py-1.5 px-2">عدد المراحل المتبقية</TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.orderNumber || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.orderNumber} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.orderDate || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.orderDate} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="الزبون" columnKey="client" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.client || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.client} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2" style={{ width: 220, maxWidth: 220 }}>
+                      <ColumnHeader label="التعيين" columnKey="designation" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.designation || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.designation} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="الكمية" columnKey="quantity" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.quantity || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.quantity} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.deliveryDeadline || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.deliveryDeadline} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.status || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.status} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2" style={{ width: 110, maxWidth: 110 }}>
+                      <ColumnHeader label="ملاحظات" columnKey="observation" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.observation || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.observation} />
+                    </TableHead>
+                    <TableHead className="text-right py-1.5 px-2">
+                      <ColumnHeader label="عدد المراحل المتبقية" columnKey="remaining" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.remaining || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.remaining} />
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {p1Orders.map(o => {
+                  {p1Processed.map(o => {
                     const isRework = reworkOrderIds.has(o.id);
                     const pendingQc = pendingQcOrderIds.has(o.id);
                     const status = getOrderGlobalStatus(o.id, steps, productionRecords, absenceOperationId);
-                    const details = getOrderStepStatusDetails(o.id, steps, productionRecords, absenceOperationId);
-                    const remaining = details.filter(d => d.status === 'En cours' || d.status === 'Non entamée').length;
+                    const remaining = p1RemainingCount(o);
                     return (
                       <TableRow key={o.id}>
                         <TableCell className="py-1.5 px-2">
@@ -358,7 +408,7 @@ const WelcomePage: React.FC = () => {
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-xs">{formatDateFR(o.orderDate)}</TableCell>
                         <TableCell className="py-1.5 px-2 text-sm">{getClientName(o.clientId)}</TableCell>
-                        <TableCell className="py-1.5 px-2">
+                        <TableCell className="py-1.5 px-2" style={{ width: 220, maxWidth: 220 }}>
                           <DesignationCell orderId={o.id} designation={o.designation} className="text-sm whitespace-normal break-words block" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-sm">{o.quantity}</TableCell>
@@ -384,6 +434,24 @@ const WelcomePage: React.FC = () => {
                             </Tooltip>
                           ) : (
                             <GlobalStatusBadge status={status} />
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1.5 px-2 align-top" style={{ width: 110, maxWidth: 110 }}>
+                          {o.notesUpdatedAt ? (
+                            <Tooltip delayDuration={150}>
+                              <TooltipTrigger asChild>
+                                <span className="text-xs whitespace-normal break-words block cursor-help text-muted-foreground">
+                                  {o.observation || '—'}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs !bg-white !text-black border border-border">
+                                Modifié le {formatDateTimeFR(o.notesUpdatedAt)}
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-xs whitespace-normal break-words block text-muted-foreground">
+                              {o.observation || '—'}
+                            </span>
                           )}
                         </TableCell>
                         <TableCell className="py-1.5 px-2">
