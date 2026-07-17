@@ -356,34 +356,45 @@ const WelcomePage: React.FC = () => {
             </p>
           ) : (
             <div className="rounded-md border bg-card overflow-x-auto">
-              <Table>
+              <Table className="table-fixed">
+                                <colgroup>
+                  <col style={{ width: '6%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '28%' }} />
+                  <col style={{ width: '4%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '25%' }} />
+                  <col style={{ width: '6%' }} />
+                </colgroup>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right py-1.5 px-2">
+ <TableHead className="text-right py-1.5 px-2 whitespace-normal">
                       <ColumnHeader label="رقم الطلبية" columnKey="orderNumber" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.orderNumber || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.orderNumber} />
                     </TableHead>
                     <TableHead className="text-right py-1.5 px-2">
                       <ColumnHeader label="التاريخ" columnKey="orderDate" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.orderDate || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.orderDate} />
                     </TableHead>
-                    <TableHead className="text-right py-1.5 px-2">
+                                 <TableHead className="text-right py-1.5 px-2 whitespace-normal">
                       <ColumnHeader label="الزبون" columnKey="client" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.client || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.client} />
                     </TableHead>
-                    <TableHead className="text-right py-1.5 px-2" style={{ width: 220, maxWidth: 220 }}>
+                         <TableHead className="text-right py-1.5 px-2">
                       <ColumnHeader label="التعيين" columnKey="designation" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.designation || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.designation} />
                     </TableHead>
                     <TableHead className="text-right py-1.5 px-2">
                       <ColumnHeader label="الكمية" columnKey="quantity" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.quantity || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.quantity} />
                     </TableHead>
-                    <TableHead className="text-right py-1.5 px-2">
+                    <TableHead className="text-right py-1.5 px-2 whitespace-normal">
                       <ColumnHeader label="أجل التسليم" columnKey="deliveryDeadline" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.deliveryDeadline || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.deliveryDeadline} />
                     </TableHead>
-                    <TableHead className="text-right py-1.5 px-2">
+                    <TableHead className="text-right py-1.5 px-2 whitespace-normal">
                       <ColumnHeader label="متابعة تقدم إنجاز الطلبية" columnKey="status" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.status || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.status} />
                     </TableHead>
-                    <TableHead className="text-right py-1.5 px-2" style={{ width: 110, maxWidth: 110 }}>
+                   <TableHead className="text-right py-1.5 px-2">
                       <ColumnHeader label="ملاحظات" columnKey="observation" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.observation || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.observation} />
                     </TableHead>
-                    <TableHead className="text-right py-1.5 px-2">
+                    <TableHead className="text-right py-1.5 px-2 whitespace-normal">
                       <ColumnHeader label="عدد المراحل المتبقية" columnKey="remaining" sortKey={p1SortKey} sortDir={p1SortDir} onSort={p1HandleSort} filterValue={p1Filters.remaining || ''} onFilter={p1HandleFilter} allValues={p1AllValuesByKey.remaining} />
                     </TableHead>
                   </TableRow>
@@ -407,8 +418,8 @@ const WelcomePage: React.FC = () => {
                           </button>
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-xs">{formatDateFR(o.orderDate)}</TableCell>
-                        <TableCell className="py-1.5 px-2 text-sm">{getClientName(o.clientId)}</TableCell>
-                        <TableCell className="py-1.5 px-2" style={{ width: 220, maxWidth: 220 }}>
+                       <TableCell className="py-1.5 px-2 text-sm whitespace-normal break-words">{getClientName(o.clientId)}</TableCell>
+                        <TableCell className="py-1.5 px-2">
                           <DesignationCell orderId={o.id} designation={o.designation} className="text-sm whitespace-normal break-words block" />
                         </TableCell>
                         <TableCell className="py-1.5 px-2 text-sm">{o.quantity}</TableCell>
@@ -436,7 +447,7 @@ const WelcomePage: React.FC = () => {
                             <GlobalStatusBadge status={status} />
                           )}
                         </TableCell>
-                        <TableCell className="py-1.5 px-2 align-top" style={{ width: 110, maxWidth: 110 }}>
+                        <TableCell className="py-1.5 px-2 align-top">
                           {o.notesUpdatedAt ? (
                             <Tooltip delayDuration={150}>
                               <TooltipTrigger asChild>
