@@ -5,6 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AutoWidthInput } from '@/components/ui/auto-width-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { X, Download, Pencil, Trash2, Plus } from 'lucide-react';
@@ -537,7 +538,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
 
       {/* Edit Dialog (admin only) */}
       <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="text-sm">تعديل التسجيل</DialogTitle>
           </DialogHeader>
@@ -671,14 +672,14 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       })}
                     />
                     {it.mode === 'custom' && (
-                      <Input
+                      <AutoWidthInput
                         value={it.cause}
                         placeholder="سبب آخر"
                         onChange={e => setEditRecord({
                           ...editRecord,
                           pauseItems: editRecord.pauseItems.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p),
                         })}
-                        className="h-8 text-xs flex-1 min-w-[6rem]"
+                        className="h-8 text-xs"
                       />
                     )}
                     <button
