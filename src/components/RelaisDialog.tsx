@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AutoWidthInput } from '@/components/ui/auto-width-input';
 import { Label } from '@/components/ui/label';
 import { ChevronUp, ChevronDown, Check, Plus, Trash2 } from 'lucide-react';
 import SearchableSelect from '@/components/ui/searchable-select';
@@ -366,7 +367,7 @@ const RelaisDialog: React.FC<Props> = ({
   return (
     <>
     <Dialog open={open} onOpenChange={o => { if (!o) onCancel(); }}>
-      <DialogContent className="max-w-5xl" dir="rtl">
+      <DialogContent className="max-w-6xl" dir="rtl">
         <DialogHeader>
           <DialogTitle className="text-xl">تبديل الشغل</DialogTitle>
           <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 pt-1">
@@ -441,12 +442,12 @@ const RelaisDialog: React.FC<Props> = ({
                           }))}
                         />
                         {it.mode === 'custom' && (
-                          <Input
+                          <AutoWidthInput
                             value={it.cause}
                             disabled={leftConfirmed}
                             placeholder="سبب آخر"
                             onChange={e => setPauseItems(prev => prev.map((p, i) => i === idx ? { ...p, cause: e.target.value } : p))}
-                            className="h-8 text-xs flex-1 min-w-[6rem]"
+                            className="h-8 text-xs"
                           />
                         )}
                         <button
