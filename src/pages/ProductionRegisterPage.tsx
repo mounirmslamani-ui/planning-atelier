@@ -538,7 +538,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
 
       {/* Edit Dialog (admin only) */}
       <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-w-6xl">
           <DialogHeader>
             <DialogTitle className="text-sm">تعديل التسجيل</DialogTitle>
           </DialogHeader>
