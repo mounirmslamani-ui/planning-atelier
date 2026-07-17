@@ -5,7 +5,6 @@ import PageHeader from '@/components/PageHeader';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AutoWidthInput } from '@/components/ui/auto-width-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { X, Download, Pencil, Trash2, Plus } from 'lucide-react';
@@ -672,7 +671,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       })}
                     />
                     {it.mode === 'custom' && (
-                      <AutoWidthInput
+                      <Input
                         value={it.cause}
                         placeholder="سبب آخر"
                         onChange={e => setEditRecord({
