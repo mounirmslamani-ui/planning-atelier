@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AutoWidthInput } from '@/components/ui/auto-width-input';
 import { Label } from '@/components/ui/label';
 import { ChevronUp, ChevronDown, Check, Plus, Trash2 } from 'lucide-react';
 import SearchableSelect from '@/components/ui/searchable-select';
@@ -430,11 +429,13 @@ const RelaisDialog: React.FC<Props> = ({
                         />
                         <SearchableSelect
                           dir="rtl"
+                        <SearchableSelect
+                          dir="rtl"
                           value={it.mode === 'custom' ? '...' : it.cause}
                           disabled={leftConfirmed}
                           options={PAUSE_SELECT_OPTIONS}
                           placeholder="السبب"
-                             className={it.mode === 'custom' ? 'h-8 text-xs w-16 shrink-0 px-2' : 'h-8 text-xs flex-1 min-w-[8rem]'}
+                          className={it.mode === 'custom' ? 'h-8 text-xs w-16 shrink-0 px-2' : 'h-8 text-xs flex-1 min-w-[8rem]'}
                           onValueChange={v => setPauseItems(prev => prev.map((p, i) => {
                             if (i !== idx) return p;
                             if (isCustomToken(v)) return { ...p, mode: 'custom', cause: p.mode === 'custom' ? p.cause : '' };
@@ -442,7 +443,7 @@ const RelaisDialog: React.FC<Props> = ({
                           }))}
                         />
                         {it.mode === 'custom' && (
-                          <AutoWidthInput
+                          <Input
                             value={it.cause}
                             disabled={leftConfirmed}
                             placeholder="سبب آخر"
