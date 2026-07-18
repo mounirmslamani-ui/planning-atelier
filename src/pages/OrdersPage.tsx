@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { GripVertical, MoveVertical, ListPlus, Download } from 'lucide-react';
+import { GripVertical, MoveVertical, ListPlus, Download, ArrowUpDown } from 'lucide-react';
 import { WarningTriangleIcon } from '@/components/icons/StatusIcons';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import type { Order, OrderPriority, ResourceStatus } from '@/types/planning';
@@ -80,6 +80,30 @@ function computeAtelierTime(
   return steps
     .filter(s => s.orderId === orderId && s.operationId !== absenceOpId && !s.subcontractorId)
     .reduce((sum, s) => sum + s.estimatedDuration, 0);
+}
+
+/**
+ * Fin d'exécution programmée d'une commande = la plus tardive des dates/heures
+ * de fin (endDate + endTime) parmi ses étapes réellement planifiées dans
+ * جدول البرمجة (opérateur assigné, hors مناولة/sous-traitance et hors absence),
+ * même filtre que computeAtelierTime. Retourne null si aucune étape planifiée.
+ */
+function computeScheduleEndKey(
+  orderId: string,
+  steps: { orderId: string; operationId: string; operatorId?: string; subcontractorId?: string; startDate: string; endDate: string; endTime: string }[],
+  absenceOpId: string,
+): string | null {
+  let latest: string | null = null;
+  for (const s of steps) {
+    if (s.orderId !== orderId) continue;
+    if (s.operationId === absenceOpId) continue;
+    if (s.subcontractorId) continue;
+    if (!s.operatorId) continue;
+    if (!s.endDate || !s.endTime) continue;
+    const key = `${s.endDate}T${s.endTime}`;
+    if (latest === null || key > latest) latest = key;
+  }
+  return latest;
 }
 
 function formatMinutesToHM(minutes: number): string {
@@ -406,6 +430,21 @@ const OrdersPage: React.FC = () => {
     setSelectedIds(new Set());
   };
 
+  // ─── ترتيب آلي : réordonne les Cn selon la fin d'exécution programmée dans جدول البرمجة ───
+  // Sens inverse du bouton ترتيب آلي de جدول البرمجة (qui règle Pn sur Cn) : ici c'est
+  // le planning (Pn / dates calculées) qui devient la source, et Cn qui est recalé dessus.
+  // Les commandes sans étape encore planifiée gardent leur position relative, en fin de liste.
+  const handleAutoSortByScheduleEnd = useCallback(() => {
+    const withKey = baseSorted.map(o => ({ order: o, key: computeScheduleEndKey(o.id, steps, absenceOperationId) }));
+    const planned = withKey.filter(w => w.key !== null) as { order: Order; key: string }[];
+    const unplanned = withKey.filter(w => w.key === null).map(w => w.order);
+    planned.sort((a, b) => a.key.localeCompare(b.key));
+    const newList = [...planned.map(p => p.order), ...unplanned];
+    const reindexed = newList.map((o, i) => ({ ...o, displayOrder: i + 1 }));
+    const absence = orders.find(o => o.id === absenceOrderId);
+    setOrders([...(absence ? [absence] : []), ...reindexed]);
+  }, [baseSorted, steps, absenceOperationId, orders, absenceOrderId, setOrders]);
+
   // Drag & drop — playlist-style reordering
   const handleDragStart = (e: React.DragEvent, index: number) => {
     const orderId = displayOrders[index].id;
@@ -665,6 +704,11 @@ const OrdersPage: React.FC = () => {
         </div>
      } actions={
         <div className="flex gap-2 items-center">
+          {canReorderCn && (
+            <Button onClick={handleAutoSortByScheduleEnd} variant="outline" size="sm" title="إعادة ترتيب الطلبيات (Cn) حسب تاريخ ووقت نهاية إنجازها في جدول البرمجة">
+              <ArrowUpDown className="w-4 h-4 mr-1" /> ترتيب آلي
+            </Button>
+          )}
           {canReorderCn && selectedIds.size > 0 && (
             <Button onClick={() => openMoveDialog()} variant="outline" size="sm" title="Déplacer la sélection à une position Cn">
               <MoveVertical className="w-4 h-4 mr-1" /> Déplacer ({selectedIds.size})
