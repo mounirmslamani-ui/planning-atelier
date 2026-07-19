@@ -551,48 +551,50 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                       onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))}
                     />
                   </div>
-                  <div>
-                    <Label>الكمية</Label>
-                    <Input
-                      type="number"
-                      value={merged.quantity ?? 0}
-                      onChange={e => setDraft(d => ({ ...d, quantity: parseInt(e.target.value) || 0 }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>الأولوية</Label>
-                    <SearchableSelect
-                      value={merged.priority || 'undetermined'}
-                      onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}
-                      disabled={infoLock.locked}
-                      options={(['P1', 'P2', 'P3', 'P4', 'P5', 'undetermined'] as OrderPriority[]).map(p => ({
-                        value: p,
-                        label: p === 'undetermined' ? 'غير محدد' : p,
-                      }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>أجل التسليم</Label>
-                    <Input
-                      type="date"
-                      value={merged.deliveryDeadline || merged.plannedDeadline || ''}
-                      onChange={e => setDraft(d => ({ ...d, deliveryDeadline: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>مخطط / نموذج</Label>
-                    <SearchableSelect
-                      value={merged.drawingModel || ''}
-                      onValueChange={v => setDraft(d => ({ ...d, drawingModel: v }))}
-                      disabled={infoLock.locked}
-                      placeholder="—"
-                      dir="rtl"
-                      options={[
-                        { value: 'مخطط', label: 'مخطط' },
-                        { value: 'نموذج', label: 'نموذج' },
-                        { value: 'مخطط+نموذج', label: 'مخطط+نموذج' },
-                      ]}
-                    />
+                  <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <Label>الكمية</Label>
+                      <Input
+                        type="number"
+                        value={merged.quantity ?? 0}
+                        onChange={e => setDraft(d => ({ ...d, quantity: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>الأولوية</Label>
+                      <SearchableSelect
+                        value={merged.priority || 'undetermined'}
+                        onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}
+                        disabled={infoLock.locked}
+                        options={(['P1', 'P2', 'P3', 'P4', 'P5', 'undetermined'] as OrderPriority[]).map(p => ({
+                          value: p,
+                          label: p === 'undetermined' ? 'غير محدد' : p,
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>أجل التسليم</Label>
+                      <Input
+                        type="date"
+                        value={merged.deliveryDeadline || merged.plannedDeadline || ''}
+                        onChange={e => setDraft(d => ({ ...d, deliveryDeadline: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>مخطط / نموذج</Label>
+                      <SearchableSelect
+                        value={merged.drawingModel || ''}
+                        onValueChange={v => setDraft(d => ({ ...d, drawingModel: v }))}
+                        disabled={infoLock.locked}
+                        placeholder="—"
+                        dir="rtl"
+                        options={[
+                          { value: 'مخطط', label: 'مخطط' },
+                          { value: 'نموذج', label: 'نموذج' },
+                          { value: 'مخطط+نموذج', label: 'مخطط+نموذج' },
+                        ]}
+                      />
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <Label>ملف الطلبية</Label>
