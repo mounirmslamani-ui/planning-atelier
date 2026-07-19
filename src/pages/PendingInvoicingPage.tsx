@@ -39,6 +39,7 @@ const STATUS_LABELS: Record<string, string> = {
   'in-progress': 'قيد الإنجاز',
   'on-hold': 'قيد الانتظار',
   'p4': 'P4 - معلقة',
+  'p5': 'P5 - معلقة',
 };
 
 function getSeriesPrefix(orderNumber: string): string {
@@ -162,8 +163,8 @@ const PendingInvoicingPage: React.FC = () => {
           deliveryDateOrProgress = 'قيد الإنجاز';
           deliveryKey = 'in-progress';
         } else if (globalStatus === 'En attente') {
-          if (order.priority === 'P4') {
-            statusLabel = STATUS_LABELS['p4'];
+          if (order.priority === 'P4' || order.priority === 'P5') {
+            statusLabel = order.priority === 'P5' ? STATUS_LABELS['p5'] : STATUS_LABELS['p4'];
             deliveryDateOrProgress = 'معلقة';
           } else {
             statusLabel = STATUS_LABELS['on-hold'];

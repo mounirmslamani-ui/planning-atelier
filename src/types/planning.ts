@@ -76,7 +76,7 @@ export interface Client {
   emails?: string[];
 }
 
-export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'undetermined';
+export type OrderPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'P5' | 'undetermined';
 
 export type OrderCategory = 'fabrication' | 'prestation' | 'divers' | 'slamani';
 

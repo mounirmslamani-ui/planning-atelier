@@ -46,7 +46,7 @@ const PendingOrdersTable: React.FC<PendingOrdersTableProps> = ({ filterFn, empty
 
     // Sort
     if (sortKey && sortDir) {
-      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+      const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
       result = [...result].sort((a, b) => {
         let cmp = 0;
         switch (sortKey as ColumnKey) {

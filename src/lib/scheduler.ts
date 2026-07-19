@@ -40,7 +40,7 @@ function orderScore(order?: Order): number {
 
 function priorityScoreFromLevel(p?: OrderPriority): number {
   const map: Record<string, number> = {
-    'P1': 1, 'P2': 2, 'P3': 3, 'P4': 4,
+    'P1': 1, 'P2': 2, 'P3': 3, 'P4': 4, 'P5': 5,
   };
   return p ? (map[p] ?? 9999) : 9999;
 }

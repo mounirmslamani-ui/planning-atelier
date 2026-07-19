@@ -565,7 +565,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                       value={merged.priority || 'undetermined'}
                       onValueChange={v => setDraft(d => ({ ...d, priority: v as OrderPriority }))}
                       disabled={infoLock.locked}
-                      options={(['P1', 'P2', 'P3', 'P4', 'undetermined'] as OrderPriority[]).map(p => ({
+                      options={(['P1', 'P2', 'P3', 'P4', 'P5', 'undetermined'] as OrderPriority[]).map(p => ({
                         value: p,
                         label: p === 'undetermined' ? 'غير محدد' : p,
                       }))}

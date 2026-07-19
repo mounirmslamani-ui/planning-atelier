@@ -33,7 +33,7 @@ import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 import { isReintegratedOrder } from '@/lib/reintegration';
 
-const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, undetermined: 4 };
+const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4, undetermined: 5 };
 
 type ColumnKey = 'displayOrder' | 'orderNumber' | 'orderDate' | 'client' | 'designation' | 'quantity' | 'priority' | 'complexity' | 'deliveryDeadline' | 'clientRepresentative' | 'instructions' | 'drawingModel' | 'globalStatus' | 'remainingSteps' | 'atelierTime' | 'study' | 'material' | 'tooling' | 'observation';
 
