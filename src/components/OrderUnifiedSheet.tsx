@@ -484,65 +484,67 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
               <TabsContent value="info" className="mt-0 space-y-4">
                 <fieldset disabled={infoLock.locked} className="border-0 p-0 m-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>رقم الطلبية</Label>
-                    <Input
-                      value={merged.orderNumber || ''}
-                      onChange={e => setDraft(d => ({ ...d, orderNumber: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>تاريخ إستلام الطلبية</Label>
-                    <Input
-                      type="date"
-                      value={merged.orderDate || ''}
-                      onChange={e => setDraft(d => ({ ...d, orderDate: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>الزبون</Label>
-                    <SearchableSelect
-                      value={merged.clientId || ''}
-                      onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}
-                      disabled={infoLock.locked}
-                      options={clients.map(c => ({ value: c.id, label: c.name }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>ممثل الزبون</Label>
-                    {(() => {
-                      const isSlamani = (merged.category) === 'slamani';
-                      const selectedClient = clients.find(c => c.id === (merged.clientId || ''));
-                      const reps = selectedClient?.representatives?.filter(r => r.name?.trim()) || [];
-                      if (isSlamani) {
+                  <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <Label>رقم الطلبية</Label>
+                      <Input
+                        value={merged.orderNumber || ''}
+                        onChange={e => setDraft(d => ({ ...d, orderNumber: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>تاريخ إستلام الطلبية</Label>
+                      <Input
+                        type="date"
+                        value={merged.orderDate || ''}
+                        onChange={e => setDraft(d => ({ ...d, orderDate: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>الزبون</Label>
+                      <SearchableSelect
+                        value={merged.clientId || ''}
+                        onValueChange={v => setDraft(d => ({ ...d, clientId: v }))}
+                        disabled={infoLock.locked}
+                        options={clients.map(c => ({ value: c.id, label: c.name }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>ممثل الزبون</Label>
+                      {(() => {
+                        const isSlamani = (merged.category) === 'slamani';
+                        const selectedClient = clients.find(c => c.id === (merged.clientId || ''));
+                        const reps = selectedClient?.representatives?.filter(r => r.name?.trim()) || [];
+                        if (isSlamani) {
+                          return (
+                            <Input value="سلاماني" readOnly className="bg-muted/40" />
+                          );
+                        }
+                        if (reps.length === 1) {
+                          return (
+                            <Input value={reps[0].name} readOnly className="bg-muted/40" />
+                          );
+                        }
+                        if (reps.length > 1) {
+                          return (
+                            <SearchableSelect
+                              value={merged.clientRepresentative || ''}
+                              onValueChange={v => setDraft(d => ({ ...d, clientRepresentative: v }))}
+                              disabled={infoLock.locked}
+                              placeholder="— اختر ممثلاً —"
+                              dir="rtl"
+                              options={reps.map(r => ({ value: r.name, label: r.name }))}
+                            />
+                          );
+                        }
                         return (
-                          <Input value="سلاماني" readOnly className="bg-muted/40" />
-                        );
-                      }
-                      if (reps.length === 1) {
-                        return (
-                          <Input value={reps[0].name} readOnly className="bg-muted/40" />
-                        );
-                      }
-                      if (reps.length > 1) {
-                        return (
-                          <SearchableSelect
+                          <Input
                             value={merged.clientRepresentative || ''}
-                            onValueChange={v => setDraft(d => ({ ...d, clientRepresentative: v }))}
-                            disabled={infoLock.locked}
-                            placeholder="— اختر ممثلاً —"
-                            dir="rtl"
-                            options={reps.map(r => ({ value: r.name, label: r.name }))}
+                            onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))}
                           />
                         );
-                      }
-                      return (
-                        <Input
-                          value={merged.clientRepresentative || ''}
-                          onChange={e => setDraft(d => ({ ...d, clientRepresentative: e.target.value }))}
-                        />
-                      );
-                    })()}
+                      })()}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <Label>التعيين / Désignation</Label>
