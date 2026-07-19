@@ -36,7 +36,7 @@ import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 
 const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 'محمود بن قيطون', 'عبد الرزاق', 'حمزة', 'عمر', 'صالح', 'ياسين', 'معاذ', 'يوسف', 'عبدالنور', 'معالجة حرارية'];
 
-const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4 };
 
 
 function getDesignationBg(priority?: string): string {
@@ -44,6 +44,7 @@ function getDesignationBg(priority?: string): string {
   if (priority === 'P2') return 'bg-[hsl(30,90%,50%)]/10';
   if (priority === 'P3') return 'bg-[hsl(160,60%,40%)]/10';
   if (priority === 'P4') return 'bg-[hsl(55,90%,50%)]/20';
+  if (priority === 'P5') return 'bg-[hsl(215,10%,80%)]/20';
   return '';
 }
 

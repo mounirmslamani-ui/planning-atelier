@@ -55,12 +55,14 @@ function getPriorityBorderColor(order: Order): string {
   if (p === 'P2') return 'border-[hsl(30,90%,50%)]'; // orange
   if (p === 'P3') return 'border-[hsl(160,60%,40%)]'; // teal/green
   if (p === 'P4') return 'border-[hsl(55,90%,50%)]'; // yellow
+  if (p === 'P5') return 'border-[hsl(215,10%,55%)]'; // gray
   return 'border-muted-foreground';
 }
 
 function getBlockBg(order: Order, isBlocked: boolean): string {
   if (isBlocked) return 'bg-blocked'; // purple fill when blocked
   if (order.priority === 'P4') return 'bg-[hsl(55,90%,50%)]'; // yellow fill for P4 available
+  if (order.priority === 'P5') return 'bg-[hsl(215,10%,80%)]'; // gray fill for P5 available
   return 'bg-white'; // white fill for P1-P3 when available
 }
 

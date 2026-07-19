@@ -891,7 +891,7 @@ export type Database = {
         | "Plateau circulaire"
         | "Tête taraudeuse"
       operation_category: "operator" | "subcontractor"
-      order_priority: "P1" | "P2" | "P3" | "P4" | "undetermined"
+      order_priority: "P1" | "P2" | "P3" | "P4" | "undetermined" | "P5"
       qc_decision:
         | "conforme"
         | "reprise-retouche"
@@ -1056,7 +1056,7 @@ export const Constants = {
         "Tête taraudeuse",
       ],
       operation_category: ["operator", "subcontractor"],
-      order_priority: ["P1", "P2", "P3", "P4", "undetermined"],
+      order_priority: ["P1", "P2", "P3", "P4", "undetermined", "P5"],
       qc_decision: [
         "conforme",
         "reprise-retouche",
