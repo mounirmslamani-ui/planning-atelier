@@ -1,0 +1,1 @@
+ALTER TYPE order_priority ADD VALUE IF NOT EXISTS 'P5';
