@@ -599,16 +599,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <Label>ملف الطلبية</Label>
-                    <Input
-                      type="url"
-                      value={merged.folderLink || ''}
-                      onChange={e => setDraft(d => ({ ...d, folderLink: e.target.value }))}
-                      placeholder="https://..."
-                      dir="ltr"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
                     <Label>ملاحظات/تعليمات تقنية</Label>
                     <Textarea
                       rows={2}
@@ -627,13 +617,25 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 </div>
                 </fieldset>
 
-                <div className="flex justify-end gap-2 pt-2 border-t">
-                  <infoLock.EditButton />
-                  <Button variant="outline" onClick={cancelInfo} disabled={infoLock.locked}>إلغاء</Button>
-                  <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
+                <div className="flex items-end justify-between gap-4 pt-2 border-t">
+                  <div className="flex-1">
+                    <Label>ملف الطلبية</Label>
+                    <Input
+                      type="url"
+                      value={merged.folderLink || ''}
+                      onChange={e => setDraft(d => ({ ...d, folderLink: e.target.value }))}
+                      placeholder="https://..."
+                      dir="ltr"
+                      disabled={infoLock.locked}
+                    />
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <infoLock.EditButton />
+                    <Button variant="outline" onClick={cancelInfo} disabled={infoLock.locked}>إلغاء</Button>
+                    <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
+                  </div>
                 </div>
               </TabsContent>
-
               {/* TAB 2 — RESOURCES (editable in place) */}
               <TabsContent value="resources" className="mt-0 space-y-3">
                 <ResourcesEditorTable
