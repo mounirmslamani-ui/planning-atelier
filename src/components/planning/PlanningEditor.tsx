@@ -225,22 +225,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       .map(s => ({ value: s.id, label: s.companyName }));
   };
 
-  const normalizeNeeds = (values?: string[]) => (values || []).map(v => v.trim()).filter(Boolean).join('|');
-  const buildRowSignature = (row: OperationRow) => [
-    row.operationId, row.assignType, row.option1, row.estimatedDuration,
-    [...(row.equipmentIds || [])].sort().join(','),
-    normalizeNeeds(row.specialToolingNeeds), normalizeNeeds(row.rawMaterialNeeds),
-  ].join('::');
-
   const validateRowsBeforeSave = (rowsToValidate: OperationRow[]): boolean => {
     const ordersSeen = new Set<number>();
-    const signaturesSeen = new Set<string>();
     for (const row of rowsToValidate) {
       if (ordersSeen.has(row.order)) { toast.error(`لا يمكن حفظ مرحلتين بنفس رقم الترتيب #${row.order}`); return false; }
       ordersSeen.add(row.order);
-      const sig = buildRowSignature(row);
-      if (signaturesSeen.has(sig)) { toast.error(`المرحلة #${row.order} مكررة بنفس الخصائص`); return false; }
-      signaturesSeen.add(sig);
     }
     return true;
   };
