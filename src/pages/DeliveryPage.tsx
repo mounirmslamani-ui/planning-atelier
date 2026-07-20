@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 import type { DeliveryEntry, DeliveredOrder, OrderCategory } from '@/types/planning';
+import { getQCAccepted, getDeliveredQty, getDeliverableRemaining, isDeliveryForceClosed } from '@/lib/orderFlow';
 import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { toast } from 'sonner';
