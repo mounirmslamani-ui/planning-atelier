@@ -179,11 +179,12 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
   };
 
   const submitDeliverySession = (): boolean => {
-    if (isSubmittingDel) return false;
+    if (submittingDelRef.current || isSubmittingDel) return false;
     if (delQty <= 0 || delQty > deliverable) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${deliverable}`);
       return false;
     }
+    submittingDelRef.current = true;
     setIsSubmittingDel(true);
     try {
       addDeliveredSession({
@@ -197,9 +198,13 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
       });
       setShowDelForm(false);
       toast.success('تم تسجيل جلسة التسليم');
-      return true;
-    } finally {
+      setTimeout(() => { submittingDelRef.current = false; }, 800);
       setIsSubmittingDel(false);
+      return true;
+    } catch (e) {
+      submittingDelRef.current = false;
+      setIsSubmittingDel(false);
+      throw e;
     }
   };
 
