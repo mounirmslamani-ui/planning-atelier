@@ -122,7 +122,7 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
   };
 
   const submitQcSession = (): boolean => {
-    if (isSubmittingQc) return false;
+    if (submittingQcRef.current || isSubmittingQc) return false;
     if (!qcDecision) { toast.error('اختر القرار'); return false; }
     if (qcControlled <= 0 || qcControlled > qcRemaining) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${qcRemaining}`);
@@ -132,6 +132,7 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
       toast.error('الكمية المقبولة غير صحيحة');
       return false;
     }
+    submittingQcRef.current = true;
     setIsSubmittingQc(true);
     try {
       const isAcceptDecision = qcDecision === 'conforme' || qcDecision === 'conforme-derogation';
@@ -150,9 +151,15 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
       if (placeholderQc) deleteQCEntry(placeholderQc.id);
       setShowQcForm(false);
       toast.success('تم تسجيل جلسة المراقبة');
-      return true;
-    } finally {
+      // Release the guard on the next tick so the current click cycle can't
+      // slip a second submission through before the parent re-renders.
+      setTimeout(() => { submittingQcRef.current = false; }, 800);
       setIsSubmittingQc(false);
+      return true;
+    } catch (e) {
+      submittingQcRef.current = false;
+      setIsSubmittingQc(false);
+      throw e;
     }
   };
 
