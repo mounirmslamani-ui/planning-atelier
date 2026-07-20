@@ -105,6 +105,10 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
   const [qcNotes, setQcNotes] = useState('');
   const [isSubmittingQc, setIsSubmittingQc] = useState(false);
   const [isSubmittingDel, setIsSubmittingDel] = useState(false);
+  // Synchronous guards: useState updates are async and let two clicks in the same
+  // frame pass the check, producing duplicate QC / delivery sessions in the DB.
+  const submittingQcRef = useRef(false);
+  const submittingDelRef = useRef(false);
 
   const hasConformeDecision = orderQc.some(q => q.decision === 'conforme' || q.decision === 'conforme-derogation');
 
