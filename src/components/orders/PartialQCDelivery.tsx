@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,6 +105,10 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
   const [qcNotes, setQcNotes] = useState('');
   const [isSubmittingQc, setIsSubmittingQc] = useState(false);
   const [isSubmittingDel, setIsSubmittingDel] = useState(false);
+  // Synchronous guards: useState updates are async and let two clicks in the same
+  // frame pass the check, producing duplicate QC / delivery sessions in the DB.
+  const submittingQcRef = useRef(false);
+  const submittingDelRef = useRef(false);
 
   const hasConformeDecision = orderQc.some(q => q.decision === 'conforme' || q.decision === 'conforme-derogation');
 
@@ -118,7 +122,7 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
   };
 
   const submitQcSession = (): boolean => {
-    if (isSubmittingQc) return false;
+    if (submittingQcRef.current || isSubmittingQc) return false;
     if (!qcDecision) { toast.error('اختر القرار'); return false; }
     if (qcControlled <= 0 || qcControlled > qcRemaining) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${qcRemaining}`);
@@ -128,6 +132,7 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
       toast.error('الكمية المقبولة غير صحيحة');
       return false;
     }
+    submittingQcRef.current = true;
     setIsSubmittingQc(true);
     try {
       const isAcceptDecision = qcDecision === 'conforme' || qcDecision === 'conforme-derogation';
@@ -146,9 +151,15 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
       if (placeholderQc) deleteQCEntry(placeholderQc.id);
       setShowQcForm(false);
       toast.success('تم تسجيل جلسة المراقبة');
-      return true;
-    } finally {
+      // Release the guard on the next tick so the current click cycle can't
+      // slip a second submission through before the parent re-renders.
+      setTimeout(() => { submittingQcRef.current = false; }, 800);
       setIsSubmittingQc(false);
+      return true;
+    } catch (e) {
+      submittingQcRef.current = false;
+      setIsSubmittingQc(false);
+      throw e;
     }
   };
 
@@ -168,11 +179,12 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
   };
 
   const submitDeliverySession = (): boolean => {
-    if (isSubmittingDel) return false;
+    if (submittingDelRef.current || isSubmittingDel) return false;
     if (delQty <= 0 || delQty > deliverable) {
       toast.error(`الكمية يجب أن تكون بين 1 و ${deliverable}`);
       return false;
     }
+    submittingDelRef.current = true;
     setIsSubmittingDel(true);
     try {
       addDeliveredSession({
@@ -186,9 +198,13 @@ const PartialQCDelivery = forwardRef<PartialQCDeliveryHandle, Props>(({ order, o
       });
       setShowDelForm(false);
       toast.success('تم تسجيل جلسة التسليم');
-      return true;
-    } finally {
+      setTimeout(() => { submittingDelRef.current = false; }, 800);
       setIsSubmittingDel(false);
+      return true;
+    } catch (e) {
+      submittingDelRef.current = false;
+      setIsSubmittingDel(false);
+      throw e;
     }
   };
 
