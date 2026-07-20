@@ -37,37 +37,36 @@ const DeliveryPage: React.FC = () => {
   };
 
   const allRows = React.useMemo<Row[]>(() => {
-    const map = new Map<string, Row>();
-    // STRICT rule: an order appears in "طلبيات جاهزة للتسليم" if and only if it
-    // has at least one QC session with decision = conforme / conforme-derogation.
-    // Legacy `delivery_entries` rows are ignored — they are not a proof of QC
-    // validation.
-    for (const q of qcEntries) {
-      if (q.decision !== 'conforme' && q.decision !== 'conforme-derogation') continue;
-      const orderId = q.orderId;
-      if (map.has(orderId)) continue;
-      const order = getOrder(orderId);
-      if (!order) continue;
-      let accepted = 0;
-      for (const x of qcEntries) {
-        if (x.orderId !== orderId) continue;
-        if (x.acceptedQty != null) accepted += x.acceptedQty;
-        else if (x.decision === 'conforme' || x.decision === 'conforme-derogation') accepted += order.quantity;
-      }
-      if (accepted <= 0) continue;
-      const shipped = deliveredOrders
-        .filter(d => d.orderId === orderId)
-        .reduce((s, d) => s + (d.deliveredQty ?? order.quantity), 0);
-      const forceClosed = deliveredOrders.some(d => d.orderId === orderId && d.forceClosed);
-      const deliverable = Math.max(0, accepted - shipped);
-      if (forceClosed || deliverable <= 0) continue;
-      map.set(orderId, {
-        id: q.id, orderId, controlDate: q.controlDate,
-        decision: q.decision, accepted, shipped, deliverable,
+    // Single source of truth: use the centralized helpers from lib/orderFlow.ts
+    // so this page stays aligned with PartialQCDelivery and every other consumer.
+    // An order appears here iff it has an accepted-QC decision, is not
+    // force-closed on the delivery side, and still has deliverable qty > 0.
+    const rows: Row[] = [];
+    const seen = new Set<string>();
+    for (const order of orders) {
+      if (seen.has(order.id)) continue;
+      const firstAcceptedQc = qcEntries.find(q =>
+        q.orderId === order.id && (q.decision === 'conforme' || q.decision === 'conforme-derogation'),
+      );
+      if (!firstAcceptedQc) continue;
+      if (isDeliveryForceClosed(order.id, deliveredOrders)) continue;
+      const accepted = getQCAccepted(order.id, qcEntries, order.quantity);
+      const shipped = getDeliveredQty(order.id, deliveredOrders, order.quantity);
+      const deliverable = getDeliverableRemaining(order, qcEntries, deliveredOrders, deliveryEntries);
+      if (deliverable <= 0) continue;
+      seen.add(order.id);
+      rows.push({
+        id: firstAcceptedQc.id,
+        orderId: order.id,
+        controlDate: firstAcceptedQc.controlDate,
+        decision: firstAcceptedQc.decision as 'conforme' | 'conforme-derogation',
+        accepted,
+        shipped,
+        deliverable,
       });
     }
-    return Array.from(map.values());
-  }, [qcEntries, deliveredOrders, orders]);
+    return rows;
+  }, [orders, qcEntries, deliveredOrders, deliveryEntries]);
 
 
   const filteredEntries = React.useMemo(
