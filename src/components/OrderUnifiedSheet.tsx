@@ -316,9 +316,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     else infoLock.lock();
   };
 
-  const isInfoDirty = tab === 'info' && Object.keys(draft).length > 0;
-  const isPlanningDirty = (tab === 'resources' || tab === 'steps') && editor.rowsDirty;
-  const isQcDirty = tab === 'qc' && qcDirty;
+  const isInfoDirty = Object.keys(draft).length > 0;
+  const isPlanningDirty = editor.rowsDirty;
+  const isQcDirty = qcDirty;
 
   const requestClose = (nextOpen: boolean) => {
     if (nextOpen) { onOpenChange(true); return; }
@@ -363,19 +363,19 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const confirmAndCloseUnsaved = () => {
     if (isInfoDirty) { confirmAndCloseInfo(); return; }
-    if (tab === 'resources') {
+    if (isPlanningDirty) {
+      if (tab === 'steps') {
+        const proceeded = editor.handlePlanifier();
+        setShowUnsavedPrompt(false);
+        if (proceeded) pendingStepsCloseRef.current = true;
+        return;
+      }
       editor.saveResourcesOnly();
       setShowUnsavedPrompt(false);
       onOpenChange(false);
       return;
     }
-    if (tab === 'steps') {
-      const proceeded = editor.handlePlanifier();
-      setShowUnsavedPrompt(false);
-      if (proceeded) pendingStepsCloseRef.current = true;
-      return;
-    }
-    if (tab === 'qc') {
+    if (isQcDirty) {
       const ok = qcRef.current?.confirmAndSubmit();
       setShowUnsavedPrompt(false);
       if (ok) onOpenChange(false);
@@ -387,7 +387,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const discardAndCloseUnsaved = () => {
     if (isInfoDirty) { discardAndCloseInfo(); return; }
-    if (tab === 'qc') {
+     if (isQcDirty) {
       qcRef.current?.discardForms();
     }
     setShowUnsavedPrompt(false);
