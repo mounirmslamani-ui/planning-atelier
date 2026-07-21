@@ -627,10 +627,55 @@ const PlanningTableauPage: React.FC = () => {
       .filter(g => g.tasks.length > 0);
   }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords, planningOrderMap]);
 
+  // ─── Ensemble COMPLET des tâches d'un opérateur, SANS filtre de fenêtre "N jours" ───
+  // Sert uniquement à détecter les vrais trous de Pn (étape terminée / réassignée /
+  // supprimée). Ne jamais utiliser operatorTasks (windowed) pour ce calcul : une tâche
+  // simplement hors de la fenêtre d'affichage n'est pas un trou et ne doit pas être
+  // renumérotée, sous peine de décaler les Pn des tâches encore visibles.
+  const operatorTasksAll = useMemo(() => {
+    const result: Record<string, { operator: typeof operators[0]; tasks: TaskItem[] }> = {};
+    operators.forEach(op => {
+      result[op.id] = { operator: op, tasks: [] };
+    });
+
+    draftSteps.forEach(step => {
+      if (step.operationId === absenceOperationId) return;
+      if (step.orderId === absenceOrderId) return;
+      if (isStepFinished(step, productionRecords)) return;
+      if (!step.operatorId) return;
+      if (!step.startDate || !step.endDate) return;
+      if (step.subcontractorId) return;
+
+      const order = draftOrders.find(o => o.id === step.orderId);
+      if (!order) return;
+      if (result[step.operatorId]) {
+        result[step.operatorId].tasks.push({ step, order });
+      }
+    });
+
+    Object.values(result).forEach(group => {
+      group.tasks.sort((a, b) => {
+        const pa = planningOrderMap[a.step.id];
+        const pb = planningOrderMap[b.step.id];
+        if (pa != null && pb != null) return pa - pb;
+        if (pa != null) return -1;
+        if (pb != null) return 1;
+        const da = a.order.displayOrder ?? 0;
+        const db = b.order.displayOrder ?? 0;
+        if (da === 0 && db === 0) return 0;
+        if (da === 0) return 1;
+        if (db === 0) return -1;
+        return da - db;
+      });
+    });
+
+    return Object.values(result).filter(g => g.tasks.length > 0);
+  }, [operators, draftSteps, draftOrders, absenceOperationId, absenceOrderId, productionRecords, planningOrderMap]);
+
   // ─── Recalcul automatique des Pn pour combler les trous quand une étape disparaît ───
   useEffect(() => {
     const updates: Record<string, number> = {};
-    operatorTasks.forEach(group => {
+    operatorTasksAll.forEach(group => {
       const taskIds = group.tasks.map(t => t.step.id);
       const knownPns = taskIds
         .map(id => planningOrderMap[id])
@@ -653,7 +698,7 @@ const PlanningTableauPage: React.FC = () => {
       persistPlanningOrders(updates);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [operatorTasks]);
+  }, [operatorTasksAll]);
 
   /** Apply new order + recalculate dates LOCALLY in draftSteps (no DB write) */
   const applyReorder = useCallback((
