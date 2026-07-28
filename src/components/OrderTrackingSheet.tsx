@@ -76,7 +76,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
     };
   }, [onClose]);
 
-  const editionDate = formatDateFR(new Date().toISOString().split('T')[0]);
+ const receptionDate = formatDateFR(order.orderDate);
 
   return (
     <div className="tracking-sheet-overlay" dir="rtl">
@@ -95,7 +95,7 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
           <img className="ts-header-logo-img" src={logoUrl} alt="Slamani Tasnie" />
           <div className="ts-header-date-row" dir="rtl">
             <span className="ts-label-ar">التاريخ:</span>
-            <span className="ts-date-value">{editionDate}</span>
+            <span className="ts-date-value">{receptionDate}</span>
           </div>
           <div className="ts-header-title-row">بطاقة متابعة انجاز طلبية</div>
           <div className="ts-order-number">
@@ -163,16 +163,16 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
         {/* Titre tableau aligné à droite */}
         <div className="ts-table-title">وقت الإنجاز:</div>
 
-        {/* TABLE des étapes — ordre RTL : عامل | عملية | فعلي | محتسب | تاريخ | ملاحظات */}
+        {/* TABLE des étapes — ordre RTL : تاريخ | بداية | نهاية | عامل | عملية | ملاحظات */}
         <table className="ts-steps" dir="rtl">
           <thead>
             <tr>
-              <th style={{ width: '22%' }}>اسم العامل/<br/>المناول</th>
-              <th style={{ width: '22%' }}>العملية</th>
-              <th style={{ width: '12%' }}>الوقت<br/>الفعلي</th>
-              <th style={{ width: '12%' }}>الوقت<br/>المحتسب</th>
               <th style={{ width: '12%' }}>التاريخ</th>
-              <th style={{ width: '20%' }}>ملاحظات</th>
+              <th style={{ width: '12%' }}>ساعة<br/>البداية</th>
+              <th style={{ width: '12%' }}>ساعة<br/>النهاية</th>
+              <th style={{ width: '18%' }}>اسم العامل/<br/>المناول</th>
+              <th style={{ width: '18%' }}>العملية</th>
+              <th style={{ width: '28%' }}>الأوقات المستقطعة<br/>و الملاحظات</th>
             </tr>
           </thead>
           <tbody>
@@ -180,11 +180,11 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
               const r = stepRows[i];
               return (
                 <tr key={i}>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                   <td className="ts-cell-data">{r ? r.worker : ''}</td>
                   <td className="ts-cell-data">{r ? r.operation : ''}</td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
                   <td></td>
                 </tr>
               );
