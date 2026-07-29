@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    console.log('env check', { hasUrl: !!SUPABASE_URL, hasService: !!SERVICE, serviceLen: SERVICE?.length ?? 0 });
     const admin = createClient(SUPABASE_URL, SERVICE);
 
     const trimmed = display_name.trim();
@@ -30,12 +31,22 @@ Deno.serve(async (req) => {
       .ilike('display_name', trimmed)
       .maybeSingle();
 
-    if (profErr || !profile) {
+    if (profErr) {
+      console.error('profiles query error', JSON.stringify(profErr));
+      return new Response(JSON.stringify({ error: 'الخدمة غير متوفرة مؤقتا' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!profile) {
+      console.warn('profile not found for', trimmed);
       return new Response(JSON.stringify({ error: 'اسم المستخدم غير موجود' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     const { data: userRes, error: userErr } = await admin.auth.admin.getUserById(profile.id);
     if (userErr || !userRes?.user?.email) {
