@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    console.log('env check', { hasUrl: !!SUPABASE_URL, hasService: !!SERVICE, serviceLen: SERVICE?.length ?? 0 });
+    console.log('env check', { hasUrl: !!SUPABASE_URL, hasService: !!SERVICE });
     const admin = createClient(SUPABASE_URL, SERVICE);
 
     const trimmed = display_name.trim();
