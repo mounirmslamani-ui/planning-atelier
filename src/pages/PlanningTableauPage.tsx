@@ -521,6 +521,8 @@ const PlanningTableauPage: React.FC = () => {
   // Relais (debut_poste / relais / fin_poste) dialog state
   const [relaisDialog, setRelaisDialog] = useState<{ open: boolean; mode: RelaisMode; operatorId: string } | null>(null);
   const [pendingRelaisStart, setPendingRelaisStart] = useState<{ stepId: string; operatorId: string; startTime: string; workDate: string } | null>(null);
+  const [lastStepQCWarning, setLastStepQCWarning] = useState<{ orderId: string } | null>(null);
+  const { openOrderSheet } = useOrderSheet();
 
 
 
