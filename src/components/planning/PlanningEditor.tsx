@@ -500,6 +500,25 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const clientName = order ? (clients.find(c => c.id === order.clientId)?.name || '*******') : '';
 
+  /** Crée l'entrée QC si toutes les étapes de la commande sont désormais terminées, et ouvre l'avertissement. */
+  const maybeRouteToQC = (recordsOverride?: ProductionRecord[], stepsOverride?: ProductionStep[]) => {
+    if (!order) return;
+    if (order.id === absenceOrderId) return;
+    if (qcEntries.some(q => q.orderId === order.id)) return;
+    const recs = recordsOverride ?? productionRecords;
+    const stps = stepsOverride ?? steps;
+    const check = getOrderQualityControlCheck(order.id, stps, recs, absenceOperationId);
+    if (check.isReady) {
+      addQCEntry({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        controlDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+      });
+      setLastStepWarningOpen(true);
+    }
+  };
+
   const handleProgressStatusChange = (rowId: string, target: 'not-started' | 'in-progress' | 'done') => {
     const row = rows.find(r => r.id === rowId);
     if (!order || !row || !row.stepId || row.assignType !== 'operator' || !row.option1) return;
@@ -516,32 +535,39 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }
 
     const newStatus: 'done' | 'continue' = target === 'done' ? 'done' : 'continue';
+    let recordsAfterChange: ProductionRecord[] = productionRecords;
 
     if (existingRecords.length > 0) {
       // Préserver les durées/horaires déjà enregistrés : on met simplement à jour le workStatus.
       existingRecords.forEach(r => {
         if (r.workStatus !== newStatus) updateProductionRecord({ ...r, workStatus: newStatus });
       });
-      return;
+      recordsAfterChange = productionRecords.map(r => (r.stepId === row.stepId ? { ...r, workStatus: newStatus } : r));
+    } else {
+      // Aucun enregistrement existant : créer un placeholder.
+      const op = operations.find(o => o.id === row.operationId);
+      const placeholder: ProductionRecord = {
+        id: crypto.randomUUID(),
+        stepId: row.stepId,
+        orderId: order.id,
+        operatorId: row.option1,
+        operationId: row.operationId,
+        actualDuration: 0,
+        validatedAt: new Date().toISOString(),
+        workStatus: newStatus,
+        orderNumberSnapshot: order.orderNumber,
+        clientNameSnapshot: clientName,
+        designationSnapshot: order.designation,
+        quantitySnapshot: order.quantity,
+        operationNameSnapshot: op?.name,
+      };
+      addProductionRecord(placeholder);
+      recordsAfterChange = [...productionRecords, placeholder];
     }
 
-    // Aucun enregistrement existant : créer un placeholder.
-    const op = operations.find(o => o.id === row.operationId);
-    addProductionRecord({
-      id: crypto.randomUUID(),
-      stepId: row.stepId,
-      orderId: order.id,
-      operatorId: row.option1,
-      operationId: row.operationId,
-      actualDuration: 0,
-      validatedAt: new Date().toISOString(),
-      workStatus: newStatus,
-      orderNumberSnapshot: order.orderNumber,
-      clientNameSnapshot: clientName,
-      designationSnapshot: order.designation,
-      quantitySnapshot: order.quantity,
-      operationNameSnapshot: op?.name,
-    });
+    if (newStatus === 'done') {
+      maybeRouteToQC(recordsAfterChange);
+    }
   };
 
   return {
