@@ -1117,6 +1117,15 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
           />
         );
       })()}
+
+      <LastStepQCWarningDialog
+        open={e.lastStepWarningOpen}
+        onConfirm={() => e.setLastStepWarningOpen(false)}
+        onAddStage={() => {
+          e.setLastStepWarningOpen(false);
+          e.addRow();
+        }}
+      />
     </>
   );
 };

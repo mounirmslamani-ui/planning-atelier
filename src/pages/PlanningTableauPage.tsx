@@ -14,7 +14,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
-import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { OrderNumberLink, useOrderSheet } from '@/context/OrderSheetContext';
+import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
