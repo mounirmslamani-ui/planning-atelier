@@ -6,18 +6,19 @@ import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save, Pencil } fro
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { OperationToSchedule } from '@/lib/scheduler';
-import type { Order, ProductionRecord, ResourceStatus } from '@/types/planning';
+import type { Order, ProductionRecord, ProductionStep, ResourceStatus } from '@/types/planning';
 
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
-import { getStepProgressStatus } from '@/lib/stepProgress';
+import { getStepProgressStatus, getOrderQualityControlCheck } from '@/lib/stepProgress';
 import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { isLinkedToOperation } from '@/lib/operationLinks';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import SearchableSelect from '@/components/ui/searchable-select';
+import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
 
 export interface OperationRow {
   id: string;
@@ -52,7 +53,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const ctx = usePlanning();
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
-    qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
+    qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry, addQCEntry, absenceOrderId,
     addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, deleteProductionRecord, absenceOperationId,
   } = ctx;
 
@@ -75,6 +76,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [editDurationPrompt, setEditDurationPrompt] = useState<{ rowId: string } | null>(null);
   const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
+  const [lastStepWarningOpen, setLastStepWarningOpen] = useState(false);
 
   const initializedRef = useRef(false);
   const prevOpenRef = useRef(false);
@@ -430,6 +432,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toast.success('تمت إعادة الطلبية إلى الإنتاج (قيد الانجاز)');
     } else {
       toast.success('تم حفظ التخطيط');
+      maybeRouteToQC(productionRecords, allFinalSteps);
     }
     originalRowsRef.current = rows.map(r => ({ ...r }));
     return true;
@@ -498,6 +501,25 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const clientName = order ? (clients.find(c => c.id === order.clientId)?.name || '*******') : '';
 
+  /** Crée l'entrée QC si toutes les étapes de la commande sont désormais terminées, et ouvre l'avertissement. */
+  const maybeRouteToQC = (recordsOverride?: ProductionRecord[], stepsOverride?: ProductionStep[]) => {
+    if (!order) return;
+    if (order.id === absenceOrderId) return;
+    if (qcEntries.some(q => q.orderId === order.id)) return;
+    const recs = recordsOverride ?? productionRecords;
+    const stps = stepsOverride ?? steps;
+    const check = getOrderQualityControlCheck(order.id, stps, recs, absenceOperationId);
+    if (check.isReady) {
+      addQCEntry({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        controlDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+      });
+      setLastStepWarningOpen(true);
+    }
+  };
+
   const handleProgressStatusChange = (rowId: string, target: 'not-started' | 'in-progress' | 'done') => {
     const row = rows.find(r => r.id === rowId);
     if (!order || !row || !row.stepId || row.assignType !== 'operator' || !row.option1) return;
@@ -514,32 +536,39 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }
 
     const newStatus: 'done' | 'continue' = target === 'done' ? 'done' : 'continue';
+    let recordsAfterChange: ProductionRecord[] = productionRecords;
 
     if (existingRecords.length > 0) {
       // Préserver les durées/horaires déjà enregistrés : on met simplement à jour le workStatus.
       existingRecords.forEach(r => {
         if (r.workStatus !== newStatus) updateProductionRecord({ ...r, workStatus: newStatus });
       });
-      return;
+      recordsAfterChange = productionRecords.map(r => (r.stepId === row.stepId ? { ...r, workStatus: newStatus } : r));
+    } else {
+      // Aucun enregistrement existant : créer un placeholder.
+      const op = operations.find(o => o.id === row.operationId);
+      const placeholder: ProductionRecord = {
+        id: crypto.randomUUID(),
+        stepId: row.stepId,
+        orderId: order.id,
+        operatorId: row.option1,
+        operationId: row.operationId,
+        actualDuration: 0,
+        validatedAt: new Date().toISOString(),
+        workStatus: newStatus,
+        orderNumberSnapshot: order.orderNumber,
+        clientNameSnapshot: clientName,
+        designationSnapshot: order.designation,
+        quantitySnapshot: order.quantity,
+        operationNameSnapshot: op?.name,
+      };
+      addProductionRecord(placeholder);
+      recordsAfterChange = [...productionRecords, placeholder];
     }
 
-    // Aucun enregistrement existant : créer un placeholder.
-    const op = operations.find(o => o.id === row.operationId);
-    addProductionRecord({
-      id: crypto.randomUUID(),
-      stepId: row.stepId,
-      orderId: order.id,
-      operatorId: row.option1,
-      operationId: row.operationId,
-      actualDuration: 0,
-      validatedAt: new Date().toISOString(),
-      workStatus: newStatus,
-      orderNumberSnapshot: order.orderNumber,
-      clientNameSnapshot: clientName,
-      designationSnapshot: order.designation,
-      quantitySnapshot: order.quantity,
-      operationNameSnapshot: op?.name,
-    });
+    if (newStatus === 'done') {
+      maybeRouteToQC(recordsAfterChange);
+    }
   };
 
   return {
@@ -553,6 +582,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     closeStepPrompt, setCloseStepPrompt,
     editDurationPrompt, setEditDurationPrompt,
     savePrompt, setSavePrompt,
+    lastStepWarningOpen, setLastStepWarningOpen,
     getRowProgressStatus, getRowActualDuration, getRowRecords,
     operations, operators, subcontractors, absenceOperationId,
     addProductionRecord, updateProductionRecord, clientName,
@@ -1087,6 +1117,15 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
           />
         );
       })()}
+
+      <LastStepQCWarningDialog
+        open={e.lastStepWarningOpen}
+        onConfirm={() => e.setLastStepWarningOpen(false)}
+        onAddStage={() => {
+          e.setLastStepWarningOpen(false);
+          e.addRow();
+        }}
+      />
     </>
   );
 };

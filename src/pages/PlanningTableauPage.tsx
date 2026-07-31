@@ -14,7 +14,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { isWorkDay, addWorkMinutes } from '@/lib/workTime';
 import type { ProductionStep, Order, Holiday, ProductionRecord } from '@/types/planning';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
-import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { OrderNumberLink, useOrderSheet } from '@/context/OrderSheetContext';
+import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import PriorityBadge from '@/components/orders/PriorityBadge';
@@ -520,6 +521,8 @@ const PlanningTableauPage: React.FC = () => {
   // Relais (debut_poste / relais / fin_poste) dialog state
   const [relaisDialog, setRelaisDialog] = useState<{ open: boolean; mode: RelaisMode; operatorId: string } | null>(null);
   const [pendingRelaisStart, setPendingRelaisStart] = useState<{ stepId: string; operatorId: string; startTime: string; workDate: string } | null>(null);
+  const [lastStepQCWarning, setLastStepQCWarning] = useState<{ orderId: string } | null>(null);
+  const { openOrderSheet } = useOrderSheet();
 
 
 
@@ -1098,6 +1101,7 @@ const PlanningTableauPage: React.FC = () => {
             controlDate: new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString(),
           });
+          setLastStepQCWarning({ orderId: finishedRecord.orderId });
         }
       }
     }
@@ -1913,6 +1917,15 @@ if (nextRecord) {
           />
         );
       })()}
+
+      <LastStepQCWarningDialog
+        open={!!lastStepQCWarning}
+        onConfirm={() => setLastStepQCWarning(null)}
+        onAddStage={() => {
+          if (lastStepQCWarning) openOrderSheet(lastStepQCWarning.orderId, 'steps');
+          setLastStepQCWarning(null);
+        }}
+      />
     </div>
 
   );
