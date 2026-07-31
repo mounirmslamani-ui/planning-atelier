@@ -1101,6 +1101,7 @@ const PlanningTableauPage: React.FC = () => {
             controlDate: new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString(),
           });
+          setLastStepQCWarning({ orderId: finishedRecord.orderId });
         }
       }
     }
@@ -1916,6 +1917,15 @@ if (nextRecord) {
           />
         );
       })()}
+
+      <LastStepQCWarningDialog
+        open={!!lastStepQCWarning}
+        onConfirm={() => setLastStepQCWarning(null)}
+        onAddStage={() => {
+          if (lastStepQCWarning) openOrderSheet(lastStepQCWarning.orderId, 'steps');
+          setLastStepQCWarning(null);
+        }}
+      />
     </div>
 
   );
