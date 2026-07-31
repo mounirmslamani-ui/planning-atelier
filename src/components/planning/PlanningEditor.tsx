@@ -11,13 +11,14 @@ import type { Order, ProductionRecord, ProductionStep, ResourceStatus } from '@/
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
-import { getStepProgressStatus } from '@/lib/stepProgress';
+import { getStepProgressStatus, getOrderQualityControlCheck } from '@/lib/stepProgress';
 import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
 import { isLinkedToOperation } from '@/lib/operationLinks';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import SearchableSelect from '@/components/ui/searchable-select';
+import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
 
 export interface OperationRow {
   id: string;
@@ -52,7 +53,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const ctx = usePlanning();
   const {
     operators, subcontractors, operations, steps, orders, holidays, equipments, clients, productionRecords,
-    qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry,
+    qcEntries, deliveryEntries, deliveredOrders, deleteQCEntry, addQCEntry, absenceOrderId,
     addStep, updateStep, deleteStep, updateOrder, updateProductionRecord, addProductionRecord, deleteProductionRecord, absenceOperationId,
   } = ctx;
 
@@ -75,6 +76,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [editDurationPrompt, setEditDurationPrompt] = useState<{ rowId: string } | null>(null);
   const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
+  const [lastStepWarningOpen, setLastStepWarningOpen] = useState(false);
 
   const initializedRef = useRef(false);
   const prevOpenRef = useRef(false);
