@@ -432,6 +432,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toast.success('تمت إعادة الطلبية إلى الإنتاج (قيد الانجاز)');
     } else {
       toast.success('تم حفظ التخطيط');
+      maybeRouteToQC(productionRecords, allFinalSteps);
     }
     originalRowsRef.current = rows.map(r => ({ ...r }));
     return true;
@@ -581,6 +582,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     closeStepPrompt, setCloseStepPrompt,
     editDurationPrompt, setEditDurationPrompt,
     savePrompt, setSavePrompt,
+    lastStepWarningOpen, setLastStepWarningOpen,
     getRowProgressStatus, getRowActualDuration, getRowRecords,
     operations, operators, subcontractors, absenceOperationId,
     addProductionRecord, updateProductionRecord, clientName,
