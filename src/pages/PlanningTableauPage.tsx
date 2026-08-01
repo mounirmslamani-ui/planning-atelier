@@ -243,7 +243,7 @@ type PlanningFilterKey = 'displayOrder' | 'startDate' | 'endDate' | 'orderNumber
  * INSIDE its parent commande (step_order in DB) and MUST NOT be rewritten with
  * an operator-row index — that would break the "سابق" / phase-amont logic which
  * sorts steps of a commande by `step.order`. Operator-row ordering is handled
- * exclusively by `planning_order` (Pn) via `planningOrderMap`.
+ * exclusively by `planning_order` (Pn) via `step.planningOrder`.
  */
 function appendUnorderedStepsAtEnd(allSteps: ProductionStep[]): ProductionStep[] {
   return allSteps;
