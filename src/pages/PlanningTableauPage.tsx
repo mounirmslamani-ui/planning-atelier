@@ -344,8 +344,6 @@ const PlanningTableauPage: React.FC = () => {
   });
   const [numDaysInput, setNumDaysInput] = useState(String(numDays));
   const [draftOrders, setDraftOrders] = useState<Order[]>(activeOrders);
-  // Pn per step: position dans le planning propre à chaque opérateur (persisté en DB)
-  const [planningOrderMap, setPlanningOrderMap] = useState<Record<string, number>>({});
 
   // Column filters for the operator tables
   const [localColFilters, setColFilters] = useState<Record<string, string>>({});
@@ -421,55 +419,15 @@ const PlanningTableauPage: React.FC = () => {
     }
   }, [steps, activeOrders, history]);
 
-  // ─── Pn (planning_order) : chargement additif depuis la base ───
-  // IMPORTANT : on ne remplace JAMAIS la map locale (elle est autoritative après un D&D).
-  // On se contente d'ajouter les Pn manquants pour les nouvelles étapes apparues.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      // Pagination explicite : la limite max-rows PostgREST (≤1000) tronquerait
-      // silencieusement la requête sinon. On ajoute aussi un tri déterministe sur `id`
-      // pour que la pagination renvoie un ordre stable d'une page à l'autre.
-      const PAGE = 1000;
-      let from = 0;
-      const rows: { id: string; planning_order: number | null }[] = [];
-      while (true) {
-        const { data, error } = await supabase
-          .from('production_steps')
-          .select('id, planning_order')
-          .order('id', { ascending: true })
-          .range(from, from + PAGE - 1);
-        if (cancelled || error || !data) return;
-        rows.push(...data);
-        if (data.length < PAGE) break;
-        from += PAGE;
+  /** Persist Pn (planning_order) changes for a batch of steps via le chemin d'écriture unique (updateStep). */
+  const persistPlanningOrderUpdates = useCallback((updates: Record<string, number>) => {
+    Object.entries(updates).forEach(([id, planningOrder]) => {
+      const current = draftSteps.find(s => s.id === id);
+      if (current && current.planningOrder !== planningOrder) {
+        updateStep({ ...current, planningOrder });
       }
-      if (cancelled) return;
-      setPlanningOrderMap(prev => {
-        const next = { ...prev };
-        let changed = false;
-        rows.forEach((row) => {
-          if (row.planning_order != null && next[row.id] == null) {
-            next[row.id] = row.planning_order;
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
-    })();
-    return () => { cancelled = true; };
-  }, [steps]);
-
-
-  /** Persist a batch of {stepId -> planning_order} updates to DB and local map. */
-  const persistPlanningOrders = useCallback(async (updates: Record<string, number>) => {
-    setPlanningOrderMap(prev => ({ ...prev, ...updates }));
-    await Promise.all(
-      Object.entries(updates).map(([id, planning_order]) =>
-        supabase.from('production_steps').update({ planning_order }).eq('id', id)
-      )
-    );
-  }, []);
+    });
+  }, [draftSteps, updateStep]);
 
   const handleUndo = useCallback(() => {
     const previous = history.undo();
@@ -607,8 +565,8 @@ const PlanningTableauPage: React.FC = () => {
     // Tri par planning_order (Pn) si défini, sinon par displayOrder (Cn).
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
-        const pa = planningOrderMap[a.step.id];
-        const pb = planningOrderMap[b.step.id];
+        const pa = a.step.planningOrder;
+        const pb = b.step.planningOrder;
         if (pa != null && pb != null) return pa - pb;
         if (pa != null) return -1;
         if (pb != null) return 1;
@@ -628,7 +586,7 @@ const PlanningTableauPage: React.FC = () => {
         return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
       })
       .filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords, planningOrderMap]);
+  }, [operators, draftSteps, draftOrders, workingDays, absenceOperationId, absenceOrderId, productionRecords]);
 
   // ─── Ensemble COMPLET des tâches d'un opérateur, SANS filtre de fenêtre "N jours" ───
   // Sert uniquement à détecter les vrais trous de Pn (étape terminée / réassignée /
@@ -658,8 +616,8 @@ const PlanningTableauPage: React.FC = () => {
 
     Object.values(result).forEach(group => {
       group.tasks.sort((a, b) => {
-        const pa = planningOrderMap[a.step.id];
-        const pb = planningOrderMap[b.step.id];
+        const pa = a.step.planningOrder;
+        const pb = b.step.planningOrder;
         if (pa != null && pb != null) return pa - pb;
         if (pa != null) return -1;
         if (pb != null) return 1;
@@ -673,15 +631,14 @@ const PlanningTableauPage: React.FC = () => {
     });
 
     return Object.values(result).filter(g => g.tasks.length > 0);
-  }, [operators, draftSteps, draftOrders, absenceOperationId, absenceOrderId, productionRecords, planningOrderMap]);
+  }, [operators, draftSteps, draftOrders, absenceOperationId, absenceOrderId, productionRecords]);
 
   // ─── Recalcul automatique des Pn pour combler les trous quand une étape disparaît ───
   useEffect(() => {
     const updates: Record<string, number> = {};
     operatorTasksAll.forEach(group => {
-      const taskIds = group.tasks.map(t => t.step.id);
-      const knownPns = taskIds
-        .map(id => planningOrderMap[id])
+      const knownPns = group.tasks
+        .map(t => t.step.planningOrder)
         .filter((v): v is number => v != null)
         .sort((a, b) => a - b);
       // Détecte trou : si max != length OU des étapes ont un Pn mais pas séquentiel
@@ -692,13 +649,13 @@ const PlanningTableauPage: React.FC = () => {
       if (!hasGap) return;
       group.tasks.forEach((t, idx) => {
         const desired = idx + 1;
-        if (planningOrderMap[t.step.id] !== desired) {
+        if (t.step.planningOrder !== desired) {
           updates[t.step.id] = desired;
         }
       });
     });
     if (Object.keys(updates).length > 0) {
-      persistPlanningOrders(updates);
+      persistPlanningOrderUpdates(updates);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [operatorTasksAll]);
@@ -723,9 +680,8 @@ const PlanningTableauPage: React.FC = () => {
     const finalSteps = reorderedTasks.map(({ step }) => dateUpdatesById.get(step.id) ?? step);
     const nextDraftOrders = nextDraftOrdersOverride ?? draftOrders;
     const nextForcedWarnings = nextForcedWarningsOverride ?? forcedPhaseAmontWarnings;
-    // IMPORTANT: merge fresh Pn updates over the (possibly stale) closure map,
-    // sinon updateStep réécrit l'ancien planning_order en base et la position bouge au retour.
-    const effectivePlanningMap = { ...planningOrderMap, ...(nextPlanningOrdersOverride ?? {}) };
+    // Fresh Pn updates take precedence over the step's current planningOrder.
+    const effectivePlanningMap = { ...(nextPlanningOrdersOverride ?? {}) };
 
     setOrderDirty(true);
 
@@ -749,7 +705,7 @@ const PlanningTableauPage: React.FC = () => {
       }
     });
     // frozenOrder / manualSortOrder writes removed — manual ordering only.
-  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep, planningOrderMap]);
+  }, [holidays, draftOrders, forcedPhaseAmontWarnings, draftSteps, commitPlanningHistory, updateStep]);
 
 
   // ─── Drag & drop handlers with refs for reliable state ───
@@ -791,16 +747,15 @@ const PlanningTableauPage: React.FC = () => {
     const [dragged] = items.splice(dragIndex, 1);
     items.splice(dropIndex, 0, dragged);
 
-    // Recalcule et persiste immédiatement le planning_order (Pn) pour cet opérateur.
+    // Recalcule le planning_order (Pn) pour cet opérateur ; persisté via applyReorder → updateStep.
     const updates: Record<string, number> = {};
     items.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
-    persistPlanningOrders(updates);
 
     applyReorder(items, dragged.step.id, undefined, undefined, updates);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, applyReorder, persistPlanningOrders]);
+  }, [operatorTasks, applyReorder]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -867,11 +822,11 @@ const PlanningTableauPage: React.FC = () => {
     if (ids.size === 0) return;
     if (extraStepId && !selectedStepIds.has(extraStepId)) setSelectedStepIds(ids);
     const selectedTasks = group.tasks.filter(t => ids.has(t.step.id));
-    const minPn = Math.min(...selectedTasks.map(t => planningOrderMap[t.step.id] ?? 9999));
+    const minPn = Math.min(...selectedTasks.map(t => t.step.planningOrder ?? 9999));
     setMoveTargetPn(String(minPn === 9999 ? 1 : minPn));
     setMoveDialogOperatorId(operatorId);
     setMovePnDialogOpen(true);
-  }, [operatorTasks, selectedStepIds, planningOrderMap]);
+  }, [operatorTasks, selectedStepIds]);
 
   const applyMovePnSelection = useCallback(() => {
     const target = parseInt(moveTargetPn, 10);
@@ -892,12 +847,11 @@ const PlanningTableauPage: React.FC = () => {
     // Réassigner les Pn (planning_order) séquentiellement à partir de 1 — PAS les Cn/displayOrder
     const updates: Record<string, number> = {};
     newList.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
-    persistPlanningOrders(updates);
     applyReorder(newList, undefined, undefined, undefined, updates);
 
     setMovePnDialogOpen(false);
     setSelectedStepIds(new Set());
-  }, [moveTargetPn, moveDialogOperatorId, operatorTasks, selectedStepIds, persistPlanningOrders, applyReorder]);
+  }, [moveTargetPn, moveDialogOperatorId, operatorTasks, selectedStepIds, applyReorder]);
 
 
 
@@ -914,9 +868,8 @@ const PlanningTableauPage: React.FC = () => {
     });
     const updates: Record<string, number> = {};
     sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
-    persistPlanningOrders(updates);
     applyReorder(sorted, undefined, undefined, undefined, updates);
-  }, [selectedTabOperatorId, operatorTasks, persistPlanningOrders, applyReorder]);
+  }, [selectedTabOperatorId, operatorTasks, applyReorder]);
 
   // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
