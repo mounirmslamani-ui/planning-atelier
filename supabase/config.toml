@@ -2,3 +2,6 @@ project_id = "lfrpifycckvqheqntmql"
 
 [functions.resolve-user-email]
 verify_jwt = false
+
+[functions.health]
+verify_jwt = false

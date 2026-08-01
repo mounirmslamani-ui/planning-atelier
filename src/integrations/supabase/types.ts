@@ -238,6 +238,42 @@ export type Database = {
         }
         Relationships: []
       }
+      health_incidents: {
+        Row: {
+          created_at: string
+          details: Json
+          error_code: string | null
+          error_message: string | null
+          error_type: string
+          http_status: number | null
+          id: string
+          occurred_at: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          error_code?: string | null
+          error_message?: string | null
+          error_type?: string
+          http_status?: number | null
+          id?: string
+          occurred_at?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          error_code?: string | null
+          error_message?: string | null
+          error_type?: string
+          http_status?: number | null
+          id?: string
+          occurred_at?: string
+          source?: string
+        }
+        Relationships: []
+      }
       holidays: {
         Row: {
           created_at: string
