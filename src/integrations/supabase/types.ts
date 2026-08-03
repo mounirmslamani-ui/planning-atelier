@@ -790,6 +790,8 @@ export type Database = {
           champ_bouton: string
           formulaire: string
           id: string
+          libelle_ar: string | null
+          libelle_fr: string | null
           ordre: number
           sous_formulaire: string
           tableau: string
@@ -798,6 +800,8 @@ export type Database = {
           champ_bouton?: string
           formulaire?: string
           id?: string
+          libelle_ar?: string | null
+          libelle_fr?: string | null
           ordre: number
           sous_formulaire?: string
           tableau?: string
@@ -806,6 +810,8 @@ export type Database = {
           champ_bouton?: string
           formulaire?: string
           id?: string
+          libelle_ar?: string | null
+          libelle_fr?: string | null
           ordre?: number
           sous_formulaire?: string
           tableau?: string
