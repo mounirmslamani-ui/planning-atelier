@@ -48,6 +48,8 @@ interface CatalogRow {
   formulaire: string;
   sous_formulaire: string;
   champ_bouton: string;
+  libelle_fr: string | null;
+  libelle_ar: string | null;
 }
 interface RightRow {
   id: string;
