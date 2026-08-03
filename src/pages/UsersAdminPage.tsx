@@ -253,7 +253,7 @@ const UsersAdminPage: React.FC = () => {
                     return <td key={p.id} className="p-2 text-center font-bold text-primary">ADMIN</td>;
                   }
                   const r = rights.find(x => x.user_id === p.id && matchKey(x, row));
-                  const lvl = (r?.niveau_acces ?? 'denied') as AccessLevel;
+                  const lvl = (r?.niveau_acces ?? 'RO') as AccessLevel;
                   return (
                     <td key={p.id} className="p-2 text-center">
                       <SearchableSelect
