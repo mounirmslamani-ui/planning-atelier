@@ -906,6 +906,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_write: {
+        Args: {
+          _champ_bouton?: string
+          _formulaire?: string
+          _sous_formulaire?: string
+          _tableau?: string
+          _uid: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
