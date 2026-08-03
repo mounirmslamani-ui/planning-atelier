@@ -228,10 +228,8 @@ const UsersAdminPage: React.FC = () => {
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="p-2 text-right">الجدول</th>
-              <th className="p-2 text-right">الاستمارة</th>
-              <th className="p-2 text-right">الاستمارة الفرعية</th>
-              <th className="p-2 text-right">الحقل / الزر</th>
+              <th className="p-2 text-center w-12">#</th>
+              <th className="p-2 text-right min-w-[280px]">الصلاحية</th>
               {orderedProfiles.map(p => (
                 <th key={p.id} className="p-2 text-center min-w-[140px]">{p.display_name}</th>
               ))}
@@ -240,10 +238,16 @@ const UsersAdminPage: React.FC = () => {
           <tbody>
             {catalog.map(row => (
               <tr key={row.id} className="border-t">
-                <td className="p-2">{row.tableau || '—'}</td>
-                <td className="p-2">{row.formulaire || '—'}</td>
-                <td className="p-2">{row.sous_formulaire || '—'}</td>
-                <td className="p-2">{row.champ_bouton || '—'}</td>
+                <td className="p-2 text-center text-muted-foreground">{row.ordre}</td>
+                <td
+                  className="p-2"
+                  title={[row.tableau, row.formulaire, row.sous_formulaire, row.champ_bouton].map(v => v || '—').join(' / ')}
+                >
+                  <div>{row.libelle_ar || row.champ_bouton || row.formulaire || row.tableau || '—'}</div>
+                  {row.libelle_fr && (
+                    <div className="text-xs text-muted-foreground" dir="ltr">{row.libelle_fr}</div>
+                  )}
+                </td>
                 {orderedProfiles.map(p => {
                   if (p.role === 'admin') {
                     return <td key={p.id} className="p-2 text-center font-bold text-primary">ADMIN</td>;
