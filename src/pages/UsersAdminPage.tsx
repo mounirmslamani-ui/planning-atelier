@@ -65,7 +65,7 @@ const LEVELS: { value: AccessLevel; label: string }[] = [
   { value: 'RW', label: 'RW' },
   { value: 'RO', label: 'RO' },
   { value: 'delegate', label: 'بالنيابة' },
-  { value: 'denied', label: 'denied' },
+  
 ];
 
 const matchKey = (a: { tableau: string; formulaire: string; sous_formulaire: string; champ_bouton: string }, b: CatalogRow) =>
