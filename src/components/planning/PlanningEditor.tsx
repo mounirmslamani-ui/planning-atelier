@@ -266,6 +266,26 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   const doSave = (rowsToSave: OperationRow[]): boolean => {
     if (!order || !currentOrder) return false;
+        // Garde de concurrence (audit 05/08/2026) : si un autre utilisateur (ou un
+    // autre onglet) a ajouté / supprimé / réordonné des étapes de cette même
+    // commande depuis l'ouverture de cette fenêtre, on refuse d'écraser ces
+    // changements avec notre propre snapshot potentiellement obsolète.
+    const orderedStepIds = (list: { id: string; order: number }[]) =>
+      [...list]
+        .sort((a, b) => ((a.order ?? 0) !== (b.order ?? 0))
+          ? (a.order ?? 0) - (b.order ?? 0)
+          : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+        .map(s => s.id);
+    const liveOrderIds = orderedStepIds(
+      steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId)
+    );
+    const originalOrderIds = orderedStepIds(
+      originalRowsRef.current.filter(r => !!r.stepId).map(r => ({ id: r.stepId!, order: r.order }))
+    );
+    if (JSON.stringify(liveOrderIds) !== JSON.stringify(originalOrderIds)) {
+      toast.error('تم تعديل مراحل هذه الطلبية من طرف مستخدم آخر أثناء فتح هذه النافذة. الرجاء إغلاقها وإعادة فتحها لتفادي فقدان التعديلات.');
+      return false;
+    }
     const finalRows = rowsToSave.map((row, idx) => ({ ...row, order: idx + 1 }));
     if (!validateRowsBeforeSave(finalRows)) return false;
 
