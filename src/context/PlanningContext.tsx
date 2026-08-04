@@ -480,7 +480,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [pushUndo]);
   const updateStep = useCallback((step: ProductionStep) => {
     pushUndo();
+    let previous: ProductionStep | undefined;
     setSteps(prev => {
+      previous = prev.find(s => s.id === step.id);
       let replaced = false;
       const next: ProductionStep[] = [];
       for (const current of prev) {
@@ -495,7 +497,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       return replaced ? next : [...next, step];
     });
-    dbUpdateStep(step);
+    dbUpdateStep(step).then(ok => {
+      if (ok) {
+        // Confirmation serveur reçue : on repousse la fenêtre de garde du polling
+        // pour couvrir le temps réel qu'a pris l'écriture, pas seulement les 8s
+        // qui suivent le clic — ferme la fenêtre résiduelle du §4.
+        lastLocalWriteAt.current = Date.now();
+      } else if (previous) {
+        // Écriture refusée (ex. RBAC bloc 2) : revenir à l'état serveur réel
+        // immédiatement au lieu de laisser un Pn local non persisté jusqu'au
+        // prochain polling.
+        setSteps(prev => prev.map(s => s.id === step.id ? previous! : s));
+      }
+    }).catch(() => {
+      if (previous) setSteps(prev => prev.map(s => s.id === step.id ? previous! : s));
+    });
   }, [pushUndo]);
   const deleteStep = useCallback((id: string) => {
     pushUndo(); setSteps(prev => prev.filter(s => s.id !== id)); dbDeleteStep(id);
