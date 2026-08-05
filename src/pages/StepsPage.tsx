@@ -46,6 +46,11 @@ const StepsPage: React.FC = () => {
   const realOrders = orders.filter(o => o.orderNumber !== 'ABS');
   const realOperations = operations.filter(o => o.id !== absenceOperationId);
 
+  // Toujours max(order)+1 de la commande : un compteur basé sur le nombre
+  // d'étapes peut collisionner si la séquence a des trous/doublons (audit 05/08/2026).
+  const nextOrderFor = (orderId: string) =>
+    steps.filter(s => s.orderId === orderId).reduce((m, s) => Math.max(m, s.order ?? 0), 0) + 1;
+
   const emptyStep = (): Omit<ProductionStep, 'id'> => {
     const defaultOrderId = realOrders[0]?.id || '';
     return {
@@ -60,7 +65,7 @@ const StepsPage: React.FC = () => {
       endTime: '',
       // Ordre propre à CETTE commande, jamais un compteur global
       // toutes commandes confondues (audit 05/08/2026).
-      order: steps.filter(s => s.orderId === defaultOrderId).length + 1,
+      order: nextOrderFor(defaultOrderId),
     };
   };
 
@@ -89,7 +94,7 @@ const StepsPage: React.FC = () => {
       // Nouvelle étape : recalculer l'ordre relatif à la commande choisie,
       // jamais un compteur global (audit 05/08/2026).
       if (key === 'orderId' && !editing) {
-        next.order = steps.filter(s => s.orderId === value).length + 1;
+        next.order = nextOrderFor(value);
       }
       // Auto-compute when 2 of 3 fields are set
       if (['startDate', 'startTime', 'estimatedDuration'].includes(key)) {
