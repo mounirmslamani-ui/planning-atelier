@@ -46,18 +46,23 @@ const StepsPage: React.FC = () => {
   const realOrders = orders.filter(o => o.orderNumber !== 'ABS');
   const realOperations = operations.filter(o => o.id !== absenceOperationId);
 
-  const emptyStep = (): Omit<ProductionStep, 'id'> => ({
-    orderId: realOrders[0]?.id || '',
-    operatorId: operators[0]?.id || '',
-    subcontractorId: undefined,
-    operationId: realOperations[0]?.id || '',
-    estimatedDuration: 60, // stored in minutes
-    startDate: new Date().toISOString().split('T')[0],
-    startTime: '08:00',
-    endDate: '',
-    endTime: '',
-    order: steps.length + 1,
-  });
+  const emptyStep = (): Omit<ProductionStep, 'id'> => {
+    const defaultOrderId = realOrders[0]?.id || '';
+    return {
+      orderId: defaultOrderId,
+      operatorId: operators[0]?.id || '',
+      subcontractorId: undefined,
+      operationId: realOperations[0]?.id || '',
+      estimatedDuration: 60, // stored in minutes
+      startDate: new Date().toISOString().split('T')[0],
+      startTime: '08:00',
+      endDate: '',
+      endTime: '',
+      // Ordre propre à CETTE commande, jamais un compteur global
+      // toutes commandes confondues (audit 05/08/2026).
+      order: steps.filter(s => s.orderId === defaultOrderId).length + 1,
+    };
+  };
 
   const [form, setForm] = useState<Omit<ProductionStep, 'id'>>(emptyStep());
 
@@ -81,6 +86,11 @@ const StepsPage: React.FC = () => {
   const updateForm = (key: string, value: any) => {
     setForm(prev => {
       const next = { ...prev, [key]: value };
+      // Nouvelle étape : recalculer l'ordre relatif à la commande choisie,
+      // jamais un compteur global (audit 05/08/2026).
+      if (key === 'orderId' && !editing) {
+        next.order = steps.filter(s => s.orderId === value).length + 1;
+      }
       // Auto-compute when 2 of 3 fields are set
       if (['startDate', 'startTime', 'estimatedDuration'].includes(key)) {
         if (next.startDate && next.startTime && next.estimatedDuration > 0) {
@@ -202,8 +212,8 @@ const StepsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Ordre chronologique</label>
-              <Input type="number" min={1} value={form.order} onChange={e => updateForm('order', parseInt(e.target.value) || 1)} />
+              <label className="text-sm font-medium mb-1 block">Ordre chronologique (dans la commande)</label>
+              <Input type="number" value={form.order} disabled readOnly title="Géré automatiquement — utilisez l'onglet «مراحل الإنجاز» de la commande pour réordonner les étapes." />
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">تاريخ البداية</label>
