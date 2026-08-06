@@ -269,10 +269,11 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
 
   React.useEffect(() => {
-    if (!editor.savePrompt && !editor.forcePrompt) {
+    if (!editor.forcePrompt) {
       pendingStepsCloseRef.current = false;
     }
-  }, [editor.savePrompt, editor.forcePrompt]);
+  }, [editor.forcePrompt]);
+
 
   if (!order) return null;
 
@@ -316,13 +317,19 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     else infoLock.lock();
   };
 
+  // ── Per-section unsaved state ──────────────────────────────────────────────
+  // Each section of the sheet owns its own dirty flag. Closing the sheet asks
+  // ONE single confirmation, and that confirmation saves every dirty section
+  // without triggering any further per-section dialog.
   const isInfoDirty = Object.keys(draft).length > 0;
-  const isPlanningDirty = editor.rowsDirty;
+  const isStepsDirty = editor.stepsDirty;
+  const isResourcesDirty = editor.resourcesDirty;
   const isQcDirty = qcDirty;
+  const isAnyDirty = isInfoDirty || isStepsDirty || isResourcesDirty || isQcDirty;
 
   const requestClose = (nextOpen: boolean) => {
     if (nextOpen) { onOpenChange(true); return; }
-    if (isInfoDirty || isPlanningDirty || isQcDirty) {
+    if (isAnyDirty) {
       setShowUnsavedPrompt(true);
       return;
     }
@@ -361,38 +368,52 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     onOpenChange(false);
   };
 
+  /**
+   * Single validation for the whole sheet: persist every dirty section, then
+   * close. No section is allowed to open its own "do you want to save?" dialog
+   * from here — the only possible extra dialog is the force-resources one,
+   * which asks a genuinely different question and closes the sheet itself.
+   */
   const confirmAndCloseUnsaved = () => {
-    if (isInfoDirty) { confirmAndCloseInfo(); return; }
-    if (isPlanningDirty) {
-      if (tab === 'steps') {
-        const proceeded = editor.handlePlanifier();
-        setShowUnsavedPrompt(false);
-        if (proceeded) pendingStepsCloseRef.current = true;
+    setShowUnsavedPrompt(false);
+
+    if (isInfoDirty) {
+      if (createMode) { confirmAndCloseInfo(); return; }
+      updateOrder({ ...order, ...draft });
+      setDraft({});
+      infoLock.lock();
+      toast.success('تم حفظ معلومات الطلبية');
+    }
+
+    if (isStepsDirty) {
+      // handlePlanifier persists steps AND their resource fields in one write.
+      const result = editor.handlePlanifier();
+      if (result === 'failed') return;            // validation error → stay open
+      if (result === 'pending') {                 // force-resources decision pending
+        pendingStepsCloseRef.current = true;
         return;
       }
-      editor.saveResourcesOnly();
-      setShowUnsavedPrompt(false);
-      onOpenChange(false);
-      return;
+      stepsLock.lock();
+    } else if (isResourcesDirty) {
+      if (!editor.saveResourcesOnly()) return;
     }
+
     if (isQcDirty) {
-      const ok = qcRef.current?.confirmAndSubmit();
-      setShowUnsavedPrompt(false);
-      if (ok) onOpenChange(false);
-      return;
+      if (!qcRef.current?.confirmAndSubmit()) return;
     }
-    setShowUnsavedPrompt(false);
+
     onOpenChange(false);
   };
 
   const discardAndCloseUnsaved = () => {
     if (isInfoDirty) { discardAndCloseInfo(); return; }
-     if (isQcDirty) {
+    if (isQcDirty) {
       qcRef.current?.discardForms();
     }
     setShowUnsavedPrompt(false);
     onOpenChange(false);
   };
+
 
 
   // QC save handler — handles decision workflow (delivery transfer, rework, etc.)
@@ -652,7 +673,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
               <TabsContent value="steps" className="mt-0 space-y-3">
                 <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
-                  <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
+                  <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} onSaved={() => stepsLock.lock()} />
                 </fieldset>
                 {!createMode && (
                   <PartialQCSendSection order={order} />

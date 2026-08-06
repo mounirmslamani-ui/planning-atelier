@@ -69,14 +69,18 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     : '';
 
   const [rows, setRows] = useState<OperationRow[]>([]);
+  // Baseline = last state explicitly validated by the user (initial load, or the
+  // last successful save). Kept in state (not a ref) so the per-section dirty
+  // flags recompute as soon as a section is saved.
+  const [baselineRows, setBaselineRows] = useState<OperationRow[]>([]);
   const originalRowsRef = useRef<OperationRow[]>([]);
-  
+
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [editDurationPrompt, setEditDurationPrompt] = useState<{ rowId: string } | null>(null);
-  const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
   const [lastStepWarningOpen, setLastStepWarningOpen] = useState(false);
+
 
   const initializedRef = useRef(false);
   const prevOpenRef = useRef(false);
@@ -123,10 +127,13 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       });
       setRows(initialRows);
       originalRowsRef.current = initialRows.map(r => ({ ...r }));
+      setBaselineRows(initialRows.map(r => ({ ...r })));
     } else {
       setRows([]);
       originalRowsRef.current = [];
+      setBaselineRows([]);
     }
+
   }, [open, order?.id, steps, absenceOperationId]);
 
 
@@ -140,7 +147,33 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return set;
   }, [rows]);
 
-  const rowsDirty = useMemo(() => JSON.stringify(rows) !== JSON.stringify(originalRowsRef.current), [rows]);
+  // ── Per-section dirty state ────────────────────────────────────────────────
+  // The same `rows` array feeds two distinct tabs (مراحل الإنجاز / تحضير الطلبية
+  // والموارد). Each tab therefore compares only ITS OWN fields against the
+  // baseline, so saving one section never leaves the other falsely "dirty" and
+  // closing the sheet asks at most one confirmation per genuinely edited section.
+  const stepsSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
+    id: r.id, stepId: r.stepId, order: r.order, operationId: r.operationId,
+    estimatedDuration: r.estimatedDuration, assignType: r.assignType, option1: r.option1,
+    equipmentIds: r.equipmentIds, stepNotes: r.stepNotes,
+    subcontractingDone: !!r.subcontractingDone, subcontractingInProgress: !!r.subcontractingInProgress,
+  })));
+  const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
+    id: r.id, studyStatus: r.studyStatus, materialStatus: r.materialStatus, toolingStatus: r.toolingStatus,
+    specialToolingNeeds: r.specialToolingNeeds, rawMaterialNeeds: r.rawMaterialNeeds,
+    resourceNotes: r.resourceNotes,
+  })));
+
+  const stepsDirty = useMemo(
+    () => stepsSignature(rows) !== stepsSignature(baselineRows),
+    [rows, baselineRows]
+  );
+  const resourcesDirty = useMemo(
+    () => resourcesSignature(rows) !== resourcesSignature(baselineRows),
+    [rows, baselineRows]
+  );
+  const rowsDirty = stepsDirty || resourcesDirty;
+
 
   const addRow = () => {
     if (!currentOrder) return;
@@ -236,19 +269,27 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return true;
   };
 
-  const handlePlanifier = (): boolean => {
-    if (!order) return false;
-    if (isLocked) { toast.error(lockReason); return false; }
+  /**
+   * Validate + save the steps section.
+   * Returns 'saved' when the write happened synchronously, 'pending' when a
+   * genuinely different decision is still required (forced resource statuses),
+   * and 'failed' on validation error. There is NO extra "do you want to save?"
+   * confirmation: pressing تأكيد (or confirming the unsaved-changes dialog) IS
+   * the confirmation.
+   */
+  const handlePlanifier = (): 'saved' | 'pending' | 'failed' => {
+    if (!order) return 'failed';
+    if (isLocked) { toast.error(lockReason); return 'failed'; }
     const invalidRow = rows.find(r => {
       if (r.estimatedDuration && r.estimatedDuration > 0) return false;
       const existing = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
       const isFinished = existing ? getStepProgressStatus(existing, productionRecords) === 'Terminée' : false;
       return !isFinished;
     });
-    if (invalidRow) { toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`); return false; }
+    if (invalidRow) { toast.error(`المرحلة #${invalidRow.order} : المدة المخصصة يجب أن تكون أكبر من 0`); return 'failed'; }
     const noAssignee = rows.find(r => !r.option1);
-    if (noAssignee) { toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`); return false; }
-    if (!validateRowsBeforeSave(rows)) return false;
+    if (noAssignee) { toast.error(`المرحلة #${noAssignee.order} : الرجاء اختيار العامل أو المناول`); return 'failed'; }
+    if (!validateRowsBeforeSave(rows)) return 'failed';
 
     const finishedWithBadRes = rows.filter(r => {
       const step = r.stepId ? steps.find(s => s.id === r.stepId) : undefined;
@@ -258,11 +299,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     });
     if (finishedWithBadRes.length > 0) {
       setForcePrompt({ rowIds: finishedWithBadRes.map(r => r.id) });
-      return true;
+      return 'pending';
     }
-    setSavePrompt(rows.map(r => ({ ...r })));
-    return true;
+    return doSave(rows.map(r => ({ ...r }))) ? 'saved' : 'failed';
   };
+
 
   const doSave = (rowsToSave: OperationRow[]): boolean => {
     if (!order || !currentOrder) return false;
@@ -454,14 +495,21 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toast.success('تم حفظ التخطيط');
       maybeRouteToQC(productionRecords, allFinalSteps);
     }
-    originalRowsRef.current = rows.map(r => ({ ...r }));
+    // Both sections were just persisted → whole baseline is refreshed and the
+    // two dirty flags fall back to false.
+    const savedBaseline = finalRows.map(r => ({ ...r }));
+    originalRowsRef.current = savedBaseline.map(r => ({ ...r }));
+    setBaselineRows(savedBaseline);
+    setRows(savedBaseline);
     return true;
+
   };
 
-  /** Save resources only — no rescheduling. */
-  const saveResourcesOnly = () => {
-    if (!order || !currentOrder) return;
-    if (isLocked) { toast.error(lockReason); return; }
+  /** Save resources only — no rescheduling. Returns true when persisted. */
+  const saveResourcesOnly = (): boolean => {
+    if (!order || !currentOrder) return false;
+    if (isLocked) { toast.error(lockReason); return false; }
+
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
     let updated = 0;
     rows.forEach(row => {
@@ -499,8 +547,26 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
     updateOrder(syntheticOrder);
     toast.success(`تم حفظ موارد ${updated} مرحلة`);
-    originalRowsRef.current = rows.map(r => ({ ...r }));
+    // Only the RESOURCE fields were persisted → refresh just their baseline so
+    // an unsaved steps edit keeps its own dirty flag (and vice-versa).
+    const merged = rows.map(r => {
+      const base = baselineRows.find(b => b.id === r.id);
+      if (!base) return { ...r };
+      return {
+        ...base,
+        studyStatus: r.studyStatus,
+        materialStatus: r.materialStatus,
+        toolingStatus: r.toolingStatus,
+        specialToolingNeeds: [...(r.specialToolingNeeds || [])],
+        rawMaterialNeeds: [...(r.rawMaterialNeeds || [])],
+        resourceNotes: r.resourceNotes,
+      };
+    });
+    originalRowsRef.current = merged.map(r => ({ ...r }));
+    setBaselineRows(merged);
+    return true;
   };
+
 
   const getRowRecords = (row: OperationRow): ProductionRecord[] => {
     if (!row.stepId) return [];
@@ -592,7 +658,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   };
 
   return {
-    rows, setRows, isLocked, lockReason, blockedSet, rowsDirty,
+    rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
@@ -601,7 +667,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
     editDurationPrompt, setEditDurationPrompt,
-    savePrompt, setSavePrompt,
+
     lastStepWarningOpen, setLastStepWarningOpen,
     getRowProgressStatus, getRowActualDuration, getRowRecords,
     operations, operators, subcontractors, absenceOperationId,
@@ -616,7 +682,7 @@ const durationStep = (t: 'operator' | 'subcontractor') => t === 'subcontractor' 
 const durationFactor = (t: 'operator' | 'subcontractor') => t === 'subcontractor' ? 450 : 60;
 
 /** Editable Steps tab table. */
-export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
+export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void; onSaved?: () => void }> = ({ editor, onCancel, onSaved }) => {
   const e = editor;
   const hasExistingSteps = e.rows.some(r => !!r.stepId);
   return (
@@ -814,7 +880,10 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
           {onCancel && (
             <Button variant="outline" onClick={onCancel}>إلغاء</Button>
           )}
-          <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
+          <Button
+            onClick={() => { if (e.handlePlanifier() === 'saved') onSaved?.(); }}
+            disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}
+          >
             <CalendarCheck className="w-4 h-4 mr-1" /> تأكيد
           </Button>
         </div>
@@ -1022,6 +1091,9 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
   const e = editor;
   return (
     <>
+      {/* Only remaining steps-save dialog: it asks a genuinely DIFFERENT
+          question (force resource statuses). Either answer saves immediately —
+          no second "do you want to save?" confirmation. */}
       {e.forcePrompt && (
         <ConfirmDialog
           open={!!e.forcePrompt}
@@ -1035,35 +1107,19 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
               studyStatus: 'disponible' as ResourceStatus,
               materialStatus: 'disponible' as ResourceStatus,
               toolingStatus: 'disponible' as ResourceStatus,
-              
             }) : r);
             e.setRows(forced);
             e.setForcePrompt(null);
-            e.setSavePrompt(forced.map(r => ({ ...r })));
+            if (e.doSave(forced.map(r => ({ ...r })))) onSaved?.();
           }}
           onCancel={() => {
-            const snapshot = e.rows;
+            const snapshot = e.rows.map(r => ({ ...r }));
             e.setForcePrompt(null);
-            e.setSavePrompt(snapshot.map(r => ({ ...r })));
+            if (e.doSave(snapshot)) onSaved?.();
           }}
         />
       )}
 
-      {e.savePrompt && (
-        <ConfirmDialog
-          open={!!e.savePrompt}
-          title={`هل تريد حفظ هذه ${e.savePrompt.length} مرحلة؟`}
-          description="ستتلقّى قاعدة البيانات الصفوف المعروضة حاليًا بهذا الترتيب."
-          confirmLabel="نعم، احفظ"
-          cancelLabel="إلغاء"
-          onConfirm={() => {
-            const snapshot = e.savePrompt!;
-            e.setSavePrompt(null);
-            if (e.doSave(snapshot)) onSaved?.();
-          }}
-          onCancel={() => e.setSavePrompt(null)}
-        />
-      )}
 
       {e.closeStepPrompt && (() => {
         const row = e.rows.find(r => r.id === e.closeStepPrompt!.rowId);
