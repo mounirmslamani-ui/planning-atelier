@@ -69,14 +69,18 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     : '';
 
   const [rows, setRows] = useState<OperationRow[]>([]);
+  // Baseline = last state explicitly validated by the user (initial load, or the
+  // last successful save). Kept in state (not a ref) so the per-section dirty
+  // flags recompute as soon as a section is saved.
+  const [baselineRows, setBaselineRows] = useState<OperationRow[]>([]);
   const originalRowsRef = useRef<OperationRow[]>([]);
-  
+
   const [forcePrompt, setForcePrompt] = useState<{ rowIds: string[] } | null>(null);
   const [removePrompt, setRemovePrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [closeStepPrompt, setCloseStepPrompt] = useState<{ rowId: string; label: string } | null>(null);
   const [editDurationPrompt, setEditDurationPrompt] = useState<{ rowId: string } | null>(null);
-  const [savePrompt, setSavePrompt] = useState<OperationRow[] | null>(null);
   const [lastStepWarningOpen, setLastStepWarningOpen] = useState(false);
+
 
   const initializedRef = useRef(false);
   const prevOpenRef = useRef(false);
