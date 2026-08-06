@@ -880,7 +880,10 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
           {onCancel && (
             <Button variant="outline" onClick={onCancel}>إلغاء</Button>
           )}
-          <Button onClick={e.handlePlanifier} disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}>
+          <Button
+            onClick={() => { if (e.handlePlanifier() === 'saved') onSaved?.(); }}
+            disabled={e.isLocked || e.rows.length === 0 || e.rows.every(r => !r.option1)}
+          >
             <CalendarCheck className="w-4 h-4 mr-1" /> تأكيد
           </Button>
         </div>
