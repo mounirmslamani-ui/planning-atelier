@@ -269,10 +269,11 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   React.useEffect(() => { if (createMode) infoLock.unlock(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [createMode, open]);
 
   React.useEffect(() => {
-    if (!editor.savePrompt && !editor.forcePrompt) {
+    if (!editor.forcePrompt) {
       pendingStepsCloseRef.current = false;
     }
-  }, [editor.savePrompt, editor.forcePrompt]);
+  }, [editor.forcePrompt]);
+
 
   if (!order) return null;
 
