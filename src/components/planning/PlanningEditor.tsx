@@ -127,10 +127,13 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       });
       setRows(initialRows);
       originalRowsRef.current = initialRows.map(r => ({ ...r }));
+      setBaselineRows(initialRows.map(r => ({ ...r })));
     } else {
       setRows([]);
       originalRowsRef.current = [];
+      setBaselineRows([]);
     }
+
   }, [open, order?.id, steps, absenceOperationId]);
 
 
@@ -144,7 +147,33 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     return set;
   }, [rows]);
 
-  const rowsDirty = useMemo(() => JSON.stringify(rows) !== JSON.stringify(originalRowsRef.current), [rows]);
+  // ── Per-section dirty state ────────────────────────────────────────────────
+  // The same `rows` array feeds two distinct tabs (مراحل الإنجاز / تحضير الطلبية
+  // والموارد). Each tab therefore compares only ITS OWN fields against the
+  // baseline, so saving one section never leaves the other falsely "dirty" and
+  // closing the sheet asks at most one confirmation per genuinely edited section.
+  const stepsSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
+    id: r.id, stepId: r.stepId, order: r.order, operationId: r.operationId,
+    estimatedDuration: r.estimatedDuration, assignType: r.assignType, option1: r.option1,
+    equipmentIds: r.equipmentIds, stepNotes: r.stepNotes,
+    subcontractingDone: !!r.subcontractingDone, subcontractingInProgress: !!r.subcontractingInProgress,
+  })));
+  const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
+    id: r.id, studyStatus: r.studyStatus, materialStatus: r.materialStatus, toolingStatus: r.toolingStatus,
+    specialToolingNeeds: r.specialToolingNeeds, rawMaterialNeeds: r.rawMaterialNeeds,
+    resourceNotes: r.resourceNotes,
+  })));
+
+  const stepsDirty = useMemo(
+    () => stepsSignature(rows) !== stepsSignature(baselineRows),
+    [rows, baselineRows]
+  );
+  const resourcesDirty = useMemo(
+    () => resourcesSignature(rows) !== resourcesSignature(baselineRows),
+    [rows, baselineRows]
+  );
+  const rowsDirty = stepsDirty || resourcesDirty;
+
 
   const addRow = () => {
     if (!currentOrder) return;
