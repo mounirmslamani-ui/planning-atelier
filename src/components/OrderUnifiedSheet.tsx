@@ -673,7 +673,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
               {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
               <TabsContent value="steps" className="mt-0 space-y-3">
                 <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
-                  <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} />
+                  <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} onSaved={() => stepsLock.lock()} />
                 </fieldset>
                 {!createMode && (
                   <PartialQCSendSection order={order} />
