@@ -495,8 +495,14 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toast.success('تم حفظ التخطيط');
       maybeRouteToQC(productionRecords, allFinalSteps);
     }
-    originalRowsRef.current = rows.map(r => ({ ...r }));
+    // Both sections were just persisted → whole baseline is refreshed and the
+    // two dirty flags fall back to false.
+    const savedBaseline = finalRows.map(r => ({ ...r }));
+    originalRowsRef.current = savedBaseline.map(r => ({ ...r }));
+    setBaselineRows(savedBaseline);
+    setRows(savedBaseline);
     return true;
+
   };
 
   /** Save resources only — no rescheduling. */
