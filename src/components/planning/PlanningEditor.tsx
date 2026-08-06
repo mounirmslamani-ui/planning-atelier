@@ -547,8 +547,26 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     syntheticOrder.toolingAvailable = syntheticOrder.toolingStatus === 'disponible';
     updateOrder(syntheticOrder);
     toast.success(`تم حفظ موارد ${updated} مرحلة`);
-    originalRowsRef.current = rows.map(r => ({ ...r }));
+    // Only the RESOURCE fields were persisted → refresh just their baseline so
+    // an unsaved steps edit keeps its own dirty flag (and vice-versa).
+    const merged = rows.map(r => {
+      const base = baselineRows.find(b => b.id === r.id);
+      if (!base) return { ...r };
+      return {
+        ...base,
+        studyStatus: r.studyStatus,
+        materialStatus: r.materialStatus,
+        toolingStatus: r.toolingStatus,
+        specialToolingNeeds: [...(r.specialToolingNeeds || [])],
+        rawMaterialNeeds: [...(r.rawMaterialNeeds || [])],
+        resourceNotes: r.resourceNotes,
+      };
+    });
+    originalRowsRef.current = merged.map(r => ({ ...r }));
+    setBaselineRows(merged);
+    return true;
   };
+
 
   const getRowRecords = (row: OperationRow): ProductionRecord[] => {
     if (!row.stepId) return [];
