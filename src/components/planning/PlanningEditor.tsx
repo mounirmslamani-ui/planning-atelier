@@ -658,7 +658,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   };
 
   return {
-    rows, setRows, isLocked, lockReason, blockedSet, rowsDirty,
+    rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
     handleStatusChange, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
@@ -667,7 +667,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     removePrompt, setRemovePrompt,
     closeStepPrompt, setCloseStepPrompt,
     editDurationPrompt, setEditDurationPrompt,
-    savePrompt, setSavePrompt,
+
     lastStepWarningOpen, setLastStepWarningOpen,
     getRowProgressStatus, getRowActualDuration, getRowRecords,
     operations, operators, subcontractors, absenceOperationId,
