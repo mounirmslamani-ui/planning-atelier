@@ -505,10 +505,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   };
 
-  /** Save resources only — no rescheduling. */
-  const saveResourcesOnly = () => {
-    if (!order || !currentOrder) return;
-    if (isLocked) { toast.error(lockReason); return; }
+  /** Save resources only — no rescheduling. Returns true when persisted. */
+  const saveResourcesOnly = (): boolean => {
+    if (!order || !currentOrder) return false;
+    if (isLocked) { toast.error(lockReason); return false; }
+
     const existingOrderSteps = steps.filter(s => s.orderId === order.id && s.operationId !== absenceOperationId);
     let updated = 0;
     rows.forEach(row => {
