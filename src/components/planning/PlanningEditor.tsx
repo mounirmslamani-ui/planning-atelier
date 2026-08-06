@@ -682,7 +682,7 @@ const durationStep = (t: 'operator' | 'subcontractor') => t === 'subcontractor' 
 const durationFactor = (t: 'operator' | 'subcontractor') => t === 'subcontractor' ? 450 : 60;
 
 /** Editable Steps tab table. */
-export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void }> = ({ editor, onCancel }) => {
+export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void; onSaved?: () => void }> = ({ editor, onCancel, onSaved }) => {
   const e = editor;
   const hasExistingSteps = e.rows.some(r => !!r.stepId);
   return (
