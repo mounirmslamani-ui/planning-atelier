@@ -1088,6 +1088,9 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
   const e = editor;
   return (
     <>
+      {/* Only remaining steps-save dialog: it asks a genuinely DIFFERENT
+          question (force resource statuses). Either answer saves immediately —
+          no second "do you want to save?" confirmation. */}
       {e.forcePrompt && (
         <ConfirmDialog
           open={!!e.forcePrompt}
@@ -1101,35 +1104,19 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
               studyStatus: 'disponible' as ResourceStatus,
               materialStatus: 'disponible' as ResourceStatus,
               toolingStatus: 'disponible' as ResourceStatus,
-              
             }) : r);
             e.setRows(forced);
             e.setForcePrompt(null);
-            e.setSavePrompt(forced.map(r => ({ ...r })));
+            if (e.doSave(forced.map(r => ({ ...r })))) onSaved?.();
           }}
           onCancel={() => {
-            const snapshot = e.rows;
+            const snapshot = e.rows.map(r => ({ ...r }));
             e.setForcePrompt(null);
-            e.setSavePrompt(snapshot.map(r => ({ ...r })));
+            if (e.doSave(snapshot)) onSaved?.();
           }}
         />
       )}
 
-      {e.savePrompt && (
-        <ConfirmDialog
-          open={!!e.savePrompt}
-          title={`هل تريد حفظ هذه ${e.savePrompt.length} مرحلة؟`}
-          description="ستتلقّى قاعدة البيانات الصفوف المعروضة حاليًا بهذا الترتيب."
-          confirmLabel="نعم، احفظ"
-          cancelLabel="إلغاء"
-          onConfirm={() => {
-            const snapshot = e.savePrompt!;
-            e.setSavePrompt(null);
-            if (e.doSave(snapshot)) onSaved?.();
-          }}
-          onCancel={() => e.setSavePrompt(null)}
-        />
-      )}
 
       {e.closeStepPrompt && (() => {
         const row = e.rows.find(r => r.id === e.closeStepPrompt!.rowId);
