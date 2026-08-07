@@ -26,6 +26,8 @@ import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEdit
 import PartialQCDelivery, { PartialQCDeliveryHandle } from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
+import OrderAttachmentsPanel from '@/components/orders/OrderAttachmentsPanel';
+
 import { getQCControlled, getQCPending } from '@/lib/orderFlow';
 
 
