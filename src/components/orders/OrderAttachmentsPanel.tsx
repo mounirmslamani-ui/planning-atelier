@@ -119,6 +119,17 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
     window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleView = async (row: AttachmentRow) => {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(row.file_path, 120);
+    if (error || !data?.signedUrl) {
+      toast.error('تعذر فتح الملف');
+      return;
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleDelete = async (row: AttachmentRow) => {
     if (readOnly) return;
     const { error: stErr } = await supabase.storage.from(BUCKET).remove([row.file_path]);
