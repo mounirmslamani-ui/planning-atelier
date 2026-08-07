@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Image as ImageIcon, Trash2, Upload, Download } from 'lucide-react';
+import { FileText, Image as ImageIcon, Trash2, Upload, Download, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BUCKET = 'order-attachments';
