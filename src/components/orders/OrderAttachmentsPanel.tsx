@@ -193,6 +193,9 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
                 )}
               </div>
               <span className="flex-1 text-xs truncate" title={row.file_name}>{row.file_name}</span>
+              <Button type="button" size="icon" variant="ghost" onClick={() => void handleView(row)} title="عرض">
+                <Eye className="w-4 h-4" />
+              </Button>
               <Button type="button" size="icon" variant="ghost" onClick={() => void handleDownload(row)} title="تحميل">
                 <Download className="w-4 h-4" />
               </Button>
