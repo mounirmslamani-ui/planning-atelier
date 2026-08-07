@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Image as ImageIcon, Trash2, Upload, Download } from 'lucide-react';
+import { FileText, Image as ImageIcon, Trash2, Upload, Download, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BUCKET = 'order-attachments';
@@ -119,6 +119,17 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
     window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleView = async (row: AttachmentRow) => {
+    const { data, error } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(row.file_path, 120);
+    if (error || !data?.signedUrl) {
+      toast.error('تعذر فتح الملف');
+      return;
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const handleDelete = async (row: AttachmentRow) => {
     if (readOnly) return;
     const { error: stErr } = await supabase.storage.from(BUCKET).remove([row.file_path]);
@@ -182,6 +193,9 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
                 )}
               </div>
               <span className="flex-1 text-xs truncate" title={row.file_name}>{row.file_name}</span>
+              <Button type="button" size="icon" variant="ghost" onClick={() => void handleView(row)} title="عرض">
+                <Eye className="w-4 h-4" />
+              </Button>
               <Button type="button" size="icon" variant="ghost" onClick={() => void handleDownload(row)} title="تحميل">
                 <Download className="w-4 h-4" />
               </Button>
