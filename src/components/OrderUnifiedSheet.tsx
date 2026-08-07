@@ -26,6 +26,8 @@ import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEdit
 import PartialQCDelivery, { PartialQCDeliveryHandle } from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
+import OrderAttachmentsPanel from '@/components/orders/OrderAttachmentsPanel';
+
 import { getQCControlled, getQCPending } from '@/lib/orderFlow';
 
 
@@ -656,7 +658,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
                   </div>
                 </div>
+
+                {order?.id && (
+                  <OrderAttachmentsPanel orderId={order.id} readOnly={infoLock.locked} />
+                )}
               </TabsContent>
+
               {/* TAB 2 — RESOURCES (editable in place) */}
               <TabsContent value="resources" className="mt-0 space-y-3">
                 <ResourcesEditorTable
