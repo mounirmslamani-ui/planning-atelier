@@ -640,6 +640,10 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 </div>
                 </fieldset>
 
+                {order?.id && (
+                  <OrderAttachmentsPanel orderId={order.id} readOnly={infoLock.locked} />
+                )}
+
                 <div className="flex items-center justify-end gap-4 pt-2 border-t">
                   <div className="flex gap-2 shrink-0">
                     <infoLock.EditButton />
@@ -647,11 +651,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
                   </div>
                 </div>
-
-
-                {order?.id && (
-                  <OrderAttachmentsPanel orderId={order.id} readOnly={infoLock.locked} />
-                )}
               </TabsContent>
 
               {/* TAB 2 — RESOURCES (editable in place) */}
