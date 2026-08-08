@@ -107,7 +107,7 @@ const MaterialPurchasesPage: React.FC = () => {
       Désignation: r.order.designation,
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
-      'الصنف المطلوب': r.items && r.items.length > 0 ? r.items.join('\n') : '—',
+      'المواد الأولية المطلوبة': r.items && r.items.length > 0 ? r.items.join('\n') : '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
     })), [8, 20, 24, 45, 10, 12, 30, 16]);
   };
@@ -132,7 +132,7 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
-              <TableHead>الصنف المطلوب</TableHead>
+              <TableHead>المواد الأولية المطلوبة </TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
             </TableRow>
           </TableHeader>
