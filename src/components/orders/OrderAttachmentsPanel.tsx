@@ -216,6 +216,24 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
           );
         })}
       </div>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={o => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف هذا الملف؟ لا يمكن التراجع عن هذا الإجراء.
+              {pendingDelete && (
+                <span className="block mt-1 font-medium text-foreground">{pendingDelete.file_name}</span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDelete(null)}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmDelete(pendingDelete)}>تأكيد</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
