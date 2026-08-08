@@ -640,24 +640,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 </div>
                 </fieldset>
 
-                <div className="flex items-end justify-between gap-4 pt-2 border-t">
-                  <div className="flex-1">
-                    <Label>ملف الطلبية</Label>
-                    <Input
-                      type="url"
-                      value={merged.folderLink || ''}
-                      onChange={e => setDraft(d => ({ ...d, folderLink: e.target.value }))}
-                      placeholder="https://..."
-                      dir="ltr"
-                      disabled={infoLock.locked}
-                    />
-                  </div>
+                <div className="flex items-center justify-end gap-4 pt-2 border-t">
                   <div className="flex gap-2 shrink-0">
                     <infoLock.EditButton />
                     <Button variant="outline" onClick={cancelInfo} disabled={infoLock.locked}>إلغاء</Button>
                     <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
                   </div>
                 </div>
+
 
                 {order?.id && (
                   <OrderAttachmentsPanel orderId={order.id} readOnly={infoLock.locked} />
