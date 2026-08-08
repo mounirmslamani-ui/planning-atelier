@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FileText, Image as ImageIcon, Trash2, Upload, Download, Eye } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 const BUCKET = 'order-attachments';
@@ -35,6 +36,7 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<AttachmentRow | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -130,8 +132,8 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
     window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDelete = async (row: AttachmentRow) => {
-    if (readOnly) return;
+  const confirmDelete = async (row: AttachmentRow | null) => {
+    if (!row || readOnly) return;
     const { error: stErr } = await supabase.storage.from(BUCKET).remove([row.file_path]);
     if (stErr) {
       toast.error('تعذر حذف الملف من المخزن');
@@ -143,6 +145,7 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
       return;
     }
     toast.success('تم حذف الملف');
+    setPendingDelete(null);
     await load();
   };
 
@@ -204,7 +207,7 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
                 size="icon"
                 variant="ghost"
                 disabled={readOnly}
-                onClick={() => void handleDelete(row)}
+                onClick={() => setPendingDelete(row)}
                 title="حذف"
               >
                 <Trash2 className="w-4 h-4 text-destructive" />
