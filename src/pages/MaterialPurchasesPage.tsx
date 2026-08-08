@@ -31,7 +31,7 @@ const MaterialPurchasesPage: React.FC = () => {
       .forEach(o => orderMap.set(o.id, { stepIds: [] }));
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
-      if (!order || excludedIds.has(order.id) || !isMaterialBlocked(order.materialStatus)) return;
+      if (!order || excludedIds.has(order.id) || !isMaterialBlocked((s as any).materialStatus ?? order.materialStatus)) return;
       const existing = orderMap.get(s.orderId);
       if (!existing) {
         orderMap.set(s.orderId, { stepIds: [s.id] });
@@ -46,8 +46,20 @@ const MaterialPurchasesPage: React.FC = () => {
     }).filter(Boolean) as any[];
   }, [steps, orders, absenceOrderId, absenceOperationId, excludedIds]);
 
+  const rowsWithItems = useMemo(() => rows.map(r => {
+    const set = new Set<string>();
+    r.stepIds.forEach((sid: string) => {
+      const step = steps.find(s => s.id === sid);
+      (step?.rawMaterialNeeds || []).forEach(v => {
+        const t = (v || '').trim();
+        if (t) set.add(t);
+      });
+    });
+    return { ...r, items: Array.from(set) };
+  }), [rows, steps]);
+
   const filteredRows = useMemo(() => {
-    let list = [...rows];
+    let list = [...rowsWithItems];
     const effective = selectedClientName ? { ...filters, client: selectedClientName } : filters;
     Object.entries(effective).forEach(([key, val]) => {
       if (!val) return;
@@ -66,7 +78,7 @@ const MaterialPurchasesPage: React.FC = () => {
       });
     });
     return list;
-  }, [rows, filters, getClientName, selectedClientName]);
+  }, [rowsWithItems, filters, getClientName, selectedClientName]);
 
 
   const purchaseAccessors = useMemo(() => ({
@@ -95,8 +107,9 @@ const MaterialPurchasesPage: React.FC = () => {
       Désignation: r.order.designation,
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
+      'الصنف المطلوب': r.items && r.items.length > 0 ? r.items.join('\n') : '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
-    })), [8, 20, 24, 45, 10, 12, 16]);
+    })), [8, 20, 24, 45, 10, 12, 30, 16]);
   };
 
   return (
@@ -119,12 +132,13 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableHead><ColumnHeader label="التعيين" columnKey="designation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.designation || ''} onFilter={handleFilter} allValues={allValuesByKey.designation} /></TableHead>
                 <TableHead className="text-center"><ColumnHeader label="الكمية" columnKey="quantity" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.quantity || ''} onFilter={handleFilter} allValues={allValuesByKey.quantity} /></TableHead>
                 <TableHead><ColumnHeader label="الأولوية" columnKey="priority" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.priority || ''} onFilter={handleFilter} allValues={allValuesByKey.priority} /></TableHead>
+              <TableHead>الصنف المطلوب</TableHead>
               <TableHead>أجل التسليم الموعود</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredRows.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Toutes les matières sont disponibles ✓</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Toutes les matières sont disponibles ✓</TableCell></TableRow>
             ) : filteredRows.map((r: any) => (
               <TableRow key={r.orderId}>
                 <TableCell className="text-center text-muted-foreground font-mono text-xs">{r.order.displayOrder ?? '—'}</TableCell>
@@ -133,6 +147,15 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableCell className="text-sm"><DesignationCell orderId={r.order.id} designation={r.order.designation} /></TableCell>
                 <TableCell className="text-center text-sm">{r.order.quantity}</TableCell>
                 <TableCell><PriorityBadge priority={r.order.priority} /></TableCell>
+                <TableCell className="text-sm">
+                  {r.items && r.items.length > 0 ? (
+                    <div className="flex flex-col gap-0.5">
+                      {r.items.map((it: string, idx: number) => (
+                        <div key={idx}>{it}</div>
+                      ))}
+                    </div>
+                  ) : '—'}
+                </TableCell>
                 <TableCell className="text-sm">{formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—'}</TableCell>
               </TableRow>
             ))}
