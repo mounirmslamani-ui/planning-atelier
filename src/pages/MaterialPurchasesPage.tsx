@@ -13,6 +13,8 @@ import { buildOutOfPreparationFlowSet } from '@/lib/preparationFilter';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
+import ResourceStatusPill from '@/components/ResourceStatusPill';
+import type { ResourceItem } from '@/types/planning';
 
 const MaterialPurchasesPage: React.FC = () => {
   const { orders, clients, steps, absenceOrderId, absenceOperationId, qcEntries, deliveryEntries, deliveredOrders, cancelledOrders, productionRecords } = usePlanning();
@@ -23,40 +25,32 @@ const MaterialPurchasesPage: React.FC = () => {
   const getClientName = useCallback((id: string) => clients.find(c => c.id === id)?.name || '—', [clients]);
   const { selectedClientName } = useGlobalClientFilter();
 
-  const rows = useMemo(() => {
-    const isMaterialBlocked = (status: any) => status === 'non-disponible' || status === 'partiel';
-    const orderMap = new Map<string, { stepIds: string[] }>();
-    orders
-      .filter(o => o.id !== absenceOrderId && !excludedIds.has(o.id) && isMaterialBlocked(o.materialStatus))
-      .forEach(o => orderMap.set(o.id, { stepIds: [] }));
+  /** Per-item purchase list: only items whose OWN status is missing/partial are listed. */
+  const rowsWithItems = useMemo(() => {
+    const WORSE: Record<string, number> = { 'partiel': 1, 'non-disponible': 2 };
+    const perOrder = new Map<string, Map<string, ResourceItem>>();
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
       const order = orders.find(o => o.id === s.orderId);
-      if (!order || excludedIds.has(order.id) || !isMaterialBlocked((s as any).materialStatus ?? order.materialStatus)) return;
-      const existing = orderMap.get(s.orderId);
-      if (!existing) {
-        orderMap.set(s.orderId, { stepIds: [s.id] });
-      } else {
-        existing.stepIds.push(s.id);
-      }
-    });
-    return Array.from(orderMap.entries()).map(([orderId, info]) => {
-      const order = orders.find(o => o.id === orderId);
-      if (!order || order.id === absenceOrderId) return null;
-      return { orderId, order, ...info };
-    }).filter(Boolean) as any[];
-  }, [steps, orders, absenceOrderId, absenceOperationId, excludedIds]);
-
-  const rowsWithItems = useMemo(() => rows.map(r => {
-    const set = new Set<string>();
-    r.stepIds.forEach((sid: string) => {
-      const step = steps.find(s => s.id === sid);
-      (step?.rawMaterialNeeds || []).forEach(v => {
-        const t = (v || '').trim();
-        if (t) set.add(t);
+      if (!order || order.id === absenceOrderId || excludedIds.has(order.id)) return;
+      (s.rawMaterialItems || []).forEach(item => {
+        const label = (item?.label || '').trim();
+        if (!label) return;
+        if (item.status !== 'non-disponible' && item.status !== 'partiel') return;
+        let bucket = perOrder.get(order.id);
+        if (!bucket) { bucket = new Map(); perOrder.set(order.id, bucket); }
+        const existing = bucket.get(label);
+        if (!existing || (WORSE[item.status] ?? 0) > (WORSE[existing.status] ?? 0)) {
+          bucket.set(label, { id: item.id, label, status: item.status });
+        }
       });
     });
-    return { ...r, items: Array.from(set) };
-  }), [rows, steps]);
+    return Array.from(perOrder.entries()).map(([orderId, bucket]) => {
+      const order = orders.find(o => o.id === orderId)!;
+      return { orderId, order, items: Array.from(bucket.values()) };
+    }) as any[];
+  }, [steps, orders, absenceOrderId, absenceOperationId, excludedIds]);
+
+  const rows = rowsWithItems;
 
   const filteredRows = useMemo(() => {
     let list = [...rowsWithItems];
@@ -107,7 +101,7 @@ const MaterialPurchasesPage: React.FC = () => {
       Désignation: r.order.designation,
       'الكمية': r.order.quantity,
       Priorité: r.order.priority || '—',
-      'المواد الأولية المطلوبة': r.items && r.items.length > 0 ? r.items.join('\n') : '—',
+      'المواد الأولية المطلوبة': r.items && r.items.length > 0 ? r.items.map((i: ResourceItem) => `${i.label} (${i.status === 'non-disponible' ? 'non disponible' : 'partiellement disponible'})`).join('\n') : '—',
       'أجل التسليم الموعود': formatDateFR(r.order.deliveryDeadline || r.order.plannedDeadline) || '—',
     })), [8, 20, 24, 45, 10, 12, 30, 16]);
   };
@@ -150,8 +144,11 @@ const MaterialPurchasesPage: React.FC = () => {
                 <TableCell className="text-sm">
                   {r.items && r.items.length > 0 ? (
                     <div className="flex flex-col gap-0.5">
-                      {r.items.map((it: string, idx: number) => (
-                        <div key={idx}>{it}</div>
+                      {r.items.map((it: ResourceItem) => (
+                        <div key={it.id} className="flex items-center gap-1">
+                          <ResourceStatusPill value={it.status} readOnly />
+                          <span>{it.label}</span>
+                        </div>
                       ))}
                     </div>
                   ) : '—'}
