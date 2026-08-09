@@ -610,11 +610,11 @@ export type Database = {
           operator_id: string | null
           order_id: string
           planning_order: number | null
-          raw_material_needs: string[]
+          raw_material_items: Json
           resource_notes: string | null
           shift_ended_date: string | null
           shift_started_date: string | null
-          special_tooling_needs: string[]
+          special_tooling_items: Json
           start_date: string | null
           start_time: string | null
           step_notes: string | null
@@ -648,11 +648,11 @@ export type Database = {
           operator_id?: string | null
           order_id: string
           planning_order?: number | null
-          raw_material_needs?: string[]
+          raw_material_items?: Json
           resource_notes?: string | null
           shift_ended_date?: string | null
           shift_started_date?: string | null
-          special_tooling_needs?: string[]
+          special_tooling_items?: Json
           start_date?: string | null
           start_time?: string | null
           step_notes?: string | null
@@ -686,11 +686,11 @@ export type Database = {
           operator_id?: string | null
           order_id?: string
           planning_order?: number | null
-          raw_material_needs?: string[]
+          raw_material_items?: Json
           resource_notes?: string | null
           shift_ended_date?: string | null
           shift_started_date?: string | null
-          special_tooling_needs?: string[]
+          special_tooling_items?: Json
           start_date?: string | null
           start_time?: string | null
           step_notes?: string | null
