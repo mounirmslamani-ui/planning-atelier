@@ -96,6 +96,13 @@ export const ORDER_CATEGORY_LABEL: Record<OrderCategory, string> = {
 
 export type ResourceStatus = 'disponible' | 'non-disponible' | 'partiel' | 'non-applicable';
 
+/** A single resource line (raw material or special tooling) with its own availability status. */
+export interface ResourceItem {
+  id: string;
+  label: string;
+  status: ResourceStatus;
+}
+
 // Helper: legacy boolean view of a 4-state status (true only when "disponible")
 export const statusToBool = (s: ResourceStatus | undefined): boolean => s === 'disponible';
 export const boolToStatus = (b: boolean | undefined): ResourceStatus => (b ? 'disponible' : 'non-disponible');
