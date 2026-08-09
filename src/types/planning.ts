@@ -178,8 +178,8 @@ export interface ProductionStep {
   subcontractingInProgress?: boolean;
   subcontractingDeadline?: string;
   subcontractingReceivedDate?: string;
-  specialToolingNeeds?: string[];
-  rawMaterialNeeds?: string[];
+  specialToolingItems?: ResourceItem[];
+  rawMaterialItems?: ResourceItem[];
   /** Notes / instructions on the step (planning steps tab) */
   stepNotes?: string;
   /** Notes / instructions on the resources of the step (resources tab) */
