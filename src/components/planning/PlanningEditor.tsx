@@ -32,8 +32,8 @@ export interface OperationRow {
   studyStatus: ResourceStatus;
   materialStatus: ResourceStatus;
   toolingStatus: ResourceStatus;
-  specialToolingNeeds: string[];
-  rawMaterialNeeds: string[];
+  specialToolingItems: ResourceItem[];
+  rawMaterialItems: ResourceItem[];
   stepNotes: string;
   resourceNotes: string;
   /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
