@@ -37,8 +37,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
   const materialNeeds = useMemo(() => {
     const set = new Set<string>();
-    orderSteps.forEach(s => (s.rawMaterialNeeds || []).forEach(v => {
-      const t = (v || '').trim();
+    orderSteps.forEach(s => (s.rawMaterialItems || []).forEach(item => {
+      const t = (item?.label || '').trim();
       if (t) set.add(t);
     }));
     return Array.from(set);
@@ -46,8 +46,8 @@ const OrderTrackingSheet: React.FC<Props> = ({ order, onClose }) => {
 
   const toolingNeeds = useMemo(() => {
     const set = new Set<string>();
-    orderSteps.forEach(s => (s.specialToolingNeeds || []).forEach(v => {
-      const t = (v || '').trim();
+    orderSteps.forEach(s => (s.specialToolingItems || []).forEach(item => {
+      const t = (item?.label || '').trim();
       if (t) set.add(t);
     }));
     return Array.from(set);

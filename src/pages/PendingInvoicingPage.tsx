@@ -280,12 +280,12 @@ const PendingInvoicingPage: React.FC = () => {
   const orderHasSubcontracting = (orderId: string): boolean =>
     steps.some(s => s.orderId === orderId && !!s.subcontractorId);
   const orderHasHeatTreatment = (orderId: string): boolean =>
-    steps.some(s => s.orderId === orderId && (s.specialToolingNeeds || []).some(n => /حرار|trait|heat/i.test(n)));
+    steps.some(s => s.orderId === orderId && (s.specialToolingItems || []).some(i => /حرار|trait|heat/i.test(i.label)));
   const rawMaterialsForOrder = (orderId: string): string => {
     const mats = new Set<string>();
     for (const s of steps) {
       if (s.orderId !== orderId) continue;
-      (s.rawMaterialNeeds || []).forEach(m => mats.add(m));
+      (s.rawMaterialItems || []).forEach(i => mats.add(i.label));
     }
     return [...mats].join(', ') || '—';
   };

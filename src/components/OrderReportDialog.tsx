@@ -81,8 +81,8 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
     }
 
     // Aggregated needs from steps
-    const materialNeeds = Array.from(new Set(orderSteps.flatMap(s => s.rawMaterialNeeds || [])));
-    const toolingNeeds = Array.from(new Set(orderSteps.flatMap(s => s.specialToolingNeeds || [])));
+    const materialNeeds = Array.from(new Set(orderSteps.flatMap(s => (s.rawMaterialItems || []).map(i => i.label))));
+    const toolingNeeds = Array.from(new Set(orderSteps.flatMap(s => (s.specialToolingItems || []).map(i => i.label))));
     const subcontractingSteps = orderSteps.filter(s => s.subcontractorId);
 
     // Production rows: split by "before first QC" (initial) vs "after first QC" (rework)

@@ -6,7 +6,7 @@ import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save, Pencil } fro
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { OperationToSchedule } from '@/lib/scheduler';
-import type { Order, ProductionRecord, ProductionStep, ResourceStatus } from '@/types/planning';
+import type { Order, ProductionRecord, ProductionStep, ResourceItem, ResourceStatus } from '@/types/planning';
 
 import ResourceStatusPill from '@/components/ResourceStatusPill';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -32,8 +32,8 @@ export interface OperationRow {
   studyStatus: ResourceStatus;
   materialStatus: ResourceStatus;
   toolingStatus: ResourceStatus;
-  specialToolingNeeds: string[];
-  rawMaterialNeeds: string[];
+  specialToolingItems: ResourceItem[];
+  rawMaterialItems: ResourceItem[];
   stepNotes: string;
   resourceNotes: string;
   /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
@@ -48,6 +48,12 @@ const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
 };
 
 const isBadStatus = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponible';
+
+const newEmptyItem = (): ResourceItem => ({ id: crypto.randomUUID(), label: '', status: 'non-disponible' });
+
+/** Row-level summary status derived from the per-item statuses. */
+const computeRowStatus = (items: ResourceItem[]): ResourceStatus =>
+  synthesizeResourceStatuses((items || []).map(i => i.status));
 
 export function usePlanningEditor(order: Order | null, open: boolean) {
   const ctx = usePlanning();
@@ -117,8 +123,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           studyStatus: (s.studyStatus ?? currentOrder!.studyStatus ?? 'non-disponible') as ResourceStatus,
           materialStatus: (s.materialStatus ?? currentOrder!.materialStatus ?? 'non-disponible') as ResourceStatus,
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
-          specialToolingNeeds: (s.specialToolingNeeds && s.specialToolingNeeds.length > 0) ? s.specialToolingNeeds : [''],
-          rawMaterialNeeds: (s.rawMaterialNeeds && s.rawMaterialNeeds.length > 0) ? s.rawMaterialNeeds : [''],
+          specialToolingItems: (s.specialToolingItems && s.specialToolingItems.length > 0) ? s.specialToolingItems.map(i => ({ ...i })) : [newEmptyItem()],
+          rawMaterialItems: (s.rawMaterialItems && s.rawMaterialItems.length > 0) ? s.rawMaterialItems.map(i => ({ ...i })) : [newEmptyItem()],
           stepNotes: s.stepNotes ?? '',
           resourceNotes: s.resourceNotes ?? '',
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
@@ -159,8 +165,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     subcontractingDone: !!r.subcontractingDone, subcontractingInProgress: !!r.subcontractingInProgress,
   })));
   const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
-    id: r.id, studyStatus: r.studyStatus, materialStatus: r.materialStatus, toolingStatus: r.toolingStatus,
-    specialToolingNeeds: r.specialToolingNeeds, rawMaterialNeeds: r.rawMaterialNeeds,
+    id: r.id, studyStatus: r.studyStatus,
+    specialToolingItems: r.specialToolingItems, rawMaterialItems: r.rawMaterialItems,
     resourceNotes: r.resourceNotes,
   })));
 
@@ -188,8 +194,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       studyStatus: currentOrder.studyStatus ?? 'non-disponible',
       materialStatus: currentOrder.materialStatus ?? 'non-disponible',
       toolingStatus: currentOrder.toolingStatus ?? 'non-disponible',
-      specialToolingNeeds: [''],
-      rawMaterialNeeds: [''],
+      specialToolingItems: [newEmptyItem()],
+      rawMaterialItems: [newEmptyItem()],
       stepNotes: '',
       resourceNotes: '',
     }]);
@@ -216,24 +222,37 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }));
   };
 
-  const updateNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds', index: number, value: string) => {
+  type ItemField = 'specialToolingItems' | 'rawMaterialItems';
+  const rowStatusKeyFor = (field: ItemField) => field === 'rawMaterialItems' ? 'materialStatus' : 'toolingStatus';
+
+  const updateNeedField = (rowId: string, field: ItemField, index: number, value: string) => {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
-      const arr = [...(r[field] || [''])];
-      arr[index] = value;
+      const arr = (r[field] && r[field].length > 0 ? [...r[field]] : [newEmptyItem()]);
+      arr[index] = { ...arr[index], label: value };
       return { ...r, [field]: arr };
     }));
   };
 
-  const addNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds') => {
-    setRows(prev => prev.map(r => r.id !== rowId ? r : ({ ...r, [field]: [...(r[field] || []), ''] })));
+  const addNeedField = (rowId: string, field: ItemField) => {
+    setRows(prev => prev.map(r => r.id !== rowId ? r : ({ ...r, [field]: [...(r[field] || []), newEmptyItem()] })));
   };
 
-  const removeNeedField = (rowId: string, field: 'specialToolingNeeds' | 'rawMaterialNeeds', index: number) => {
+  const removeNeedField = (rowId: string, field: ItemField, index: number) => {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
-      const arr = (r[field] || []).filter((_, i) => i !== index);
-      return { ...r, [field]: arr.length > 0 ? arr : [''] };
+      const filtered = (r[field] || []).filter((_, i) => i !== index);
+      const arr = filtered.length > 0 ? filtered : [newEmptyItem()];
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+    }));
+  };
+
+  /** Per-item availability edit — recomputes the row summary status immediately. */
+  const updateItemStatus = (rowId: string, field: ItemField, itemId: string, status: ResourceStatus) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status } : i);
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
     }));
   };
 
@@ -243,8 +262,15 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   };
 
   const handleColumnStatusChange = (field: 'study' | 'material' | 'tooling', status: ResourceStatus) => {
-    const statusKey = `${field}Status` as 'studyStatus' | 'materialStatus' | 'toolingStatus';
-    setRows(prev => prev.map(row => ({ ...row, [statusKey]: status } as OperationRow)));
+    if (field === 'study') {
+      setRows(prev => prev.map(row => ({ ...row, studyStatus: status } as OperationRow)));
+      return;
+    }
+    const itemField: ItemField = field === 'material' ? 'rawMaterialItems' : 'specialToolingItems';
+    setRows(prev => prev.map(row => {
+      const arr = (row[itemField] || []).map(i => ({ ...i, status }));
+      return { ...row, [itemField]: arr, [rowStatusKeyFor(itemField)]: computeRowStatus(arr) } as OperationRow;
+    }));
   };
 
   const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
@@ -393,8 +419,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.studyDeadline = undefined;
         s.materialDeadline = undefined;
         s.toolingDeadline = undefined;
-        s.specialToolingNeeds = (sourceRow.specialToolingNeeds || []).filter(v => v.trim());
-        s.rawMaterialNeeds = (sourceRow.rawMaterialNeeds || []).filter(v => v.trim());
+        s.specialToolingItems = (sourceRow.specialToolingItems || []).filter(i => i.label.trim());
+        s.rawMaterialItems = (sourceRow.rawMaterialItems || []).filter(i => i.label.trim());
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
@@ -449,8 +475,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyDeadline: undefined,
         materialDeadline: undefined,
         toolingDeadline: undefined,
-        specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
-        rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
+        specialToolingItems: (row.specialToolingItems || []).filter(i => i.label.trim()),
+        rawMaterialItems: (row.rawMaterialItems || []).filter(i => i.label.trim()),
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
         subcontractingDone: hist.subcontractorId
@@ -528,8 +554,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyDeadline: undefined,
         materialDeadline: undefined,
         toolingDeadline: undefined,
-        specialToolingNeeds: (row.specialToolingNeeds || []).filter(v => v.trim()),
-        rawMaterialNeeds: (row.rawMaterialNeeds || []).filter(v => v.trim()),
+        specialToolingItems: (row.specialToolingItems || []).filter(i => i.label.trim()),
+        rawMaterialItems: (row.rawMaterialItems || []).filter(i => i.label.trim()),
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
       });
@@ -557,8 +583,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         studyStatus: r.studyStatus,
         materialStatus: r.materialStatus,
         toolingStatus: r.toolingStatus,
-        specialToolingNeeds: [...(r.specialToolingNeeds || [])],
-        rawMaterialNeeds: [...(r.rawMaterialNeeds || [])],
+        specialToolingItems: [...(r.specialToolingItems || [])],
+        rawMaterialItems: [...(r.rawMaterialItems || [])],
         resourceNotes: r.resourceNotes,
       };
     });
@@ -660,7 +686,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
     addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
-    handleStatusChange, getAssigneeOptions,
+    handleStatusChange, updateItemStatus, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
     forcePrompt, setForcePrompt,
@@ -1014,16 +1040,16 @@ export const ResourcesEditorTable: React.FC<{
                   <td className="p-1.5">{opName}</td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.materialStatus} onChange={s => e.handleStatusChange(row.id, 'material', s)} readOnly={matDisabled} />
-                      {(row.rawMaterialNeeds.length > 0 ? row.rawMaterialNeeds : ['']).map((val, idx) => (
-                        <div key={idx} className="flex items-center gap-1">
-                          <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'rawMaterialNeeds', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled} />
-                          {idx === row.rawMaterialNeeds.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialNeeds')} disabled={matDisabled}>
+                      {(row.rawMaterialItems.length > 0 ? row.rawMaterialItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
+                        <div key={item.id} className="flex items-center gap-1">
+                          <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s)} readOnly={matDisabled} />
+                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled} />
+                          {idx === row.rawMaterialItems.length - 1 ? (
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialItems')} disabled={matDisabled}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialNeeds', idx)} disabled={matDisabled}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialItems', idx)} disabled={matDisabled}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -1033,16 +1059,16 @@ export const ResourcesEditorTable: React.FC<{
                   </td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
-                      <ResourceStatusPill value={row.toolingStatus} onChange={s => e.handleStatusChange(row.id, 'tooling', s)} readOnly={tooDisabled} />
-                      {(row.specialToolingNeeds.length > 0 ? row.specialToolingNeeds : ['']).map((val, idx) => (
-                        <div key={idx} className="flex items-center gap-1">
-                          <Input className="h-7 text-xs px-1" value={val} onChange={ev => e.updateNeedField(row.id, 'specialToolingNeeds', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled} />
-                          {idx === row.specialToolingNeeds.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingNeeds')} disabled={tooDisabled}>
+                      {(row.specialToolingItems.length > 0 ? row.specialToolingItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
+                        <div key={item.id} className="flex items-center gap-1">
+                          <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'specialToolingItems', item.id, s)} readOnly={tooDisabled} />
+                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'specialToolingItems', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled} />
+                          {idx === row.specialToolingItems.length - 1 ? (
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingItems')} disabled={tooDisabled}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingNeeds', idx)} disabled={tooDisabled}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingItems', idx)} disabled={tooDisabled}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
