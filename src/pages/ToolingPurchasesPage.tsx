@@ -30,6 +30,7 @@ const ToolingPurchasesPage: React.FC = () => {
     const WORSE: Record<string, number> = { 'partiel': 1, 'non-disponible': 2 };
     const perOrder = new Map<string, Map<string, ResourceItem>>();
     steps.filter(s => s.operationId !== absenceOperationId).forEach(s => {
+      if (s.specialToolingNotApplicable) return;
       const order = orders.find(o => o.id === s.orderId);
       if (!order || order.id === absenceOrderId || excludedIds.has(order.id)) return;
       (s.specialToolingItems || []).forEach(item => {
