@@ -34,6 +34,8 @@ export interface OperationRow {
   toolingStatus: ResourceStatus;
   specialToolingItems: ResourceItem[];
   rawMaterialItems: ResourceItem[];
+  rawMaterialNotApplicable: boolean;
+  specialToolingNotApplicable: boolean;
   stepNotes: string;
   resourceNotes: string;
   /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
@@ -56,6 +58,10 @@ const newEmptyItem = (): ResourceItem => ({ id: crypto.randomUUID(), label: '', 
  *  persisted, so they must not influence the live synthesis either. */
 const computeRowStatus = (items: ResourceItem[]): ResourceStatus =>
   synthesizeResourceStatuses((items || []).filter(i => i.label && i.label.trim()).map(i => i.status));
+
+/** Field status: 'non-applicable' when the row flag is set, otherwise synthesized from items. */
+const computeFieldStatus = (notApplicable: boolean, items: ResourceItem[]): ResourceStatus =>
+  notApplicable ? 'non-applicable' : computeRowStatus(items);
 
 export function usePlanningEditor(order: Order | null, open: boolean) {
   const ctx = usePlanning();
