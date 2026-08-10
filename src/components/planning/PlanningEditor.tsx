@@ -208,6 +208,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toolingStatus: computeRowStatus([newEmptyItem()]),
       specialToolingItems: [newEmptyItem()],
       rawMaterialItems: [newEmptyItem()],
+      rawMaterialNotApplicable: false,
+      specialToolingNotApplicable: false,
       stepNotes: '',
       resourceNotes: '',
     }]);
