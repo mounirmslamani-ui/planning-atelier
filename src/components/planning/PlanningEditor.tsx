@@ -1087,16 +1087,29 @@ export const ResourcesEditorTable: React.FC<{
                   <td className="p-1.5">{opName}</td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
+                      <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={!!row.rawMaterialNotApplicable}
+                          onChange={ev => e.toggleNotApplicable(row.id, 'rawMaterialItems', ev.target.checked)}
+                          disabled={matDisabled}
+                        />
+                        <span>غير معني</span>
+                        {row.rawMaterialNotApplicable && <span>⚪</span>}
+                      </label>
                       {(row.rawMaterialItems.length > 0 ? row.rawMaterialItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-1">
-                          <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s)} readOnly={matDisabled} />
-                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled} />
+                        <div key={item.id} className={`flex items-center gap-1 ${row.rawMaterialNotApplicable ? 'opacity-50' : ''}`}>
+                          {!row.rawMaterialNotApplicable && (
+                            <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s)} readOnly={matDisabled} options={['disponible', 'partiel', 'non-disponible']} />
+                          )}
+                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled || row.rawMaterialNotApplicable} />
                           {idx === row.rawMaterialItems.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialItems')} disabled={matDisabled}>
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialItems')} disabled={matDisabled || row.rawMaterialNotApplicable}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialItems', idx)} disabled={matDisabled}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialItems', idx)} disabled={matDisabled || row.rawMaterialNotApplicable}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -1106,16 +1119,29 @@ export const ResourcesEditorTable: React.FC<{
                   </td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
+                      <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={!!row.specialToolingNotApplicable}
+                          onChange={ev => e.toggleNotApplicable(row.id, 'specialToolingItems', ev.target.checked)}
+                          disabled={tooDisabled}
+                        />
+                        <span>غير معني</span>
+                        {row.specialToolingNotApplicable && <span>⚪</span>}
+                      </label>
                       {(row.specialToolingItems.length > 0 ? row.specialToolingItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-1">
-                          <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'specialToolingItems', item.id, s)} readOnly={tooDisabled} />
-                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'specialToolingItems', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled} />
+                        <div key={item.id} className={`flex items-center gap-1 ${row.specialToolingNotApplicable ? 'opacity-50' : ''}`}>
+                          {!row.specialToolingNotApplicable && (
+                            <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'specialToolingItems', item.id, s)} readOnly={tooDisabled} options={['disponible', 'partiel', 'non-disponible']} />
+                          )}
+                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'specialToolingItems', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled || row.specialToolingNotApplicable} />
                           {idx === row.specialToolingItems.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingItems')} disabled={tooDisabled}>
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingItems')} disabled={tooDisabled || row.specialToolingNotApplicable}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingItems', idx)} disabled={tooDisabled}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingItems', idx)} disabled={tooDisabled || row.specialToolingNotApplicable}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -1123,6 +1149,7 @@ export const ResourcesEditorTable: React.FC<{
                       ))}
                     </div>
                   </td>
+
                   <td className="p-1.5 text-center">
                     <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} readOnly={stuDisabled} />
                   </td>
