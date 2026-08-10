@@ -238,13 +238,14 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   type ItemField = 'specialToolingItems' | 'rawMaterialItems';
   const rowStatusKeyFor = (field: ItemField) => field === 'rawMaterialItems' ? 'materialStatus' : 'toolingStatus';
+  const flagKeyFor = (field: ItemField) => field === 'rawMaterialItems' ? 'rawMaterialNotApplicable' : 'specialToolingNotApplicable';
 
   const updateNeedField = (rowId: string, field: ItemField, index: number, value: string) => {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = (r[field] && r[field].length > 0 ? [...r[field]] : [newEmptyItem()]);
       arr[index] = { ...arr[index], label: value };
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
 
@@ -252,7 +253,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = [...(r[field] || []), newEmptyItem()];
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
 
@@ -261,7 +262,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       if (r.id !== rowId) return r;
       const filtered = (r[field] || []).filter((_, i) => i !== index);
       const arr = filtered.length > 0 ? filtered : [newEmptyItem()];
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
 
@@ -270,7 +271,19 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status } : i);
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
+    }));
+  };
+
+  /** Row-level "لا حاجة" flag — no material / no tooling needed for this step. */
+  const toggleNotApplicable = (rowId: string, field: ItemField, value: boolean) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      return {
+        ...r,
+        [flagKeyFor(field)]: value,
+        [rowStatusKeyFor(field)]: computeFieldStatus(value, r[field] || []),
+      } as OperationRow;
     }));
   };
 
@@ -285,11 +298,19 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       return;
     }
     const itemField: ItemField = field === 'material' ? 'rawMaterialItems' : 'specialToolingItems';
+    const flagKey = flagKeyFor(itemField);
     setRows(prev => prev.map(row => {
+      if (status === 'non-applicable') {
+        // Bulk "لا حاجة" — set the row flag, leave items untouched.
+        return { ...row, [flagKey]: true, [rowStatusKeyFor(itemField)]: 'non-applicable' } as OperationRow;
+      }
+      // Rows already flagged as not applicable are left untouched.
+      if (row[flagKey]) return row;
       const arr = (row[itemField] || []).map(i => ({ ...i, status }));
       return { ...row, [itemField]: arr, [rowStatusKeyFor(itemField)]: computeRowStatus(arr) } as OperationRow;
     }));
   };
+
 
   const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
     const op = operations.find(o => o.id === operationId);
