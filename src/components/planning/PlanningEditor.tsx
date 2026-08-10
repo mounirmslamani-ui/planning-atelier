@@ -460,6 +460,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.toolingDeadline = undefined;
         s.specialToolingItems = (sourceRow.specialToolingItems || []).filter(i => i.label.trim());
         s.rawMaterialItems = (sourceRow.rawMaterialItems || []).filter(i => i.label.trim());
+        s.rawMaterialNotApplicable = sourceRow.rawMaterialNotApplicable;
+        s.specialToolingNotApplicable = sourceRow.specialToolingNotApplicable;
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
@@ -516,6 +518,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingItems: (row.specialToolingItems || []).filter(i => i.label.trim()),
         rawMaterialItems: (row.rawMaterialItems || []).filter(i => i.label.trim()),
+        rawMaterialNotApplicable: row.rawMaterialNotApplicable,
+        specialToolingNotApplicable: row.specialToolingNotApplicable,
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
         subcontractingDone: hist.subcontractorId
@@ -595,6 +599,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingItems: (row.specialToolingItems || []).filter(i => i.label.trim()),
         rawMaterialItems: (row.rawMaterialItems || []).filter(i => i.label.trim()),
+        rawMaterialNotApplicable: row.rawMaterialNotApplicable,
+        specialToolingNotApplicable: row.specialToolingNotApplicable,
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
       });
@@ -624,6 +630,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingStatus: r.toolingStatus,
         specialToolingItems: [...(r.specialToolingItems || [])],
         rawMaterialItems: [...(r.rawMaterialItems || [])],
+        rawMaterialNotApplicable: r.rawMaterialNotApplicable,
+        specialToolingNotApplicable: r.specialToolingNotApplicable,
         resourceNotes: r.resourceNotes,
       };
     });
@@ -724,7 +732,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
-    addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
+    addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField, toggleNotApplicable,
     handleStatusChange, updateItemStatus, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
