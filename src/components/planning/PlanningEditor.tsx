@@ -1128,12 +1128,19 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
           cancelLabel="إلغاء"
           onConfirm={() => {
             const ids = new Set(e.forcePrompt!.rowIds);
-            const forced = e.rows.map(r => ids.has(r.id) ? ({
-              ...r,
-              studyStatus: 'disponible' as ResourceStatus,
-              materialStatus: 'disponible' as ResourceStatus,
-              toolingStatus: 'disponible' as ResourceStatus,
-            }) : r);
+            const forced = e.rows.map(r => {
+              if (!ids.has(r.id)) return r;
+              const rawMaterialItems = r.rawMaterialItems.map(it => ({ ...it, status: 'disponible' as ResourceStatus }));
+              const specialToolingItems = r.specialToolingItems.map(it => ({ ...it, status: 'disponible' as ResourceStatus }));
+              return {
+                ...r,
+                studyStatus: 'disponible' as ResourceStatus,
+                materialStatus: computeRowStatus(rawMaterialItems),
+                toolingStatus: computeRowStatus(specialToolingItems),
+                rawMaterialItems,
+                specialToolingItems,
+              };
+            });
             e.setRows(forced);
             e.setForcePrompt(null);
             if (e.doSave(forced.map(r => ({ ...r })))) onSaved?.();
