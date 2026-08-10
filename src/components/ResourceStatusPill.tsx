@@ -13,6 +13,8 @@ interface Props {
   onChange?: (next: ResourceStatus) => void;
   size?: 'sm' | 'md';
   readOnly?: boolean;
+  /** Restrict the selectable statuses in the dropdown. Defaults to all four. */
+  options?: ResourceStatus[];
 }
 
 const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
