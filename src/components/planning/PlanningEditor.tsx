@@ -133,6 +133,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
           specialToolingItems: (s.specialToolingItems && s.specialToolingItems.length > 0) ? s.specialToolingItems.map(i => ({ ...i })) : [newEmptyItem()],
           rawMaterialItems: (s.rawMaterialItems && s.rawMaterialItems.length > 0) ? s.rawMaterialItems.map(i => ({ ...i })) : [newEmptyItem()],
+          rawMaterialNotApplicable: s.rawMaterialNotApplicable ?? false,
+          specialToolingNotApplicable: s.specialToolingNotApplicable ?? false,
           stepNotes: s.stepNotes ?? '',
           resourceNotes: s.resourceNotes ?? '',
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
@@ -175,6 +177,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
     id: r.id, studyStatus: r.studyStatus,
     specialToolingItems: r.specialToolingItems, rawMaterialItems: r.rawMaterialItems,
+    rawMaterialNotApplicable: r.rawMaterialNotApplicable,
+    specialToolingNotApplicable: r.specialToolingNotApplicable,
     resourceNotes: r.resourceNotes,
   })));
 
