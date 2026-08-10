@@ -611,10 +611,12 @@ export type Database = {
           order_id: string
           planning_order: number | null
           raw_material_items: Json
+          raw_material_not_applicable: boolean
           resource_notes: string | null
           shift_ended_date: string | null
           shift_started_date: string | null
           special_tooling_items: Json
+          special_tooling_not_applicable: boolean
           start_date: string | null
           start_time: string | null
           step_notes: string | null
@@ -649,10 +651,12 @@ export type Database = {
           order_id: string
           planning_order?: number | null
           raw_material_items?: Json
+          raw_material_not_applicable?: boolean
           resource_notes?: string | null
           shift_ended_date?: string | null
           shift_started_date?: string | null
           special_tooling_items?: Json
+          special_tooling_not_applicable?: boolean
           start_date?: string | null
           start_time?: string | null
           step_notes?: string | null
@@ -687,10 +691,12 @@ export type Database = {
           order_id?: string
           planning_order?: number | null
           raw_material_items?: Json
+          raw_material_not_applicable?: boolean
           resource_notes?: string | null
           shift_ended_date?: string | null
           shift_started_date?: string | null
           special_tooling_items?: Json
+          special_tooling_not_applicable?: boolean
           start_date?: string | null
           start_time?: string | null
           step_notes?: string | null

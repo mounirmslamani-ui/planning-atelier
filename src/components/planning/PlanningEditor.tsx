@@ -34,6 +34,8 @@ export interface OperationRow {
   toolingStatus: ResourceStatus;
   specialToolingItems: ResourceItem[];
   rawMaterialItems: ResourceItem[];
+  rawMaterialNotApplicable: boolean;
+  specialToolingNotApplicable: boolean;
   stepNotes: string;
   resourceNotes: string;
   /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
@@ -56,6 +58,10 @@ const newEmptyItem = (): ResourceItem => ({ id: crypto.randomUUID(), label: '', 
  *  persisted, so they must not influence the live synthesis either. */
 const computeRowStatus = (items: ResourceItem[]): ResourceStatus =>
   synthesizeResourceStatuses((items || []).filter(i => i.label && i.label.trim()).map(i => i.status));
+
+/** Field status: 'non-applicable' when the row flag is set, otherwise synthesized from items. */
+const computeFieldStatus = (notApplicable: boolean, items: ResourceItem[]): ResourceStatus =>
+  notApplicable ? 'non-applicable' : computeRowStatus(items);
 
 export function usePlanningEditor(order: Order | null, open: boolean) {
   const ctx = usePlanning();
@@ -127,6 +133,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           toolingStatus: (s.toolingStatus ?? currentOrder!.toolingStatus ?? 'non-disponible') as ResourceStatus,
           specialToolingItems: (s.specialToolingItems && s.specialToolingItems.length > 0) ? s.specialToolingItems.map(i => ({ ...i })) : [newEmptyItem()],
           rawMaterialItems: (s.rawMaterialItems && s.rawMaterialItems.length > 0) ? s.rawMaterialItems.map(i => ({ ...i })) : [newEmptyItem()],
+          rawMaterialNotApplicable: s.rawMaterialNotApplicable ?? false,
+          specialToolingNotApplicable: s.specialToolingNotApplicable ?? false,
           stepNotes: s.stepNotes ?? '',
           resourceNotes: s.resourceNotes ?? '',
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
@@ -169,6 +177,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
     id: r.id, studyStatus: r.studyStatus,
     specialToolingItems: r.specialToolingItems, rawMaterialItems: r.rawMaterialItems,
+    rawMaterialNotApplicable: r.rawMaterialNotApplicable,
+    specialToolingNotApplicable: r.specialToolingNotApplicable,
     resourceNotes: r.resourceNotes,
   })));
 
@@ -198,6 +208,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       toolingStatus: computeRowStatus([newEmptyItem()]),
       specialToolingItems: [newEmptyItem()],
       rawMaterialItems: [newEmptyItem()],
+      rawMaterialNotApplicable: false,
+      specialToolingNotApplicable: false,
       stepNotes: '',
       resourceNotes: '',
     }]);
@@ -226,13 +238,14 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   type ItemField = 'specialToolingItems' | 'rawMaterialItems';
   const rowStatusKeyFor = (field: ItemField) => field === 'rawMaterialItems' ? 'materialStatus' : 'toolingStatus';
+  const flagKeyFor = (field: ItemField) => field === 'rawMaterialItems' ? 'rawMaterialNotApplicable' : 'specialToolingNotApplicable';
 
   const updateNeedField = (rowId: string, field: ItemField, index: number, value: string) => {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = (r[field] && r[field].length > 0 ? [...r[field]] : [newEmptyItem()]);
       arr[index] = { ...arr[index], label: value };
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
 
@@ -240,7 +253,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = [...(r[field] || []), newEmptyItem()];
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
 
@@ -249,7 +262,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       if (r.id !== rowId) return r;
       const filtered = (r[field] || []).filter((_, i) => i !== index);
       const arr = filtered.length > 0 ? filtered : [newEmptyItem()];
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
 
@@ -258,7 +271,19 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status } : i);
-      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
+    }));
+  };
+
+  /** Row-level "لا حاجة" flag — no material / no tooling needed for this step. */
+  const toggleNotApplicable = (rowId: string, field: ItemField, value: boolean) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      return {
+        ...r,
+        [flagKeyFor(field)]: value,
+        [rowStatusKeyFor(field)]: computeFieldStatus(value, r[field] || []),
+      } as OperationRow;
     }));
   };
 
@@ -273,11 +298,19 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       return;
     }
     const itemField: ItemField = field === 'material' ? 'rawMaterialItems' : 'specialToolingItems';
+    const flagKey = flagKeyFor(itemField);
     setRows(prev => prev.map(row => {
+      if (status === 'non-applicable') {
+        // Bulk "لا حاجة" — set the row flag, leave items untouched.
+        return { ...row, [flagKey]: true, [rowStatusKeyFor(itemField)]: 'non-applicable' } as OperationRow;
+      }
+      // Rows already flagged as not applicable are left untouched.
+      if (row[flagKey]) return row;
       const arr = (row[itemField] || []).map(i => ({ ...i, status }));
       return { ...row, [itemField]: arr, [rowStatusKeyFor(itemField)]: computeRowStatus(arr) } as OperationRow;
     }));
   };
+
 
   const getAssigneeOptions = (type: 'operator' | 'subcontractor', operationId: string) => {
     const op = operations.find(o => o.id === operationId);
@@ -427,6 +460,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.toolingDeadline = undefined;
         s.specialToolingItems = (sourceRow.specialToolingItems || []).filter(i => i.label.trim());
         s.rawMaterialItems = (sourceRow.rawMaterialItems || []).filter(i => i.label.trim());
+        s.rawMaterialNotApplicable = sourceRow.rawMaterialNotApplicable;
+        s.specialToolingNotApplicable = sourceRow.specialToolingNotApplicable;
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
         s.estimatedDuration = sourceRow.estimatedDuration;
@@ -483,6 +518,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingItems: (row.specialToolingItems || []).filter(i => i.label.trim()),
         rawMaterialItems: (row.rawMaterialItems || []).filter(i => i.label.trim()),
+        rawMaterialNotApplicable: row.rawMaterialNotApplicable,
+        specialToolingNotApplicable: row.specialToolingNotApplicable,
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
         subcontractingDone: hist.subcontractorId
@@ -562,6 +599,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingDeadline: undefined,
         specialToolingItems: (row.specialToolingItems || []).filter(i => i.label.trim()),
         rawMaterialItems: (row.rawMaterialItems || []).filter(i => i.label.trim()),
+        rawMaterialNotApplicable: row.rawMaterialNotApplicable,
+        specialToolingNotApplicable: row.specialToolingNotApplicable,
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
       });
@@ -591,6 +630,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         toolingStatus: r.toolingStatus,
         specialToolingItems: [...(r.specialToolingItems || [])],
         rawMaterialItems: [...(r.rawMaterialItems || [])],
+        rawMaterialNotApplicable: r.rawMaterialNotApplicable,
+        specialToolingNotApplicable: r.specialToolingNotApplicable,
         resourceNotes: r.resourceNotes,
       };
     });
@@ -691,7 +732,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
-    addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField,
+    addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField, toggleNotApplicable,
     handleStatusChange, updateItemStatus, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
@@ -1046,16 +1087,29 @@ export const ResourcesEditorTable: React.FC<{
                   <td className="p-1.5">{opName}</td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
+                      <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={!!row.rawMaterialNotApplicable}
+                          onChange={ev => e.toggleNotApplicable(row.id, 'rawMaterialItems', ev.target.checked)}
+                          disabled={matDisabled}
+                        />
+                        <span>غير معني</span>
+                        {row.rawMaterialNotApplicable && <span>⚪</span>}
+                      </label>
                       {(row.rawMaterialItems.length > 0 ? row.rawMaterialItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-1">
-                          <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s)} readOnly={matDisabled} />
-                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled} />
+                        <div key={item.id} className={`flex items-center gap-1 ${row.rawMaterialNotApplicable ? 'opacity-50' : ''}`}>
+                          {!row.rawMaterialNotApplicable && (
+                            <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s)} readOnly={matDisabled} options={['disponible', 'partiel', 'non-disponible']} />
+                          )}
+                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled || row.rawMaterialNotApplicable} />
                           {idx === row.rawMaterialItems.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialItems')} disabled={matDisabled}>
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialItems')} disabled={matDisabled || row.rawMaterialNotApplicable}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialItems', idx)} disabled={matDisabled}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'rawMaterialItems', idx)} disabled={matDisabled || row.rawMaterialNotApplicable}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -1065,16 +1119,29 @@ export const ResourcesEditorTable: React.FC<{
                   </td>
                   <td className="p-1.5">
                     <div className="flex flex-col gap-1">
+                      <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="h-3 w-3"
+                          checked={!!row.specialToolingNotApplicable}
+                          onChange={ev => e.toggleNotApplicable(row.id, 'specialToolingItems', ev.target.checked)}
+                          disabled={tooDisabled}
+                        />
+                        <span>غير معني</span>
+                        {row.specialToolingNotApplicable && <span>⚪</span>}
+                      </label>
                       {(row.specialToolingItems.length > 0 ? row.specialToolingItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
-                        <div key={item.id} className="flex items-center gap-1">
-                          <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'specialToolingItems', item.id, s)} readOnly={tooDisabled} />
-                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'specialToolingItems', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled} />
+                        <div key={item.id} className={`flex items-center gap-1 ${row.specialToolingNotApplicable ? 'opacity-50' : ''}`}>
+                          {!row.specialToolingNotApplicable && (
+                            <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'specialToolingItems', item.id, s)} readOnly={tooDisabled} options={['disponible', 'partiel', 'non-disponible']} />
+                          )}
+                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'specialToolingItems', idx, ev.target.value)} placeholder="أداة..." disabled={tooDisabled || row.specialToolingNotApplicable} />
                           {idx === row.specialToolingItems.length - 1 ? (
-                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingItems')} disabled={tooDisabled}>
+                            <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'specialToolingItems')} disabled={tooDisabled || row.specialToolingNotApplicable}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           ) : (
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingItems', idx)} disabled={tooDisabled}>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.removeNeedField(row.id, 'specialToolingItems', idx)} disabled={tooDisabled || row.specialToolingNotApplicable}>
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
@@ -1082,6 +1149,7 @@ export const ResourcesEditorTable: React.FC<{
                       ))}
                     </div>
                   </td>
+
                   <td className="p-1.5 text-center">
                     <ResourceStatusPill value={row.studyStatus} onChange={s => e.handleStatusChange(row.id, 'study', s)} readOnly={stuDisabled} />
                   </td>

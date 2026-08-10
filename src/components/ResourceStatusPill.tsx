@@ -13,6 +13,8 @@ interface Props {
   onChange?: (next: ResourceStatus) => void;
   size?: 'sm' | 'md';
   readOnly?: boolean;
+  /** Restrict the selectable statuses in the dropdown. Defaults to all four. */
+  options?: ResourceStatus[];
 }
 
 const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
@@ -24,7 +26,7 @@ const STATUS_META: Record<ResourceStatus, { emoji: string; label: string }> = {
 
 const ORDER: ResourceStatus[] = ['disponible', 'partiel', 'non-disponible', 'non-applicable'];
 
-const ResourceStatusPill: React.FC<Props> = ({ value, onChange, size = 'sm', readOnly = false }) => {
+const ResourceStatusPill: React.FC<Props> = ({ value, onChange, size = 'sm', readOnly = false, options = ORDER }) => {
   const [open, setOpen] = React.useState(false);
   const current = value ?? 'non-disponible';
   const meta = STATUS_META[current];
@@ -54,7 +56,7 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, size = 'sm', rea
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="min-w-[180px]">
-        {ORDER.map(s => (
+        {options.map(s => (
           <DropdownMenuItem
             key={s}
             onSelect={(event) => {

@@ -180,6 +180,10 @@ export interface ProductionStep {
   subcontractingReceivedDate?: string;
   specialToolingItems?: ResourceItem[];
   rawMaterialItems?: ResourceItem[];
+  /** Row-level flag: no raw material needed for this step. */
+  rawMaterialNotApplicable?: boolean;
+  /** Row-level flag: no special tooling needed for this step. */
+  specialToolingNotApplicable?: boolean;
   /** Notes / instructions on the step (planning steps tab) */
   stepNotes?: string;
   /** Notes / instructions on the resources of the step (resources tab) */
