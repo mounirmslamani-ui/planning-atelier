@@ -56,7 +56,7 @@ const ResourceStatusPill: React.FC<Props> = ({ value, onChange, size = 'sm', rea
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="min-w-[180px]">
-        {ORDER.map(s => (
+        {options.map(s => (
           <DropdownMenuItem
             key={s}
             onSelect={(event) => {
