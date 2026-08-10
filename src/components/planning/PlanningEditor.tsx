@@ -51,9 +51,11 @@ const isBadStatus = (s: ResourceStatus) => s === 'partiel' || s === 'non-disponi
 
 const newEmptyItem = (): ResourceItem => ({ id: crypto.randomUUID(), label: '', status: 'non-disponible' });
 
-/** Row-level summary status derived from the per-item statuses. */
+/** Row-level summary status derived from the per-item statuses.
+ *  Empty-label items are ignored — they are filtered out before save and never
+ *  persisted, so they must not influence the live synthesis either. */
 const computeRowStatus = (items: ResourceItem[]): ResourceStatus =>
-  synthesizeResourceStatuses((items || []).map(i => i.status));
+  synthesizeResourceStatuses((items || []).filter(i => i.label && i.label.trim()).map(i => i.status));
 
 export function usePlanningEditor(order: Order | null, open: boolean) {
   const ctx = usePlanning();
@@ -192,8 +194,8 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       option1: '',
       equipmentIds: [],
       studyStatus: currentOrder.studyStatus ?? 'non-disponible',
-      materialStatus: currentOrder.materialStatus ?? 'non-disponible',
-      toolingStatus: currentOrder.toolingStatus ?? 'non-disponible',
+      materialStatus: computeRowStatus([newEmptyItem()]),
+      toolingStatus: computeRowStatus([newEmptyItem()]),
       specialToolingItems: [newEmptyItem()],
       rawMaterialItems: [newEmptyItem()],
       stepNotes: '',
@@ -230,12 +232,16 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       if (r.id !== rowId) return r;
       const arr = (r[field] && r[field].length > 0 ? [...r[field]] : [newEmptyItem()]);
       arr[index] = { ...arr[index], label: value };
-      return { ...r, [field]: arr };
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
     }));
   };
 
   const addNeedField = (rowId: string, field: ItemField) => {
-    setRows(prev => prev.map(r => r.id !== rowId ? r : ({ ...r, [field]: [...(r[field] || []), newEmptyItem()] })));
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = [...(r[field] || []), newEmptyItem()];
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeRowStatus(arr) } as OperationRow;
+    }));
   };
 
   const removeNeedField = (rowId: string, field: ItemField, index: number) => {
