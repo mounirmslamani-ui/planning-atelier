@@ -877,7 +877,7 @@ const PlanningTableauPage: React.FC = () => {
   const handleAutoSortByCn = useCallback(() => {
     const operatorId = selectedTabOperatorId ?? operatorTasks[0]?.operator.id;
     if (!operatorId) return;
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    const group = operatorTasksAll.find(g => g.operator.id === operatorId);
     if (!group || group.tasks.length === 0) return;
     const sorted = [...group.tasks].sort((a, b) => {
       const da = a.order.displayOrder ?? 9999;
@@ -887,7 +887,7 @@ const PlanningTableauPage: React.FC = () => {
     const updates: Record<string, number> = {};
     sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
     applyReorder(sorted, undefined, undefined, undefined, updates);
-  }, [selectedTabOperatorId, operatorTasks, applyReorder]);
+  }, [selectedTabOperatorId, operatorTasks, operatorTasksAll, applyReorder]);
 
   // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
