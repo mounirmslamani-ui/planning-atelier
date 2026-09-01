@@ -635,6 +635,7 @@ const PlanningTableauPage: React.FC = () => {
 
   // ─── Recalcul automatique des Pn pour combler les trous quand une étape disparaît ───
   useEffect(() => {
+    if (!canReorderPn) return;
     const updates: Record<string, number> = {};
     operatorTasksAll.forEach(group => {
       const knownPns = group.tasks
