@@ -1215,26 +1215,18 @@ if (nextRecord) {
     const normalizedFilters = Object.entries(colFilters).filter(([, value]) => !!value);
 
     normalizedFilters.forEach(([key, value]) => {
-      const needle = value.toLowerCase();
-      result = result.filter(t => {
-        switch (key as PlanningFilterKey) {
-          case 'displayOrder': return String(t.order.displayOrder ?? '').includes(needle);
-          case 'startDate': return t.step.startDate === value;
-          case 'endDate': return t.step.endDate === value;
-          case 'orderNumber': return t.order.orderNumber.toLowerCase().includes(needle);
-          case 'client': { if (value.includes('|')) { const vals = value.split('|').filter(Boolean); return vals.includes(getClientName(t.order.clientId)); } return getClientName(t.order.clientId).toLowerCase().includes(needle); }
-          case 'designation': return t.order.designation.toLowerCase().includes(needle);
-          case 'quantity': return String(t.order.quantity).includes(needle);
-          case 'priority': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.priority as string); }
-          case 'complexity': { const vals = value.split('|').filter(Boolean); return vals.includes(t.order.technicalComplexity || ''); }
-          case 'globalStatus': { const vals = value.split('|').filter(Boolean); return vals.includes(getOrderGlobalStatus(t.order.id, draftSteps, productionRecords, absenceOperationId)); }
-          case 'machine': return getMachineName(t.step) === value;
-          case 'status': { const vals = value.split('|').filter(Boolean); return vals.includes(getStepProgressStatus(t.step, productionRecords)); }
-          case 'operation': { const vals = value.split('|').filter(Boolean); return vals.includes(getOperationName(t.step.operationId)); }
-          default: return true;
-        }
-      });
+      const acc = (planningAccessors as Record<string, (t: any) => string>)[key];
+      if (!acc) return;
+      const vals = value.split('|').filter(Boolean);
+      if (vals.length > 1 || value.includes('|')) {
+        const set = new Set(vals.map(v => v.toLowerCase()));
+        result = result.filter(t => set.has(String(acc(t) ?? '').toLowerCase()));
+      } else {
+        const needle = value.toLowerCase();
+        result = result.filter(t => String(acc(t) ?? '').toLowerCase().includes(needle));
+      }
     });
+
 
     if (colSortKey && colSortDir) {
       result = [...result].sort((a, b) => {
