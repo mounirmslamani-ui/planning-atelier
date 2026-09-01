@@ -635,6 +635,7 @@ const PlanningTableauPage: React.FC = () => {
 
   // ─── Recalcul automatique des Pn pour combler les trous quand une étape disparaît ───
   useEffect(() => {
+    if (!canReorderPn) return;
     const updates: Record<string, number> = {};
     operatorTasksAll.forEach(group => {
       const knownPns = group.tasks
@@ -739,23 +740,41 @@ const PlanningTableauPage: React.FC = () => {
       return;
     }
 
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
-    if (!group) return;
+    const visibleGroup = operatorTasks.find(g => g.operator.id === operatorId);
+    const fullGroup = operatorTasksAll.find(g => g.operator.id === operatorId);
+    if (!visibleGroup || !fullGroup) return;
 
-    const items = [...group.tasks];
-    const dragIndex = drag.index;
-    const [dragged] = items.splice(dragIndex, 1);
-    items.splice(dropIndex, 0, dragged);
+    const draggedId = visibleGroup.tasks[drag.index]?.step.id;
+    if (!draggedId) return;
 
-    // Recalcule le planning_order (Pn) pour cet opérateur ; persisté via applyReorder → updateStep.
+    const neighborVisible = visibleGroup.tasks[dropIndex];
+    const neighborId = neighborVisible && neighborVisible.step.id !== draggedId ? neighborVisible.step.id : null;
+
+    const withoutDragged = fullGroup.tasks.filter(t => t.step.id !== draggedId);
+    const draggedItem = fullGroup.tasks.find(t => t.step.id === draggedId);
+    if (!draggedItem) return;
+
+    let insertAt: number;
+    if (neighborId) {
+      const neighborIdx = withoutDragged.findIndex(t => t.step.id === neighborId);
+      insertAt = neighborIdx === -1 ? withoutDragged.length : neighborIdx;
+    } else {
+      const lastVisible = visibleGroup.tasks[visibleGroup.tasks.length - 1];
+      const lastIdx = lastVisible ? withoutDragged.findIndex(t => t.step.id === lastVisible.step.id) : -1;
+      insertAt = lastIdx === -1 ? withoutDragged.length : lastIdx + 1;
+    }
+
+    const items = [...withoutDragged.slice(0, insertAt), draggedItem, ...withoutDragged.slice(insertAt)];
+
     const updates: Record<string, number> = {};
     items.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
 
-    applyReorder(items, dragged.step.id, undefined, undefined, updates);
+    applyReorder(items, draggedItem.step.id, undefined, undefined, updates);
     dragRef.current = null;
     setDragOverState(null);
     setIsDragging(false);
-  }, [operatorTasks, applyReorder]);
+
+  }, [operatorTasks, operatorTasksAll, applyReorder]);
 
   const handleDragEnd = useCallback(() => {
     dragRef.current = null;
@@ -815,7 +834,7 @@ const PlanningTableauPage: React.FC = () => {
   }, [selectedStepIds]);
 
   const openMovePnDialog = useCallback((operatorId: string, extraStepId?: string) => {
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    const group = operatorTasksAll.find(g => g.operator.id === operatorId);
     if (!group) return;
     const ids = new Set(selectedStepIds);
     if (extraStepId) ids.add(extraStepId);
@@ -826,12 +845,12 @@ const PlanningTableauPage: React.FC = () => {
     setMoveTargetPn(String(minPn === 9999 ? 1 : minPn));
     setMoveDialogOperatorId(operatorId);
     setMovePnDialogOpen(true);
-  }, [operatorTasks, selectedStepIds]);
+  }, [operatorTasksAll, selectedStepIds]);
 
   const applyMovePnSelection = useCallback(() => {
     const target = parseInt(moveTargetPn, 10);
     if (!target || target < 1) return;
-    const group = operatorTasks.find(g => g.operator.id === moveDialogOperatorId);
+    const group = operatorTasksAll.find(g => g.operator.id === moveDialogOperatorId);
     if (!group) { setMovePnDialogOpen(false); return; }
 
     const selectedItems = group.tasks.filter(t => selectedStepIds.has(t.step.id));
@@ -851,7 +870,7 @@ const PlanningTableauPage: React.FC = () => {
 
     setMovePnDialogOpen(false);
     setSelectedStepIds(new Set());
-  }, [moveTargetPn, moveDialogOperatorId, operatorTasks, selectedStepIds, applyReorder]);
+  }, [moveTargetPn, moveDialogOperatorId, operatorTasksAll, selectedStepIds, applyReorder]);
 
 
 
@@ -859,7 +878,7 @@ const PlanningTableauPage: React.FC = () => {
   const handleAutoSortByCn = useCallback(() => {
     const operatorId = selectedTabOperatorId ?? operatorTasks[0]?.operator.id;
     if (!operatorId) return;
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    const group = operatorTasksAll.find(g => g.operator.id === operatorId);
     if (!group || group.tasks.length === 0) return;
     const sorted = [...group.tasks].sort((a, b) => {
       const da = a.order.displayOrder ?? 9999;
@@ -869,7 +888,7 @@ const PlanningTableauPage: React.FC = () => {
     const updates: Record<string, number> = {};
     sorted.forEach((item, idx) => { updates[item.step.id] = idx + 1; });
     applyReorder(sorted, undefined, undefined, undefined, updates);
-  }, [selectedTabOperatorId, operatorTasks, applyReorder]);
+  }, [selectedTabOperatorId, operatorTasks, operatorTasksAll, applyReorder]);
 
   // toggleStepFrozen removed — step locking (cadenas) no longer supported.
 
