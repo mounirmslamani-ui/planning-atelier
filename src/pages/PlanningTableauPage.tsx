@@ -833,7 +833,7 @@ const PlanningTableauPage: React.FC = () => {
   }, [selectedStepIds]);
 
   const openMovePnDialog = useCallback((operatorId: string, extraStepId?: string) => {
-    const group = operatorTasks.find(g => g.operator.id === operatorId);
+    const group = operatorTasksAll.find(g => g.operator.id === operatorId);
     if (!group) return;
     const ids = new Set(selectedStepIds);
     if (extraStepId) ids.add(extraStepId);
@@ -844,7 +844,7 @@ const PlanningTableauPage: React.FC = () => {
     setMoveTargetPn(String(minPn === 9999 ? 1 : minPn));
     setMoveDialogOperatorId(operatorId);
     setMovePnDialogOpen(true);
-  }, [operatorTasks, selectedStepIds]);
+  }, [operatorTasksAll, selectedStepIds]);
 
   const applyMovePnSelection = useCallback(() => {
     const target = parseInt(moveTargetPn, 10);
