@@ -849,7 +849,7 @@ const PlanningTableauPage: React.FC = () => {
   const applyMovePnSelection = useCallback(() => {
     const target = parseInt(moveTargetPn, 10);
     if (!target || target < 1) return;
-    const group = operatorTasks.find(g => g.operator.id === moveDialogOperatorId);
+    const group = operatorTasksAll.find(g => g.operator.id === moveDialogOperatorId);
     if (!group) { setMovePnDialogOpen(false); return; }
 
     const selectedItems = group.tasks.filter(t => selectedStepIds.has(t.step.id));
@@ -869,7 +869,7 @@ const PlanningTableauPage: React.FC = () => {
 
     setMovePnDialogOpen(false);
     setSelectedStepIds(new Set());
-  }, [moveTargetPn, moveDialogOperatorId, operatorTasks, selectedStepIds, applyReorder]);
+  }, [moveTargetPn, moveDialogOperatorId, operatorTasksAll, selectedStepIds, applyReorder]);
 
 
 
