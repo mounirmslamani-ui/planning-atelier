@@ -314,7 +314,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
     quantity: (r: RegisterRecord) => String(getRecordInfo(r).quantity ?? ''),
     operation: (r: RegisterRecord) => getRecordInfo(r).operationName,
     date: (r: RegisterRecord) => recordDisplayDate(r).toISOString().split('T')[0],
-    duration: (r: RegisterRecord) => (r.actualDuration / 60).toFixed(2),
+    duration: (r: RegisterRecord) => fmtHM(r.actualDuration),
   }), [orders, clients, operations]);
 
   const allValuesByKey = useMemo(
