@@ -314,7 +314,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
     quantity: (r: RegisterRecord) => String(getRecordInfo(r).quantity ?? ''),
     operation: (r: RegisterRecord) => getRecordInfo(r).operationName,
     date: (r: RegisterRecord) => recordDisplayDate(r).toISOString().split('T')[0],
-    duration: (r: RegisterRecord) => (r.actualDuration / 60).toFixed(2),
+    duration: (r: RegisterRecord) => fmtHM(r.actualDuration),
   }), [orders, clients, operations]);
 
   const allValuesByKey = useMemo(
@@ -496,7 +496,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       <TableCell className="text-center font-mono">{rec.startTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
-                      <TableCell className="text-right font-medium">{(rec.actualDuration / 60).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-medium">{fmtHM(rec.actualDuration)}</TableCell>
                       {showActionsCol && (
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
