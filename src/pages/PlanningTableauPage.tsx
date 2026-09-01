@@ -1250,7 +1250,7 @@ if (nextRecord) {
     }
 
     return result;
-  }, [colFilters, colSortKey, colSortDir, getClientName, getMachineName, getOperationName, productionRecords, draftSteps, absenceOperationId]);
+  }, [colFilters, colSortKey, colSortDir, planningAccessors, getClientName, getMachineName, getOperationName, productionRecords, draftSteps, absenceOperationId]);
 
   const hasActiveFilters = Object.values(colFilters).some(Boolean) || !!colSortKey;
 
