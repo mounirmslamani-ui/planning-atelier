@@ -485,6 +485,36 @@ const RelaisDialog: React.FC<Props> = ({
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(totalEstimatedRemaining)} />
                   </div>
 
+                  <div className="pt-2 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-xs">عدد الساعات المستقطعة من الفوترة</Label>
+                      <TimeField value={nonBillableTime} onChange={setNonBillableTime} disabled={leftConfirmed} />
+                    </div>
+                    {nonBillableMinutes > 0 && (
+                      <>
+                        <textarea
+                          value={nonBillableReason}
+                          disabled={leftConfirmed}
+                          onChange={e => setNonBillableReason(e.target.value)}
+                          placeholder="سبب الاستقطاع"
+                          className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                        />
+                        {nonBillableReasonMissing && (
+                          <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
+                        )}
+                        {nonBillableExceeds ? (
+                          <p className="text-destructive text-xs">
+                            الوقت المستقطع لا يمكن أن يتجاوز المدة الفعلية
+                          </p>
+                        ) : (
+                          <div className="rounded-md border border-orange-300 bg-orange-100 dark:bg-orange-950/30 p-2 text-xs text-orange-900 dark:text-orange-200">
+                            {`${formatMinutesToHM(nonBillableMinutes)} من ${formatMinutesToHM(actualDuration ?? 0)} لن تُفوتر للزبون.`}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
                   {mode !== 'fin_poste' && (
                     <div className="flex gap-2 pt-2">
                       <Button
