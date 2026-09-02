@@ -403,6 +403,8 @@ export function mapRecordToDB(r: ProductionRecord) {
     pause_minutes: r.pauseMinutes ?? null,
     pause_comment: r.pauseComment ?? null,
     work_status: r.workStatus || 'done',
+    non_billable_hours: r.nonBillableHours ?? 0,
+    non_billable_reason: r.nonBillableReason ?? null,
     order_number_snapshot: r.orderNumberSnapshot ?? null,
     client_name_snapshot: r.clientNameSnapshot ?? null,
     designation_snapshot: r.designationSnapshot ?? null,
