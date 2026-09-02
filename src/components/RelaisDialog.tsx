@@ -25,6 +25,8 @@ export interface RelaisFinishedRecord {
   pauseComment?: string;
   actualDuration: number;
   workStatus: 'done' | 'continue';
+  nonBillableHours?: number;
+  nonBillableReason?: string;
 }
 
 export interface RelaisNextRecord {
@@ -216,6 +218,8 @@ const RelaisDialog: React.FC<Props> = ({
   const [pauseItems, setPauseItems] = useState<PauseItem[]>([]);
   const [pauseManual, setPauseManual] = useState(false);
   const [workStatus, setWorkStatus] = useState<'done' | 'continue'>('continue');
+  const [nonBillableTime, setNonBillableTime] = useState('00:00'); // HH:mm
+  const [nonBillableReason, setNonBillableReason] = useState('');
   const [rightStartTime, setRightStartTime] = useState('08:00');
   const [rightStartManual, setRightStartManual] = useState(false);
 
@@ -237,6 +241,8 @@ const RelaisDialog: React.FC<Props> = ({
     setPauseManual(false);
     setPauseItems([]);
     setWorkStatus('continue');
+    setNonBillableTime('00:00');
+    setNonBillableReason('');
     setRightStartTime(mode === 'debut_poste' ? '08:00' : now);
     setRightStartManual(false);
     setLeftConfirmed(false);
@@ -284,9 +290,14 @@ const RelaisDialog: React.FC<Props> = ({
 
   const nextRemaining = nextStep ? Math.max(0, nextStep.estimatedDuration - nextTotalDone) : 0;
 
+  const nonBillableMinutes = parseHHMM(nonBillableTime) ?? 0;
+  const nonBillableExceeds = nonBillableMinutes > (actualDuration ?? 0);
+  const nonBillableReasonMissing = nonBillableMinutes > 0 && !nonBillableReason.trim();
+
   // ───────── Handlers ─────────
   const handleLeftConfirm = (statusOverride?: 'done' | 'continue') => {
     if (!currentStep || !currentOrder || actualDuration === null) return;
+    if (nonBillableExceeds || nonBillableReasonMissing) return;
     const finalStatus = statusOverride ?? workStatus;
     const payload: RelaisFinishedRecord = {
       stepId: currentStep.id,
@@ -299,6 +310,8 @@ const RelaisDialog: React.FC<Props> = ({
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
       pauseComment: serializePauseItems(pauseItems) || undefined,
       actualDuration,
+      nonBillableHours: nonBillableMinutes > 0 ? Number((nonBillableMinutes / 60).toFixed(2)) : 0,
+      nonBillableReason: nonBillableMinutes > 0 ? nonBillableReason.trim() : undefined,
       workStatus: finalStatus,
     };
     setWorkStatus(finalStatus);
@@ -472,6 +485,36 @@ const RelaisDialog: React.FC<Props> = ({
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(totalEstimatedRemaining)} />
                   </div>
 
+                  <div className="pt-2 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-xs">عدد الساعات المستقطعة من الفوترة</Label>
+                      <TimeField value={nonBillableTime} onChange={setNonBillableTime} disabled={leftConfirmed} />
+                    </div>
+                    {nonBillableMinutes > 0 && (
+                      <>
+                        <textarea
+                          value={nonBillableReason}
+                          disabled={leftConfirmed}
+                          onChange={e => setNonBillableReason(e.target.value)}
+                          placeholder="سبب الاستقطاع"
+                          className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                        />
+                        {nonBillableReasonMissing && (
+                          <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
+                        )}
+                        {nonBillableExceeds ? (
+                          <p className="text-destructive text-xs">
+                            الوقت المستقطع لا يمكن أن يتجاوز المدة الفعلية
+                          </p>
+                        ) : (
+                          <div className="rounded-md border border-orange-300 bg-orange-100 dark:bg-orange-950/30 p-2 text-xs text-orange-900 dark:text-orange-200">
+                            {`${formatMinutesToHM(nonBillableMinutes)} من ${formatMinutesToHM(actualDuration ?? 0)} لن تُفوتر للزبون.`}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
                   {mode !== 'fin_poste' && (
                     <div className="flex gap-2 pt-2">
                       <Button
@@ -499,7 +542,7 @@ const RelaisDialog: React.FC<Props> = ({
                     <Button
                       type="button"
                       onClick={() => handleLeftConfirm()}
-                      disabled={leftConfirmed || durationError}
+                      disabled={leftConfirmed || durationError || nonBillableExceeds || nonBillableReasonMissing}
                       className="flex-1"
                     >
                       انهاء

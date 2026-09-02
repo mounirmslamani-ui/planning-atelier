@@ -85,6 +85,8 @@ const ProductionRegisterPage: React.FC = () => {
     pauseHHMM: string;
     actualDuration: string;
     pauseItems: PauseItem[];
+    nonBillableTime: string; // HH:mm
+    nonBillableReason: string;
   } | null>(null);
 
   const parseHHMM = (s: string): number | null => {
@@ -100,6 +102,7 @@ const ProductionRegisterPage: React.FC = () => {
     const mm = rec.actualDuration % 60;
     const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
     const pM = (rec.pauseMinutes ?? 0) % 60;
+    const nbMin = Math.round((rec.nonBillableHours ?? 0) * 60);
     setEditRecord({
       id: rec.id,
       orderId: rec.orderId,
@@ -111,6 +114,8 @@ const ProductionRegisterPage: React.FC = () => {
       pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
       actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
       pauseItems: parsePauseItems(rec.pauseComment),
+      nonBillableTime: `${String(Math.floor(nbMin / 60)).padStart(2, '0')}:${String(nbMin % 60).padStart(2, '0')}`,
+      nonBillableReason: rec.nonBillableReason ?? '',
     });
   }, []);
 
@@ -230,6 +235,9 @@ const ProductionRegisterPage: React.FC = () => {
       dur = Math.max(0, endMin - startMin - pauseMin);
     }
     if (dur <= 0) return;
+    const nonBillableMinutes = parseHHMM(editRecord.nonBillableTime) ?? 0;
+    if (nonBillableMinutes > dur) return;
+    if (nonBillableMinutes > 0 && !editRecord.nonBillableReason.trim()) return;
     // Si la commande a été changée, la durée et l'état (Terminée/En cours) ne comptent plus
     // pour l'ancienne étape (stepId a changé) et sont désormais comptés pour la nouvelle —
     // aucun calcul séparé n'est stocké par commande, tout est dérivé de stepId à la volée.
@@ -246,6 +254,8 @@ const ProductionRegisterPage: React.FC = () => {
       pauseMinutes: pauseMin || undefined,
       pauseComment: serializePauseItems(editRecord.pauseItems) || undefined,
       actualDuration: dur,
+      nonBillableHours: nonBillableMinutes > 0 ? Number((nonBillableMinutes / 60).toFixed(2)) : 0,
+      nonBillableReason: nonBillableMinutes > 0 ? editRecord.nonBillableReason.trim() : undefined,
       orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
       clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
       designationSnapshot: targetOrder?.designation ?? rec.designationSnapshot,
@@ -364,6 +374,9 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         Quantité: info.quantity ?? '—',
         Opération: info.operationName,
         'المدة الفعلية (سا)': Number((rec.actualDuration / 60).toFixed(2)),
+        'Heures défalquées': rec.nonBillableHours ? Number(rec.nonBillableHours.toFixed(2)) : 0,
+        'Motif défalcation': rec.nonBillableReason ?? '—',
+        'Heures facturables': Number((rec.billableHours ?? (rec.actualDuration / 60)).toFixed(2)),
       };
     });
   }, [orders, clients, operations]);
@@ -376,7 +389,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           .filter(r => r.operatorId === op.id)
           .sort((a, b) => recordDisplayDate(b).getTime() - recordDisplayDate(a).getTime())
       ),
-      columnWidths: [12, 8, 8, 10, 14, 22, 38, 8, 22, 12],
+      columnWidths: [12, 8, 8, 10, 14, 22, 38, 8, 22, 12, 14, 28, 14],
     })));
   };
 
@@ -477,6 +490,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                   <TableHead className="w-20 text-right">
                     <ColumnHeader label="المدة الفعلية" columnKey="duration" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['duration'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.duration} className="justify-end" />
                   </TableHead>
+                  <TableHead className="w-16 text-center">استقطاع</TableHead>
                   {showActionsCol && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -497,6 +511,18 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
                       <TableCell className="text-right font-medium">{fmtHM(rec.actualDuration)}</TableCell>
+                      <TableCell className="text-center">
+                        {(rec.nonBillableHours ?? 0) > 0 ? (
+                          <span
+                            title={rec.nonBillableReason || ''}
+                            className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200"
+                          >
+                            {fmtHM(Math.round((rec.nonBillableHours ?? 0) * 60))}
+                          </span>
+                        ) : (
+                          <span className="inline-block rounded px-1.5 py-0.5 text-[11px] bg-muted text-muted-foreground">0:00</span>
+                        )}
+                      </TableCell>
                       {showActionsCol && (
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">

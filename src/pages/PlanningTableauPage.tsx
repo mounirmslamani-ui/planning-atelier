@@ -1056,6 +1056,8 @@ const PlanningTableauPage: React.FC = () => {
         pauseMinutes: finishedRecord.pauseMinutes,
         pauseComment: finishedRecord.pauseComment,
         workStatus: finishedRecord.workStatus,
+        nonBillableHours: finishedRecord.nonBillableHours,
+        nonBillableReason: finishedRecord.nonBillableReason,
       };
       addProductionRecord(record);
 
