@@ -254,6 +254,8 @@ const ProductionRegisterPage: React.FC = () => {
       pauseMinutes: pauseMin || undefined,
       pauseComment: serializePauseItems(editRecord.pauseItems) || undefined,
       actualDuration: dur,
+      nonBillableHours: nonBillableMinutes > 0 ? Number((nonBillableMinutes / 60).toFixed(2)) : 0,
+      nonBillableReason: nonBillableMinutes > 0 ? editRecord.nonBillableReason.trim() : undefined,
       orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
       clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
       designationSnapshot: targetOrder?.designation ?? rec.designationSnapshot,
