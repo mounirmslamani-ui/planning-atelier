@@ -290,9 +290,14 @@ const RelaisDialog: React.FC<Props> = ({
 
   const nextRemaining = nextStep ? Math.max(0, nextStep.estimatedDuration - nextTotalDone) : 0;
 
+  const nonBillableMinutes = parseHHMM(nonBillableTime) ?? 0;
+  const nonBillableExceeds = nonBillableMinutes > (actualDuration ?? 0);
+  const nonBillableReasonMissing = nonBillableMinutes > 0 && !nonBillableReason.trim();
+
   // ───────── Handlers ─────────
   const handleLeftConfirm = (statusOverride?: 'done' | 'continue') => {
     if (!currentStep || !currentOrder || actualDuration === null) return;
+    if (nonBillableExceeds || nonBillableReasonMissing) return;
     const finalStatus = statusOverride ?? workStatus;
     const payload: RelaisFinishedRecord = {
       stepId: currentStep.id,
@@ -305,6 +310,8 @@ const RelaisDialog: React.FC<Props> = ({
       pauseMinutes: parseHHMM(pauseTime) ?? 0,
       pauseComment: serializePauseItems(pauseItems) || undefined,
       actualDuration,
+      nonBillableHours: nonBillableMinutes > 0 ? Number((nonBillableMinutes / 60).toFixed(2)) : 0,
+      nonBillableReason: nonBillableMinutes > 0 ? nonBillableReason.trim() : undefined,
       workStatus: finalStatus,
     };
     setWorkStatus(finalStatus);
