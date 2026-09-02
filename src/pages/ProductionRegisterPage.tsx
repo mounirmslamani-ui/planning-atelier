@@ -235,6 +235,9 @@ const ProductionRegisterPage: React.FC = () => {
       dur = Math.max(0, endMin - startMin - pauseMin);
     }
     if (dur <= 0) return;
+    const nonBillableMinutes = parseHHMM(editRecord.nonBillableTime) ?? 0;
+    if (nonBillableMinutes > dur) return;
+    if (nonBillableMinutes > 0 && !editRecord.nonBillableReason.trim()) return;
     // Si la commande a été changée, la durée et l'état (Terminée/En cours) ne comptent plus
     // pour l'ancienne étape (stepId a changé) et sont désormais comptés pour la nouvelle —
     // aucun calcul séparé n'est stocké par commande, tout est dérivé de stepId à la volée.
