@@ -374,6 +374,9 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
         Quantité: info.quantity ?? '—',
         Opération: info.operationName,
         'المدة الفعلية (سا)': Number((rec.actualDuration / 60).toFixed(2)),
+        'Heures défalquées': rec.nonBillableHours ? Number(rec.nonBillableHours.toFixed(2)) : 0,
+        'Motif défalcation': rec.nonBillableReason ?? '—',
+        'Heures facturables': Number((rec.billableHours ?? (rec.actualDuration / 60)).toFixed(2)),
       };
     });
   }, [orders, clients, operations]);
