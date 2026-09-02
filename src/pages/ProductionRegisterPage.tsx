@@ -102,6 +102,7 @@ const ProductionRegisterPage: React.FC = () => {
     const mm = rec.actualDuration % 60;
     const pH = Math.floor((rec.pauseMinutes ?? 0) / 60);
     const pM = (rec.pauseMinutes ?? 0) % 60;
+    const nbMin = Math.round((rec.nonBillableHours ?? 0) * 60);
     setEditRecord({
       id: rec.id,
       orderId: rec.orderId,
@@ -113,6 +114,8 @@ const ProductionRegisterPage: React.FC = () => {
       pauseHHMM: `${String(pH).padStart(2, '0')}:${String(pM).padStart(2, '0')}`,
       actualDuration: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`,
       pauseItems: parsePauseItems(rec.pauseComment),
+      nonBillableTime: `${String(Math.floor(nbMin / 60)).padStart(2, '0')}:${String(nbMin % 60).padStart(2, '0')}`,
+      nonBillableReason: rec.nonBillableReason ?? '',
     });
   }, []);
 
