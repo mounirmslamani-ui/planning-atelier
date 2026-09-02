@@ -542,7 +542,7 @@ const RelaisDialog: React.FC<Props> = ({
                     <Button
                       type="button"
                       onClick={() => handleLeftConfirm()}
-                      disabled={leftConfirmed || durationError}
+                      disabled={leftConfirmed || durationError || nonBillableExceeds || nonBillableReasonMissing}
                       className="flex-1"
                     >
                       انهاء
