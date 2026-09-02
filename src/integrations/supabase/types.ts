@@ -508,11 +508,14 @@ export type Database = {
       production_records: {
         Row: {
           actual_duration: number
+          billable_hours: number | null
           client_name_snapshot: string | null
           created_at: string
           designation_snapshot: string | null
           end_time: string | null
           id: string
+          non_billable_hours: number
+          non_billable_reason: string | null
           operation_id: string
           operation_name_snapshot: string | null
           operator_id: string
@@ -529,11 +532,14 @@ export type Database = {
         }
         Insert: {
           actual_duration?: number
+          billable_hours?: number | null
           client_name_snapshot?: string | null
           created_at?: string
           designation_snapshot?: string | null
           end_time?: string | null
           id?: string
+          non_billable_hours?: number
+          non_billable_reason?: string | null
           operation_id: string
           operation_name_snapshot?: string | null
           operator_id: string
@@ -550,11 +556,14 @@ export type Database = {
         }
         Update: {
           actual_duration?: number
+          billable_hours?: number | null
           client_name_snapshot?: string | null
           created_at?: string
           designation_snapshot?: string | null
           end_time?: string | null
           id?: string
+          non_billable_hours?: number
+          non_billable_reason?: string | null
           operation_id?: string
           operation_name_snapshot?: string | null
           operator_id?: string
