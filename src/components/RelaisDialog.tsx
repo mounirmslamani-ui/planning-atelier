@@ -25,6 +25,8 @@ export interface RelaisFinishedRecord {
   pauseComment?: string;
   actualDuration: number;
   workStatus: 'done' | 'continue';
+  nonBillableHours?: number;
+  nonBillableReason?: string;
 }
 
 export interface RelaisNextRecord {
