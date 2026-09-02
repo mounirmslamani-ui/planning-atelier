@@ -511,6 +511,18 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                       <TableCell className="text-center font-mono">{rec.endTime ?? '—'}</TableCell>
                       <TableCell className="text-center font-mono">{rec.pauseMinutes ? fmtHM(rec.pauseMinutes) : '—'}</TableCell>
                       <TableCell className="text-right font-medium">{fmtHM(rec.actualDuration)}</TableCell>
+                      <TableCell className="text-center">
+                        {(rec.nonBillableHours ?? 0) > 0 ? (
+                          <span
+                            title={rec.nonBillableReason || ''}
+                            className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200"
+                          >
+                            {fmtHM(Math.round((rec.nonBillableHours ?? 0) * 60))}
+                          </span>
+                        ) : (
+                          <span className="inline-block rounded px-1.5 py-0.5 text-[11px] bg-muted text-muted-foreground">0:00</span>
+                        )}
+                      </TableCell>
                       {showActionsCol && (
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
