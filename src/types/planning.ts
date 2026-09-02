@@ -214,6 +214,9 @@ export interface ProductionRecord {
   pauseMinutes?: number;
   pauseComment?: string;
   workStatus?: 'done' | 'continue';
+  nonBillableHours?: number; // heures défalquées, non facturables
+  nonBillableReason?: string; // motif de la défalcation
+  billableHours?: number; // calculé côté serveur, lecture seule
   // Snapshots — preserved even if the source order is deleted later
   orderNumberSnapshot?: string;
   clientNameSnapshot?: string;
