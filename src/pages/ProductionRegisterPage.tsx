@@ -389,7 +389,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           .filter(r => r.operatorId === op.id)
           .sort((a, b) => recordDisplayDate(b).getTime() - recordDisplayDate(a).getTime())
       ),
-      columnWidths: [12, 8, 8, 10, 14, 22, 38, 8, 22, 12],
+      columnWidths: [12, 8, 8, 10, 14, 22, 38, 8, 22, 12, 14, 28, 14],
     })));
   };
 
