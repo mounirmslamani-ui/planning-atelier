@@ -218,6 +218,8 @@ const RelaisDialog: React.FC<Props> = ({
   const [pauseItems, setPauseItems] = useState<PauseItem[]>([]);
   const [pauseManual, setPauseManual] = useState(false);
   const [workStatus, setWorkStatus] = useState<'done' | 'continue'>('continue');
+  const [nonBillableTime, setNonBillableTime] = useState('00:00'); // HH:mm
+  const [nonBillableReason, setNonBillableReason] = useState('');
   const [rightStartTime, setRightStartTime] = useState('08:00');
   const [rightStartManual, setRightStartManual] = useState(false);
 
