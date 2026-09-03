@@ -301,24 +301,54 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                       <th className="text-right p-1">العملية</th>
                       <th className="text-right p-1">العامل</th>
                       <th className="text-right p-1">المدة المخصصة (سا)</th>
-                      <th className="text-right p-1">المدة المستهلكة (سا)</th>
-                      <th className="text-right p-1">متابعة تقدم إنجاز الطلبية</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.initialProduction.map(row => (
-                      <tr key={row.step.id} className="border-b">
-                        <td className="p-1">{row.operationName}</td>
-                        <td className="p-1">{row.operatorName}</td>
-                        <td className="p-1">{row.allocatedH}</td>
-                        <td className="p-1">{row.actualH}</td>
-                        <td className="p-1">{getStepProgressStatus(row.step, result.records)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </section>
+                       <th className="text-right p-1">المدة المستهلكة (سا)</th>
+                       <th className="text-right p-1">المستقطعة (سا)</th>
+                       <th className="text-right p-1">القابلة للفوترة (سا)</th>
+                       <th className="text-right p-1">متابعة تقدم إنجاز الطلبية</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {result.initialProduction.map(row => (
+                       <tr key={row.step.id} className="border-b">
+                         <td className="p-1">{row.operationName}</td>
+                         <td className="p-1">{row.operatorName}</td>
+                         <td className="p-1">{row.allocatedH}</td>
+                         <td className="p-1">{row.actualH}</td>
+                         <td className="p-1">
+                           {row.hasDeduction ? (
+                             <span className="rounded px-1.5 py-0.5 text-xs bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+                               {row.nonBillableH}
+                             </span>
+                           ) : '0.00'}
+                         </td>
+                         <td className="p-1 font-medium">{row.billableH}</td>
+                         <td className="p-1">{getStepProgressStatus(row.step, result.records)}</td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               )}
+             </section>
+
+             {/* Synthèse facturation */}
+             <section className="p-3 rounded-md border">
+               <h3 className="font-bold mb-2 border-b pb-1">حصيلة الساعات والفوترة</h3>
+               <div className="grid grid-cols-3 gap-2 text-sm">
+                 <div className="p-2 rounded-md bg-muted/40">
+                   <div className="text-xs text-muted-foreground">المدة المستهلكة</div>
+                   <div className="font-bold">{result.totalActualH.toFixed(2)} سا</div>
+                 </div>
+                 <div className="p-2 rounded-md bg-orange-100 dark:bg-orange-950/30">
+                   <div className="text-xs text-orange-900 dark:text-orange-200">الساعات المستقطعة</div>
+                   <div className="font-bold text-orange-900 dark:text-orange-200">{result.totalNonBillableH.toFixed(2)} سا</div>
+                 </div>
+                 <div className="p-2 rounded-md bg-muted/40">
+                   <div className="text-xs text-muted-foreground">الساعات القابلة للفوترة</div>
+                   <div className="font-bold">{result.totalBillableH.toFixed(2)} سا</div>
+                 </div>
+               </div>
+             </section>
+
 
             {/* QC 1 */}
             <section className="p-3 rounded-md border">
