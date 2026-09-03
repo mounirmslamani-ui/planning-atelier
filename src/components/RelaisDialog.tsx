@@ -502,6 +502,10 @@ const RelaisDialog: React.FC<Props> = ({
                         {nonBillableReasonMissing && (
                           <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
                         )}
+                        <Row
+                          label="المدة المفوترة"
+                          value={formatMinutesToHM(Math.max(0, (actualDuration ?? 0) - nonBillableMinutes))}
+                        />
                         {nonBillableExceeds ? (
                           <p className="text-destructive text-xs">
                             الوقت المستقطع لا يمكن أن يتجاوز المدة الفعلية
