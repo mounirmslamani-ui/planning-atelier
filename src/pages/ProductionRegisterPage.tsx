@@ -134,6 +134,14 @@ const ProductionRegisterPage: React.FC = () => {
     return null;
   }, [editRecord]);
 
+  const editEffectiveDurationMinutes = editRecord
+    ? (parseHHMM(editComputedDuration ?? editRecord.actualDuration) ?? 0)
+    : 0;
+  const editNonBillableMinutes = editRecord ? (parseHHMM(editRecord.nonBillableTime) ?? 0) : 0;
+  const editNonBillableExceeds = editNonBillableMinutes > editEffectiveDurationMinutes;
+  const editNonBillableReasonMissing = editNonBillableMinutes > 0 && !(editRecord?.nonBillableReason.trim());
+
+
   // Total automatique de la liste de pauses (hh:mm) si au moins une ligne, sinon null.
   const editPauseAutoHHMM = useMemo(() => {
     if (!editRecord || editRecord.pauseItems.length === 0) return null;
