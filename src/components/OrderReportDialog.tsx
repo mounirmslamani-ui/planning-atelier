@@ -383,6 +383,8 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                         <th className="text-right p-1">العامل</th>
                         <th className="text-right p-1">المدة المخصصة (سا)</th>
                         <th className="text-right p-1">المدة المستهلكة (سا)</th>
+                        <th className="text-right p-1">المستقطعة (سا)</th>
+                        <th className="text-right p-1">القابلة للفوترة (سا)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -392,6 +394,14 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                           <td className="p-1">{row.operatorName}</td>
                           <td className="p-1">{row.allocatedH}</td>
                           <td className="p-1">{row.actualH}</td>
+                          <td className="p-1">
+                            {row.hasDeduction ? (
+                              <span className="rounded px-1.5 py-0.5 text-xs bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+                                {row.nonBillableH}
+                              </span>
+                            ) : '0.00'}
+                          </td>
+                          <td className="p-1 font-medium">{row.billableH}</td>
                         </tr>
                       ))}
                     </tbody>
