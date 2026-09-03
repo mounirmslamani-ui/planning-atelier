@@ -92,18 +92,33 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
       const operation = planning.operations.find(o => o.id === step.operationId);
       const stepRecords = records.filter(r => r.stepId === step.id);
       const actualMin = stepRecords.reduce((sum, r) => sum + (r.actualDuration || 0), 0);
-      const isRework = !!firstQcAt && !!step.startDate && step.startDate > (firstQcAt.split('T')[0] || '');
+      const nonBillableH = stepRecords.reduce((sum, r) => sum + (r.nonBillableHours || 0), 0);
+      const billableH = stepRecords.reduce(
+        (sum, r) => sum + (r.billableHours ?? ((r.actualDuration || 0) / 60)),
+        0
+      );
+      const isPostFirstQC = !!firstQcAt && !!step.startDate && step.startDate > (firstQcAt.split('T')[0] || '');
       return {
         step,
         operatorName: op?.name || '—',
         operationName: operation?.name || '—',
         allocatedH: ((step.estimatedDuration || 0) / 60).toFixed(2),
         actualH: (actualMin / 60).toFixed(2),
-        isRework,
+        nonBillableH: nonBillableH.toFixed(2),
+        billableH: billableH.toFixed(2),
+        hasDeduction: nonBillableH > 0,
+        isPostFirstQC,
       };
     });
-    const initialProduction = productionRows.filter(r => !r.isRework);
-    const reworkProduction = productionRows.filter(r => r.isRework);
+    const initialProduction = productionRows.filter(r => !r.isPostFirstQC);
+    const reworkProduction = productionRows.filter(r => r.isPostFirstQC);
+
+    const totalActualH = records.reduce((s, r) => s + (r.actualDuration || 0), 0) / 60;
+    const totalNonBillableH = records.reduce((s, r) => s + (r.nonBillableHours || 0), 0);
+    const totalBillableH = records.reduce(
+      (s, r) => s + (r.billableHours ?? ((r.actualDuration || 0) / 60)),
+      0
+    );
 
     return {
       found: true as const,
@@ -111,6 +126,7 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
       qcFirst, qcSecond, delivered, deliveryEntry,
       globalStatus, materialNeeds, toolingNeeds, subcontractingSteps,
       initialProduction, reworkProduction,
+      totalActualH, totalNonBillableH, totalBillableH,
     };
   }, [submitted, planning]);
 
