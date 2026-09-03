@@ -134,6 +134,14 @@ const ProductionRegisterPage: React.FC = () => {
     return null;
   }, [editRecord]);
 
+  const editEffectiveDurationMinutes = editRecord
+    ? (parseHHMM(editComputedDuration ?? editRecord.actualDuration) ?? 0)
+    : 0;
+  const editNonBillableMinutes = editRecord ? (parseHHMM(editRecord.nonBillableTime) ?? 0) : 0;
+  const editNonBillableExceeds = editNonBillableMinutes > editEffectiveDurationMinutes;
+  const editNonBillableReasonMissing = editNonBillableMinutes > 0 && !(editRecord?.nonBillableReason.trim());
+
+
   // Total automatique de la liste de pauses (hh:mm) si au moins une ligne, sinon null.
   const editPauseAutoHHMM = useMemo(() => {
     if (!editRecord || editRecord.pauseItems.length === 0) return null;
@@ -724,11 +732,43 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
               <p className="text-[10px] text-muted-foreground">
                 إذا تم تحديد وقت البداية، ساعة النهاية والوقت المستقطع، يتم إعادة حساب المدة الفعلية تلقائيًا (ساعة النهاية - ساعة البداية - الوقت المستقطع)
               </p>
+
+              <div className="space-y-2 border-t pt-2">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">عدد الساعات المستقطعة من الفوترة (HH:mm)</label>
+                  <Input
+                    value={editRecord.nonBillableTime}
+                    onChange={e => setEditRecord({ ...editRecord, nonBillableTime: formatTimeTyping(e.target.value) })}
+                    placeholder="00:00"
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                {editNonBillableMinutes > 0 && (
+                  <>
+                    <textarea
+                      value={editRecord.nonBillableReason}
+                      onChange={e => setEditRecord({ ...editRecord, nonBillableReason: e.target.value })}
+                      placeholder="سبب الاستقطاع"
+                      className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                    />
+                    {editNonBillableReasonMissing && (
+                      <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
+                    )}
+                    {editNonBillableExceeds ? (
+                      <p className="text-destructive text-xs">الوقت المستقطع لا يمكن أن يتجاوز المدة الفعلية</p>
+                    ) : (
+                      <div className="rounded-md border border-orange-300 bg-orange-100 dark:bg-orange-950/30 p-2 text-xs text-orange-900 dark:text-orange-200">
+                        {`${fmtHM(editNonBillableMinutes)} من ${fmtHM(editEffectiveDurationMinutes)} لن تُفوتر للزبون.`}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>إلغاء</Button>
-            <Button size="sm" onClick={saveEdit}>حفظ</Button>
+            <Button size="sm" onClick={saveEdit} disabled={editNonBillableExceeds || editNonBillableReasonMissing}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

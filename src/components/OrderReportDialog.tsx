@@ -92,18 +92,33 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
       const operation = planning.operations.find(o => o.id === step.operationId);
       const stepRecords = records.filter(r => r.stepId === step.id);
       const actualMin = stepRecords.reduce((sum, r) => sum + (r.actualDuration || 0), 0);
-      const isRework = !!firstQcAt && !!step.startDate && step.startDate > (firstQcAt.split('T')[0] || '');
+      const nonBillableH = stepRecords.reduce((sum, r) => sum + (r.nonBillableHours || 0), 0);
+      const billableH = stepRecords.reduce(
+        (sum, r) => sum + (r.billableHours ?? ((r.actualDuration || 0) / 60)),
+        0
+      );
+      const isPostFirstQC = !!firstQcAt && !!step.startDate && step.startDate > (firstQcAt.split('T')[0] || '');
       return {
         step,
         operatorName: op?.name || '—',
         operationName: operation?.name || '—',
         allocatedH: ((step.estimatedDuration || 0) / 60).toFixed(2),
         actualH: (actualMin / 60).toFixed(2),
-        isRework,
+        nonBillableH: nonBillableH.toFixed(2),
+        billableH: billableH.toFixed(2),
+        hasDeduction: nonBillableH > 0,
+        isPostFirstQC,
       };
     });
-    const initialProduction = productionRows.filter(r => !r.isRework);
-    const reworkProduction = productionRows.filter(r => r.isRework);
+    const initialProduction = productionRows.filter(r => !r.isPostFirstQC);
+    const reworkProduction = productionRows.filter(r => r.isPostFirstQC);
+
+    const totalActualH = records.reduce((s, r) => s + (r.actualDuration || 0), 0) / 60;
+    const totalNonBillableH = records.reduce((s, r) => s + (r.nonBillableHours || 0), 0);
+    const totalBillableH = records.reduce(
+      (s, r) => s + (r.billableHours ?? ((r.actualDuration || 0) / 60)),
+      0
+    );
 
     return {
       found: true as const,
@@ -111,6 +126,7 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
       qcFirst, qcSecond, delivered, deliveryEntry,
       globalStatus, materialNeeds, toolingNeeds, subcontractingSteps,
       initialProduction, reworkProduction,
+      totalActualH, totalNonBillableH, totalBillableH,
     };
   }, [submitted, planning]);
 
@@ -285,24 +301,54 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                       <th className="text-right p-1">العملية</th>
                       <th className="text-right p-1">العامل</th>
                       <th className="text-right p-1">المدة المخصصة (سا)</th>
-                      <th className="text-right p-1">المدة المستهلكة (سا)</th>
-                      <th className="text-right p-1">متابعة تقدم إنجاز الطلبية</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.initialProduction.map(row => (
-                      <tr key={row.step.id} className="border-b">
-                        <td className="p-1">{row.operationName}</td>
-                        <td className="p-1">{row.operatorName}</td>
-                        <td className="p-1">{row.allocatedH}</td>
-                        <td className="p-1">{row.actualH}</td>
-                        <td className="p-1">{getStepProgressStatus(row.step, result.records)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </section>
+                       <th className="text-right p-1">المدة المستهلكة (سا)</th>
+                       <th className="text-right p-1">المستقطعة (سا)</th>
+                       <th className="text-right p-1">القابلة للفوترة (سا)</th>
+                       <th className="text-right p-1">متابعة تقدم إنجاز الطلبية</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {result.initialProduction.map(row => (
+                       <tr key={row.step.id} className="border-b">
+                         <td className="p-1">{row.operationName}</td>
+                         <td className="p-1">{row.operatorName}</td>
+                         <td className="p-1">{row.allocatedH}</td>
+                         <td className="p-1">{row.actualH}</td>
+                         <td className="p-1">
+                           {row.hasDeduction ? (
+                             <span className="rounded px-1.5 py-0.5 text-xs bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+                               {row.nonBillableH}
+                             </span>
+                           ) : '0.00'}
+                         </td>
+                         <td className="p-1 font-medium">{row.billableH}</td>
+                         <td className="p-1">{getStepProgressStatus(row.step, result.records)}</td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               )}
+             </section>
+
+             {/* Synthèse facturation */}
+             <section className="p-3 rounded-md border">
+               <h3 className="font-bold mb-2 border-b pb-1">حصيلة الساعات والفوترة</h3>
+               <div className="grid grid-cols-3 gap-2 text-sm">
+                 <div className="p-2 rounded-md bg-muted/40">
+                   <div className="text-xs text-muted-foreground">المدة المستهلكة</div>
+                   <div className="font-bold">{result.totalActualH.toFixed(2)} سا</div>
+                 </div>
+                 <div className="p-2 rounded-md bg-orange-100 dark:bg-orange-950/30">
+                   <div className="text-xs text-orange-900 dark:text-orange-200">الساعات المستقطعة</div>
+                   <div className="font-bold text-orange-900 dark:text-orange-200">{result.totalNonBillableH.toFixed(2)} سا</div>
+                 </div>
+                 <div className="p-2 rounded-md bg-muted/40">
+                   <div className="text-xs text-muted-foreground">الساعات القابلة للفوترة</div>
+                   <div className="font-bold">{result.totalBillableH.toFixed(2)} سا</div>
+                 </div>
+               </div>
+             </section>
+
 
             {/* QC 1 */}
             <section className="p-3 rounded-md border">
@@ -337,6 +383,8 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                         <th className="text-right p-1">العامل</th>
                         <th className="text-right p-1">المدة المخصصة (سا)</th>
                         <th className="text-right p-1">المدة المستهلكة (سا)</th>
+                        <th className="text-right p-1">المستقطعة (سا)</th>
+                        <th className="text-right p-1">القابلة للفوترة (سا)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -346,6 +394,14 @@ const OrderReportDialog: React.FC<OrderReportDialogProps> = ({ open, onClose }) 
                           <td className="p-1">{row.operatorName}</td>
                           <td className="p-1">{row.allocatedH}</td>
                           <td className="p-1">{row.actualH}</td>
+                          <td className="p-1">
+                            {row.hasDeduction ? (
+                              <span className="rounded px-1.5 py-0.5 text-xs bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200">
+                                {row.nonBillableH}
+                              </span>
+                            ) : '0.00'}
+                          </td>
+                          <td className="p-1 font-medium">{row.billableH}</td>
                         </tr>
                       ))}
                     </tbody>
