@@ -9,6 +9,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
 import StepDurationExpiredDialog from '@/components/StepDurationExpiredDialog';
 import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, pauseItemsTotalHHMM, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
+import { NON_BILLABLE_SELECT_OPTIONS, isNonBillableCustomToken } from '@/lib/nonBillableReasons';
 import type { Operation, Order, ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type RelaisMode = 'debut_poste' | 'relais' | 'fin_poste';
