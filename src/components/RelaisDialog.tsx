@@ -484,8 +484,8 @@ const RelaisDialog: React.FC<Props> = ({
                     ) : (
                       <Row label="المدة الفعلية" value={formatMinutesToHM(actualDuration ?? 0)} />
                     )}
-                    <Row label="المدة الفعلية الإجمالية" value={formatMinutesToHM(totalDoneInclusive)} />
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(totalEstimatedRemaining)} />
+                    <Row label="المدة الإجمالية" value={formatMinutesToHM(totalDoneInclusive)} />
                   </div>
 
                   <div className="pt-2 space-y-2">
