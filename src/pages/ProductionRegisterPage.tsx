@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SearchableSelect from '@/components/ui/searchable-select';
 import { X, Download, Pencil, Trash2, Plus } from 'lucide-react';
 import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, parsePauseItems, pauseItemsTotalHHMM, pauseItemsTotalMinutes, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
+import { NON_BILLABLE_PRESETS, NON_BILLABLE_SELECT_OPTIONS, isNonBillableCustomToken } from '@/lib/nonBillableReasons';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
