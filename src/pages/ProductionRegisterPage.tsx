@@ -118,6 +118,7 @@ const ProductionRegisterPage: React.FC = () => {
       pauseItems: parsePauseItems(rec.pauseComment),
       nonBillableTime: `${String(Math.floor(nbMin / 60)).padStart(2, '0')}:${String(nbMin % 60).padStart(2, '0')}`,
       nonBillableReason: rec.nonBillableReason ?? '',
+      nonBillableReasonMode: NON_BILLABLE_PRESETS.includes(rec.nonBillableReason ?? '') ? 'preset' : 'custom',
     });
   }, []);
 
