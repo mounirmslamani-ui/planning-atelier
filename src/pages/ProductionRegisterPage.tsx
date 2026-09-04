@@ -535,6 +535,9 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                           <span className="inline-block rounded px-1.5 py-0.5 text-[11px] bg-muted text-muted-foreground">0:00</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {fmtHM(Math.round((rec.billableHours ?? (rec.actualDuration / 60)) * 60))}
+                      </TableCell>
                       {showActionsCol && (
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
