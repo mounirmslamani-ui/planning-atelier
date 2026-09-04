@@ -245,6 +245,7 @@ const RelaisDialog: React.FC<Props> = ({
     setWorkStatus('continue');
     setNonBillableTime('00:00');
     setNonBillableReason('');
+    setNonBillableReasonMode('preset');
     setRightStartTime(mode === 'debut_poste' ? '08:00' : now);
     setRightStartManual(false);
     setLeftConfirmed(false);
