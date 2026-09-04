@@ -752,12 +752,28 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 </div>
                 {editNonBillableMinutes > 0 && (
                   <>
-                    <textarea
-                      value={editRecord.nonBillableReason}
-                      onChange={e => setEditRecord({ ...editRecord, nonBillableReason: e.target.value })}
+                    <SearchableSelect
+                      dir="rtl"
+                      value={editRecord.nonBillableReasonMode === 'custom' ? '...' : editRecord.nonBillableReason}
+                      options={NON_BILLABLE_SELECT_OPTIONS}
                       placeholder="سبب الاستقطاع"
-                      className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                      className="h-8 text-xs w-full px-2"
+                      onValueChange={v => {
+                        if (isNonBillableCustomToken(v)) {
+                          setEditRecord({ ...editRecord, nonBillableReasonMode: 'custom', nonBillableReason: '' });
+                        } else {
+                          setEditRecord({ ...editRecord, nonBillableReasonMode: 'preset', nonBillableReason: v });
+                        }
+                      }}
                     />
+                    {editRecord.nonBillableReasonMode === 'custom' && (
+                      <Input
+                        value={editRecord.nonBillableReason}
+                        placeholder="تفاصيل السبب"
+                        onChange={e => setEditRecord({ ...editRecord, nonBillableReason: e.target.value })}
+                        className="h-8 text-xs w-full"
+                      />
+                    )}
                     {editNonBillableReasonMissing && (
                       <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
                     )}
