@@ -479,13 +479,13 @@ const RelaisDialog: React.FC<Props> = ({
                   </div>
 
                   <div className="pt-2 space-y-1">
+                    <Row label="المدة الفعلية الإجمالية" value={formatMinutesToHM(totalDoneInclusive)} />
                     {durationError ? (
                       <p className="text-destructive text-xs">ساعة النهاية يجب أن تكون بعد ساعة البداية</p>
                     ) : (
-                      <Row label="المدة الفعلية" value={formatMinutesToHM(actualDuration ?? 0)} />
+                      <Row label="المدة الفعلية الإجمالية-الوقت المستقطع" value={formatMinutesToHM(actualDuration ?? 0)} />
                     )}
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(totalEstimatedRemaining)} />
-                    <Row label="المدة الإجمالية" value={formatMinutesToHM(totalDoneInclusive)} />
                   </div>
 
                   <div className="pt-2 space-y-2">
