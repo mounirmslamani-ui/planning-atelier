@@ -9,6 +9,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
 import StepDurationExpiredDialog from '@/components/StepDurationExpiredDialog';
 import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, pauseItemsTotalHHMM, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
+import { NON_BILLABLE_SELECT_OPTIONS, isNonBillableCustomToken } from '@/lib/nonBillableReasons';
 import type { Operation, Order, ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type RelaisMode = 'debut_poste' | 'relais' | 'fin_poste';
@@ -220,6 +221,7 @@ const RelaisDialog: React.FC<Props> = ({
   const [workStatus, setWorkStatus] = useState<'done' | 'continue'>('continue');
   const [nonBillableTime, setNonBillableTime] = useState('00:00'); // HH:mm
   const [nonBillableReason, setNonBillableReason] = useState('');
+  const [nonBillableReasonMode, setNonBillableReasonMode] = useState<'preset' | 'custom'>('preset');
   const [rightStartTime, setRightStartTime] = useState('08:00');
   const [rightStartManual, setRightStartManual] = useState(false);
 
@@ -243,6 +245,7 @@ const RelaisDialog: React.FC<Props> = ({
     setWorkStatus('continue');
     setNonBillableTime('00:00');
     setNonBillableReason('');
+    setNonBillableReasonMode('preset');
     setRightStartTime(mode === 'debut_poste' ? '08:00' : now);
     setRightStartManual(false);
     setLeftConfirmed(false);
@@ -481,8 +484,8 @@ const RelaisDialog: React.FC<Props> = ({
                     ) : (
                       <Row label="المدة الفعلية" value={formatMinutesToHM(actualDuration ?? 0)} />
                     )}
-                    <Row label="المدة الفعلية الإجمالية" value={formatMinutesToHM(totalDoneInclusive)} />
                     <Row label="المدة المقدرة المتبقية للمرحلة" value={formatMinutesToHM(totalEstimatedRemaining)} />
+                    <Row label="المدة الإجمالية" value={formatMinutesToHM(totalDoneInclusive)} />
                   </div>
 
                   <div className="pt-2 space-y-2">
@@ -492,13 +495,32 @@ const RelaisDialog: React.FC<Props> = ({
                     </div>
                     {nonBillableMinutes > 0 && (
                       <>
-                        <textarea
-                          value={nonBillableReason}
+                        <SearchableSelect
+                          dir="rtl"
+                          value={nonBillableReasonMode === 'custom' ? '...' : nonBillableReason}
                           disabled={leftConfirmed}
-                          onChange={e => setNonBillableReason(e.target.value)}
+                          options={NON_BILLABLE_SELECT_OPTIONS}
                           placeholder="سبب الاستقطاع"
-                          className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                          className="h-8 text-xs w-full"
+                          onValueChange={v => {
+                            if (isNonBillableCustomToken(v)) {
+                              setNonBillableReasonMode('custom');
+                              setNonBillableReason('');
+                            } else {
+                              setNonBillableReasonMode('preset');
+                              setNonBillableReason(v);
+                            }
+                          }}
                         />
+                        {nonBillableReasonMode === 'custom' && (
+                          <Input
+                            value={nonBillableReason}
+                            disabled={leftConfirmed}
+                            placeholder="تفاصيل السبب"
+                            onChange={e => setNonBillableReason(e.target.value)}
+                            className="h-8 text-xs w-full"
+                          />
+                        )}
                         {nonBillableReasonMissing && (
                           <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
                         )}

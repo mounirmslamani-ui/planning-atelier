@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SearchableSelect from '@/components/ui/searchable-select';
 import { X, Download, Pencil, Trash2, Plus } from 'lucide-react';
 import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, parsePauseItems, pauseItemsTotalHHMM, pauseItemsTotalMinutes, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
+import { NON_BILLABLE_PRESETS, NON_BILLABLE_SELECT_OPTIONS, isNonBillableCustomToken } from '@/lib/nonBillableReasons';
 import { exportSheetsToExcel, type ExcelRow } from '@/lib/excelExport';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
 import { getOperationLabel } from '@/lib/operationLinks';
@@ -87,6 +88,7 @@ const ProductionRegisterPage: React.FC = () => {
     pauseItems: PauseItem[];
     nonBillableTime: string; // HH:mm
     nonBillableReason: string;
+    nonBillableReasonMode: 'preset' | 'custom';
   } | null>(null);
 
   const parseHHMM = (s: string): number | null => {
@@ -116,6 +118,7 @@ const ProductionRegisterPage: React.FC = () => {
       pauseItems: parsePauseItems(rec.pauseComment),
       nonBillableTime: `${String(Math.floor(nbMin / 60)).padStart(2, '0')}:${String(nbMin % 60).padStart(2, '0')}`,
       nonBillableReason: rec.nonBillableReason ?? '',
+      nonBillableReasonMode: NON_BILLABLE_PRESETS.includes(rec.nonBillableReason ?? '') ? 'preset' : 'custom',
     });
   }, []);
 
@@ -499,6 +502,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                     <ColumnHeader label="المدة الفعلية" columnKey="duration" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['duration'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.duration} className="justify-end" />
                   </TableHead>
                   <TableHead className="w-16 text-center">استقطاع</TableHead>
+                  <TableHead className="w-20 text-right">المدة المفوترة</TableHead>
                   {showActionsCol && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -530,6 +534,9 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                         ) : (
                           <span className="inline-block rounded px-1.5 py-0.5 text-[11px] bg-muted text-muted-foreground">0:00</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {fmtHM(Math.round((rec.billableHours ?? (rec.actualDuration / 60)) * 60))}
                       </TableCell>
                       {showActionsCol && (
                         <TableCell>
@@ -745,12 +752,28 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                 </div>
                 {editNonBillableMinutes > 0 && (
                   <>
-                    <textarea
-                      value={editRecord.nonBillableReason}
-                      onChange={e => setEditRecord({ ...editRecord, nonBillableReason: e.target.value })}
+                    <SearchableSelect
+                      dir="rtl"
+                      value={editRecord.nonBillableReasonMode === 'custom' ? '...' : editRecord.nonBillableReason}
+                      options={NON_BILLABLE_SELECT_OPTIONS}
                       placeholder="سبب الاستقطاع"
-                      className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                      className="h-8 text-xs w-full px-2"
+                      onValueChange={v => {
+                        if (isNonBillableCustomToken(v)) {
+                          setEditRecord({ ...editRecord, nonBillableReasonMode: 'custom', nonBillableReason: '' });
+                        } else {
+                          setEditRecord({ ...editRecord, nonBillableReasonMode: 'preset', nonBillableReason: v });
+                        }
+                      }}
                     />
+                    {editRecord.nonBillableReasonMode === 'custom' && (
+                      <Input
+                        value={editRecord.nonBillableReason}
+                        placeholder="تفاصيل السبب"
+                        onChange={e => setEditRecord({ ...editRecord, nonBillableReason: e.target.value })}
+                        className="h-8 text-xs w-full"
+                      />
+                    )}
                     {editNonBillableReasonMissing && (
                       <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
                     )}
