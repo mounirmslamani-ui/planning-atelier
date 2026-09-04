@@ -495,13 +495,32 @@ const RelaisDialog: React.FC<Props> = ({
                     </div>
                     {nonBillableMinutes > 0 && (
                       <>
-                        <textarea
-                          value={nonBillableReason}
+                        <SearchableSelect
+                          dir="rtl"
+                          value={nonBillableReasonMode === 'custom' ? '...' : nonBillableReason}
                           disabled={leftConfirmed}
-                          onChange={e => setNonBillableReason(e.target.value)}
+                          options={NON_BILLABLE_SELECT_OPTIONS}
                           placeholder="سبب الاستقطاع"
-                          className="w-full min-h-[60px] rounded-md border bg-background p-2 text-xs"
+                          className="h-8 text-xs w-full"
+                          onValueChange={v => {
+                            if (isNonBillableCustomToken(v)) {
+                              setNonBillableReasonMode('custom');
+                              setNonBillableReason('');
+                            } else {
+                              setNonBillableReasonMode('preset');
+                              setNonBillableReason(v);
+                            }
+                          }}
                         />
+                        {nonBillableReasonMode === 'custom' && (
+                          <Input
+                            value={nonBillableReason}
+                            disabled={leftConfirmed}
+                            placeholder="تفاصيل السبب"
+                            onChange={e => setNonBillableReason(e.target.value)}
+                            className="h-8 text-xs w-full"
+                          />
+                        )}
                         {nonBillableReasonMissing && (
                           <p className="text-destructive text-xs">سبب الاستقطاع إجباري</p>
                         )}
