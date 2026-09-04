@@ -502,6 +502,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
                     <ColumnHeader label="المدة الفعلية" columnKey="duration" sortKey={colSortKey} sortDir={colSortDir} onSort={handleColSort} filterValue={colFilters['duration'] || ''} onFilter={handleColFilter} allValues={allValuesByKey.duration} className="justify-end" />
                   </TableHead>
                   <TableHead className="w-16 text-center">استقطاع</TableHead>
+                  <TableHead className="w-20 text-right">المدة المفوترة</TableHead>
                   {showActionsCol && <TableHead className="w-20 text-center">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
