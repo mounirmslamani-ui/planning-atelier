@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 import OrderUnifiedSheet from '@/components/OrderUnifiedSheet';
 
-type Tab = 'info' | 'resources' | 'steps' | 'qc';
+type Tab = 'info' | 'resources' | 'steps' | 'qc' | 'costing';
 
 interface Ctx {
   openOrderSheet: (orderId: string, tab?: Tab) => void;
