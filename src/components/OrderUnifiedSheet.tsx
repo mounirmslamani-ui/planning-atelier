@@ -27,6 +27,7 @@ import PartialQCDelivery, { PartialQCDeliveryHandle } from '@/components/orders/
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import OrderAttachmentsPanel from '@/components/orders/OrderAttachmentsPanel';
+import OrderCostingTab from '@/components/orders/OrderCostingTab';
 
 import { getQCControlled, getQCPending } from '@/lib/orderFlow';
 
@@ -35,7 +36,7 @@ interface Props {
   orderId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialTab?: 'info' | 'resources' | 'steps' | 'qc';
+  initialTab?: 'info' | 'resources' | 'steps' | 'qc' | 'costing';
   createMode?: boolean;
   initialDraft?: Partial<Order>;
   onCreated?: (order: Order) => void;
@@ -46,6 +47,7 @@ const TAB_TITLES = {
   resources: 'تحضير الطلبية والموارد',
   steps: 'مراحل الإنجاز والتوقيت',
   qc: 'مراقبة الجودة والتسليم',
+  costing: 'حساب التكلفة/ثمن البيع',
 } as const;
 
 const decisionLabels: Record<QCDecision, string> = {
@@ -494,11 +496,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
           {/* TABS */}
           <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col overflow-hidden">
             {!createMode && (
-              <TabsList className="mx-6 mt-3 grid grid-cols-4">
+              <TabsList className="mx-6 mt-3 grid grid-cols-5">
                 <TabsTrigger value="info">{TAB_TITLES.info}</TabsTrigger>
                 <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
                 <TabsTrigger value="steps">{TAB_TITLES.steps}</TabsTrigger>
                 <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
+                <TabsTrigger value="costing">{TAB_TITLES.costing}</TabsTrigger>
               </TabsList>
             )}
 
@@ -678,6 +681,13 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   <stepsLock.EditButton />
                 </div>
               </TabsContent>
+
+              {/* TAB 5 — COSTING / SALE PRICE */}
+              {!createMode && (
+                <TabsContent value="costing" className="mt-0">
+                  <OrderCostingTab order={order} open={open} />
+                </TabsContent>
+              )}
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
               <TabsContent value="qc" className="mt-0 space-y-4">
