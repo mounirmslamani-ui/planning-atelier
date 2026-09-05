@@ -184,6 +184,12 @@ export interface ProductionStep {
   subcontractingInProgress?: boolean;
   subcontractingDeadline?: string;
   subcontractingReceivedDate?: string;
+  /** Coût de la sous-traitance (تكلفة المناولة) — saisi dans l'onglet coûts */
+  subcontractingCost?: number;
+  /** Marge appliquée à subcontractingCost : 30 ou 50 (%) */
+  subcontractingMargin?: 30 | 50;
+  /** Taux horaire choisi pour cette étape de fabrication interne (DZD/heure) */
+  hourlyRate?: number;
   specialToolingItems?: ResourceItem[];
   rawMaterialItems?: ResourceItem[];
   /** Row-level flag: no raw material needed for this step. */
