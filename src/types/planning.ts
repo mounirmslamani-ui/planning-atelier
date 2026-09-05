@@ -101,6 +101,12 @@ export interface ResourceItem {
   id: string;
   label: string;
   status: ResourceStatus;
+  /** Prix d'achat de cette matière première — renseigné dans l'onglet حساب التكلفة/ثمن البيع */
+  costPrice?: number;
+  /** Marge appliquée à costPrice pour obtenir le prix de vente : 30 ou 50 (%) */
+  margin?: 30 | 50;
+  /** Fournisseur — saisi manuellement */
+  supplier?: string;
 }
 
 // Helper: legacy boolean view of a 4-state status (true only when "disponible")
