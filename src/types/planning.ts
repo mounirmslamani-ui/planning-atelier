@@ -148,6 +148,8 @@ export interface Order {
   reintegratedAt?: string;
   /** Technical complexity level: level1..level4 */
   technicalComplexity?: 'level1' | 'level2' | 'level3' | 'level4';
+  /** Prix de vente unitaire saisi manuellement dans l'onglet coûts (ثمن بيع الوحدة) */
+  salePricePerUnit?: number;
 }
 
 export interface ProductionStep {
