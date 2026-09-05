@@ -255,6 +255,7 @@ export function mapOrderToDB(o: Order) {
     reintegrated_at: o.reintegratedAt || null,
     
     technical_complexity: o.technicalComplexity || null,
+    sale_price_per_unit: o.salePricePerUnit ?? null,
   };
 }
 
