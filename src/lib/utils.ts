@@ -25,3 +25,20 @@ export function formatDateTimeFR(iso: string | undefined | null): string {
   const mi = String(d.getMinutes()).padStart(2, '0');
   return `${dd}/${mm}/${yyyy} à ${hh}:${mi}`;
 }
+
+/** Formate un montant en "5 600.00 DZD" (séparateur de milliers = espace, décimales = point) */
+export function formatDZD(amount: number | undefined | null): string {
+  const n = Number(amount) || 0;
+  const [intPart, decPart] = n.toFixed(2).split('.');
+  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${withSpaces}.${decPart} DZD`;
+}
+
+/** Formate un nombre d'heures décimal (2.5) en "02:30" pour affichage lisible */
+export function formatHoursHHMM(decimalHours: number | undefined | null): string {
+  const h = Number(decimalHours) || 0;
+  const totalMinutes = Math.round(h * 60);
+  const hh = Math.floor(totalMinutes / 60);
+  const mm = totalMinutes % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}

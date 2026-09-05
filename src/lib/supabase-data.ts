@@ -217,6 +217,7 @@ export function mapOrderFromDB(row: any): Order {
     reintegratedAt: (row as any).reintegrated_at || undefined,
     
     technicalComplexity: (row as any).technical_complexity || undefined,
+    salePricePerUnit: row.sale_price_per_unit != null ? Number(row.sale_price_per_unit) : undefined,
   };
 }
 
@@ -254,6 +255,7 @@ export function mapOrderToDB(o: Order) {
     reintegrated_at: o.reintegratedAt || null,
     
     technical_complexity: o.technicalComplexity || null,
+    sale_price_per_unit: o.salePricePerUnit ?? null,
   };
 }
 
@@ -294,6 +296,9 @@ export function mapStepFromDB(row: any): ProductionStep {
     subcontractingInProgress: row.subcontracting_in_progress ?? false,
     subcontractingDeadline: row.subcontracting_deadline || undefined,
     subcontractingReceivedDate: row.subcontracting_received_date || undefined,
+    subcontractingCost: row.subcontracting_cost != null ? Number(row.subcontracting_cost) : undefined,
+    subcontractingMargin: row.subcontracting_margin ?? undefined,
+    hourlyRate: row.hourly_rate != null ? Number(row.hourly_rate) : undefined,
     specialToolingItems: ((row as any).special_tooling_items || []) as any,
     rawMaterialItems: ((row as any).raw_material_items || []) as any,
     rawMaterialNotApplicable: (row as any).raw_material_not_applicable ?? false,
@@ -338,6 +343,9 @@ export function mapStepToDB(s: ProductionStep) {
     subcontracting_in_progress: s.subcontractingInProgress ?? false,
     subcontracting_deadline: toISODateOrNull(s.subcontractingDeadline),
     subcontracting_received_date: toISODateOrNull(s.subcontractingReceivedDate),
+    subcontracting_cost: s.subcontractingCost ?? null,
+    subcontracting_margin: s.subcontractingMargin ?? null,
+    hourly_rate: s.hourlyRate ?? null,
     special_tooling_items: (s.specialToolingItems || []) as any,
     raw_material_items: (s.rawMaterialItems || []) as any,
     raw_material_not_applicable: s.rawMaterialNotApplicable ?? false,

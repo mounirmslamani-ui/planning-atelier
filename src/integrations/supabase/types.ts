@@ -428,6 +428,7 @@ export type Database = {
           prototype_quantity: number | null
           quantity: number
           reintegrated_at: string | null
+          sale_price_per_unit: number | null
           study_status: Database["public"]["Enums"]["resource_status"]
           technical_complexity: string | null
           tooling_status: Database["public"]["Enums"]["resource_status"]
@@ -459,6 +460,7 @@ export type Database = {
           prototype_quantity?: number | null
           quantity?: number
           reintegrated_at?: string | null
+          sale_price_per_unit?: number | null
           study_status?: Database["public"]["Enums"]["resource_status"]
           technical_complexity?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
@@ -490,6 +492,7 @@ export type Database = {
           prototype_quantity?: number | null
           quantity?: number
           reintegrated_at?: string | null
+          sale_price_per_unit?: number | null
           study_status?: Database["public"]["Enums"]["resource_status"]
           technical_complexity?: string | null
           tooling_status?: Database["public"]["Enums"]["resource_status"]
@@ -612,6 +615,7 @@ export type Database = {
           equipment_ids: string[]
           estimated_duration: number
           frozen: boolean
+          hourly_rate: number | null
           id: string
           material_deadline: string | null
           material_status: Database["public"]["Enums"]["resource_status"]
@@ -633,9 +637,11 @@ export type Database = {
           study_completed_date: string | null
           study_deadline: string | null
           study_status: Database["public"]["Enums"]["resource_status"]
+          subcontracting_cost: number | null
           subcontracting_deadline: string | null
           subcontracting_done: boolean
           subcontracting_in_progress: boolean
+          subcontracting_margin: number | null
           subcontracting_received_date: string | null
           subcontractor_id: string | null
           tooling_deadline: string | null
@@ -652,6 +658,7 @@ export type Database = {
           equipment_ids?: string[]
           estimated_duration?: number
           frozen?: boolean
+          hourly_rate?: number | null
           id?: string
           material_deadline?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
@@ -673,9 +680,11 @@ export type Database = {
           study_completed_date?: string | null
           study_deadline?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
+          subcontracting_cost?: number | null
           subcontracting_deadline?: string | null
           subcontracting_done?: boolean
           subcontracting_in_progress?: boolean
+          subcontracting_margin?: number | null
           subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null
@@ -692,6 +701,7 @@ export type Database = {
           equipment_ids?: string[]
           estimated_duration?: number
           frozen?: boolean
+          hourly_rate?: number | null
           id?: string
           material_deadline?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
@@ -713,9 +723,11 @@ export type Database = {
           study_completed_date?: string | null
           study_deadline?: string | null
           study_status?: Database["public"]["Enums"]["resource_status"]
+          subcontracting_cost?: number | null
           subcontracting_deadline?: string | null
           subcontracting_done?: boolean
           subcontracting_in_progress?: boolean
+          subcontracting_margin?: number | null
           subcontracting_received_date?: string | null
           subcontractor_id?: string | null
           tooling_deadline?: string | null

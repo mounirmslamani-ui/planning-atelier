@@ -101,6 +101,12 @@ export interface ResourceItem {
   id: string;
   label: string;
   status: ResourceStatus;
+  /** Prix d'achat de cette matière première — renseigné dans l'onglet حساب التكلفة/ثمن البيع */
+  costPrice?: number;
+  /** Marge appliquée à costPrice pour obtenir le prix de vente : 30 ou 50 (%) */
+  margin?: 30 | 50;
+  /** Fournisseur — saisi manuellement */
+  supplier?: string;
 }
 
 // Helper: legacy boolean view of a 4-state status (true only when "disponible")
@@ -142,6 +148,8 @@ export interface Order {
   reintegratedAt?: string;
   /** Technical complexity level: level1..level4 */
   technicalComplexity?: 'level1' | 'level2' | 'level3' | 'level4';
+  /** Prix de vente unitaire saisi manuellement dans l'onglet coûts (ثمن بيع الوحدة) */
+  salePricePerUnit?: number;
 }
 
 export interface ProductionStep {
@@ -178,6 +186,12 @@ export interface ProductionStep {
   subcontractingInProgress?: boolean;
   subcontractingDeadline?: string;
   subcontractingReceivedDate?: string;
+  /** Coût de la sous-traitance (تكلفة المناولة) — saisi dans l'onglet coûts */
+  subcontractingCost?: number;
+  /** Marge appliquée à subcontractingCost : 30 ou 50 (%) */
+  subcontractingMargin?: 30 | 50;
+  /** Taux horaire choisi pour cette étape de fabrication interne (DZD/heure) */
+  hourlyRate?: number;
   specialToolingItems?: ResourceItem[];
   rawMaterialItems?: ResourceItem[];
   /** Row-level flag: no raw material needed for this step. */
