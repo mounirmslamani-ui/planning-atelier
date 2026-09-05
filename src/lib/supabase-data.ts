@@ -217,6 +217,7 @@ export function mapOrderFromDB(row: any): Order {
     reintegratedAt: (row as any).reintegrated_at || undefined,
     
     technicalComplexity: (row as any).technical_complexity || undefined,
+    salePricePerUnit: row.sale_price_per_unit != null ? Number(row.sale_price_per_unit) : undefined,
   };
 }
 
