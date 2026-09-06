@@ -140,7 +140,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                               className="h-8 text-xs"
                             />
                           </td>
-                          <td className="p-2 whitespace-nowrap font-medium">{formatDAPrefix(sale)}</td>
+                          <td className="p-2 whitespace-nowrap font-medium" dir="ltr">{formatDAPrefix(sale)}</td>
                         </tr>
                       );
                     }),
@@ -153,7 +153,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
           <div className="px-3 py-2 border-t text-xs flex justify-between">
             <span className="text-muted-foreground">مجموع ثمن بيع المواد الأولية</span>
-            <span className="font-semibold">{formatDAPrefix(breakdown.materialsSaleTotal)}</span>
+            <span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.materialsSaleTotal)}</span>
           </div>
         </section>
 
@@ -190,7 +190,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                           className="h-8 text-xs"
                         />
                       </td>
-                      <td className="p-2 whitespace-nowrap font-medium">{formatDAPrefix(sale)}</td>
+                      <td className="p-2 whitespace-nowrap font-medium" dir="ltr">{formatDAPrefix(sale)}</td>
                     </tr>
                   );
                 })}
@@ -202,7 +202,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
           <div className="px-3 py-2 border-t text-xs flex justify-between">
             <span className="text-muted-foreground">مجموع ثمن بيع المناولة</span>
-            <span className="font-semibold">{formatDAPrefix(breakdown.subcontractingSaleTotal)}</span>
+            <span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.subcontractingSaleTotal)}</span>
           </div>
         </section>
 
@@ -240,7 +240,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </Button>
-                          <span className="min-w-20 text-center whitespace-nowrap">
+                          <span className="min-w-20 text-center whitespace-nowrap" dir="ltr">
                             {step.hourlyRate != null ? formatDAPrefix(step.hourlyRate) : '—'}
                           </span>
                           <Button
@@ -254,7 +254,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                           </Button>
                         </div>
                       </td>
-                      <td className="p-2 whitespace-nowrap font-medium">{formatDAPrefix(sale)}</td>
+                      <td className="p-2 whitespace-nowrap font-medium" dir="ltr">{formatDAPrefix(sale)}</td>
                     </tr>
                   );
                 })}
@@ -266,21 +266,21 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
           <div className="px-3 py-2 border-t text-xs flex justify-between">
             <span className="text-muted-foreground">مجموع ثمن بيع التصنيع</span>
-            <span className="font-semibold">{formatDAPrefix(breakdown.manufacturingSaleTotal)}</span>
+            <span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.manufacturingSaleTotal)}</span>
           </div>
         </section>
 
         {/* SYNTHÈSE */}
         <section className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">التكلفة الإجمالية للطلبية</span><span className="font-semibold">{formatDAPrefix(breakdown.totalCost)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">تكلفة الوحدة ({order.quantity})</span><span className="font-semibold">{formatDAPrefix(breakdown.unitCost)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">التكلفة الإجمالية للطلبية</span><span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.totalCost)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">تكلفة الوحدة ({order.quantity})</span><span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.unitCost)}</span></div>
           <div className="flex items-center justify-between gap-3 pt-1">
             <Label className="text-muted-foreground font-normal">ثمن بيع الوحدة</Label>
             <div className="w-48"><MoneyInput value={draftSalePrice} onValueChange={setDraftSalePrice} currencyPosition="start" currencyLabel="دج" /></div>
           </div>
           <div className="flex justify-between border-t pt-2">
             <span className="text-muted-foreground">ثمن البيع الإجمالي</span>
-            <span className="font-bold text-base">{breakdown.totalSalePrice != null ? formatDAPrefix(breakdown.totalSalePrice) : '—'}</span>
+            <span className="font-bold text-base" dir="ltr">{breakdown.totalSalePrice != null ? formatDAPrefix(breakdown.totalSalePrice) : '—'}</span>
           </div>
         </section>
       </fieldset>
