@@ -1,9 +1,27 @@
-import type { Order, ProductionStep, ProductionRecord, Operation } from '@/types/planning';
+import type { Order, ProductionStep, ProductionRecord, Operation, OrderCategory } from '@/types/planning';
 
 export const MARGIN_OPTIONS = [30, 50] as const;
 export type MarginPercent = 30 | 50;
 
-export const MANUFACTURING_HOURLY_RATES = [1500, 2000, 2500, 3000, 3500, 4000, 4500];
+/** Palier d'ajustement manuel (+ / -) du taux horaire d'une étape, en DZD. */
+export const HOURLY_RATE_STEP = 500;
+
+/**
+ * Taux horaire par défaut d'une opération selon la catégorie de la commande :
+ *   fabrication / prestation → التكلفة الساعية 1
+ *   divers                   → التكلفة الساعية 2
+ *   slamani                  → 0 (forfaitaire, non facturé)
+ * Retourne undefined si l'opération ne définit pas le taux correspondant
+ * (l'utilisateur devra alors le renseigner via les boutons + / -).
+ */
+export function getDefaultHourlyRate(
+  category: OrderCategory | undefined,
+  operation: Operation | undefined,
+): number | undefined {
+  if (category === 'slamani') return 0;
+  if (category === 'divers') return operation?.hourlyRate2;
+  return operation?.hourlyRate1; // fabrication / prestation / non défini
+}
 
 export interface OrderCostingBreakdown {
   materialsSaleTotal: number;
