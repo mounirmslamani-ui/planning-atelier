@@ -130,6 +130,8 @@ export function mapOperationFromDB(row: any): Operation {
     id: row.id,
     name: row.name,
     category: row.category as OperationCategory,
+    hourlyRate1: row.hourly_rate_1 != null ? Number(row.hourly_rate_1) : undefined,
+    hourlyRate2: row.hourly_rate_2 != null ? Number(row.hourly_rate_2) : undefined,
   };
 }
 
@@ -138,6 +140,8 @@ export function mapOperationToDB(op: Operation) {
     id: op.id,
     name: op.name,
     category: op.category,
+    hourly_rate_1: op.hourlyRate1 ?? null,
+    hourly_rate_2: op.hourlyRate2 ?? null,
   };
 }
 
