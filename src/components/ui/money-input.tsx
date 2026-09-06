@@ -9,6 +9,7 @@ interface MoneyInputProps {
   className?: string;
   placeholder?: string;
   currencyLabel?: string;
+  currencyPosition?: 'start' | 'end';
 }
 
 /**
