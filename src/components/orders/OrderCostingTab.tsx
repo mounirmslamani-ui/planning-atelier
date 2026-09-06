@@ -129,7 +129,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                             />
                           </td>
                           <td className="p-2 min-w-36">
-                            <MoneyInput value={it.costPrice} onValueChange={v => patchItem(step.id, it.id, { costPrice: v })} currencyLabel="دج" />
+                            <MoneyInput value={it.costPrice} onValueChange={v => patchItem(step.id, it.id, { costPrice: v })} currencyPosition="start" currencyLabel="دج" />
                           </td>
                           <td className="p-2 min-w-28">
                             <SearchableSelect
@@ -179,7 +179,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                       <td className="p-2">{opName(step.operationId)}</td>
                       <td className="p-2">{resourceName(step)}</td>
                       <td className="p-2 min-w-36">
-                        <MoneyInput value={step.subcontractingCost} onValueChange={v => patchStep(step.id, { subcontractingCost: v })} currencyLabel="دج" />
+                        <MoneyInput value={step.subcontractingCost} onValueChange={v => patchStep(step.id, { subcontractingCost: v })} currencyPosition="start" currencyLabel="دج" />
                       </td>
                       <td className="p-2 min-w-28">
                         <SearchableSelect
@@ -276,7 +276,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           <div className="flex justify-between"><span className="text-muted-foreground">تكلفة الوحدة ({order.quantity})</span><span className="font-semibold">{formatDAPrefix(breakdown.unitCost)}</span></div>
           <div className="flex items-center justify-between gap-3 pt-1">
             <Label className="text-muted-foreground font-normal">ثمن بيع الوحدة</Label>
-            <div className="w-48"><MoneyInput value={draftSalePrice} onValueChange={setDraftSalePrice} currencyLabel="دج" /></div>
+            <div className="w-48"><MoneyInput value={draftSalePrice} onValueChange={setDraftSalePrice} currencyPosition="start" currencyLabel="دج" /></div>
           </div>
           <div className="flex justify-between border-t pt-2">
             <span className="text-muted-foreground">ثمن البيع الإجمالي</span>
