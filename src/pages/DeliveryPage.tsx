@@ -194,6 +194,9 @@ const DeliveryPage: React.FC = () => {
                       {entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية'}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {order.salePricePerUnit != null ? formatDZD(order.salePricePerUnit * order.quantity) : '—'}
+                  </TableCell>
                  </TableRow>
               );
             })}
