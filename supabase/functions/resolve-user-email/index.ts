@@ -25,14 +25,29 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE);
 
     const trimmed = display_name.trim();
-    const { data: profile, error: profErr } = await admin
-      .from('profiles')
-      .select('id, status')
-      .ilike('display_name', trimmed)
-      .maybeSingle();
+
+    // Le backend peut renvoyer une erreur transitoire (redémarrage, timeout amont) :
+    // on retente jusqu'à 3 fois avec un court délai, avec un timeout court par tentative.
+    let profile: { id: string; status: string } | null = null;
+    let profErr: unknown = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const res = await admin
+        .from('profiles')
+        .select('id, status')
+        .ilike('display_name', trimmed)
+        .abortSignal(AbortSignal.timeout(8000))
+        .maybeSingle();
+      if (!res.error) {
+        profile = (res.data as { id: string; status: string } | null) ?? null;
+        profErr = null;
+        break;
+      }
+      profErr = res.error;
+      console.error(`profiles query error (tentative ${attempt})`, JSON.stringify(res.error));
+      if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
 
     if (profErr) {
-      console.error('profiles query error', JSON.stringify(profErr));
       return new Response(JSON.stringify({ error: 'الخدمة غير متوفرة مؤقتا' }), {
         status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
