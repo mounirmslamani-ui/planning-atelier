@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatDateFR } from '@/lib/utils';
+import { formatDateFR, formatDZD } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -87,6 +87,10 @@ const DeliveryPage: React.FC = () => {
     deadline: (e: Row) => getOrder(e.orderId)?.plannedDeadline || '',
     controlDate: (e: Row) => e.controlDate,
     decision: (e: Row) => e.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
+    salePrice: (e: Row) => {
+      const o = getOrder(e.orderId);
+      return o?.salePricePerUnit != null ? o.salePricePerUnit * o.quantity : 0;
+    },
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(filteredEntries, accessors);
 
@@ -104,8 +108,9 @@ const DeliveryPage: React.FC = () => {
         Délais: order ? formatDateFR(order.plannedDeadline) : '—',
         'تاريخ مراقبة الجودة': formatDateFR(entry.controlDate),
         Décision: entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية',
+        'ثمن البيع الإجمالي': order?.salePricePerUnit != null ? order.salePricePerUnit * order.quantity : '',
       };
-    }), [12, 20, 14, 24, 45, 10, 10, 14, 16, 26]);
+    }), [12, 20, 14, 24, 45, 10, 10, 14, 16, 26, 20]);
   };
 
 
@@ -152,6 +157,7 @@ const DeliveryPage: React.FC = () => {
               <TableHead><ColumnHeader label="أجل التسليم" columnKey="deadline" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deadline || ''} onFilter={handleFilter} allValues={allValuesByKey.deadline} /></TableHead>
               <TableHead><ColumnHeader label="تاريخ مراقبة الجودة" columnKey="controlDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.controlDate || ''} onFilter={handleFilter} allValues={allValuesByKey.controlDate} /></TableHead>
               <TableHead><ColumnHeader label="قرار" columnKey="decision" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.decision || ''} onFilter={handleFilter} allValues={allValuesByKey.decision} /></TableHead>
+              <TableHead><ColumnHeader label="ثمن البيع الإجمالي" columnKey="salePrice" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.salePrice || ''} onFilter={handleFilter} allValues={allValuesByKey.salePrice} /></TableHead>
              </TableRow>
           </TableHeader>
           <TableBody>
@@ -188,12 +194,15 @@ const DeliveryPage: React.FC = () => {
                       {entry.decision === 'conforme' ? 'مطابق للمواصفات' : 'مطابق للمواصفات بصفة استثنائية'}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {order.salePricePerUnit != null ? formatDZD(order.salePricePerUnit * order.quantity) : '—'}
+                  </TableCell>
                  </TableRow>
               );
             })}
             {allRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucune commande à livrer.
                 </TableCell>
               </TableRow>
