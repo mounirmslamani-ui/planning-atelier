@@ -53,6 +53,8 @@ export interface Operation {
   id: string;
   name: string;
   category: OperationCategory;
+  hourlyRate1?: number;
+  hourlyRate2?: number;
 }
 
 export type ClientClass = 'A' | 'B' | 'C' | 'D' | 'E';
