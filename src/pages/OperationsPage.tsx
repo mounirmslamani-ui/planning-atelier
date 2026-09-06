@@ -9,6 +9,8 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Operation, OperationCategory } from '@/types/planning';
+import MoneyInput from '@/components/ui/money-input';
+import { formatDA } from '@/lib/utils';
 
 const OperationsPage: React.FC = () => {
   const { operations, addOperation, updateOperation, deleteOperation, absenceOperationId } = usePlanning();
@@ -17,6 +19,8 @@ const OperationsPage: React.FC = () => {
   const [editing, setEditing] = useState<Operation | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<OperationCategory>('operator');
+  const [hourlyRate1, setHourlyRate1] = useState<number | undefined>(undefined);
+  const [hourlyRate2, setHourlyRate2] = useState<number | undefined>(undefined);
 
   const operatorOps = operations.filter(o => o.category === 'operator' && o.id !== absenceOperationId);
   const subcontractorOps = operations.filter(o => o.category === 'subcontractor');
@@ -25,6 +29,8 @@ const OperationsPage: React.FC = () => {
     setEditing(null);
     setName('');
     setCategory(cat);
+    setHourlyRate1(undefined);
+    setHourlyRate2(undefined);
     setDialogOpen(true);
   };
 
@@ -32,14 +38,16 @@ const OperationsPage: React.FC = () => {
     setEditing(op);
     setName(op.name);
     setCategory(op.category);
+    setHourlyRate1(op.hourlyRate1);
+    setHourlyRate2(op.hourlyRate2);
     setDialogOpen(true);
   };
 
   const handleSave = () => {
     if (editing) {
-      updateOperation({ ...editing, name, category });
+      updateOperation({ ...editing, name, category, hourlyRate1, hourlyRate2 });
     } else {
-      addOperation({ id: crypto.randomUUID(), name, category });
+      addOperation({ id: crypto.randomUUID(), name, category, hourlyRate1, hourlyRate2 });
     }
     setDialogOpen(false);
   };
@@ -57,6 +65,8 @@ const OperationsPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
+              <TableHead className="w-32">التكلفة الساعية 1</TableHead>
+              <TableHead className="w-32">التكلفة الساعية 2</TableHead>
               <TableHead className="w-24">عمليات</TableHead>
             </TableRow>
           </TableHeader>
@@ -64,6 +74,8 @@ const OperationsPage: React.FC = () => {
             {items.map(op => (
               <TableRow key={op.id}>
                 <TableCell className="font-medium">{op.name}</TableCell>
+                <TableCell>{op.hourlyRate1 != null ? formatDA(op.hourlyRate1) : '—'}</TableCell>
+                <TableCell>{op.hourlyRate2 != null ? formatDA(op.hourlyRate2) : '—'}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(op)}>
@@ -78,7 +90,7 @@ const OperationsPage: React.FC = () => {
             ))}
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={2} className="text-center text-muted-foreground py-6">
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
                   Aucune opération. Cliquez sur "Ajouter" pour commencer.
                 </TableCell>
               </TableRow>
@@ -108,6 +120,16 @@ const OperationsPage: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
           <Input value={name} onChange={e => setName(e.target.value)} placeholder="Nom de l'opération" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium mb-1 block">التكلفة الساعية 1</label>
+              <MoneyInput value={hourlyRate1} onValueChange={setHourlyRate1} currencyLabel="دج" />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">التكلفة الساعية 2</label>
+              <MoneyInput value={hourlyRate2} onValueChange={setHourlyRate2} currencyLabel="دج" />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
             <Button onClick={handleSave} disabled={!name}>حفظ</Button>
