@@ -41,6 +41,14 @@ export function formatDA(amount: number | undefined | null): string {
   const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return `\u2066${withSpaces}.${decPart}\u2069 دج`;
 }
+
+/** Formate un montant en "دج 5 000.00" pour les affichages où le symbole doit précéder le nombre */
+export function formatDAPrefix(amount: number | undefined | null): string {
+  const n = Number(amount) || 0;
+  const [intPart, decPart] = n.toFixed(2).split('.');
+  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `دج \u2066${withSpaces}.${decPart}\u2069`;
+}
 /** Formate un nombre d'heures décimal (2.5) en "02:30" pour affichage lisible */
 export function formatHoursHHMM(decimalHours: number | undefined | null): string {
   const h = Number(decimalHours) || 0;
