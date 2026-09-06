@@ -8,6 +8,7 @@ interface MoneyInputProps {
   disabled?: boolean;
   className?: string;
   placeholder?: string;
+  currencyLabel?: string;
 }
 
 /**
@@ -15,7 +16,7 @@ interface MoneyInputProps {
  * - Vide ⇒ `undefined` (aucune valeur saisie, à distinguer de 0).
  * - Accepte uniquement des nombres positifs, décimales avec point.
  */
-const MoneyInput: React.FC<MoneyInputProps> = ({ value, onValueChange, disabled, className, placeholder = '0.00' }) => {
+const MoneyInput: React.FC<MoneyInputProps> = ({ value, onValueChange, disabled, className, placeholder = '0.00', currencyLabel = 'DZD' }) => {
   const [text, setText] = React.useState<string>(value != null ? String(value) : '');
 
   React.useEffect(() => {
@@ -42,7 +43,7 @@ const MoneyInput: React.FC<MoneyInputProps> = ({ value, onValueChange, disabled,
         onChange={(e) => handleChange(e.target.value)}
         className={cn('h-8 text-xs text-left pe-12', className)}
       />
-      <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">DZD</span>
+        <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{currencyLabel}</span>
     </div>
   );
 };
