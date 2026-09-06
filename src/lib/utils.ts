@@ -34,6 +34,13 @@ export function formatDZD(amount: number | undefined | null): string {
   return `${withSpaces}.${decPart} DZD`;
 }
 
+/** Formate un montant en "5 000.00 دج" (تكلفة ساعية للعمليات) */
+export function formatDA(amount: number | undefined | null): string {
+  const n = Number(amount) || 0;
+  const [intPart, decPart] = n.toFixed(2).split('.');
+  const withSpaces = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${withSpaces}.${decPart} دج`;
+}
 /** Formate un nombre d'heures décimal (2.5) en "02:30" pour affichage lisible */
 export function formatHoursHHMM(decimalHours: number | undefined | null): string {
   const h = Number(decimalHours) || 0;
