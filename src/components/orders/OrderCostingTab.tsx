@@ -5,13 +5,15 @@ import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import MoneyInput from '@/components/ui/money-input';
 import { toast } from 'sonner';
+import { Minus, Plus } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import { formatDZD, formatHoursHHMM } from '@/lib/utils';
 import {
-  computeOrderCosting, getStepBillableHours, MANUFACTURING_HOURLY_RATES, MARGIN_OPTIONS,
+  computeOrderCosting, getStepBillableHours, getDefaultHourlyRate, HOURLY_RATE_STEP, MARGIN_OPTIONS,
 } from '@/lib/orderCosting';
+import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 import type { Order, ProductionStep, ResourceItem } from '@/types/planning';
 
 interface Props {
@@ -20,7 +22,6 @@ interface Props {
 }
 
 const marginOptions = MARGIN_OPTIONS.map(m => ({ value: String(m), label: `${m} %` }));
-const rateOptions = MANUFACTURING_HOURLY_RATES.map(r => ({ value: String(r), label: `${r} DZD/سا` }));
 
 const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const { steps, productionRecords, operations, subcontractors, operators, updateStep, updateOrder } = usePlanning();
@@ -42,9 +43,16 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const [draftSalePrice, setDraftSalePrice] = React.useState<number | undefined>(order.salePricePerUnit);
 
   React.useEffect(() => {
-    setDraftSteps(orderSteps);
+    const category = inferCategoryFromOrderNumber(order.orderNumber);
+    setDraftSteps(orderSteps.map(s => {
+      // On ne touche jamais à un taux déjà renseigné (manuellement ou précédemment) — uniquement le pré-remplissage initial.
+      if (s.subcontractorId || s.hourlyRate != null) return s;
+      const operation = operations.find(o => o.id === s.operationId);
+      const defaultRate = getDefaultHourlyRate(category, operation);
+      return defaultRate != null ? { ...s, hourlyRate: defaultRate } : s;
+    }));
     setDraftSalePrice(order.salePricePerUnit);
-  }, [orderSteps, order.salePricePerUnit, open]);
+  }, [orderSteps, order.salePricePerUnit, order.orderNumber, open, operations]);
 
   const opName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const resourceName = (s: ProductionStep) =>
@@ -222,13 +230,29 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                       <td className="p-2">{resourceName(step)}</td>
                       <td className="p-2 whitespace-nowrap">{formatHoursHHMM(hours)}</td>
                       <td className="p-2 min-w-40">
-                        <SearchableSelect
-                          value={step.hourlyRate != null ? String(step.hourlyRate) : ''}
-                          onValueChange={v => patchStep(step.id, { hourlyRate: v ? Number(v) : undefined })}
-                          options={rateOptions}
-                          placeholder="—"
-                          className="h-8 text-xs"
-                        />
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => patchStep(step.id, { hourlyRate: Math.max(0, (step.hourlyRate ?? 0) - HOURLY_RATE_STEP) })}
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </Button>
+                          <span className="min-w-20 text-center whitespace-nowrap">
+                            {step.hourlyRate != null ? formatDZD(step.hourlyRate) : '—'}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => patchStep(step.id, { hourlyRate: (step.hourlyRate ?? 0) + HOURLY_RATE_STEP })}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </td>
                       <td className="p-2 whitespace-nowrap font-medium">{formatDZD(sale)}</td>
                     </tr>
