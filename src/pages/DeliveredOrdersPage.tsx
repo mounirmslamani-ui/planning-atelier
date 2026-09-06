@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatDateFR } from '@/lib/utils';
+import { formatDateFR, formatDZD } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { usePlanning } from '@/context/PlanningContext';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -65,6 +65,10 @@ const DeliveredOrdersPage: React.FC = () => {
     salePriceStatus: (d: DeliveredOrder) => PRICE_META[d.salePriceStatus].label,
     invoiceNumber: (d: DeliveredOrder) => d.invoiceNumber || 'في الانتظار',
     observation: (d: DeliveredOrder) => d.observation || '',
+    salePrice: (d: DeliveredOrder) => {
+      const o = getOrder(d.orderId);
+      return o?.salePricePerUnit != null ? o.salePricePerUnit * o.quantity : 0;
+    },
   };
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(filteredDelivered, accessors);
 
@@ -82,8 +86,9 @@ const DeliveredOrdersPage: React.FC = () => {
         'ثمن البيع': PRICE_META[entry.salePriceStatus].label,
         'رقم الفاتورة': entry.invoiceNumber || 'في الانتظار',
         Observation: entry.observation || '',
+        'ثمن البيع الإجمالي': order?.salePricePerUnit != null ? order.salePricePerUnit * order.quantity : '',
       };
-    }), [12, 20, 14, 24, 45, 10, 18, 22, 20, 40]);
+    }), [12, 20, 14, 24, 45, 10, 18, 22, 20, 40, 20]);
   };
 
   const requestPriceChange = (entry: DeliveredOrder, next: SalePriceStatus) => {
@@ -144,6 +149,7 @@ const DeliveredOrdersPage: React.FC = () => {
               <TableHead><ColumnHeader label="تاريخ التسليم" columnKey="deliveryDate" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.deliveryDate || ''} onFilter={handleFilter} allValues={allValuesByKey.deliveryDate} /></TableHead>
               <TableHead className="text-xs font-semibold">ثمن البيع</TableHead>
               <TableHead><ColumnHeader label="رقم الفاتورة" columnKey="invoiceNumber" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.invoiceNumber || ''} onFilter={handleFilter} allValues={allValuesByKey.invoiceNumber} /></TableHead>
+              <TableHead><ColumnHeader label="ثمن البيع الإجمالي" columnKey="salePrice" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.salePrice || ''} onFilter={handleFilter} allValues={allValuesByKey.salePrice} /></TableHead>
               <TableHead className="text-xs font-semibold">ملاحظات</TableHead>
 
             </TableRow>
@@ -170,6 +176,7 @@ const DeliveredOrdersPage: React.FC = () => {
                         {entry.invoiceNumber || 'في الانتظار'}
                       </button>
                     </TableCell>
+                    <TableCell className="text-sm">—</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{entry.observation || '—'}</TableCell>
                   </TableRow>
                 );
@@ -233,6 +240,9 @@ const DeliveredOrdersPage: React.FC = () => {
                       {entry.invoiceNumber || 'في الانتظار'}
                     </button>
                   </TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {order.salePricePerUnit != null ? formatDZD(order.salePricePerUnit * order.quantity) : '—'}
+                  </TableCell>
                   <TableCell>
                     <Input
                       value={obsValue}
@@ -248,7 +258,7 @@ const DeliveredOrdersPage: React.FC = () => {
             })}
             {deliveredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                   Aucune commande livrée.
                 </TableCell>
               </TableRow>
