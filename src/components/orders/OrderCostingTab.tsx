@@ -9,7 +9,7 @@ import { Minus, Plus } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
-import { formatDAPrefix, formatHoursHHMM } from '@/lib/utils';
+import { getStepProgressStatus } from '@/lib/stepProgress';
 import {
   computeOrderCosting, getStepBillableHours, getDefaultHourlyRate, HOURLY_RATE_STEP, MARGIN_OPTIONS,
 } from '@/lib/orderCosting';
@@ -224,6 +224,13 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                 {draftSteps.filter(s => !s.subcontractorId).map(step => {
                   const hours = getStepBillableHours(step.id, orderRecords);
                   const sale = hours * (step.hourlyRate ?? 0);
+                  const progressStatus = getStepProgressStatus(step, orderRecords);
+                  const saleCellClass =
+                    progressStatus === 'Terminée'
+                      ? 'bg-green-100 text-green-900 dark:bg-green-950/40 dark:text-green-200'
+                      : progressStatus === 'En cours'
+                        ? 'bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200'
+                        : 'bg-white dark:bg-transparent';
                   return (
                     <tr key={step.id} className="border-b last:border-0">
                       <td className="p-2">{opName(step.operationId)}</td>
@@ -254,7 +261,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                           </Button>
                         </div>
                       </td>
-                      <td className="p-2 whitespace-nowrap font-medium" dir="ltr">{formatDAPrefix(sale)}</td>
+                      <td className={`p-2 whitespace-nowrap font-medium ${saleCellClass}`} dir="ltr">{formatDAPrefix(sale)}</td>
                     </tr>
                   );
                 })}
