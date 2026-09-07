@@ -9,6 +9,7 @@ import { Minus, Plus } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
+import { formatDAPrefix, formatHoursHHMM } from '@/lib/utils';
 import { getStepProgressStatus } from '@/lib/stepProgress';
 import {
   computeOrderCosting, getStepBillableHours, getDefaultHourlyRate, HOURLY_RATE_STEP, MARGIN_OPTIONS,
