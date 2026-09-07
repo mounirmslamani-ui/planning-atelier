@@ -9,7 +9,7 @@ import { Minus, Plus } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
-import { formatDAPrefix, formatHoursHHMM } from '@/lib/utils';
+import { cn, formatDAPrefix, formatHoursHHMM } from '@/lib/utils';
 import { getStepProgressStatus } from '@/lib/stepProgress';
 import {
   computeOrderCosting, getStepBillableHours, getDefaultHourlyRate, HOURLY_RATE_STEP, MARGIN_OPTIONS,
@@ -23,6 +23,10 @@ interface Props {
 }
 
 const marginOptions = MARGIN_OPTIONS.map(m => ({ value: String(m), label: `${m} %` }));
+
+// Mise en forme conditionnelle — section المناولة (حساب التكلفة/ثمن البيع)
+const SUB_RED = 'bg-red-100 text-red-900 dark:bg-red-950/40 dark:text-red-200';
+const SUB_GREEN = 'bg-green-100 text-green-900 dark:bg-green-950/40 dark:text-green-200';
 
 const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const { steps, productionRecords, operations, subcontractors, operators, updateStep, updateOrder } = usePlanning();
@@ -73,6 +77,31 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
     () => computeOrderCosting({ ...order, salePricePerUnit: draftSalePrice }, draftSteps, orderRecords, operations),
     [order, draftSalePrice, draftSteps, orderRecords, operations],
   );
+    // Mise en forme conditionnelle des lignes المناولة : rouge tant que l'étape
+  // n'est pas منتهية ; une fois منتهية, chaque case passe au vert dès qu'elle
+  // est renseignée (ثمن البيع ne devient verte que si تكلفة المناولة ET هامش
+  // الربح sont tous deux renseignés).
+  const subcontractedRows = React.useMemo(() => draftSteps
+    .filter(s => s.subcontractorId)
+    .map(step => {
+      const isDone = getStepProgressStatus(step, orderRecords) === 'Terminée';
+      const costFilled = step.subcontractingCost != null;
+      const marginFilled = step.subcontractingMargin != null;
+      const saleOk = isDone && costFilled && marginFilled;
+      return {
+        step,
+        costClass: isDone && costFilled ? SUB_GREEN : SUB_RED,
+        marginClass: isDone && marginFilled ? SUB_GREEN : SUB_RED,
+        saleClass: saleOk ? SUB_GREEN : SUB_RED,
+        saleOk,
+      };
+    }), [draftSteps, orderRecords]);
+
+  const subcontractingTotalClass = subcontractedRows.length === 0
+    ? ''
+    : subcontractedRows.every(r => r.saleOk)
+      ? `${SUB_GREEN} px-2 py-0.5 rounded`
+      : `${SUB_RED} px-2 py-0.5 rounded`;
 
   const handleSave = () => {
     draftSteps.forEach(s => {
@@ -173,14 +202,14 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                 </tr>
               </thead>
               <tbody>
-                {draftSteps.filter(s => s.subcontractorId).map(step => {
+                {subcontractedRows.map(({ step, costClass, marginClass, saleClass }) => {
                   const sale = (step.subcontractingCost ?? 0) * (1 + ((step.subcontractingMargin ?? 0) / 100));
                   return (
                     <tr key={step.id} className="border-b last:border-0">
                       <td className="p-2">{opName(step.operationId)}</td>
                       <td className="p-2">{resourceName(step)}</td>
                       <td className="p-2 min-w-36">
-                        <MoneyInput value={step.subcontractingCost} onValueChange={v => patchStep(step.id, { subcontractingCost: v })} currencyPosition="start" currencyLabel="دج" />
+                        <MoneyInput value={step.subcontractingCost} onValueChange={v => patchStep(step.id, { subcontractingCost: v })} currencyPosition="start" currencyLabel="دج" className={costClass} />
                       </td>
                       <td className="p-2 min-w-28">
                         <SearchableSelect
@@ -188,14 +217,14 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                           onValueChange={v => patchStep(step.id, { subcontractingMargin: v ? (Number(v) as 30 | 50) : undefined })}
                           options={marginOptions}
                           placeholder="—"
-                          className="h-8 text-xs"
+                          className={cn('h-8 text-xs', marginClass)}
                         />
                       </td>
-                      <td className="p-2 whitespace-nowrap font-medium" dir="ltr">{formatDAPrefix(sale)}</td>
+                      <td className={`p-2 whitespace-nowrap font-medium ${saleClass}`} dir="ltr">{formatDAPrefix(sale)}</td>
                     </tr>
                   );
                 })}
-                {draftSteps.every(s => !s.subcontractorId) && (
+                {subcontractedRows.length === 0 && (
                   <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">لا توجد مراحل مناولة.</td></tr>
                 )}
               </tbody>
@@ -203,7 +232,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
           <div className="px-3 py-2 border-t text-xs flex justify-between">
             <span className="text-muted-foreground">مجموع ثمن بيع المناولة</span>
-            <span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.subcontractingSaleTotal)}</span>
+            <span className={cn('font-semibold', subcontractingTotalClass)} dir="ltr">{formatDAPrefix(breakdown.subcontractingSaleTotal)}</span>
           </div>
         </section>
 
