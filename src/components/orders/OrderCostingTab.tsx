@@ -120,6 +120,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           costClass: isAvailable && costFilled ? SUB_GREEN : SUB_RED,
           marginClass: isAvailable && marginFilled ? SUB_GREEN : SUB_RED,
           saleClass: isAvailable && allFilled ? SUB_GREEN : SUB_RED,
+          saleOk: isAvailable && allFilled,   // ← ligne ajoutée
         };
       })), [draftSteps]);
 
@@ -149,6 +150,19 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
     : manufacturingRows.every(r => r.saleOk)
       ? `${SUB_GREEN} px-2 py-0.5 rounded`
       : `${SUB_RED} px-2 py-0.5 rounded`;
+
+  const materialsTotalClass = materialRows.length === 0
+    ? ''
+    : materialRows.every(r => r.saleOk)
+      ? `${SUB_GREEN} px-2 py-0.5 rounded`
+      : `${SUB_RED} px-2 py-0.5 rounded`;
+
+  const materialsOk = materialRows.length === 0 || materialRows.every(r => r.saleOk);
+  const subcontractingOk = subcontractedRows.length === 0 || subcontractedRows.every(r => r.saleOk);
+  const manufacturingOk = manufacturingRows.length === 0 || manufacturingRows.every(r => r.saleOk);
+  const totalsClass = (materialsOk && subcontractingOk && manufacturingOk)
+    ? `${SUB_GREEN} px-2 py-0.5 rounded`
+    : `${SUB_RED} px-2 py-0.5 rounded`;
   
   const handleSave = () => {
     draftSteps.forEach(s => {
@@ -223,7 +237,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
           <div className="px-3 py-2 border-t text-xs flex justify-between">
             <span className="text-muted-foreground">مجموع ثمن بيع المواد الأولية</span>
-            <span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.materialsSaleTotal)}</span>
+            <span className={cn('font-semibold', materialsTotalClass)} dir="ltr">{formatDAPrefix(breakdown.materialsSaleTotal)}</span>
           </div>
         </section>
 
@@ -338,8 +352,8 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
 
         {/* SYNTHÈSE */}
         <section className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">التكلفة الإجمالية للطلبية</span><span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.totalCost)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">تكلفة الوحدة ({order.quantity})</span><span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.unitCost)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">التكلفة الإجمالية للطلبية</span><span className={cn('font-semibold', totalsClass)} dir="ltr">{formatDAPrefix(breakdown.totalCost)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">تكلفة الوحدة ({order.quantity})</span><span className={cn('font-semibold', totalsClass)} dir="ltr">{formatDAPrefix(breakdown.unitCost)}</span></div>
           <div className="flex items-center justify-between gap-3 pt-1">
             <Label className="text-muted-foreground font-normal">ثمن بيع الوحدة</Label>
             <div className="w-48"><MoneyInput value={draftSalePrice} onValueChange={setDraftSalePrice} currencyPosition="start" currencyLabel="دج" /></div>
