@@ -270,17 +270,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                 </tr>
               </thead>
               <tbody>
-                {draftSteps.filter(s => !s.subcontractorId).map(step => {
-                  const hours = getStepBillableHours(step.id, orderRecords);
-                  const sale = hours * (step.hourlyRate ?? 0);
-                  const progressStatus = getStepProgressStatus(step, orderRecords);
-                  const saleCellClass =
-                    progressStatus === 'Terminée'
-                      ? 'bg-green-100 text-green-900 dark:bg-green-950/40 dark:text-green-200'
-                      : progressStatus === 'En cours'
-                        ? 'bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200'
-                        : 'bg-white dark:bg-transparent';
-                  return (
+                {manufacturingRows.map(({ step, hours, sale, saleClass }) => (
                     <tr key={step.id} className="border-b last:border-0">
                       <td className="p-2">{opName(step.operationId)}</td>
                       <td className="p-2">{resourceName(step)}</td>
@@ -310,11 +300,10 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                           </Button>
                         </div>
                       </td>
-                      <td className={`p-2 whitespace-nowrap font-medium ${saleCellClass}`} dir="ltr">{formatDAPrefix(sale)}</td>
+                      <td className={`p-2 whitespace-nowrap font-medium ${saleClass}`} dir="ltr">{formatDAPrefix(sale)}</td>
                     </tr>
-                  );
-                })}
-                {draftSteps.every(s => !!s.subcontractorId) && (
+                ))}
+                {manufacturingRows.length === 0 && (
                   <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">لا توجد مراحل تصنيع داخلي.</td></tr>
                 )}
               </tbody>
@@ -322,7 +311,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
           <div className="px-3 py-2 border-t text-xs flex justify-between">
             <span className="text-muted-foreground">مجموع ثمن بيع التصنيع</span>
-            <span className="font-semibold" dir="ltr">{formatDAPrefix(breakdown.manufacturingSaleTotal)}</span>
+            <span className={cn('font-semibold', manufacturingTotalClass)} dir="ltr">{formatDAPrefix(breakdown.manufacturingSaleTotal)}</span>
           </div>
         </section>
 
