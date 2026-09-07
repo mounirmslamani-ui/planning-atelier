@@ -97,6 +97,32 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
       };
     }), [draftSteps, orderRecords]);
 
+    // Mise en forme conditionnelle des lignes المواد الأولية : si la matière est
+  // "disponible" (تحضير الطلبية والموارد), chaque case (المورد / ثمن الشراء /
+  // الهامش) passe au vert dès qu'elle est renseignée, rouge sinon ; ثمن البيع
+  // ne devient verte que si les trois sont renseignées. Si la matière n'est
+  // pas "disponible" (non-disponible ou partiel), les quatre cases restent rouges.
+  const materialRows = React.useMemo(() => draftSteps.flatMap(step =>
+    (step.rawMaterialItems || [])
+      .filter(it => it.label && it.label.trim())
+      .map(it => {
+        const isAvailable = it.status === 'disponible';
+        const supplierFilled = !!(it.supplier && it.supplier.trim());
+        const costFilled = it.costPrice != null;
+        const marginFilled = it.margin != null;
+        const allFilled = supplierFilled && costFilled && marginFilled;
+        const sale = (it.costPrice ?? 0) * (1 + ((it.margin ?? 0) / 100));
+        return {
+          step,
+          item: it,
+          sale,
+          supplierClass: isAvailable && supplierFilled ? SUB_GREEN : SUB_RED,
+          costClass: isAvailable && costFilled ? SUB_GREEN : SUB_RED,
+          marginClass: isAvailable && marginFilled ? SUB_GREEN : SUB_RED,
+          saleClass: isAvailable && allFilled ? SUB_GREEN : SUB_RED,
+        };
+      })), [draftSteps]);
+  
   const subcontractingTotalClass = subcontractedRows.length === 0
     ? ''
     : subcontractedRows.every(r => r.saleOk)
@@ -141,41 +167,34 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                 </tr>
               </thead>
               <tbody>
-                {draftSteps.flatMap(step =>
-                  (step.rawMaterialItems || [])
-                    .filter(it => it.label && it.label.trim())
-                    .map(it => {
-                      const sale = (it.costPrice ?? 0) * (1 + ((it.margin ?? 0) / 100));
-                      return (
-                        <tr key={`${step.id}-${it.id}`} className="border-b last:border-0">
-                          <td className="p-2">{opName(step.operationId)}</td>
-                          <td className="p-2">{it.label}</td>
-                          <td className="p-2 min-w-40">
-                            <Input
-                              className="h-8 text-xs"
-                              value={it.supplier || ''}
-                              placeholder="—"
-                              onChange={e => patchItem(step.id, it.id, { supplier: e.target.value })}
-                            />
-                          </td>
-                          <td className="p-2 min-w-36">
-                            <MoneyInput value={it.costPrice} onValueChange={v => patchItem(step.id, it.id, { costPrice: v })} currencyPosition="start" currencyLabel="دج" />
-                          </td>
-                          <td className="p-2 min-w-28">
-                            <SearchableSelect
-                              value={it.margin != null ? String(it.margin) : ''}
-                              onValueChange={v => patchItem(step.id, it.id, { margin: v ? (Number(v) as 30 | 50) : undefined })}
-                              options={marginOptions}
-                              placeholder="—"
-                              className="h-8 text-xs"
-                            />
-                          </td>
-                          <td className="p-2 whitespace-nowrap font-medium" dir="ltr">{formatDAPrefix(sale)}</td>
-                        </tr>
-                      );
-                    }),
-                )}
-                {draftSteps.every(s => !(s.rawMaterialItems || []).some(it => it.label && it.label.trim())) && (
+                {materialRows.map(({ step, item: it, sale, supplierClass, costClass, marginClass, saleClass }) => (
+                  <tr key={`${step.id}-${it.id}`} className="border-b last:border-0">
+                    <td className="p-2">{opName(step.operationId)}</td>
+                    <td className="p-2">{it.label}</td>
+                    <td className="p-2 min-w-40">
+                      <Input
+                        className={cn('h-8 text-xs', supplierClass)}
+                        value={it.supplier || ''}
+                        placeholder="—"
+                        onChange={e => patchItem(step.id, it.id, { supplier: e.target.value })}
+                      />
+                    </td>
+                    <td className="p-2 min-w-36">
+                      <MoneyInput value={it.costPrice} onValueChange={v => patchItem(step.id, it.id, { costPrice: v })} currencyPosition="start" currencyLabel="دج" className={costClass} />
+                    </td>
+                    <td className="p-2 min-w-28">
+                      <SearchableSelect
+                        value={it.margin != null ? String(it.margin) : ''}
+                        onValueChange={v => patchItem(step.id, it.id, { margin: v ? (Number(v) as 30 | 50) : undefined })}
+                        options={marginOptions}
+                        placeholder="—"
+                        className={cn('h-8 text-xs', marginClass)}
+                      />
+                    </td>
+                    <td className={`p-2 whitespace-nowrap font-medium ${saleClass}`} dir="ltr">{formatDAPrefix(sale)}</td>
+                  </tr>
+                ))}
+                {materialRows.length === 0 && (
                   <tr><td colSpan={6} className="p-3 text-center text-muted-foreground">لا توجد مواد أولية مسجّلة.</td></tr>
                 )}
               </tbody>
