@@ -122,13 +122,34 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           saleClass: isAvailable && allFilled ? SUB_GREEN : SUB_RED,
         };
       })), [draftSteps]);
+
+  const manufacturingRows = React.useMemo(() => draftSteps
+    .filter(s => !s.subcontractorId)
+    .map(step => {
+      const hours = getStepBillableHours(step.id, orderRecords);
+      const sale = hours * (step.hourlyRate ?? 0);
+      const progressStatus = getStepProgressStatus(step, orderRecords);
+      const isDone = progressStatus === 'Terminée';
+      const saleClass = isDone
+        ? SUB_GREEN
+        : progressStatus === 'En cours'
+          ? 'bg-orange-100 text-orange-900 dark:bg-orange-950/40 dark:text-orange-200'
+          : 'bg-white dark:bg-transparent';
+      return { step, hours, sale, saleClass, saleOk: isDone };
+    }), [draftSteps, orderRecords]);
   
   const subcontractingTotalClass = subcontractedRows.length === 0
     ? ''
     : subcontractedRows.every(r => r.saleOk)
       ? `${SUB_GREEN} px-2 py-0.5 rounded`
       : `${SUB_RED} px-2 py-0.5 rounded`;
-
+  
+  const manufacturingTotalClass = manufacturingRows.length === 0
+    ? ''
+    : manufacturingRows.every(r => r.saleOk)
+      ? `${SUB_GREEN} px-2 py-0.5 rounded`
+      : `${SUB_RED} px-2 py-0.5 rounded`;
+  
   const handleSave = () => {
     draftSteps.forEach(s => {
       const original = orderSteps.find(o => o.id === s.id);
