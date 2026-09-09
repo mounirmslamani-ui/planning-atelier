@@ -173,17 +173,16 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const subcontractingOk = subcontractedRows.length === 0 || subcontractedRows.every(r => r.saleOk);
   const manufacturingOk = manufacturingRows.length === 0 || manufacturingRows.every(r => r.saleOk);
   const allRubricsFinalized = materialsOk && subcontractingOk && manufacturingOk;
-    // Fond vert de toute la rubrique (comme la sous-fenêtre SYNTHÈSE) dès qu'elle est
-  // entièrement finalisée — une rubrique vide (aucune ligne) n'a rien à finaliser.
-  const materialsSectionDone = materialRows.length > 0 && materialsOk;
+  const totalsClass = allRubricsFinalized
+    ? `${SUB_GREEN} px-2 py-0.5 rounded`
+    : `${SUB_RED} px-2 py-0.5 rounded`;
+
   // Fond vert de toute la rubrique (comme la sous-fenêtre SYNTHÈSE) dès qu'elle est
   // entièrement finalisée. Une rubrique vide (aucune ligne, ex. "لا توجد مراحل مناولة")
   // n'est pas concernée par la طلبية : elle est donc considérée d'office comme finalisée.
   const materialsSectionDone = materialsOk;
   const subcontractingSectionDone = subcontractingOk;
   const manufacturingSectionDone = manufacturingOk;
-    ? `${SUB_GREEN} px-2 py-0.5 rounded`
-    : `${SUB_RED} px-2 py-0.5 rounded`;
 
   // Une fois confirmé (et tant que les trois rubriques restent finalisées), toute la
   // sous-fenêtre SYNTHÈSE passe au vert des champs finalisés.
