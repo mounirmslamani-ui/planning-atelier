@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import MoneyInput from '@/components/ui/money-input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Minus, Plus } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
@@ -46,6 +47,14 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   // Brouillon local — validé en une seule fois
   const [draftSteps, setDraftSteps] = React.useState<ProductionStep[]>(orderSteps);
   const [draftSalePrice, setDraftSalePrice] = React.useState<number | undefined>(order.salePricePerUnit);
+  
+  // Confirmation de ثمن بيع الوحدة une fois toutes les rubriques finalisées (vertes) :
+  // salePriceConfirmed passe à true après validation dans la boîte de dialogue, ce qui
+  // colore toute la sous-fenêtre SYNTHÈSE en vert. Toute nouvelle saisie invalide la
+  // confirmation précédente tant qu'elle n'est pas reconfirmée.
+  const [salePriceConfirmed, setSalePriceConfirmed] = React.useState<boolean>(order.salePricePerUnit != null);
+  const [confirmDialogValue, setConfirmDialogValue] = React.useState<number | undefined>(undefined);
+  const priceBeforeEditRef = React.useRef<number | undefined>(order.salePricePerUnit);
 
   React.useEffect(() => {
     const category = inferCategoryFromOrderNumber(order.orderNumber);
@@ -57,6 +66,9 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
       return defaultRate != null ? { ...s, hourlyRate: defaultRate } : s;
     }));
     setDraftSalePrice(order.salePricePerUnit);
+    setSalePriceConfirmed(order.salePricePerUnit != null);
+    priceBeforeEditRef.current = order.salePricePerUnit;
+    setConfirmDialogValue(undefined);   
   }, [orderSteps, order.salePricePerUnit, order.orderNumber, open, operations]);
 
   const opName = (id: string) => operations.find(o => o.id === id)?.name || '—';
@@ -160,9 +172,40 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const materialsOk = materialRows.length === 0 || materialRows.every(r => r.saleOk);
   const subcontractingOk = subcontractedRows.length === 0 || subcontractedRows.every(r => r.saleOk);
   const manufacturingOk = manufacturingRows.length === 0 || manufacturingRows.every(r => r.saleOk);
-  const totalsClass = (materialsOk && subcontractingOk && manufacturingOk)
+  const allRubricsFinalized = materialsOk && subcontractingOk && manufacturingOk;
+  const totalsClass = allRubricsFinalized
     ? `${SUB_GREEN} px-2 py-0.5 rounded`
     : `${SUB_RED} px-2 py-0.5 rounded`;
+
+  // Une fois confirmé (et tant que les trois rubriques restent finalisées), toute la
+  // sous-fenêtre SYNTHÈSE passe au vert des champs finalisés.
+  const synthesisConfirmedClass = salePriceConfirmed && allRubricsFinalized ? SUB_GREEN : '';
+
+  const handleSalePriceChange = (v: number | undefined) => {
+    setDraftSalePrice(v);
+    if (salePriceConfirmed) setSalePriceConfirmed(false);
+  };
+
+  const handleSalePriceBlur = () => {
+    if (draftSalePrice === priceBeforeEditRef.current) return; // rien de saisi/changé
+    if (allRubricsFinalized && draftSalePrice != null) {
+      setConfirmDialogValue(draftSalePrice);
+    } else {
+      // Rubriques pas toutes finalisées : pas de confirmation requise, saisie acceptée directement.
+      priceBeforeEditRef.current = draftSalePrice;
+    }
+  };
+
+  const handleConfirmSalePrice = () => {
+    priceBeforeEditRef.current = confirmDialogValue;
+    setSalePriceConfirmed(true);
+    setConfirmDialogValue(undefined);
+  };
+
+  const handleCancelSalePrice = () => {
+    setDraftSalePrice(priceBeforeEditRef.current);
+    setConfirmDialogValue(undefined);
+  };
   
   const handleSave = () => {
     draftSteps.forEach(s => {
@@ -172,6 +215,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
     if (draftSalePrice !== order.salePricePerUnit) {
       updateOrder({ ...order, salePricePerUnit: draftSalePrice });
     }
+    priceBeforeEditRef.current = draftSalePrice;
     lock.lock();
     toast.success('تم تسجيل حساب التكلفة');
   };
@@ -179,6 +223,9 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const handleCancel = () => {
     setDraftSteps(orderSteps);
     setDraftSalePrice(order.salePricePerUnit);
+    setSalePriceConfirmed(order.salePricePerUnit != null);
+    priceBeforeEditRef.current = order.salePricePerUnit;
+    setConfirmDialogValue(undefined);
     lock.lock();
   };
 
@@ -351,12 +398,20 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
         </section>
 
         {/* SYNTHÈSE */}
-        <section className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">
+        <section className={cn('rounded-lg border bg-muted/30 p-3 space-y-2 text-sm', synthesisConfirmedClass)}>
           <div className="flex justify-between"><span className="text-muted-foreground">التكلفة الإجمالية للطلبية</span><span className={cn('font-semibold', totalsClass)} dir="ltr">{formatDAPrefix(breakdown.totalCost)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">تكلفة الوحدة ({order.quantity})</span><span className={cn('font-semibold', totalsClass)} dir="ltr">{formatDAPrefix(breakdown.unitCost)}</span></div>
           <div className="flex items-center justify-between gap-3 pt-1">
             <Label className="text-muted-foreground font-normal">ثمن بيع الوحدة</Label>
-            <div className="w-48"><MoneyInput value={draftSalePrice} onValueChange={setDraftSalePrice} currencyPosition="start" currencyLabel="دج" /></div>
+            <div className="w-48">
+              <MoneyInput
+                value={draftSalePrice}
+                onValueChange={handleSalePriceChange}
+                onBlur={handleSalePriceBlur}
+                currencyPosition="start"
+                currencyLabel="دج"
+              />
+            </div>
           </div>
           <div className="flex justify-between border-t pt-2">
             <span className="text-muted-foreground">ثمن البيع الإجمالي</span>
@@ -364,6 +419,21 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
           </div>
         </section>
       </fieldset>
+
+      <AlertDialog open={confirmDialogValue != null} onOpenChange={o => { if (!o) handleCancelSalePrice(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد ثمن بيع الوحدة</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من قرار تطبيق ثمن بيع الوحدة {confirmDialogValue != null ? formatDAPrefix(confirmDialogValue) : ''} ؟
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSalePrice}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSalePrice}>تأكيد</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex justify-end gap-2 pt-1">
         <lock.EditButton />
