@@ -173,6 +173,11 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const subcontractingOk = subcontractedRows.length === 0 || subcontractedRows.every(r => r.saleOk);
   const manufacturingOk = manufacturingRows.length === 0 || manufacturingRows.every(r => r.saleOk);
   const allRubricsFinalized = materialsOk && subcontractingOk && manufacturingOk;
+    // Fond vert de toute la rubrique (comme la sous-fenêtre SYNTHÈSE) dès qu'elle est
+  // entièrement finalisée — une rubrique vide (aucune ligne) n'a rien à finaliser.
+  const materialsSectionDone = materialRows.length > 0 && materialsOk;
+  const subcontractingSectionDone = subcontractedRows.length > 0 && subcontractingOk;
+  const manufacturingSectionDone = manufacturingRows.length > 0 && manufacturingOk;
   const totalsClass = allRubricsFinalized
     ? `${SUB_GREEN} px-2 py-0.5 rounded`
     : `${SUB_RED} px-2 py-0.5 rounded`;
@@ -234,7 +239,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
       <fieldset disabled={lock.locked} className="border-0 p-0 m-0 space-y-5">
 
         {/* MATIÈRES PREMIÈRES */}
-        <section className="rounded-lg border bg-card">
+        <section className={cn('rounded-lg border bg-card', materialsSectionDone && SUB_GREEN)}>
           <div className="px-3 py-2 border-b bg-muted/40 text-sm font-semibold">المواد الأولية</div>
           <div className="overflow-auto">
             <table className="w-full text-xs">
@@ -289,7 +294,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
         </section>
 
         {/* SOUS-TRAITANCE */}
-        <section className="rounded-lg border bg-card">
+        <section className={cn('rounded-lg border bg-card', subcontractingSectionDone && SUB_GREEN)}>
           <div className="px-3 py-2 border-b bg-muted/40 text-sm font-semibold">المناولة</div>
           <div className="overflow-auto">
             <table className="w-full text-xs">
@@ -338,7 +343,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
         </section>
 
         {/* FABRICATION INTERNE */}
-        <section className="rounded-lg border bg-card">
+        <section className={cn('rounded-lg border bg-card', manufacturingSectionDone && SUB_GREEN)}>
           <div className="px-3 py-2 border-b bg-muted/40 text-sm font-semibold">التصنيع الداخلي</div>
           <div className="overflow-auto">
             <table className="w-full text-xs">
