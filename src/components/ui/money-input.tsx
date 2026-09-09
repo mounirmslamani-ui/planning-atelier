@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 interface MoneyInputProps {
   value: number | undefined;
   onValueChange: (value: number | undefined) => void;
+    onBlur?: () => void;
   disabled?: boolean;
   className?: string;
   placeholder?: string;
@@ -17,7 +18,7 @@ interface MoneyInputProps {
  * - Vide ⇒ `undefined` (aucune valeur saisie, à distinguer de 0).
  * - Accepte uniquement des nombres positifs, décimales avec point.
  */
-const MoneyInput: React.FC<MoneyInputProps> = ({ value, onValueChange, disabled, className, placeholder = '0.00', currencyLabel = 'DZD', currencyPosition = 'end' }) => {
+const MoneyInput: React.FC<MoneyInputProps> = ({ value, onValueChange, onBlur, disabled, className, placeholder = '0.00', currencyLabel = 'DZD', currencyPosition = 'end' }) => {
   const [text, setText] = React.useState<string>(value != null ? String(value) : '');
 
   React.useEffect(() => {
@@ -44,6 +45,7 @@ const MoneyInput: React.FC<MoneyInputProps> = ({ value, onValueChange, disabled,
         value={text}
         placeholder={placeholder}
         onChange={(e) => handleChange(e.target.value)}
+                onBlur={onBlur}
         className={cn('h-8 text-xs text-left', isStart ? 'ps-12' : 'pe-12', className)}
       />
         <span className={cn('pointer-events-none absolute top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground', isStart ? 'start-2' : 'end-2')}>{currencyLabel}</span>
