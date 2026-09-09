@@ -417,6 +417,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                 onBlur={handleSalePriceBlur}
                 currencyPosition="start"
                 currencyLabel="دج"
+                className={synthesisConfirmedClass}
               />
             </div>
           </div>
