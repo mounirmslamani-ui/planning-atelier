@@ -266,6 +266,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const canEditTooling  = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'العدة' }) === 'RW';
   const canEditStudy    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'تحضير الطلبية والموارد', champ_bouton: 'الدراسة' }) === 'RW';
   const canEditSteps    = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'مراحل الإنجاز والتوقيت', champ_bouton: 'Tous' }) === 'RW';
+  const canViewCosting = hasAccess({ tableau: '', formulaire: '', sous_formulaire: 'حساب التكلفة/ثمن البيع', champ_bouton: 'Tous' }) !== 'denied';
   // Create mode: always allow (the order doesn't exist yet — no RBAC scope applies)
   const infoLock  = useSubFormLock(createMode ? true : canEditInfo, open);
   const stepsLock = useSubFormLock(canEditSteps, open);
@@ -496,12 +497,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
           {/* TABS */}
           <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col overflow-hidden">
             {!createMode && (
-              <TabsList className="mx-6 mt-3 grid grid-cols-5">
+              <TabsList className={`mx-6 mt-3 grid ${canViewCosting ? 'grid-cols-5' : 'grid-cols-4'}`}>
                 <TabsTrigger value="info">{TAB_TITLES.info}</TabsTrigger>
                 <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
                 <TabsTrigger value="steps">{TAB_TITLES.steps}</TabsTrigger>
                 <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
-                <TabsTrigger value="costing">{TAB_TITLES.costing}</TabsTrigger>
+                {canViewCosting && (
+                  <TabsTrigger value="costing">{TAB_TITLES.costing}</TabsTrigger>
+                )}
               </TabsList>
             )}
 
@@ -683,7 +686,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
               </TabsContent>
 
               {/* TAB 5 — COSTING / SALE PRICE */}
-              {!createMode && (
+              {!createMode && canViewCosting && (
                 <TabsContent value="costing" className="mt-0">
                   <OrderCostingTab order={order} open={open} />
                 </TabsContent>
