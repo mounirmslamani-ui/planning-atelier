@@ -312,6 +312,7 @@ export function mapStepFromDB(row: any): ProductionStep {
     planningOrder: row.planning_order ?? undefined,
     shiftStartedDate: row.shift_started_date || undefined,
     shiftEndedDate: row.shift_ended_date || undefined,
+    nonBillable: (row as any).non_billable ?? false,
   };
 }
 
@@ -359,6 +360,7 @@ export function mapStepToDB(s: ProductionStep) {
     planning_order: s.planningOrder ?? null,
     shift_started_date: toISODateOrNull(s.shiftStartedDate),
     shift_ended_date: toISODateOrNull(s.shiftEndedDate),
+    non_billable: s.nonBillable ?? false,
   };
 }
 
