@@ -9,7 +9,7 @@ import { usePlanning } from '@/context/PlanningContext';
 import { formatDateFR } from '@/lib/utils';
 import StepDurationExpiredDialog from '@/components/StepDurationExpiredDialog';
 import { PAUSE_SELECT_OPTIONS, isCustomToken, newPauseItem, pauseItemsTotalHHMM, serializePauseItems, type PauseItem } from '@/lib/pauseItems';
-import { NON_BILLABLE_SELECT_OPTIONS, isNonBillableCustomToken } from '@/lib/nonBillableReasons';
+import { NON_BILLABLE_SELECT_OPTIONS, NON_BILLABLE_PRESETS, isNonBillableCustomToken } from '@/lib/nonBillableReasons';
 import type { Operation, Order, ProductionRecord, ProductionStep } from '@/types/planning';
 
 export type RelaisMode = 'debut_poste' | 'relais' | 'fin_poste';
@@ -280,6 +280,16 @@ const RelaisDialog: React.FC<Props> = ({
   const actualDuration = computeActualDuration(startTime, endTime, pauseTime);
   const durationError = actualDuration === null;
 
+  // Étape marquée « تصحيح/rework » : l'opérateur ne saisit rien — le temps
+  // complet est automatiquement défalqué de la facturation.
+  useEffect(() => {
+    if (!currentStep?.nonBillable) return;
+    if (leftConfirmed) return;
+    setNonBillableTime(formatMinutesToHM(actualDuration ?? 0));
+    setNonBillableReason(prev => (prev.trim() ? prev : NON_BILLABLE_PRESETS[0]));
+    setNonBillableReasonMode('preset');
+  }, [currentStep?.nonBillable, actualDuration, leftConfirmed]);
+
   const todayDate = todayISO();
   const getClientName = (id?: string) => clients.find(c => c.id === id)?.name || '—';
   const getOperationName = (id?: string) => operations.find(o => o.id === id)?.name || '—';
@@ -490,15 +500,18 @@ const RelaisDialog: React.FC<Props> = ({
 
                   <div className="pt-2 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <Label className="text-xs">عدد الساعات المستقطعة من الفوترة</Label>
-                      <TimeField value={nonBillableTime} onChange={setNonBillableTime} disabled={leftConfirmed} />
+                      <Label className="text-xs">
+                        عدد الساعات المستقطعة من الفوترة
+                        {currentStep?.nonBillable && <span className="text-orange-600"> (تلقائي — مرحلة تصحيح)</span>}
+                      </Label>
+                      <TimeField value={nonBillableTime} onChange={setNonBillableTime} disabled={leftConfirmed || !!currentStep?.nonBillable} />
                     </div>
                     {nonBillableMinutes > 0 && (
                       <>
                         <SearchableSelect
                           dir="rtl"
                           value={nonBillableReasonMode === 'custom' ? '...' : nonBillableReason}
-                          disabled={leftConfirmed}
+                          disabled={leftConfirmed || !!currentStep?.nonBillable}
                           options={NON_BILLABLE_SELECT_OPTIONS}
                           placeholder="سبب الاستقطاع"
                           className="h-8 text-xs w-full"
@@ -515,7 +528,7 @@ const RelaisDialog: React.FC<Props> = ({
                         {nonBillableReasonMode === 'custom' && (
                           <Input
                             value={nonBillableReason}
-                            disabled={leftConfirmed}
+                            disabled={leftConfirmed || !!currentStep?.nonBillable}
                             placeholder="تفاصيل السبب"
                             onChange={e => setNonBillableReason(e.target.value)}
                             className="h-8 text-xs w-full"
