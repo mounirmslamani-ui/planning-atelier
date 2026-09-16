@@ -12,6 +12,7 @@ import ResourceStatusPill from '@/components/ResourceStatusPill';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { BLOCKED_MODAL_ROW_CLASS } from '@/lib/blockedSteps';
 import { getStepProgressStatus, getOrderQualityControlCheck } from '@/lib/stepProgress';
+import { NON_BILLABLE_PRESETS } from '@/lib/nonBillableReasons';
 import { synthesizeResourceStatuses } from '@/lib/resourceSynthesis';
 import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
@@ -41,6 +42,8 @@ export interface OperationRow {
   /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
   subcontractingDone?: boolean;
   subcontractingInProgress?: boolean;
+  /** Correction/rework — l'étape ne sera jamais facturée au client */
+  nonBillable: boolean;
 }
 
 const PROGRESS_AR: Record<'Non entamée' | 'En cours' | 'Terminée', string> = {
@@ -139,6 +142,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           resourceNotes: s.resourceNotes ?? '',
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
           subcontractingInProgress: isSub ? !!s.subcontractingInProgress : false,
+          nonBillable: s.nonBillable ?? false,
         };
       });
       setRows(initialRows);
@@ -173,6 +177,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     estimatedDuration: r.estimatedDuration, assignType: r.assignType, option1: r.option1,
     equipmentIds: r.equipmentIds, stepNotes: r.stepNotes,
     subcontractingDone: !!r.subcontractingDone, subcontractingInProgress: !!r.subcontractingInProgress,
+    nonBillable: !!r.nonBillable,
   })));
   const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
     id: r.id, studyStatus: r.studyStatus,
@@ -212,6 +217,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       specialToolingNotApplicable: false,
       stepNotes: '',
       resourceNotes: '',
+      nonBillable: false,
     }]);
   };
 
@@ -464,6 +470,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         s.specialToolingNotApplicable = sourceRow.specialToolingNotApplicable;
         s.stepNotes = sourceRow.stepNotes || undefined;
         s.resourceNotes = sourceRow.resourceNotes || undefined;
+        s.nonBillable = !!sourceRow.nonBillable;
         s.estimatedDuration = sourceRow.estimatedDuration;
         if (sourceRow.assignType === 'subcontractor') {
           s.subcontractingDone = !!sourceRow.subcontractingDone;
@@ -522,6 +529,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         specialToolingNotApplicable: row.specialToolingNotApplicable,
         stepNotes: row.stepNotes || undefined,
         resourceNotes: row.resourceNotes || undefined,
+        nonBillable: !!row.nonBillable,
         subcontractingDone: hist.subcontractorId
           ? !!row.subcontractingDone
           : false,
@@ -769,13 +777,14 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
         <table className="w-full table-fixed text-xs">
           <colgroup>
             <col style={{ width: '4%' }} />
-            <col style={{ width: '18%' }} />
+            <col style={{ width: '17%' }} />
             <col style={{ width: '9%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '18%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '4%' }} />
+            <col style={{ width: '14%' }} />
             <col style={{ width: '9%' }} />
             <col style={{ width: '8%' }} />
-            <col style={{ width: '16%' }} />
+            <col style={{ width: '15%' }} />
             <col style={{ width: '4%' }} />
             <col style={{ width: '4%' }} />
           </colgroup>
@@ -785,6 +794,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
               <th className="p-1.5 text-right">العملية</th>
               <th className="p-1.5 text-right">فئة</th>
               <th className="p-1.5 text-right">المدة</th>
+              <th className="p-1.5 text-center" title="تصحيح/rework — لن تُفوتر هذه المرحلة للزبون">تصحيح</th>
               <th className="p-1.5 text-right">العامل / المناول</th>
               <th className="p-1.5 text-right">التقدم</th>
               <th className="p-1.5 text-right">المدة الفعلية</th>
@@ -835,6 +845,16 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                       />
                       <span className="text-[10px] text-muted-foreground shrink-0">{durationUnit(row.assignType)}</span>
                     </div>
+                  </td>
+                  <td className="p-1.5 text-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={!!row.nonBillable}
+                      onChange={ev => e.updateRow(row.id, 'nonBillable', ev.target.checked)}
+                      disabled={e.isLocked}
+                      title="تصحيح/rework — لن تُفوتر هذه المرحلة للزبون"
+                    />
                   </td>
                   <td className="p-1.5">
                     <SearchableSelect
@@ -940,7 +960,7 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
               );
             })}
             {e.rows.length === 0 && (
-              <tr><td colSpan={10} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل. أضف عملية.</td></tr>
+              <tr><td colSpan={11} className="text-center text-muted-foreground py-6 text-xs">لا توجد مراحل. أضف عملية.</td></tr>
             )}
           </tbody>
         </table>
@@ -1291,6 +1311,7 @@ export const PlanningEditorDialogs: React.FC<{ editor: PlanningEditor; order: Or
             records={records}
             operators={e.operators}
             operations={e.operations}
+            nonBillable={!!row.nonBillable}
             onClose={() => e.setEditDurationPrompt(null)}
             onSave={(updates) => {
               updates.forEach(u => e.updateProductionRecord(u));
@@ -1330,11 +1351,12 @@ interface EditStepDurationDialogProps {
   records: ProductionRecord[];
   operators: { id: string; name: string }[];
   operations: { id: string; name: string }[];
+  nonBillable?: boolean;
   onClose: () => void;
   onSave: (updates: ProductionRecord[]) => void;
 }
 
-const EditStepDurationDialog: React.FC<EditStepDurationDialogProps> = ({ open, records, operators, operations, onClose, onSave }) => {
+const EditStepDurationDialog: React.FC<EditStepDurationDialogProps> = ({ open, records, operators, operations, nonBillable = false, onClose, onSave }) => {
   type RowState = { id: string; startTime: string; endTime: string; pauseHHMM: string };
   const [draft, setDraft] = useState<RowState[]>([]);
 
@@ -1375,6 +1397,12 @@ const EditStepDurationDialog: React.FC<EditStepDurationDialogProps> = ({ open, r
         endTime: d.endTime || undefined,
         pauseMinutes: parseHHMMStr(d.pauseHHMM) || undefined,
         actualDuration: dur,
+        ...(nonBillable ? {
+          nonBillableHours: Number((dur / 60).toFixed(2)),
+          nonBillableReason: (original.nonBillableReason && original.nonBillableReason.trim())
+            ? original.nonBillableReason
+            : NON_BILLABLE_PRESETS[0],
+        } : {}),
       });
     });
     onSave(updates);
@@ -1386,6 +1414,12 @@ const EditStepDurationDialog: React.FC<EditStepDurationDialogProps> = ({ open, r
         <DialogHeader>
           <DialogTitle>تعديل مدة إنجاز الطلبية</DialogTitle>
         </DialogHeader>
+
+        {nonBillable && (
+          <div className="rounded-md border border-orange-300 bg-orange-100 dark:bg-orange-950/30 p-2 text-xs text-orange-900 dark:text-orange-200">
+            هذه المرحلة معلّمة « تصحيح » — كامل الوقت المسجّل هنا يُحتسب تلقائيًا كغير مفوتر للزبون.
+          </div>
+        )}
 
         {draft.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">لا توجد تسجيلات إنجاز لهذه المرحلة.</p>
