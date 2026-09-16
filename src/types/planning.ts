@@ -208,6 +208,8 @@ export interface ProductionStep {
   planningOrder?: number;
   shiftStartedDate?: string; // ISO date — posé par بداية دوام / تبديل الشغل
   shiftEndedDate?: string; // ISO date — posé par نهاية دوام
+  /** Étape de correction/rework — heures automatiquement non facturées au client */
+  nonBillable?: boolean;
 }
 
 export interface Holiday {
