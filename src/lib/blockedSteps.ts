@@ -1,9 +1,9 @@
 import type { Order, ProductionStep, ResourceStatus } from '@/types/planning';
 
 /**
- * A step is considered "blocked" when its Matière OR Outillage status
+ * A step is considered "blocked" when its Matière (matière première) status
  * is red (non-disponible) or orange (partiel).
- * Étude is intentionally NOT considered here per spec.
+ * Étude et Outillage sont volontairement NON pris en compte ici.
  */
 const isBlockingStatus = (status: ResourceStatus): boolean => status === 'partiel' || status === 'non-disponible';
 
@@ -16,16 +16,13 @@ function getOrderResourceStatus(order: Order | undefined, field: 'material' | 't
 export function isStepSelfBlocked(step: ProductionStep, order?: Order): boolean {
   const m: ResourceStatus =
     getOrderResourceStatus(order, 'material') ?? step.materialStatus ?? (step.materialAvailable ? 'disponible' : 'non-disponible');
-  const t: ResourceStatus =
-    getOrderResourceStatus(order, 'tooling') ?? step.toolingStatus ?? (step.toolingAvailable ? 'disponible' : 'non-disponible');
-  return isBlockingStatus(m) || isBlockingStatus(t);
+  return isBlockingStatus(m);
 }
 
-/** A command is blocked immediately when Matière OR Outillage is red/orange, even before steps exist. */
+/** A command is blocked immediately when Matière (matière première) is red/orange, even before steps exist. Outillage n'est pas pris en compte. */
 export function isOrderSelfBlocked(order: Order): boolean {
   const m: ResourceStatus = order.materialStatus ?? (order.materialAvailable ? 'disponible' : 'non-disponible');
-  const t: ResourceStatus = order.toolingStatus ?? (order.toolingAvailable ? 'disponible' : 'non-disponible');
-  return isBlockingStatus(m) || isBlockingStatus(t);
+  return isBlockingStatus(m);
 }
 
 /**
@@ -33,7 +30,7 @@ export function isOrderSelfBlocked(order: Order): boolean {
  * "blocked" (violet) style: as soon as one step in an order is self-blocked,
  * that step AND all its successor steps in the same order are blocked.
  *
- * If ALL steps of an order have material AND tooling green, none are blocked.
+ * If ALL steps of an order have material green (tooling is ignored), none are blocked.
  */
 export function computeBlockedStepIds(allSteps: ProductionStep[], allOrders: Order[] = []): Set<string> {
   const blocked = new Set<string>();
