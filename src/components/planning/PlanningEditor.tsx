@@ -161,7 +161,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     const set = new Set<string>();
     let hit = false;
     for (const r of rows) {
-      if (!hit && (isBadStatus(r.materialStatus) || isBadStatus(r.toolingStatus))) hit = true;
+      if (!hit && isBadStatus(r.materialStatus)) hit = true;
       if (hit) set.add(r.id);
     }
     return set;
