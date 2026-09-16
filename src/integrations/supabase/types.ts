@@ -625,6 +625,7 @@ export type Database = {
           id: string
           material_deadline: string | null
           material_status: Database["public"]["Enums"]["resource_status"]
+          non_billable: boolean
           operation_id: string
           operator_id: string | null
           order_id: string
@@ -668,6 +669,7 @@ export type Database = {
           id?: string
           material_deadline?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
+          non_billable?: boolean
           operation_id: string
           operator_id?: string | null
           order_id: string
@@ -711,6 +713,7 @@ export type Database = {
           id?: string
           material_deadline?: string | null
           material_status?: Database["public"]["Enums"]["resource_status"]
+          non_billable?: boolean
           operation_id?: string
           operator_id?: string | null
           order_id?: string
