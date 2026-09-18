@@ -94,7 +94,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   // est renseignée (ثمن البيع ne devient verte que si تكلفة المناولة ET هامش
   // الربح sont tous deux renseignés).
   const subcontractedRows = React.useMemo(() => draftSteps
-    .filter(s => s.subcontractorId)
+    .filter(s => s.subcontractorId && !s.nonBillable)
     .map(step => {
       const isDone = getStepProgressStatus(step, orderRecords) === 'Terminée';
       const costFilled = step.subcontractingCost != null;
@@ -114,7 +114,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   // الهامش) passe au vert dès qu'elle est renseignée, rouge sinon ; ثمن البيع
   // ne devient verte que si les trois sont renseignées. Si la matière n'est
   // pas "disponible" (non-disponible ou partiel), les quatre cases restent rouges.
-  const materialRows = React.useMemo(() => draftSteps.flatMap(step =>
+  const materialRows = React.useMemo(() => draftSteps.filter(s => !s.nonBillable).flatMap(step =>
     (step.rawMaterialItems || [])
       .filter(it => it.label && it.label.trim())
       .map(it => {
@@ -137,7 +137,7 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
       })), [draftSteps]);
 
   const manufacturingRows = React.useMemo(() => draftSteps
-    .filter(s => !s.subcontractorId)
+    .filter(s => !s.subcontractorId && !s.nonBillable)
     .map(step => {
       const hours = getStepBillableHours(step.id, orderRecords);
       const sale = hours * (step.hourlyRate ?? 0);
