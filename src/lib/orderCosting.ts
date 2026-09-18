@@ -59,7 +59,6 @@ export function computeOrderCosting(
 
   for (const step of orderSteps) {
     if (step.nonBillable) continue; // مرحلة تصحيح/rework — لا تُفوتر للزبون: لا يد عاملة ولا مادة
-    const isSubcontracted = !!step.subcontractorId;  for (const step of orderSteps) {
     const isSubcontracted = !!step.subcontractorId;
 
     if (isSubcontracted) {
