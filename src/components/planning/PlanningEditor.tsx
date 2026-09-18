@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save, Pencil } from 'lucide-react';
+import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save, Pencil, RotateCcw } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
 import { scheduleOrder } from '@/lib/scheduler';
 import type { OperationToSchedule } from '@/lib/scheduler';
@@ -219,6 +219,35 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       resourceNotes: '',
       nonBillable: false,
     }]);
+  };
+
+  /** Rework — duplique la ligne juste en dessous avec les mêmes éléments
+   *  (opération, catégorie, durée, opérateur/mandataire, équipements...),
+   *  prête à être modifiée. La nouvelle ligne est marquée "تصحيح" par défaut
+   *  (comme c'était fait manuellement jusqu'ici) : elle n'entrera pas dans le
+   *  calcul du prix de revient tant que la case n'est pas décochée. L'usager
+   *  garde la liberté de décocher CETTE case et de cocher celle de la ligne
+   *  d'origine à la place, s'il préfère exclure la première exécution. */
+  const duplicateRowForRework = (rowId: string) => {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === rowId);
+      if (idx < 0) return prev;
+      const source = prev[idx];
+      const clone: OperationRow = {
+        ...source,
+        id: `row-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+        stepId: undefined,
+        specialToolingItems: source.specialToolingItems.map(i => ({ ...i })),
+        rawMaterialItems: source.rawMaterialItems.map(i => ({ ...i })),
+        subcontractingDone: false,
+        subcontractingInProgress: false,
+        stepNotes: '',
+        nonBillable: true,
+      };
+      const copy = [...prev];
+      copy.splice(idx + 1, 0, clone);
+      return copy.map((r, i) => ({ ...r, order: i + 1 }));
+    });
   };
 
   const moveRow = (id: string, direction: 'up' | 'down') => {
@@ -740,7 +769,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
-    addRow, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField, toggleNotApplicable,
+    addRow, duplicateRowForRework, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField, toggleNotApplicable,
     handleStatusChange, updateItemStatus, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
@@ -784,9 +813,9 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
             <col style={{ width: '14%' }} />
             <col style={{ width: '9%' }} />
             <col style={{ width: '8%' }} />
-            <col style={{ width: '15%' }} />
+            <col style={{ width: '12%' }} />
             <col style={{ width: '4%' }} />
-            <col style={{ width: '4%' }} />
+            <col style={{ width: '7%' }} />
           </colgroup>
           <thead className="bg-muted/40">
             <tr>
@@ -939,6 +968,15 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                         title="تعديل مدة إنجاز الطلبية"
                       >
                         <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        className="h-7 w-7 inline-flex items-center justify-center hover:bg-accent rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        onClick={() => e.duplicateRowForRework(row.id)}
+                        disabled={!row.stepId || e.isLocked}
+                        title="إعادة تنفيذ (Rework) — ينشئ مرحلة جديدة بنفس المعطيات أسفل هذه المرحلة، معلّمة «تصحيح» تلقائيًا"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
