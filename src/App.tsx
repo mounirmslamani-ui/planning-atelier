@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PlanningProvider } from "@/context/PlanningContext";
 import { OrderSheetProvider } from "@/context/OrderSheetContext";
+import { OrderAttachmentsProvider } from "@/context/OrderAttachmentsContext";
 import { GlobalClientFilterProvider } from "@/context/GlobalClientFilterContext";
 import AuthGate from "@/components/AuthGate";
 import AppLayout from "@/components/AppLayout";
@@ -45,6 +46,7 @@ const App = () => (
         <PlanningProvider>
           <BrowserRouter>
           <OrderSheetProvider>
+            <OrderAttachmentsProvider>
             <GlobalClientFilterProvider>
             <AppLayout>
               <Routes>
@@ -77,6 +79,7 @@ const App = () => (
               </Routes>
             </AppLayout>
             </GlobalClientFilterProvider>
+              </OrderAttachmentsProvider>
           </OrderSheetProvider>
         </BrowserRouter>
         </PlanningProvider>
