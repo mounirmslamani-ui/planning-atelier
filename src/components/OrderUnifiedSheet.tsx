@@ -26,7 +26,7 @@ import { usePlanningEditor, StepsEditorTable, ResourcesEditorTable, PlanningEdit
 import PartialQCDelivery, { PartialQCDeliveryHandle } from '@/components/orders/PartialQCDelivery';
 import { useAuth } from '@/context/AuthContext';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
-import OrderAttachmentsPanel from '@/components/orders/OrderAttachmentsPanel';
+import OrderAttachmentsPanel, { OrderAttachmentsPanelHandle } from '@/components/orders/OrderAttachmentsPanel';
 import OrderCostingTab from '@/components/orders/OrderCostingTab';
 
 import { getQCControlled, getQCPending } from '@/lib/orderFlow';
@@ -213,6 +213,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false);
   const pendingStepsCloseRef = React.useRef(false);
   const qcRef = React.useRef<PartialQCDeliveryHandle>(null);
+  const attachmentsRef = React.useRef<OrderAttachmentsPanelHandle>(null);
   const [qcDirty, setQcDirty] = useState(false);
   
   const [printOpen, setPrintOpen] = useState(false);
@@ -295,14 +296,15 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const merged: Order = { ...order, ...draft };
 
-  const saveInfo = () => {
+  const saveInfo = async () => {
     if (createMode) {
       if (!merged.orderNumber || !merged.orderNumber.trim()) {
         toast.error('رقم الطلبية مطلوب');
         return;
       }
       const newOrder: Order = { ...merged, id: crypto.randomUUID() };
-      addOrder(newOrder);
+      await addOrder(newOrder);
+      await attachmentsRef.current?.uploadPending(newOrder.id);
       onCreated?.(newOrder);
       setDraft({});
       onOpenChange(false);
@@ -342,7 +344,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   };
 
 
-  const confirmAndCloseInfo = () => {
+  const confirmAndCloseInfo = async () => {
     if (createMode) {
       if (!merged.orderNumber || !merged.orderNumber.trim()) {
         toast.error('رقم الطلبية مطلوب');
@@ -350,7 +352,8 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
         return;
       }
       const newOrder: Order = { ...merged, id: crypto.randomUUID() };
-      addOrder(newOrder);
+      await addOrder(newOrder);
+      await attachmentsRef.current?.uploadPending(newOrder.id);
       onCreated?.(newOrder);
       setDraft({});
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
@@ -647,9 +650,13 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 </fieldset>
 
                 {order?.id && (
-                  <OrderAttachmentsPanel orderId={order.id} readOnly={infoLock.locked} />
+                  <OrderAttachmentsPanel
+                    ref={attachmentsRef}
+                    orderId={order.id}
+                    readOnly={infoLock.locked}
+                    pendingMode={createMode}
+                  />
                 )}
-
                 <div className="flex items-center justify-end gap-4 pt-2 border-t">
                   <div className="flex gap-2 shrink-0">
                     <infoLock.EditButton />
