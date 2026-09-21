@@ -61,7 +61,7 @@ interface PlanningContextType {
   updateClient: (client: Client) => void;
   deleteClient: (id: string) => void;
   setOrders: (orders: Order[]) => void;
-  addOrder: (order: Order) => void;
+  addOrder: (order: Order) => Promise<boolean>;
   updateOrder: (order: Order) => void;
   deleteOrder: (id: string) => void;
   setSteps: (steps: ProductionStep[]) => void;
@@ -427,13 +427,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setClients(prev => prev.filter(c => c.id !== id)); dbDeleteClient(id);
   }, [pushUndo]);
 
-  // Order
-  const addOrder = useCallback((order: Order) => {
+  const addOrder = useCallback(async (order: Order) => {
     pushUndo();
     setOrders(prev => [...prev, order]);
-    dbInsertOrder(order).then(ok => {
-      if (!ok) setOrders(prev => prev.filter(o => o.id !== order.id));
-    });
+    const ok = await dbInsertOrder(order);
+    if (!ok) setOrders(prev => prev.filter(o => o.id !== order.id));
+    return ok;
   }, [pushUndo]);
   const updateOrder = useCallback((order: Order) => {
     pushUndo();
