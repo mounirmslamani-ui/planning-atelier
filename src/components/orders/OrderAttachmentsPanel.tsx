@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,14 @@ interface AttachmentRow {
   created_at: string;
 }
 
+export interface OrderAttachmentsPanelHandle {
+  uploadPending: (orderId: string) => Promise<void>;
+}
+
 interface Props {
   orderId: string;
   readOnly?: boolean;
+  pendingMode?: boolean;
 }
 
 const sanitize = (name: string) =>
@@ -31,16 +36,17 @@ const sanitize = (name: string) =>
     .replace(/_+/g, '_')
     .slice(-120);
 
-const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) => {
+const OrderAttachmentsPanel = forwardRef<OrderAttachmentsPanelHandle, Props>(({ orderId, readOnly = false, pendingMode = false }, ref) => {
   const [rows, setRows] = useState<AttachmentRow[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AttachmentRow | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
-    if (!orderId) return;
+    if (!orderId || pendingMode) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('order_attachments')
@@ -70,18 +76,16 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
     } else {
       setThumbs({});
     }
-  }, [orderId]);
+  }, [orderId, pendingMode]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0 || readOnly) return;
-    setUploading(true);
+  const uploadFilesTo = async (targetOrderId: string, files: File[]) => {
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData?.user?.id ?? null;
     let ok = 0;
-    for (const file of Array.from(files)) {
-      const path = `${orderId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
+    for (const file of files) {
+      const path = `${targetOrderId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
         .upload(path, file, { contentType: file.type || undefined, upsert: false });
@@ -90,7 +94,7 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
         continue;
       }
       const { error: insErr } = await supabase.from('order_attachments').insert({
-        order_id: orderId,
+        order_id: targetOrderId,
         file_path: path,
         file_name: file.name,
         file_type: file.type || null,
@@ -104,11 +108,38 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
       }
       ok++;
     }
+    return ok;
+  };
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0 || readOnly) return;
+    if (pendingMode) {
+      setPendingFiles(prev => [...prev, ...Array.from(files)]);
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+    setUploading(true);
+    const ok = await uploadFilesTo(orderId, Array.from(files));
     setUploading(false);
     if (inputRef.current) inputRef.current.value = '';
     if (ok > 0) toast.success(`تم رفع ${ok} ملف`);
     await load();
   };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  useImperativeHandle(ref, () => ({
+    uploadPending: async (targetOrderId: string) => {
+      if (pendingFiles.length === 0) return;
+      setUploading(true);
+      const ok = await uploadFilesTo(targetOrderId, pendingFiles);
+      setUploading(false);
+      setPendingFiles([]);
+      if (ok > 0) toast.success(`تم رفع ${ok} ملف`);
+    },
+  }), [pendingFiles]);
 
   const handleDownload = async (row: AttachmentRow) => {
     const { data, error } = await supabase.storage
@@ -177,8 +208,36 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
       </div>
 
       {loading && <p className="text-xs text-muted-foreground">جاري التحميل...</p>}
-      {!loading && rows.length === 0 && (
+      {!loading && rows.length === 0 && pendingFiles.length === 0 && (
         <p className="text-xs text-muted-foreground">لا توجد ملفات مرفقة.</p>
+      )}
+
+      {pendingFiles.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {pendingFiles.map((file, idx) => (
+            <div key={`${file.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-dashed p-2">
+              <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
+                {file.type.startsWith('image/') ? (
+                  <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                )}
+              </div>
+              <span className="flex-1 text-xs truncate" title={file.name}>{file.name}</span>
+              <span className="text-[10px] text-muted-foreground shrink-0">سيُرفع عند التأكيد</span>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                disabled={readOnly}
+                onClick={() => removePendingFile(idx)}
+                title="إزالة"
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -236,6 +295,6 @@ const OrderAttachmentsPanel: React.FC<Props> = ({ orderId, readOnly = false }) =
       </AlertDialog>
     </div>
   );
-};
+});
 
 export default OrderAttachmentsPanel;
