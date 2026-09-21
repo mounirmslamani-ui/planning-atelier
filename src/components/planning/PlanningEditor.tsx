@@ -513,6 +513,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           reusedIds.add(sourceRow.stepId);
           reused = true;
         }
+        sourceRow.stepId = s.id;
       }
       if (reused) {
         // Preserve the manual planning_order (Pn) set from the Planning Tableau —
