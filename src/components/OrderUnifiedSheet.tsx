@@ -210,6 +210,11 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   // continue de passer orderId={null} pour cette instance du panneau (il ne connaît
   // que le brouillon).
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  // Which tab the create-session has unlocked so far: 'steps' right after the
+  // order info is confirmed, 'resources' once the steps tab has been confirmed.
+  // Irrelevant once createMode (the prop) is false — the tab list is then
+  // unconditional and doesn't consult this.
+  const [createStage, setCreateStage] = useState<'steps' | 'resources'>('steps');
   const existingOrder = useMemo(
     () => orders.find(o => o.id === (orderId ?? createdOrderId)) || null,
     [orders, orderId, createdOrderId]
@@ -241,6 +246,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       setTab(initialTab);
       setDraft(createMode && initialDraft ? { ...initialDraft } : {});
       setCreatedOrderId(null);
+      setCreateStage('steps');
     }
   }, [open, initialTab, orderId, createMode, initialDraft]);
 
@@ -321,7 +327,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       await attachmentsRef.current?.uploadPending(newOrder.id);
       setCreatedOrderId(newOrder.id);
       setDraft({});
-      setTab('resources');
+        setTab('steps');
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
       return;
     }
@@ -513,10 +519,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
           {/* TABS */}
           <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col overflow-hidden">
             {!effectiveCreateMode && (
-              <TabsList className={`mx-6 mt-3 grid ${createMode ? 'grid-cols-3' : (canViewCosting ? 'grid-cols-5' : 'grid-cols-4')}`}>
+              <TabsList className={`mx-6 mt-3 grid ${createMode ? (createStage === 'resources' ? 'grid-cols-3' : 'grid-cols-2') : (canViewCosting ? 'grid-cols-5' : 'grid-cols-4')}`}>
                 <TabsTrigger value="info">{TAB_TITLES.info}</TabsTrigger>
-                <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
                 <TabsTrigger value="steps">{TAB_TITLES.steps}</TabsTrigger>
+                {(!createMode || createStage === 'resources') && (
+                  <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
+                )}
                 {!createMode && (
                   <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
                 )}
@@ -681,7 +689,27 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                 </div>
               </TabsContent>
 
-              {/* TAB 2 — RESOURCES (editable in place) */}
+              {/* TAB 2 — STEPS (editable in place, with full planning logic) */}
+              <TabsContent value="steps" className="mt-0 space-y-3">
+                <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
+                  <StepsEditorTable
+                    editor={editor}
+                    onCancel={() => { setDraft({}); onOpenChange(false); }}
+                    onSaved={() => {
+                      stepsLock.lock();
+                      if (createMode && createStage === 'steps') { setCreateStage('resources'); setTab('resources'); }
+                    }}
+                  />
+                </fieldset>
+                {!createMode && (
+                  <PartialQCSendSection order={order} />
+                )}
+                <div className="flex justify-end gap-2 pt-2">
+                  <stepsLock.EditButton />
+                </div>
+              </TabsContent>
+
+              {/* TAB 3 — RESOURCES (editable in place) */}
               <TabsContent value="resources" className="mt-0 space-y-3">
                 <ResourcesEditorTable
                   editor={editor}
@@ -692,19 +720,6 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                   order={order}
                   open={open}
                 />
-              </TabsContent>
-
-              {/* TAB 3 — STEPS (editable in place, with full planning logic) */}
-              <TabsContent value="steps" className="mt-0 space-y-3">
-                <fieldset disabled={stepsLock.locked} className="border-0 p-0 m-0">
-                  <StepsEditorTable editor={editor} onCancel={() => { setDraft({}); onOpenChange(false); }} onSaved={() => stepsLock.lock()} />
-                </fieldset>
-                {!createMode && (
-                  <PartialQCSendSection order={order} />
-                )}
-                <div className="flex justify-end gap-2 pt-2">
-                  <stepsLock.EditButton />
-                </div>
               </TabsContent>
 
               {/* TAB 5 — COSTING / SALE PRICE */}
