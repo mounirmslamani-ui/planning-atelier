@@ -328,7 +328,6 @@ const OrderRegistryPage: React.FC = () => {
         onOpenChange={(open) => { if (!open) setCreateDraft(null); }}
         createMode
         initialDraft={createDraft || undefined}
-        onCreated={() => setCreateDraft(null)}
       />
     </div>
   );
