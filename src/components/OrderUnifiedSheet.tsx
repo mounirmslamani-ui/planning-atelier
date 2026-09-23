@@ -39,7 +39,6 @@ interface Props {
   initialTab?: 'info' | 'resources' | 'steps' | 'qc' | 'costing';
   createMode?: boolean;
   initialDraft?: Partial<Order>;
-  onCreated?: (order: Order) => void;
 }
 
 const TAB_TITLES = {
@@ -197,7 +196,7 @@ const PartialQCSendSection: React.FC<{ order: Order }> = ({ order }) => {
 };
 
 
-const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft, onCreated }) => {
+const OrderUnifiedSheet: React.FC<Props> = ({ orderId, open, onOpenChange, initialTab = 'info', createMode = false, initialDraft }) => {
   const {
     orders, clients, steps,
     productionRecords, qcEntries, deliveryEntries, deliveredOrders,
@@ -206,7 +205,21 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     absenceOperationId, deleteOrder, cancelledOrders, deleteCancelledOrder,
   } = usePlanning();
 
-  const existingOrder = useMemo(() => orders.find(o => o.id === orderId) || null, [orders, orderId]);
+  // Une fois la commande créée en cours de flux (voir saveInfo/confirmAndCloseInfo
+  // plus bas), createdOrderId permet de continuer à la retrouver même si le parent
+  // continue de passer orderId={null} pour cette instance du panneau (il ne connaît
+  // que le brouillon).
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const existingOrder = useMemo(
+    () => orders.find(o => o.id === (orderId ?? createdOrderId)) || null,
+    [orders, orderId, createdOrderId]
+  );
+  // Vrai uniquement tant que la commande n'est pas encore persistée. Dès qu'elle
+  // existe (existingOrder se résout), le panneau se comporte comme un panneau
+  // d'édition normal pour les données, même si `createMode` (la prop) reste vrai
+  // pour le reste de la session afin de garder l'interface réduite du flux de
+  // création (voir TabsList plus bas).
+  const effectiveCreateMode = createMode && !existingOrder;
 
   const [tab, setTab] = useState<string>(initialTab);
   const [draft, setDraft] = useState<Partial<Order>>({});
@@ -227,13 +240,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     if (open) {
       setTab(initialTab);
       setDraft(createMode && initialDraft ? { ...initialDraft } : {});
+      setCreatedOrderId(null);
     }
   }, [open, initialTab, orderId, createMode, initialDraft]);
 
   // Synthesize the "order" we work with: existing one, or a draft skeleton in create mode.
   const order: Order | null = useMemo(() => {
     if (existingOrder) return existingOrder;
-    if (!createMode) return null;
+    if (!effectiveCreateMode) return null;
     const today = new Date().toISOString().split('T')[0];
     return {
       id: 'new',
@@ -252,9 +266,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       studyStatus: 'non-disponible',
       ...initialDraft,
     } as Order;
-  }, [existingOrder, createMode, initialDraft]);
+  }, [existingOrder, effectiveCreateMode, initialDraft]);
 
-  const editor = usePlanningEditor(order, open && !createMode);
+  const editor = usePlanningEditor(order, open && !effectiveCreateMode);
 
   const { hasAccess } = useAuth();
   const canReintegrateBtn = hasAccess({ tableau: '', formulaire: '', sous_formulaire: '', champ_bouton: 'إعادة إدماج' }) === 'RW';
@@ -284,20 +298,20 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
   if (!order) return null;
 
   const clientName = clients.find(c => c.id === (draft.clientId ?? order.clientId))?.name || '—';
-  const status = createMode
+  const status = effectiveCreateMode
     ? 'قيد الانتظار' as const
     : getOrderRegistryStatus(order, steps, productionRecords, qcEntries, deliveryEntries, deliveredOrders, absenceOperationId);
-  const orderQc = createMode ? [] : qcEntries.filter(q => q.orderId === order.id);
-  const orderDelivery = createMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
-  const orderDelivered = createMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
-  const orderCancelled = createMode ? undefined : cancelledOrders.find(c => c.orderId === order.id);
-  const canReintegrate = !createMode && !!(orderQc.length || orderDelivery.length || orderDelivered || orderCancelled);
+  const orderQc = effectiveCreateMode ? [] : qcEntries.filter(q => q.orderId === order.id);
+  const orderDelivery = effectiveCreateMode ? [] : deliveryEntries.filter(d => d.orderId === order.id);
+  const orderDelivered = effectiveCreateMode ? undefined : deliveredOrders.find(d => d.orderId === order.id);
+  const orderCancelled = effectiveCreateMode ? undefined : cancelledOrders.find(c => c.orderId === order.id);
+  const canReintegrate = !effectiveCreateMode && !!(orderQc.length || orderDelivery.length || orderDelivered || orderCancelled);
 
 
   const merged: Order = { ...order, ...draft };
 
   const saveInfo = async () => {
-    if (createMode) {
+    if (effectiveCreateMode) {
       if (!merged.orderNumber || !merged.orderNumber.trim()) {
         toast.error('رقم الطلبية مطلوب');
         return;
@@ -305,9 +319,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       const newOrder: Order = { ...merged, id: crypto.randomUUID() };
       await addOrder(newOrder);
       await attachmentsRef.current?.uploadPending(newOrder.id);
-      onCreated?.(newOrder);
+      setCreatedOrderId(newOrder.id);
       setDraft({});
-      onOpenChange(false);
+      setTab('resources');
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
       return;
     }
@@ -320,10 +334,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
   const cancelInfo = () => {
     setDraft({});
-    if (createMode) onOpenChange(false);
+    if (effectiveCreateMode) onOpenChange(false);
     else infoLock.lock();
   };
-
   // ── Per-section unsaved state ──────────────────────────────────────────────
   // Each section of the sheet owns its own dirty flag. Closing the sheet asks
   // ONE single confirmation, and that confirmation saves every dirty section
@@ -345,7 +358,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
 
   const confirmAndCloseInfo = async () => {
-    if (createMode) {
+    if (effectiveCreateMode) {
       if (!merged.orderNumber || !merged.orderNumber.trim()) {
         toast.error('رقم الطلبية مطلوب');
         setShowUnsavedPrompt(false);
@@ -354,7 +367,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       const newOrder: Order = { ...merged, id: crypto.randomUUID() };
       await addOrder(newOrder);
       await attachmentsRef.current?.uploadPending(newOrder.id);
-      onCreated?.(newOrder);
+      setCreatedOrderId(newOrder.id);
       setDraft({});
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
       setShowUnsavedPrompt(false);
@@ -386,7 +399,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
     setShowUnsavedPrompt(false);
 
     if (isInfoDirty) {
-      if (createMode) { confirmAndCloseInfo(); return; }
+      if (effectiveCreateMode) { confirmAndCloseInfo(); return; }
       updateOrder({ ...order, ...draft });
       setDraft({});
       infoLock.lock();
@@ -499,13 +512,15 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
           {/* TABS */}
           <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col overflow-hidden">
-            {!createMode && (
-              <TabsList className={`mx-6 mt-3 grid ${canViewCosting ? 'grid-cols-5' : 'grid-cols-4'}`}>
+            {!effectiveCreateMode && (
+              <TabsList className={`mx-6 mt-3 grid ${createMode ? 'grid-cols-3' : (canViewCosting ? 'grid-cols-5' : 'grid-cols-4')}`}>
                 <TabsTrigger value="info">{TAB_TITLES.info}</TabsTrigger>
                 <TabsTrigger value="resources">{TAB_TITLES.resources}</TabsTrigger>
                 <TabsTrigger value="steps">{TAB_TITLES.steps}</TabsTrigger>
-                <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
-                {canViewCosting && (
+                {!createMode && (
+                  <TabsTrigger value="qc">{TAB_TITLES.qc}</TabsTrigger>
+                )}
+                {!createMode && canViewCosting && (
                   <TabsTrigger value="costing">{TAB_TITLES.costing}</TabsTrigger>
                 )}
               </TabsList>
@@ -654,14 +669,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                     ref={attachmentsRef}
                     orderId={order.id}
                     readOnly={infoLock.locked}
-                    pendingMode={createMode}
+                    pendingMode={effectiveCreateMode}
                   />
                 )}
                 <div className="flex items-center justify-end gap-4 pt-2 border-t">
                   <div className="flex gap-2 shrink-0">
                     <infoLock.EditButton />
                     <Button variant="outline" onClick={cancelInfo} disabled={infoLock.locked}>إلغاء</Button>
-                    <Button onClick={saveInfo} disabled={infoLock.locked || (!createMode && Object.keys(draft).length === 0)}>تأكيد</Button>
+                    <Button onClick={saveInfo} disabled={infoLock.locked || (!effectiveCreateMode && Object.keys(draft).length === 0)}>تأكيد</Button>
                   </div>
                 </div>
               </TabsContent>
@@ -700,15 +715,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
               )}
 
               {/* TAB 4 — QC + DELIVERY (partial sessions) */}
-              <TabsContent value="qc" className="mt-0 space-y-4">
-                <PartialQCDelivery ref={qcRef} order={order} open={open} onDirtyChange={setQcDirty} />
-                <div className="border-t pt-3 flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => requestClose(false)}>إلغاء</Button>
-                  <Button onClick={confirmAndCloseUnsaved}>تأكيد</Button>
-                </div>
+              {!createMode && (
+                <TabsContent value="qc" className="mt-0 space-y-4">
+                  <PartialQCDelivery ref={qcRef} order={order} open={open} onDirtyChange={setQcDirty} />
+                  <div className="border-t pt-3 flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => requestClose(false)}>إلغاء</Button>
+                    <Button onClick={confirmAndCloseUnsaved}>تأكيد</Button>
+                  </div>
 
-
-                {!createMode && (
                   <div className="border-t pt-4 mt-4 flex gap-3 justify-end">
                     {canReintegrate && canReintegrateBtn && (
                       <Button
@@ -748,9 +762,9 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                         محو الطلبية
                       </Button>
                     )}
-                  </div>
-                )}
-              </TabsContent>
+                    </div>
+                </TabsContent>
+              )}
 
             </div>
           </Tabs>
