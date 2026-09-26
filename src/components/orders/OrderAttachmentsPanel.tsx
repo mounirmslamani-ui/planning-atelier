@@ -223,11 +223,11 @@ const OrderAttachmentsPanel = forwardRef<OrderAttachmentsPanelHandle, Props>(({ 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {pendingFiles.map((file, idx) => (
             <div key={`${file.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-dashed p-2">
-              <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
+              <div className="w-28 h-28 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
                 {file.type.startsWith('image/') ? (
-                  <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                  <ImageIcon className="w-14 h-14 text-muted-foreground" />
                 ) : (
-                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  <FileText className="w-14 h-14 text-muted-foreground" />
                 )}
               </div>
               <span className="flex-1 text-xs truncate" title={file.name}>{file.name}</span>
@@ -252,13 +252,13 @@ const OrderAttachmentsPanel = forwardRef<OrderAttachmentsPanelHandle, Props>(({ 
           const isImage = (row.file_type || '').startsWith('image/');
           return (
             <div key={row.id} className="flex items-center gap-2 rounded-md border p-2">
-              <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
+              <div className="w-28 h-28 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
                 {isImage && thumbs[row.id] ? (
                   <img src={thumbs[row.id]} alt={row.file_name} className="w-full h-full object-cover" />
                 ) : isImage ? (
-                  <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                  <ImageIcon className="w-14 h-14 text-muted-foreground" />
                 ) : (
-                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  <FileText className="w-14 h-14 text-muted-foreground" />
                 )}
               </div>
               <span className="flex-1 text-xs truncate" title={row.file_name}>{row.file_name}</span>
