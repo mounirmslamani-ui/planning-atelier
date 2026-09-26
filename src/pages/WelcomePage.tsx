@@ -215,7 +215,7 @@ const WelcomePage: React.FC = () => {
       orderDate: today,
       clientId: selectedClientId || '',
       designation: '',
-      quantity: 1,
+      quantity: 0,
       priority: 'undetermined',
       plannedDeadline: today,
       materialAvailable: false,
