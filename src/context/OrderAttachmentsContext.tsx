@@ -103,13 +103,13 @@ export const OrderAttachmentsProvider: React.FC<{ children: React.ReactNode }> =
               const isImage = (row.file_type || '').startsWith('image/');
               return (
                 <div key={row.id} className="flex items-center gap-2 rounded-md border p-2">
-                  <div className="w-10 h-10 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
+                  <div className="w-[100px] h-[100px] shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden">
                     {isImage && thumbs[row.id] ? (
                       <img src={thumbs[row.id]} alt={row.file_name} className="w-full h-full object-cover" />
                     ) : isImage ? (
-                      <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      <ImageIcon className="w-12 h-12 text-muted-foreground" />
                     ) : (
-                      <FileText className="w-5 h-5 text-muted-foreground" />
+                      <FileText className="w-12 h-12 text-muted-foreground" />
                     )}
                   </div>
                   <span className="flex-1 text-xs truncate" title={row.file_name}>{row.file_name}</span>
