@@ -21,6 +21,7 @@ interface AttachmentRow {
 
 export interface OrderAttachmentsPanelHandle {
   uploadPending: (orderId: string) => Promise<void>;
+  hasFiles: () => boolean;
 }
 
 interface Props {
@@ -139,7 +140,8 @@ const OrderAttachmentsPanel = forwardRef<OrderAttachmentsPanelHandle, Props>(({ 
       setPendingFiles([]);
       if (ok > 0) toast.success(`تم رفع ${ok} ملف`);
     },
-  }), [pendingFiles]);
+    hasFiles: () => (pendingMode ? pendingFiles.length > 0 : rows.length > 0),
+  }), [pendingFiles, pendingMode, rows]);
 
   const handleDownload = async (row: AttachmentRow) => {
     const { data, error } = await supabase.storage
@@ -165,6 +167,11 @@ const OrderAttachmentsPanel = forwardRef<OrderAttachmentsPanelHandle, Props>(({ 
 
   const confirmDelete = async (row: AttachmentRow | null) => {
     if (!row || readOnly) return;
+    if (rows.length <= 1) {
+      toast.error('لا يمكن حذف آخر ملف مرفق للطلبية');
+      setPendingDelete(null);
+      return;
+    }
     const { error: stErr } = await supabase.storage.from(BUCKET).remove([row.file_path]);
     if (stErr) {
       toast.error('تعذر حذف الملف من المخزن');
@@ -265,9 +272,9 @@ const OrderAttachmentsPanel = forwardRef<OrderAttachmentsPanelHandle, Props>(({ 
                 type="button"
                 size="icon"
                 variant="ghost"
-                disabled={readOnly}
+                disabled={readOnly || rows.length <= 1}
                 onClick={() => setPendingDelete(row)}
-                title="حذف"
+                title={rows.length <= 1 ? 'لا يمكن حذف آخر ملف مرفق' : 'حذف'}
               >
                 <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
