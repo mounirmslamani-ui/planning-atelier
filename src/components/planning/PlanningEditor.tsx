@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import MoneyInput from '@/components/ui/money-input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Trash2, CalendarCheck, ChevronUp, ChevronDown, Save, Pencil, RotateCcw } from 'lucide-react';
 import { usePlanning } from '@/context/PlanningContext';
@@ -42,6 +43,8 @@ export interface OperationRow {
   /** Subcontracting progress state — only meaningful when assignType === 'subcontractor'. */
   subcontractingDone?: boolean;
   subcontractingInProgress?: boolean;
+  /** Coût de la sous-traitance saisi lors du passage à منتهية (obligatoire à ce moment-là). */
+  subcontractingCost?: number;
   /** Correction/rework — l'étape ne sera jamais facturée au client */
   nonBillable: boolean;
 }
@@ -142,6 +145,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
           resourceNotes: s.resourceNotes ?? '',
           subcontractingDone: isSub ? !!s.subcontractingDone : false,
           subcontractingInProgress: isSub ? !!s.subcontractingInProgress : false,
+          subcontractingCost: isSub ? s.subcontractingCost : undefined,
           nonBillable: s.nonBillable ?? false,
         };
       });
@@ -177,6 +181,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     estimatedDuration: r.estimatedDuration, assignType: r.assignType, option1: r.option1,
     equipmentIds: r.equipmentIds, stepNotes: r.stepNotes,
     subcontractingDone: !!r.subcontractingDone, subcontractingInProgress: !!r.subcontractingInProgress,
+    subcontractingCost: r.subcontractingCost ?? null,
     nonBillable: !!r.nonBillable,
   })));
   const resourcesSignature = (list: OperationRow[]) => JSON.stringify(list.map(r => ({
@@ -306,6 +311,15 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status } : i);
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
+    }));
+  };
+
+  /** Comme updateItemStatus, mais fixe aussi le prix d'achat en même temps (fenêtre prix obligatoire). */
+  const updateItemStatusAndPrice = (rowId: string, field: ItemField, itemId: string, status: ResourceStatus, costPrice: number) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status, costPrice } : i);
       return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
@@ -504,9 +518,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         if (sourceRow.assignType === 'subcontractor') {
           s.subcontractingDone = !!sourceRow.subcontractingDone;
           s.subcontractingInProgress = !sourceRow.subcontractingDone && !!sourceRow.subcontractingInProgress;
+          s.subcontractingCost = sourceRow.subcontractingCost;
         } else {
           s.subcontractingDone = false;
           s.subcontractingInProgress = false;
+          s.subcontractingCost = undefined;
         }
         if (sourceRow.stepId && existingOrderSteps.some(es => es.id === sourceRow.stepId)) {
           s.id = sourceRow.stepId;
@@ -566,6 +582,9 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
         subcontractingInProgress: hist.subcontractorId
           ? (!row.subcontractingDone && !!row.subcontractingInProgress)
           : false,
+        subcontractingCost: hist.subcontractorId
+          ? row.subcontractingCost
+          : undefined,
       });
     });
 
@@ -771,7 +790,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
     addRow, duplicateRowForRework, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField, toggleNotApplicable,
-    handleStatusChange, updateItemStatus, getAssigneeOptions,
+    handleStatusChange, updateItemStatus, updateItemStatusAndPrice, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
     forcePrompt, setForcePrompt,
@@ -796,6 +815,8 @@ const durationFactor = (t: 'operator' | 'subcontractor') => t === 'subcontractor
 export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () => void; onSaved?: () => void }> = ({ editor, onCancel, onSaved }) => {
   const e = editor;
   const hasExistingSteps = e.rows.some(r => !!r.stepId);
+  const [subPricePrompt, setSubPricePrompt] = useState<{ rowId: string } | null>(null);
+  const [subPriceValue, setSubPriceValue] = useState<number | undefined>(undefined);
   return (
     <div className="space-y-3">
       {e.isLocked && (
@@ -910,6 +931,11 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
                             className="h-8 text-xs px-2"
                             value={value}
                             onValueChange={v => {
+                              if (v === 'done' && row.subcontractingCost == null) {
+                                setSubPriceValue(undefined);
+                                setSubPricePrompt({ rowId: row.id });
+                                return;
+                              }
                               e.updateRow(row.id, 'subcontractingDone', v === 'done');
                               e.updateRow(row.id, 'subcontractingInProgress', v === 'in-progress');
                             }}
@@ -1020,6 +1046,32 @@ export const StepsEditorTable: React.FC<{ editor: PlanningEditor; onCancel?: () 
           </Button>
         </div>
       </div>
+      <Dialog open={!!subPricePrompt} onOpenChange={(o) => { if (!o) setSubPricePrompt(null); }}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تكلفة المناولة</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <MoneyInput value={subPriceValue} onValueChange={setSubPriceValue} currencyPosition="start" currencyLabel="دج" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSubPricePrompt(null)}>إلغاء</Button>
+            <Button
+              disabled={subPriceValue == null}
+              onClick={() => {
+                if (subPricePrompt) {
+                  e.updateRow(subPricePrompt.rowId, 'subcontractingCost', subPriceValue);
+                  e.updateRow(subPricePrompt.rowId, 'subcontractingDone', true);
+                  e.updateRow(subPricePrompt.rowId, 'subcontractingInProgress', false);
+                }
+                setSubPricePrompt(null);
+              }}
+            >
+              تأكيد
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -1035,6 +1087,8 @@ export const ResourcesEditorTable: React.FC<{
   open?: boolean;
 }> = ({ editor, onCancel, canEditMaterial = true, canEditTooling = true, canEditStudy = true, order, open = true }) => {
   const e = editor;
+  const [matPricePrompt, setMatPricePrompt] = useState<{ rowId: string; itemId: string; status: ResourceStatus; label: string } | null>(null);
+  const [matPriceValue, setMatPriceValue] = useState<number | undefined>(undefined);
   const { updateOrder } = usePlanning();
   const matLock = useSubFormLock(canEditMaterial, open);
   const tooLock = useSubFormLock(canEditTooling, open);
@@ -1160,7 +1214,19 @@ export const ResourcesEditorTable: React.FC<{
                       {(row.rawMaterialItems.length > 0 ? row.rawMaterialItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
                         <div key={item.id} className={`flex items-center gap-1 ${row.rawMaterialNotApplicable ? 'opacity-50' : ''}`}>
                           {!row.rawMaterialNotApplicable && (
-                            <ResourceStatusPill value={item.status} onChange={s => e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s)} readOnly={matDisabled} options={['disponible', 'partiel', 'non-disponible']} />
+                            <ResourceStatusPill
+                              value={item.status}
+                              onChange={s => {
+                                if ((s === 'disponible' || s === 'partiel') && item.costPrice == null) {
+                                  setMatPriceValue(undefined);
+                                  setMatPricePrompt({ rowId: row.id, itemId: item.id, status: s, label: item.label });
+                                  return;
+                                }
+                                e.updateItemStatus(row.id, 'rawMaterialItems', item.id, s);
+                              }}
+                              readOnly={matDisabled}
+                              options={['disponible', 'partiel', 'non-disponible']}
+                            />
                           )}
                           <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled || row.rawMaterialNotApplicable} />
                           {idx === row.rawMaterialItems.length - 1 ? (
@@ -1241,6 +1307,30 @@ export const ResourcesEditorTable: React.FC<{
           <Save className="w-4 h-4 mr-1" /> تأكيد
         </Button>
       </div>
+      <Dialog open={!!matPricePrompt} onOpenChange={(o) => { if (!o) setMatPricePrompt(null); }}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>ثمن شراء المادة{matPricePrompt?.label ? ` — ${matPricePrompt.label}` : ''}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <MoneyInput value={matPriceValue} onValueChange={setMatPriceValue} currencyPosition="start" currencyLabel="دج" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMatPricePrompt(null)}>إلغاء</Button>
+            <Button
+              disabled={matPriceValue == null}
+              onClick={() => {
+                if (matPricePrompt) {
+                  e.updateItemStatusAndPrice(matPricePrompt.rowId, 'rawMaterialItems', matPricePrompt.itemId, matPricePrompt.status, matPriceValue!);
+                }
+                setMatPricePrompt(null);
+              }}
+            >
+              تأكيد
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
