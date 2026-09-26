@@ -261,7 +261,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       orderDate: today,
       clientId: '',
       designation: '',
-      quantity: 1,
+      quantity: 0,
       priority: 'undetermined',
       plannedDeadline: today,
       materialAvailable: false,
@@ -322,6 +322,18 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
         toast.error('رقم الطلبية مطلوب');
         return;
       }
+      if (!merged.designation || !merged.designation.trim()) {
+        toast.error('التعيين مطلوب');
+        return;
+      }
+      if (!merged.quantity || merged.quantity <= 0) {
+        toast.error('الكمية يجب أن تكون أكبر من 0');
+        return;
+      }
+      if (!attachmentsRef.current?.hasFiles()) {
+        toast.error('يجب إرفاق صورة أو ملف قبل إنشاء الطلبية');
+        return;
+      }
       const newOrder: Order = { ...merged, id: crypto.randomUUID() };
       await addOrder(newOrder);
       await attachmentsRef.current?.uploadPending(newOrder.id);
@@ -329,6 +341,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       setDraft({});
         setTab('steps');
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
+      return;
+    }
+    if (!merged.designation || !merged.designation.trim()) {
+      toast.error('التعيين مطلوب');
+      return;
+    }
+    if (!merged.quantity || merged.quantity <= 0) {
+      toast.error('الكمية يجب أن تكون أكبر من 0');
       return;
     }
     if (Object.keys(draft).length === 0) { infoLock.lock(); return; }
@@ -370,6 +390,21 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
         setShowUnsavedPrompt(false);
         return;
       }
+      if (!merged.designation || !merged.designation.trim()) {
+        toast.error('التعيين مطلوب');
+        setShowUnsavedPrompt(false);
+        return;
+      }
+      if (!merged.quantity || merged.quantity <= 0) {
+        toast.error('الكمية يجب أن تكون أكبر من 0');
+        setShowUnsavedPrompt(false);
+        return;
+      }
+      if (!attachmentsRef.current?.hasFiles()) {
+        toast.error('يجب إرفاق صورة أو ملف قبل إنشاء الطلبية');
+        setShowUnsavedPrompt(false);
+        return;
+      }
       const newOrder: Order = { ...merged, id: crypto.randomUUID() };
       await addOrder(newOrder);
       await attachmentsRef.current?.uploadPending(newOrder.id);
@@ -378,6 +413,16 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       toast.success(`تم إنشاء الطلبية ${newOrder.orderNumber}`);
       setShowUnsavedPrompt(false);
       onOpenChange(false);
+      return;
+    }
+    if (!merged.designation || !merged.designation.trim()) {
+      toast.error('التعيين مطلوب');
+      setShowUnsavedPrompt(false);
+      return;
+    }
+    if (!merged.quantity || merged.quantity <= 0) {
+      toast.error('الكمية يجب أن تكون أكبر من 0');
+      setShowUnsavedPrompt(false);
       return;
     }
     updateOrder({ ...order, ...draft });
@@ -406,6 +451,14 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
 
     if (isInfoDirty) {
       if (effectiveCreateMode) { confirmAndCloseInfo(); return; }
+      if (!merged.designation || !merged.designation.trim()) {
+        toast.error('التعيين مطلوب');
+        return;
+      }
+      if (!merged.quantity || merged.quantity <= 0) {
+        toast.error('الكمية يجب أن تكون أكبر من 0');
+        return;
+      }
       updateOrder({ ...order, ...draft });
       setDraft({});
       infoLock.lock();
@@ -607,13 +660,12 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                       value={merged.designation || ''}
                       onChange={e => setDraft(d => ({ ...d, designation: e.target.value }))}
                     />
-                  </div>
-                  <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
                       <Label>الكمية</Label>
                       <Input
                         type="number"
-                        value={merged.quantity ?? 0}
+                        min={1}
+                        value={merged.quantity || ''}
                         onChange={e => setDraft(d => ({ ...d, quantity: parseInt(e.target.value) || 0 }))}
                       />
                     </div>
