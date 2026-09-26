@@ -136,7 +136,7 @@ const OrderRegistryPage: React.FC = () => {
       orderDate: today,
       clientId: slamaniClient?.id || '',
       designation: '',
-      quantity: 1,
+      quantity: 0,
       priority: 'undetermined',
       plannedDeadline: today,
       materialAvailable: false,
