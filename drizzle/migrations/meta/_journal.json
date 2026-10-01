@@ -8,6 +8,13 @@
       "when": 1790868732393,
       "tag": "0000_create_material_reference_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790881658926,
+      "tag": "0001_orders_planned_deadline_nullable",
+      "breakpoints": true
     }
   ]
 }
