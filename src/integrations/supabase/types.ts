@@ -563,7 +563,7 @@ export type Database = {
           observation: string | null
           order_date: string
           order_number: string
-          planned_deadline: string
+          planned_deadline: string | null
           priority: Database["public"]["Enums"]["order_priority"] | null
           prototype_deadline: string | null
           prototype_quantity: number | null
@@ -595,7 +595,7 @@ export type Database = {
           observation?: string | null
           order_date?: string
           order_number: string
-          planned_deadline?: string
+          planned_deadline?: string | null
           priority?: Database["public"]["Enums"]["order_priority"] | null
           prototype_deadline?: string | null
           prototype_quantity?: number | null
@@ -627,7 +627,7 @@ export type Database = {
           observation?: string | null
           order_date?: string
           order_number?: string
-          planned_deadline?: string
+          planned_deadline?: string | null
           priority?: Database["public"]["Enums"]["order_priority"] | null
           prototype_deadline?: string | null
           prototype_quantity?: number | null
