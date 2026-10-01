@@ -20,6 +20,7 @@ import { isReintegratedOrder } from '@/lib/reintegration';
 import { isLinkedToOperation } from '@/lib/operationLinks';
 import { useSubFormLock } from '@/components/orders/SubFormLock';
 import SearchableSelect from '@/components/ui/searchable-select';
+import MaterialItemFields from '@/components/planning/MaterialItemFields';
 import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
 
 export interface OperationRow {
@@ -285,6 +286,16 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
       if (r.id !== rowId) return r;
       const arr = (r[field] && r[field].length > 0 ? [...r[field]] : [newEmptyItem()]);
       arr[index] = { ...arr[index], label: value };
+      return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
+    }));
+  };
+
+  /** Met à jour plusieurs champs d'une ligne (ex. nuance/format/dimension/quantité/unité + libellé de synthèse). */
+  const updateItemFields = (rowId: string, field: ItemField, index: number, patch: Partial<ResourceItem>) => {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const arr = (r[field] && r[field].length > 0 ? [...r[field]] : [newEmptyItem()]);
+      arr[index] = { ...arr[index], ...patch };
       return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
@@ -789,7 +800,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
-    addRow, duplicateRowForRework, moveRow, updateRow, updateNeedField, addNeedField, removeNeedField, toggleNotApplicable,
+    addRow, duplicateRowForRework, moveRow, updateRow, updateNeedField, updateItemFields, addNeedField, removeNeedField, toggleNotApplicable,
     handleStatusChange, updateItemStatus, updateItemStatusAndPrice, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
@@ -1158,12 +1169,12 @@ export const ResourcesEditorTable: React.FC<{
       <div className="bg-card rounded-md border w-full">
         <table className="w-full table-fixed text-xs">
           <colgroup>
-            <col style={{ width: '5%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '22%' }} />
+            <col style={{ width: '4%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '40%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '19%' }} />
           </colgroup>
           <thead className="bg-muted/40">
             <tr>
