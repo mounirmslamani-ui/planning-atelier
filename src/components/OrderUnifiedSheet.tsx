@@ -263,7 +263,7 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
       designation: '',
       quantity: 0,
       priority: 'undetermined',
-      plannedDeadline: today,
+      plannedDeadline: '',
       materialAvailable: false,
       toolingAvailable: false,
       studyReady: false,
@@ -682,11 +682,11 @@ updateOrder, addOrder, addQCEntry, updateQCEntry, addDeliveryEntry, deleteQCEntr
                       />
                     </div>
                     <div>
-                      <Label>أجل التسليم</Label>
+                      <Label>أجل التسليم{!(merged.deliveryDeadline || merged.plannedDeadline) && <span className="ms-2 text-xs font-normal text-muted-foreground">(غير محدد)</span>}</Label>
                       <Input
                         type="date"
                         value={merged.deliveryDeadline || merged.plannedDeadline || ''}
-                        onChange={e => setDraft(d => ({ ...d, deliveryDeadline: e.target.value }))}
+                        onChange={e => setDraft(d => ({ ...d, deliveryDeadline: e.target.value, ...(e.target.value === '' ? { plannedDeadline: '' } : {}) }))}
                       />
                     </div>
                     <div>
