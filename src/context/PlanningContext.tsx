@@ -126,7 +126,9 @@ interface Snapshot {
 
 const MAX_HISTORY = 50;
 
-const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
+// Keep a single context instance across HMR reloads (prevents "must be used within PlanningProvider").
+const g = globalThis as unknown as { __planningCtx?: React.Context<PlanningContextType | undefined> };
+const PlanningContext = g.__planningCtx ?? (g.__planningCtx = createContext<PlanningContextType | undefined>(undefined));
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);

@@ -1,4 +1,3 @@
-tsx
 import React, { useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
