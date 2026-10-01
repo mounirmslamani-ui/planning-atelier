@@ -15,6 +15,13 @@
       "when": 1790881658926,
       "tag": "0001_orders_planned_deadline_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790892557602,
+      "tag": "0002_create_material_purchase_prices",
+      "breakpoints": true
     }
   ]
 }

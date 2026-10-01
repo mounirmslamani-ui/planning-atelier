@@ -403,6 +403,99 @@ export type Database = {
         }
         Relationships: []
       }
+      material_purchase_prices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          dimension_id: string | null
+          document_ref: string | null
+          format_id: string
+          grade_id: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          price_unit_id: string
+          purchase_date: string
+          quantity: number | null
+          supplier_id: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          dimension_id?: string | null
+          document_ref?: string | null
+          format_id: string
+          grade_id: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          price_unit_id: string
+          purchase_date: string
+          quantity?: number | null
+          supplier_id?: string | null
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          dimension_id?: string | null
+          document_ref?: string | null
+          format_id?: string
+          grade_id?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          price_unit_id?: string
+          purchase_date?: string
+          quantity?: number | null
+          supplier_id?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_purchase_prices_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "material_dimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "material_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "material_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_price_unit_id_fkey"
+            columns: ["price_unit_id"]
+            isOneToOne: false
+            referencedRelation: "material_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_units: {
         Row: {
           created_at: string
@@ -1148,9 +1241,76 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      material_last_purchase_price: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          dimension_id: string | null
+          document_ref: string | null
+          format_id: string | null
+          grade_id: string | null
+          id: string | null
+          is_active: boolean | null
+          notes: string | null
+          price_unit_id: string | null
+          purchase_date: string | null
+          quantity: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          unit_price: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_purchase_prices_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "material_dimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "material_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "material_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_price_unit_id_fkey"
+            columns: ["price_unit_id"]
+            isOneToOne: false
+            referencedRelation: "material_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      can_read: {
+        Args: {
+          _champ_bouton?: string
+          _formulaire?: string
+          _sous_formulaire?: string
+          _tableau?: string
+          _uid: string
+        }
+        Returns: boolean
+      }
       can_write: {
         Args: {
           _champ_bouton?: string
