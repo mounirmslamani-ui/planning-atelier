@@ -138,7 +138,7 @@ const OrderRegistryPage: React.FC = () => {
       designation: '',
       quantity: 0,
       priority: 'undetermined',
-      plannedDeadline: today,
+      plannedDeadline: '',
       materialAvailable: false,
       toolingAvailable: false,
       studyReady: false,
