@@ -295,6 +295,141 @@ export type Database = {
         }
         Relationships: []
       }
+      material_densities: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          libelle: string
+          unit: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle: string
+          unit?: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle?: string
+          unit?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      material_dimensions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          libelle: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      material_formats: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          libelle_ar: string | null
+          libelle_fr: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle_ar?: string | null
+          libelle_fr: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle_ar?: string | null
+          libelle_fr?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      material_grades: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          libelle_ar: string | null
+          libelle_fr: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle_ar?: string | null
+          libelle_fr: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle_ar?: string | null
+          libelle_fr?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      material_units: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          libelle_ar: string | null
+          libelle_fr: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle_ar?: string | null
+          libelle_fr: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          libelle_ar?: string | null
+          libelle_fr?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       operations: {
         Row: {
           category: Database["public"]["Enums"]["operation_category"]
@@ -930,6 +1065,42 @@ export type Database = {
           phones?: string[]
           representatives?: Json
           secondary_activities?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
