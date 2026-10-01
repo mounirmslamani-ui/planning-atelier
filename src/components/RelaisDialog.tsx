@@ -114,15 +114,13 @@ function formatMaskedTime(raw: string): string {
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
-const todayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const ALGIERS_TZ = 'Africa/Algiers';
 
-const nowHHMM = () => {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
+const todayISO = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: ALGIERS_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
+const nowHHMM = () =>
+  new Intl.DateTimeFormat('en-GB', { timeZone: ALGIERS_TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
 
 // ───────── Sub-component: HH:mm input with up/down arrows ─────────
 interface TimeFieldProps {
