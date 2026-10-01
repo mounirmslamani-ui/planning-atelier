@@ -241,7 +241,7 @@ export function mapOrderToDB(o: Order) {
     display_order: o.displayOrder ?? null,
     frozen_order: o.frozenOrder ?? false,
     manual_sort_order: o.manualSortOrder ?? null,
-    planned_deadline: toISODate(o.plannedDeadline),
+    planned_deadline: toISODateOrNull(o.plannedDeadline),
     prototype_quantity: o.prototypeQuantity ?? null,
     prototype_deadline: toISODateOrNull(o.prototypeDeadline),
     delivery_deadline: toISODateOrNull(o.deliveryDeadline),
