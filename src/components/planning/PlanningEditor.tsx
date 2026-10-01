@@ -1228,7 +1228,11 @@ export const ResourcesEditorTable: React.FC<{
                               options={['disponible', 'partiel', 'non-disponible']}
                             />
                           )}
-                          <Input className="h-7 text-xs px-1" value={item.label} onChange={ev => e.updateNeedField(row.id, 'rawMaterialItems', idx, ev.target.value)} placeholder="مادة..." disabled={matDisabled || row.rawMaterialNotApplicable} />
+                          <MaterialItemFields
+                            item={item}
+                            disabled={matDisabled || row.rawMaterialNotApplicable}
+                            onChange={patch => e.updateItemFields(row.id, 'rawMaterialItems', idx, patch)}
+                          />
                           {idx === row.rawMaterialItems.length - 1 ? (
                             <Button type="button" variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => e.addNeedField(row.id, 'rawMaterialItems')} disabled={matDisabled || row.rawMaterialNotApplicable}>
                               <Plus className="w-3 h-3" />
