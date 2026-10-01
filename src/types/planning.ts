@@ -109,6 +109,16 @@ export interface ResourceItem {
   margin?: 30 | 50;
   /** Fournisseur — saisi manuellement */
   supplier?: string;
+  /** Matière première structurée — id dans material_grades (nuance) */
+  gradeId?: string;
+  /** id dans material_formats (rond, tôle, hexagone…) */
+  formatId?: string;
+  /** id dans material_dimensions (D40, 30x40…) */
+  dimensionId?: string;
+  /** Quantité / longueur (exprimée dans l'unité choisie) */
+  quantity?: number;
+  /** id dans material_units (mm, barre, feuille…) */
+  unitId?: string;
 }
 
 // Helper: legacy boolean view of a 4-state status (true only when "disponible")
