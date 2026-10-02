@@ -34,6 +34,7 @@ import SubcontractingPage from "./pages/SubcontractingPage";
 import AbsencesPage from "./pages/AbsencesPage";
 import PlanningTableauPage from "./pages/PlanningTableauPage";
 import UsersAdminPage from "./pages/UsersAdminPage";
+import MaterialReferencesPage from "./pages/MaterialReferencesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,7 @@ const App = () => (
                 <Route path="/absences" element={<AbsencesPage />} />
                 <Route path="/planning-tableau" element={<PlanningTableauPage />} />
                 <Route path="/users" element={<UsersAdminPage />} />
+                <Route path="/material-references" element={<MaterialReferencesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AppLayout>
