@@ -29,6 +29,13 @@
       "when": 1790927127946,
       "tag": "0003_confidential_rights_no_auto_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790930215183,
+      "tag": "0004_billing_followup_right_and_proforma",
+      "breakpoints": true
     }
   ]
 }
