@@ -11,7 +11,7 @@ import {
   dbInsertSubcontractor, dbUpdateSubcontractor, dbDeleteSubcontractor,
   dbInsertOperation, dbUpdateOperation, dbDeleteOperation,
   dbInsertClient, dbUpdateClient, dbDeleteClient,
-  dbInsertOrder, dbUpdateOrder, dbDeleteOrder, dbBulkUpdateOrders,
+  dbInsertOrder, dbUpdateOrder, dbUpdateOrderProforma, dbDeleteOrder, dbBulkUpdateOrders,
   dbInsertStep, dbUpdateStep, dbDeleteStep,
   dbInsertHoliday, dbUpdateHoliday, dbDeleteHoliday,
   dbInsertRecord, dbUpdateRecord, dbDeleteRecord,
@@ -63,6 +63,8 @@ interface PlanningContextType {
   setOrders: (orders: Order[]) => void;
   addOrder: (order: Order) => Promise<boolean>;
   updateOrder: (order: Order) => void;
+  /** Enregistre uniquement la فاتورة شكلية d'une commande (droit « متابعة فوترة الطلبيات » en écriture requis côté base). */
+  updateOrderProforma: (orderId: string, proformaNumber: string) => Promise<boolean>;
   deleteOrder: (id: string) => void;
   setSteps: (steps: ProductionStep[]) => void;
   addStep: (step: ProductionStep) => void;
@@ -452,6 +454,20 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (!ok && previous) setOrders(prev => prev.map(o => o.id === order.id ? previous! : o));
     });
   }, [pushUndo]);
+  const updateOrderProforma = useCallback(async (orderId: string, proformaNumber: string) => {
+    lastLocalWriteAt.current = Date.now();
+    const value = proformaNumber.trim();
+    let previous: string | undefined;
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      previous = o.proformaNumber;
+      return { ...o, proformaNumber: value || undefined };
+    }));
+    const ok = await dbUpdateOrderProforma(orderId, value);
+    lastLocalWriteAt.current = Date.now();
+    if (!ok) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, proformaNumber: previous } : o));
+    return ok;
+  }, []);
   const deleteOrder = useCallback((id: string) => {
     pushUndo();
     setOrders(prev => prev.filter(o => o.id !== id));
@@ -656,7 +672,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       operations, setOperations, addOperation, updateOperation, deleteOperation,
       clients: [...clients].sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })),
       setClients, addClient, updateClient, deleteClient,
-      orders, setOrders: setOrdersWrapped, addOrder, updateOrder, deleteOrder,
+      orders, setOrders: setOrdersWrapped, addOrder, updateOrder, updateOrderProforma, deleteOrder,
       steps, setSteps, addStep, updateStep, deleteStep,
       holidays, setHolidays, addHoliday, updateHoliday, deleteHoliday,
       productionRecords, addProductionRecord, updateProductionRecord, deleteProductionRecord,
