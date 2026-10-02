@@ -162,6 +162,8 @@ export interface Order {
   technicalComplexity?: 'level1' | 'level2' | 'level3' | 'level4';
   /** Prix de vente unitaire saisi manuellement dans l'onglet coûts (ثمن بيع الوحدة) */
   salePricePerUnit?: number;
+  /** N° de facture proforma (فاتورة شكلية) — écrit uniquement via updateOrderProforma, jamais via mapOrderToDB */
+  proformaNumber?: string;
 }
 
 export interface ProductionStep {
