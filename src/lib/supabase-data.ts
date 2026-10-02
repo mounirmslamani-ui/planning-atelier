@@ -222,6 +222,7 @@ export function mapOrderFromDB(row: any): Order {
     
     technicalComplexity: (row as any).technical_complexity || undefined,
     salePricePerUnit: row.sale_price_per_unit != null ? Number(row.sale_price_per_unit) : undefined,
+    proformaNumber: row.proforma_number || undefined,
   };
 }
 
@@ -776,6 +777,14 @@ export async function dbInsertOrder(o: Order) {
 export async function dbUpdateOrder(o: Order) {
   const { error } = await supabase.from('orders').update(mapOrderToDB(o)).eq('id', o.id);
   if (error) logError('order', 'update', error);
+  return !error;
+}
+// Écriture dédiée de la proforma : proforma_number n'est volontairement PAS dans mapOrderToDB.
+// Sinon chaque sauvegarde de commande (ou upsert groupé) renverrait la valeur locale, et une copie
+// périmée ferait échouer la sauvegarde d'un utilisateur sans le droit « متابعة فوترة الطلبيات ».
+export async function dbUpdateOrderProforma(orderId: string, proformaNumber: string) {
+  const { error } = await supabase.from('orders').update({ proforma_number: proformaNumber || null }).eq('id', orderId);
+  if (error) logError('order', 'update proforma', error);
   return !error;
 }
 export async function dbDeleteOrder(id: string) {
