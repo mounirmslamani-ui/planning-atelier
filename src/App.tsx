@@ -51,7 +51,7 @@ const App = () => (
             <GlobalClientFilterProvider>
             <AppLayout>
               <Routes>
-                <Route path="/" element={<Navigate to="/home" replace />} />
+                <Route path="/" element={<Navigate to="/planning-tableau" replace />} />
                 <Route path="/home" element={<WelcomePage />} />
                 <Route path="/planning-gantt" element={<Index />} />
                 <Route path="/operators" element={<OperatorsPage />} />
