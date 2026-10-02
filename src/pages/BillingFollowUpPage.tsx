@@ -14,7 +14,10 @@ import { useTableSortFilter } from '@/hooks/useTableSortFilter';
 import { computeOrderBillingBreakdown, type OrderBillingBreakdown } from '@/lib/orderCosting';
 import { getExportFilename } from '@/lib/excelExport';
 import { cn, formatDateFR } from '@/lib/utils';
-import type { DeliveredOrder, Order, ProductionRecord, ProductionStep } from '@/types/planning';
+import type { DeliveredOrder, Order, OrderCategory, ProductionRecord, ProductionStep } from '@/types/planning';
+import { ORDER_CATEGORY_LABEL } from '@/types/planning';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 
 const PAGE_TITLE = 'متابعة فوترة الطلبيات';
 const BILLING_RIGHT = { tableau: PAGE_TITLE };
@@ -23,19 +26,15 @@ const BILLING_RIGHT = { tableau: PAGE_TITLE };
 const MONEY_FMT = '_-* #,##0.00\\ _D_A_-;\\-* #,##0.00\\ _D_A_-;_-* "-"??\\ _D_A_-;_-@_-';
 const DATE_FMT = 'dd/mm/yyyy';
 
-type InvoiceFilter = 'all' | 'pending' | 'invoiced';
-const INVOICE_BUTTONS: { key: InvoiceFilter; label: string }[] = [
-  { key: 'all', label: 'جميع الطلبيات المسلمة' },
-  { key: 'pending', label: 'في انتظار الفوترة' },
-  { key: 'invoiced', label: 'مفوترة' },
-];
+type BillingCategory = Extract<OrderCategory, 'fabrication' | 'prestation'>;
+const BILLING_CATEGORIES: BillingCategory[] = ['fabrication', 'prestation'];
 
 type Row = {
   order: Order;
   clientName: string;
   deliveryDate: string;      // ISO — dernière livraison de la commande
   invoiceNumbers: string;    // n° de facture distincts, séparés par « - »
-  invoiced: boolean;         // toutes les livraisons ont un n° de facture
+  category: BillingCategory;
   breakdown: OrderBillingBreakdown;
 };
 
@@ -97,7 +96,7 @@ const BillingFollowUpPage: React.FC = () => {
   const canView = level !== 'denied';
   const canEdit = level === 'RW';
 
-  const [invoiceFilter, setInvoiceFilter] = useState<InvoiceFilter>('all');
+  const [activeCat, setActiveCat] = useState<BillingCategory>('fabrication');
 
   const rows = useMemo<Row[]>(() => {
     if (!canView) return [];
@@ -122,6 +121,8 @@ const BillingFollowUpPage: React.FC = () => {
     const result: Row[] = [];
     for (const order of orders) {
       if (order.id === absenceOrderId) continue;
+      const category = inferCategoryFromOrderNumber(order.orderNumber);
+      if (category !== 'fabrication' && category !== 'prestation') continue; // SLAMANI et Divers exclus de cette rubrique
       const sessions = sessionsByOrder.get(order.id);
       if (!sessions || sessions.length === 0) continue;
 
@@ -135,7 +136,7 @@ const BillingFollowUpPage: React.FC = () => {
         clientName: clientNameById.get(order.clientId) || '',
         deliveryDate,
         invoiceNumbers,
-        invoiced: sessions.every(d => !!(d.invoiceNumber || '').trim()),
+       category,
         breakdown: computeOrderBillingBreakdown(
           order,
           (stepsByOrder.get(order.id) || []).slice().sort((a, b) => a.order - b.order),
@@ -147,11 +148,8 @@ const BillingFollowUpPage: React.FC = () => {
     return result.sort((a, b) => b.deliveryDate.localeCompare(a.deliveryDate));
   }, [canView, orders, clients, steps, productionRecords, deliveredOrders, operations, absenceOrderId]);
 
-  const buttonFilteredRows = useMemo(
-    () => rows.filter(r =>
-      invoiceFilter === 'all' || (invoiceFilter === 'invoiced' ? r.invoiced : !r.invoiced)),
-    [rows, invoiceFilter],
-  );
+  const categoryRows = useMemo(() => rows.filter(r => r.category === activeCat), [rows, activeCat]);
+  const catCount = (cat: BillingCategory) => rows.filter(r => r.category === cat).length;
 
   const accessors = useMemo(() => ({
     orderNumber: (r: Row) => r.order.orderNumber,
@@ -166,7 +164,7 @@ const BillingFollowUpPage: React.FC = () => {
   }), []);
 
   const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } =
-    useTableSortFilter<Row>(buttonFilteredRows, accessors);
+    useTableSortFilter<Row>(categoryRows, accessors);
 
   // Colonnes opérateurs dynamiques : uniquement ceux qui ont un montant sur au moins une ligne affichée.
   const operatorColumns = useMemo(() => {
@@ -236,8 +234,8 @@ const BillingFollowUpPage: React.FC = () => {
     ].map(wch => ({ wch }));
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, PAGE_TITLE);
-    XLSX.writeFile(wb, getExportFilename(PAGE_TITLE));
+    XLSX.utils.book_append_sheet(wb, ws, ORDER_CATEGORY_LABEL[activeCat]);
+    XLSX.writeFile(wb, getExportFilename(`${PAGE_TITLE} - ${ORDER_CATEGORY_LABEL[activeCat]}`));
   };
 
   if (!canView) {
@@ -282,21 +280,19 @@ const BillingFollowUpPage: React.FC = () => {
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         </div>
-        <div className="flex items-center gap-2 flex-wrap mt-3">
-          <span className="text-xs font-semibold text-muted-foreground min-w-20">الفوترة:</span>
-          {INVOICE_BUTTONS.map(b => (
-            <Button
-              key={b.key}
-              size="sm"
-              variant={invoiceFilter === b.key ? 'default' : 'outline'}
-              className="h-7 text-xs"
-              onClick={() => setInvoiceFilter(b.key)}
-            >
-              {b.label}
-            </Button>
-          ))}
         </div>
       </div>
+
+      <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as BillingCategory)} dir="rtl" className="flex-none mb-2 w-full">
+        <TabsList className="justify-start">
+          {BILLING_CATEGORIES.map(c => (
+            <TabsTrigger key={c} value={c}>
+              {ORDER_CATEGORY_LABEL[c]}
+              <span className="mr-2 text-xs text-muted-foreground">({catCount(c)})</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <table className="w-full caption-bottom text-sm">
