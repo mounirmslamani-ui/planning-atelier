@@ -6,7 +6,7 @@ import {
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
   DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
-  UserCog, Home,
+  UserCog, Home, FileSpreadsheet,
 } from 'lucide-react';
 
 import { usePlanning } from '@/context/PlanningContext';
@@ -44,6 +44,7 @@ const sidebarGroups = [
     items: [
       { to: '/delivery', label: 'طلبيات جاهزة للتسليم', icon: PackageCheck, dropTarget: false as DropTargetType },
       { to: '/delivered-orders', label: 'طلبيات مسلمة', icon: Archive, dropTarget: false as DropTargetType },
+      { to: '/billing-followup', label: 'متابعة فوترة الطلبيات', icon: FileSpreadsheet, dropTarget: false as DropTargetType, right: { tableau: 'متابعة فوترة الطلبيات' } },
       { to: '/cancelled-orders', label: 'طلبيات ملغاة', icon: Ban, dropTarget: false as DropTargetType },
     ],
   },
@@ -74,7 +75,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
   const [reportOpen, setReportOpen] = useState(false);
   const dragPayloadWindow = window as Window & { __planningProdDragPayload?: string };
   const planning = usePlanning();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, profile, hasAccess } = useAuth();
 
   const handleGlobalExport = () => {
     try {
@@ -150,7 +151,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
               {group.title}
             </div>
             <div className="space-y-0.5">
-              {group.items.map(item => {
+              {group.items.filter(item => !item.right || hasAccess(item.right) !== 'denied').map(item => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.to;
                 const isDropTarget = item.dropTarget && ((item.dropTarget === 'prod' && onProdDrop) || (item.dropTarget === 'qc' && onQcDrop));
