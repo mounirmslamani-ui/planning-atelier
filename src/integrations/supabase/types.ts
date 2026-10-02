@@ -1092,6 +1092,7 @@ export type Database = {
           champ_bouton: string
           formulaire: string
           id: string
+          is_confidential: boolean
           libelle_ar: string | null
           libelle_fr: string | null
           ordre: number
@@ -1102,6 +1103,7 @@ export type Database = {
           champ_bouton?: string
           formulaire?: string
           id?: string
+          is_confidential?: boolean
           libelle_ar?: string | null
           libelle_fr?: string | null
           ordre: number
@@ -1112,6 +1114,7 @@ export type Database = {
           champ_bouton?: string
           formulaire?: string
           id?: string
+          is_confidential?: boolean
           libelle_ar?: string | null
           libelle_fr?: string | null
           ordre?: number
