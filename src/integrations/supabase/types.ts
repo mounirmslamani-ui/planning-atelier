@@ -658,6 +658,7 @@ export type Database = {
           order_number: string
           planned_deadline: string | null
           priority: Database["public"]["Enums"]["order_priority"] | null
+          proforma_number: string | null
           prototype_deadline: string | null
           prototype_quantity: number | null
           quantity: number
@@ -690,6 +691,7 @@ export type Database = {
           order_number: string
           planned_deadline?: string | null
           priority?: Database["public"]["Enums"]["order_priority"] | null
+          proforma_number?: string | null
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
@@ -722,6 +724,7 @@ export type Database = {
           order_number?: string
           planned_deadline?: string | null
           priority?: Database["public"]["Enums"]["order_priority"] | null
+          proforma_number?: string | null
           prototype_deadline?: string | null
           prototype_quantity?: number | null
           quantity?: number
