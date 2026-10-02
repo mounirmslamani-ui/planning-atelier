@@ -280,7 +280,6 @@ const BillingFollowUpPage: React.FC = () => {
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         </div>
-        </div>
       </div>
 
       <Tabs value={activeCat} onValueChange={(v) => setActiveCat(v as BillingCategory)} dir="rtl" className="flex-none mb-2 w-full">
