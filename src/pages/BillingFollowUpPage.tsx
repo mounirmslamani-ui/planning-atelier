@@ -32,8 +32,9 @@ const BILLING_CATEGORIES: BillingCategory[] = ['fabrication', 'prestation'];
 type Row = {
   order: Order;
   clientName: string;
-  deliveryDate: string;      // ISO — dernière livraison de la commande
-  invoiceNumbers: string;    // n° de facture distincts, séparés par « - »
+  deliveryDate: string;      // ISO — dernière livraison de la commande (vide si jamais livrée)
+  invoiceNumbers: string;    // n° de facture distincts séparés par « - » ; « ملغاة » si la commande est annulée
+  cancelled: boolean;
   category: BillingCategory;
   breakdown: OrderBillingBreakdown;
 };
@@ -88,7 +89,7 @@ const ProformaCell: React.FC<{
 
 const BillingFollowUpPage: React.FC = () => {
   const {
-    orders, clients, operators, operations, steps, productionRecords, deliveredOrders,
+    orders, clients, operators, operations, steps, productionRecords, deliveredOrders, cancelledOrders,
     absenceOrderId, updateOrderProforma,
   } = usePlanning();
   const { hasAccess } = useAuth();
@@ -117,18 +118,21 @@ const BillingFollowUpPage: React.FC = () => {
       const list = recordsByOrder.get(r.orderId);
       if (list) list.push(r); else recordsByOrder.set(r.orderId, [r]);
     }
+    const cancelledOrderIds = new Set(cancelledOrders.map(c => c.orderId));
 
     const result: Row[] = [];
     for (const order of orders) {
       if (order.id === absenceOrderId) continue;
       const category = inferCategoryFromOrderNumber(order.orderNumber);
       if (category !== 'fabrication' && category !== 'prestation') continue; // SLAMANI et Divers exclus de cette rubrique
-      const sessions = sessionsByOrder.get(order.id);
-      if (!sessions || sessions.length === 0) continue;
+      const sessions = sessionsByOrder.get(order.id) ?? [];
+      const cancelled = cancelledOrderIds.has(order.id);
 
-      const invoiceNumbers = [...new Set(
-        sessions.map(d => (d.invoiceNumber || '').trim()).filter(Boolean),
-      )].join(' - ');
+      const invoiceNumbers = cancelled
+        ? 'ملغاة'
+        : [...new Set(
+          sessions.map(d => (d.invoiceNumber || '').trim()).filter(Boolean),
+        )].join(' - ');
       const deliveryDate = sessions.map(d => d.deliveryDate).filter(Boolean).sort().at(-1) || '';
 
       result.push({
@@ -136,7 +140,8 @@ const BillingFollowUpPage: React.FC = () => {
         clientName: clientNameById.get(order.clientId) || '',
         deliveryDate,
         invoiceNumbers,
-       category,
+        cancelled,
+        category,
         breakdown: computeOrderBillingBreakdown(
           order,
           (stepsByOrder.get(order.id) || []).slice().sort((a, b) => a.order - b.order),
@@ -145,8 +150,10 @@ const BillingFollowUpPage: React.FC = () => {
         ),
       });
     }
-    return result.sort((a, b) => b.deliveryDate.localeCompare(a.deliveryDate));
-  }, [canView, orders, clients, steps, productionRecords, deliveredOrders, operations, absenceOrderId]);
+    return result.sort((a, b) =>
+      (b.order.orderDate || '').localeCompare(a.order.orderDate || '')
+      || b.order.orderNumber.localeCompare(a.order.orderNumber));
+  }, [canView, orders, clients, steps, productionRecords, deliveredOrders, cancelledOrders, operations, absenceOrderId]);
 
   const categoryRows = useMemo(() => rows.filter(r => r.category === activeCat), [rows, activeCat]);
   const catCount = (cat: BillingCategory) => rows.filter(r => r.category === cat).length;
@@ -323,11 +330,11 @@ const BillingFollowUpPage: React.FC = () => {
             {processed.length === 0 && (
               <TableRow>
                 <TableCell colSpan={totalCols} className="text-center text-muted-foreground py-8">
-                  لا توجد طلبيات مسلمة.
+                  لا توجد طلبيات.
                 </TableCell>
               </TableRow>
             )}
-            {processed.map(({ order, clientName, deliveryDate, invoiceNumbers, breakdown: b }) => (
+            {processed.map(({ order, clientName, deliveryDate, invoiceNumbers, cancelled, breakdown: b }) => (
               <TableRow key={order.id}>
                 <TableCell className="font-heading text-sm whitespace-nowrap">
                   <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />
@@ -343,7 +350,7 @@ const BillingFollowUpPage: React.FC = () => {
                 <TableCell className="text-xs whitespace-nowrap">
                   <ProformaCell orderId={order.id} value={order.proformaNumber || ''} canEdit={canEdit} onSave={updateOrderProforma} />
                 </TableCell>
-                <TableCell className="text-xs whitespace-nowrap" dir="ltr">{invoiceNumbers || '—'}</TableCell>
+                <TableCell className={cn('text-xs whitespace-nowrap', cancelled && 'font-medium text-destructive')} dir="ltr">{invoiceNumbers || '—'}</TableCell>
                 {amountCell(b.unitSalePrice)}
                 {amountCell(b.totalSalePrice, true)}
                 {amountCell(b.unitCost)}
