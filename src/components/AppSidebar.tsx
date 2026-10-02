@@ -6,7 +6,7 @@ import {
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
   DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
-  UserCog, Home, FileSpreadsheet,
+  UserCog, Home, FileSpreadsheet, Layers,
 } from 'lucide-react';
 
 import { usePlanning } from '@/context/PlanningContext';
@@ -57,6 +57,7 @@ const sidebarGroups = [
       { to: '/clients', label: 'الزبائن', icon: Building2, dropTarget: false as DropTargetType },
       { to: '/subcontractors', label: 'المناولون', icon: Handshake, dropTarget: false as DropTargetType },
       { to: '/operations', label: 'العمليات', icon: Drill, dropTarget: false as DropTargetType },
+      { to: '/material-references', label: 'مرجعيات المادة الأولية', icon: Layers, dropTarget: false as DropTargetType, right: { tableau: 'مرجعيات المادة الأولية' } },
     ],
   },
 ];
