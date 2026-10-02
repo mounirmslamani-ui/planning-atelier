@@ -23,6 +23,7 @@ import QualityControlPage from "./pages/QualityControlPage";
 import DeliveryPage from "./pages/DeliveryPage";
 import DeliveredOrdersPage from "./pages/DeliveredOrdersPage";
 import PendingInvoicingPage from "./pages/PendingInvoicingPage";
+import BillingFollowUpPage from "./pages/BillingFollowUpPage";
 import CancelledOrdersPage from "./pages/CancelledOrdersPage";
 import OrderRegistryPage from "./pages/OrderRegistryPage";
 import MaterialPurchasesPage from "./pages/MaterialPurchasesPage";
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="/delivery" element={<DeliveryPage />} />
                 <Route path="/delivered-orders" element={<DeliveredOrdersPage />} />
                 <Route path="/pending-invoicing" element={<PendingInvoicingPage />} />
+                <Route path="/billing-followup" element={<BillingFollowUpPage />} />
                 <Route path="/cancelled-orders" element={<CancelledOrdersPage />} />
                 <Route path="/material-purchases" element={<MaterialPurchasesPage />} />
                 <Route path="/tooling-purchases" element={<ToolingPurchasesPage />} />
