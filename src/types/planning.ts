@@ -119,6 +119,14 @@ export interface ResourceItem {
   quantity?: number;
   /** id dans material_units (mm, barre, feuille…) */
   unitId?: string;
+  /** Type de ligne : matière première (défaut si absent), visserie, roulements ou autre composant */
+  kind?: 'raw' | 'fasteners' | 'bearings' | 'other';
+  /** Composants (kind ≠ raw) : désignation libre, ex. « Roulement 6206 2RS » */
+  designation?: string;
+  /** Composants (kind ≠ raw) : quantité en nombre de pièces */
+  componentQuantity?: number;
+  /** Observation libre, ex. débitage */
+  observation?: string;
 }
 
 // Helper: legacy boolean view of a 4-state status (true only when "disponible")
