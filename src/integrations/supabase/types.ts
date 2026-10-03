@@ -356,6 +356,7 @@ export type Database = {
           is_active: boolean
           libelle_ar: string | null
           libelle_fr: string
+          shape: string | null
           updated_at: string
         }
         Insert: {
@@ -364,6 +365,7 @@ export type Database = {
           is_active?: boolean
           libelle_ar?: string | null
           libelle_fr: string
+          shape?: string | null
           updated_at?: string
         }
         Update: {
@@ -372,6 +374,7 @@ export type Database = {
           is_active?: boolean
           libelle_ar?: string | null
           libelle_fr?: string
+          shape?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -379,6 +382,7 @@ export type Database = {
       material_grades: {
         Row: {
           created_at: string
+          density_id: string | null
           id: string
           is_active: boolean
           libelle_ar: string | null
@@ -387,6 +391,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          density_id?: string | null
           id?: string
           is_active?: boolean
           libelle_ar?: string | null
@@ -395,13 +400,111 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          density_id?: string | null
           id?: string
           is_active?: boolean
           libelle_ar?: string | null
           libelle_fr?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "material_grades_density_id_fkey"
+            columns: ["density_id"]
+            isOneToOne: false
+            referencedRelation: "material_densities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_purchase_lines: {
+        Row: {
+          amount: number
+          component_kind: string | null
+          created_at: string
+          created_by: string | null
+          designation: string | null
+          fee_label: string | null
+          id: string
+          is_active: boolean
+          line_type: string
+          material_id: string | null
+          order_id: string | null
+          order_item_id: string | null
+          purchase_id: string
+          quantity: number | null
+          unit_id: string | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          component_kind?: string | null
+          created_at?: string
+          created_by?: string | null
+          designation?: string | null
+          fee_label?: string | null
+          id?: string
+          is_active?: boolean
+          line_type: string
+          material_id?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          purchase_id: string
+          quantity?: number | null
+          unit_id?: string | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          component_kind?: string | null
+          created_at?: string
+          created_by?: string | null
+          designation?: string | null
+          fee_label?: string | null
+          id?: string
+          is_active?: boolean
+          line_type?: string
+          material_id?: string | null
+          order_id?: string | null
+          order_item_id?: string | null
+          purchase_id?: string
+          quantity?: number | null
+          unit_id?: string | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_purchase_lines_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_lines_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_lines_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "material_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_lines_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "material_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       material_purchase_prices: {
         Row: {
@@ -496,6 +599,50 @@ export type Database = {
           },
         ]
       }
+      material_purchases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_ref: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          purchase_date: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_ref?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          purchase_date: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_ref?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          purchase_date?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_units: {
         Row: {
           created_at: string
@@ -503,6 +650,7 @@ export type Database = {
           is_active: boolean
           libelle_ar: string | null
           libelle_fr: string
+          mm_per_unit: number | null
           updated_at: string
         }
         Insert: {
@@ -511,6 +659,7 @@ export type Database = {
           is_active?: boolean
           libelle_ar?: string | null
           libelle_fr: string
+          mm_per_unit?: number | null
           updated_at?: string
         }
         Update: {
@@ -519,9 +668,62 @@ export type Database = {
           is_active?: boolean
           libelle_ar?: string | null
           libelle_fr?: string
+          mm_per_unit?: number | null
           updated_at?: string
         }
         Relationships: []
+      }
+      materials: {
+        Row: {
+          created_at: string
+          dimension_id: string
+          format_id: string
+          grade_id: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dimension_id: string
+          format_id: string
+          grade_id: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dimension_id?: string
+          format_id?: string
+          grade_id?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_dimension_id_fkey"
+            columns: ["dimension_id"]
+            isOneToOne: false
+            referencedRelation: "material_dimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materials_format_id_fkey"
+            columns: ["format_id"]
+            isOneToOne: false
+            referencedRelation: "material_formats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materials_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "material_grades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       operations: {
         Row: {
