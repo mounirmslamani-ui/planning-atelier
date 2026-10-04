@@ -43,6 +43,13 @@
       "when": 1791036217087,
       "tag": "0005_material_catalog_purchases_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791087288786,
+      "tag": "0006_commercial_documents_foundation",
+      "breakpoints": true
     }
   ]
 }
