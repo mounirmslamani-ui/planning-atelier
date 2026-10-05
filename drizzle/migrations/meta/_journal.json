@@ -50,6 +50,13 @@
       "when": 1791087288786,
       "tag": "0006_commercial_documents_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791184118122,
+      "tag": "0007_commercial_documents_revoke_delete",
+      "breakpoints": true
     }
   ]
 }
