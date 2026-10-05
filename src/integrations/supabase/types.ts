@@ -1188,6 +1188,7 @@ export type Database = {
           order_item_id: string | null
           purchase_id: string
           quantity: number | null
+          related_line_id: string | null
           unit_id: string | null
           unit_price: number | null
           updated_at: string
@@ -1207,6 +1208,7 @@ export type Database = {
           order_item_id?: string | null
           purchase_id: string
           quantity?: number | null
+          related_line_id?: string | null
           unit_id?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -1226,6 +1228,7 @@ export type Database = {
           order_item_id?: string | null
           purchase_id?: string
           quantity?: number | null
+          related_line_id?: string | null
           unit_id?: string | null
           unit_price?: number | null
           updated_at?: string
@@ -1250,6 +1253,13 @@ export type Database = {
             columns: ["purchase_id"]
             isOneToOne: false
             referencedRelation: "material_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_purchase_lines_related_line_id_fkey"
+            columns: ["related_line_id"]
+            isOneToOne: false
+            referencedRelation: "material_purchase_lines"
             referencedColumns: ["id"]
           },
           {
@@ -1398,6 +1408,48 @@ export type Database = {
           },
         ]
       }
+      material_suppliers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          material_id: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          material_id: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          material_id?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_suppliers_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_suppliers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_units: {
         Row: {
           created_at: string
@@ -1430,30 +1482,39 @@ export type Database = {
       }
       materials: {
         Row: {
+          code: string
           created_at: string
           dimension_id: string
           format_id: string
           grade_id: string
           id: string
           is_active: boolean
+          order_unit_id: string | null
+          purchase_unit_id: string | null
           updated_at: string
         }
         Insert: {
+          code?: string
           created_at?: string
           dimension_id: string
           format_id: string
           grade_id: string
           id?: string
           is_active?: boolean
+          order_unit_id?: string | null
+          purchase_unit_id?: string | null
           updated_at?: string
         }
         Update: {
+          code?: string
           created_at?: string
           dimension_id?: string
           format_id?: string
           grade_id?: string
           id?: string
           is_active?: boolean
+          order_unit_id?: string | null
+          purchase_unit_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1476,6 +1537,20 @@ export type Database = {
             columns: ["grade_id"]
             isOneToOne: false
             referencedRelation: "material_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materials_order_unit_id_fkey"
+            columns: ["order_unit_id"]
+            isOneToOne: false
+            referencedRelation: "material_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materials_purchase_unit_id_fkey"
+            columns: ["purchase_unit_id"]
+            isOneToOne: false
+            referencedRelation: "material_units"
             referencedColumns: ["id"]
           },
         ]
@@ -2637,6 +2712,45 @@ export type Database = {
           },
         ]
       }
+      material_supplier_last_prices: {
+        Row: {
+          is_active: boolean | null
+          last_fee_amount: number | null
+          last_fee_date: string | null
+          last_fee_label: string | null
+          last_price_date: string | null
+          last_price_unit_id: string | null
+          last_price_unit_label: string | null
+          last_unit_price: number | null
+          material_id: string | null
+          material_supplier_id: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_purchase_lines_unit_id_fkey"
+            columns: ["last_price_unit_id"]
+            isOneToOne: false
+            referencedRelation: "material_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_suppliers_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_suppliers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_read: {
@@ -2669,6 +2783,20 @@ export type Database = {
       is_admin: { Args: { _uid: string }; Returns: boolean }
       next_document_number: { Args: { _doc_type: string }; Returns: string }
       po_refresh_status: { Args: { _po: string }; Returns: undefined }
+      record_material_purchase: {
+        Args: {
+          p_document_ref?: string
+          p_fee_amount?: number
+          p_fee_label?: string
+          p_material_id: string
+          p_purchase_date: string
+          p_quantity: number
+          p_supplier_id: string
+          p_unit_id: string
+          p_unit_price: number
+        }
+        Returns: string
+      }
     }
     Enums: {
       client_class: "A" | "B" | "C" | "D" | "E"
