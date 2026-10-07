@@ -319,52 +319,63 @@ export interface MaterialUsageItem {
   label: string;
 }
 
-/** Où une matière est déjà utilisée : commandes, achats, bons de commande fournisseur, réceptions. */
+const USAGE_KEY = ['material-usage'];
+
+/** Où une matière est utilisée (commandes et achats). Vide = modifiable et supprimable. */
+async function fetchMaterialUsage(materialId: string): Promise<MaterialUsageItem[]> {
+  const { data: mat, error: matErr } = await sb
+    .from('materials')
+    .select('grade_id, format_id, dimension_id')
+    .eq('id', materialId)
+    .single();
+  if (matErr) throw matErr;
+  const key = [{ gradeId: mat.grade_id, formatId: mat.format_id, dimensionId: mat.dimension_id }];
+  const [steps, purchases] = await Promise.all([
+    sb.from('production_steps').select('orders(order_number)').contains('raw_material_items', key),
+    sb.from('material_purchase_lines').select('material_purchases(document_ref, purchase_date)').eq('material_id', materialId),
+  ]);
+  if (steps.error) throw steps.error;
+  if (purchases.error) throw purchases.error;
+  const orders = Array.from(new Set<string>((steps.data || []).map((r: any) => r.orders?.order_number).filter(Boolean))).sort();
+  const items: MaterialUsageItem[] = orders.map(label => ({ kind: 'order', label }));
+  for (const r of purchases.data || []) {
+    const p = (r as any).material_purchases;
+    const date = p?.purchase_date ? new Date(`${p.purchase_date}T00:00:00`).toLocaleDateString('fr-FR') : '';
+    items.push({ kind: 'purchase', label: p?.document_ref || date || 'sans référence' });
+  }
+  return items;
+}
+
 export function useMaterialUsage(materialId: string | null) {
   return useQuery({
-    queryKey: ['material-usage', materialId],
-    enabled: materialId != null,
-    queryFn: async (): Promise<MaterialUsageItem[]> => {
-      const items: MaterialUsageItem[] = [];
-      const add = (kind: MaterialUsageItem['kind'], rows: any[] | null, pick: (r: any) => string) => {
-        for (const r of rows || []) items.push({ kind, label: pick(r) });
-      };
-      const [steps, purchases, pos, receipts] = await Promise.all([
-        sb.from('production_steps').select('order_id, orders(order_number)').eq('material_id', materialId),
-        sb.from('material_purchase_lines').select('id, material_purchases(document_ref, purchase_date)').eq('material_id', materialId),
-        sb.from('purchase_order_lines').select('id, purchase_orders(doc_number)').eq('material_id', materialId),
-        sb.from('goods_receipt_lines').select('id, goods_receipts(doc_number)').eq('material_id', materialId),
-      ]);
-      for (const r of [steps, purchases, pos, receipts]) if (r.error) throw r.error;
-      add('order', steps.data, r => r.orders?.order_number ?? '');
-      add('purchase', purchases.data, r => r.material_purchases?.document_ref ?? r.material_purchases?.purchase_date ?? '');
-      add('purchase_order', pos.data, r => r.purchase_orders?.doc_number ?? '');
-      add('goods_receipt', receipts.data, r => r.goods_receipts?.doc_number ?? '');
-      return items.filter(i => i.label);
-    },
-    staleTime: 60 * 1000,
+    queryKey: [...USAGE_KEY, materialId],
+    enabled: !!materialId,
+    staleTime: 0,
+    queryFn: () => fetchMaterialUsage(materialId as string),
   });
 }
 
-/** Supprime définitivement une fiche matière (et ses fournisseurs habituels). */
+/** Supprime une matière jamais utilisée (vérification refaite au moment de la suppression). */
 export function useDeleteMaterialSheet() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error: supErr } = await sb.from('material_suppliers').delete().eq('material_id', id);
-      if (supErr) throw supErr;
+      const used = await fetchMaterialUsage(id);
+      if (used.length > 0) throw new Error('Suppression impossible : cette matière est déjà utilisée.');
+      const { error: linkErr } = await sb.from('material_suppliers').delete().eq('material_id', id);
+      if (linkErr) throw linkErr;
       const { data, error } = await sb.from('materials').delete().eq('id', id).select('id');
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Suppression refusée : droit d’écriture manquant.');
     },
-    onSuccess: () => {
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: SHEETS_KEY });
       qc.invalidateQueries({ queryKey: COMBOS_KEY });
       qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY });
+      qc.invalidateQueries({ queryKey: USAGE_KEY });
     },
   });
 }
-
 /** Rattache un fournisseur à une matière (le réactive s'il était désactivé). */
 export function useAddMaterialSupplier() {
   const qc = useQueryClient();
