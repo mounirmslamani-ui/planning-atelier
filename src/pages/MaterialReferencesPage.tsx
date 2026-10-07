@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,16 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import SearchableSelect from '@/components/ui/searchable-select';
-import { useMaterialCombinations, useMaterialReference } from '@/hooks/useMaterialReferences';
+import ReferenceCombobox from '@/components/ui/reference-combobox';
+import {
+  useAddMaterialSupplier, useCreateMaterialReference, useGradeDensityIds, useMaterialReference,
+  useMaterialSheets, useMaterialSupplierPrices, useRecordMaterialPurchase, useSaveMaterialSheet,
+  useToggleMaterialSupplier,
+} from '@/hooks/useMaterialReferences';
+import type { MaterialRefOption, MaterialSheet } from '@/hooks/useMaterialReferences';
 import { SHAPE_OPTIONS } from '@/lib/materialWeight';
 import { useAuth } from '@/context/AuthContext';
+import type { AccessLevel } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
 /** Droit n° 29 du catalogue : lecture = RO, ajout / modification / désactivation = RW. */
@@ -323,60 +329,475 @@ const ReferenceList: React.FC<{ def: ListDef; canEdit: boolean }> = ({ def, canE
   );
 };
 
-const COMBOS_TAB = 'combinations';
+const PRICE_RIGHT = { tableau: 'أسعار شراء المواد الأولية' };
 
-/** Catalogue des matières : chaque ligne est une combinaison unique nuance + format + dimension. */
-const CombinationList: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
-  const qc = useQueryClient();
+const todayLocal = () => new Date().toLocaleDateString('en-CA');
+
+const parseNum = (s: string) => Number(s.trim().replace(',', '.'));
+
+const fmtMoney = (n: number | null) =>
+  n == null ? '—' : n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const fmtDate = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('fr-FR') : '');
+
+const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-2 text-sm';
+
+const labelOf = (list: { id: string; label: string }[] | undefined, id: string | null | undefined) =>
+  (id && list?.find(o => o.id === id)?.label) || '—';
+
+interface PurchaseTarget {
+  materialId: string;
+  supplierId: string;
+  supplierName: string;
+  materialLabel: string;
+  defaultUnitId: string;
+}
+
+/** Saisie d'un achat : crée la facture, la ligne matière et les frais de découpe éventuels en une seule opération. */
+const PurchaseDialog: React.FC<{ target: PurchaseTarget; units: MaterialRefOption[]; onClose: () => void }> = ({
+  target, units, onClose,
+}) => {
+  const record = useRecordMaterialPurchase();
+  const [date, setDate] = useState(todayLocal());
+  const [quantity, setQuantity] = useState('');
+  const [unitId, setUnitId] = useState(target.defaultUnitId);
+  const [unitPrice, setUnitPrice] = useState('');
+  const [feeAmount, setFeeAmount] = useState('');
+  const [feeLabel, setFeeLabel] = useState('');
+  const [documentRef, setDocumentRef] = useState('');
+
+  const submit = async () => {
+    const q = parseNum(quantity);
+    const p = parseNum(unitPrice);
+    const fee = feeAmount.trim() === '' ? null : parseNum(feeAmount);
+    if (!date) { toast.error('Choisis la date de l’achat.'); return; }
+    if (!Number.isFinite(q) || q <= 0) { toast.error('Quantité : saisis un nombre supérieur à 0.'); return; }
+    if (!unitId) { toast.error('Choisis l’unité.'); return; }
+    if (unitPrice.trim() === '' || !Number.isFinite(p) || p < 0) { toast.error('Prix unitaire : saisis un nombre valide.'); return; }
+    if (fee != null && (!Number.isFinite(fee) || fee < 0)) { toast.error('Frais de découpe : saisis un nombre valide.'); return; }
+    try {
+      await record.mutateAsync({
+        materialId: target.materialId,
+        supplierId: target.supplierId,
+        date,
+        quantity: q,
+        unitId,
+        unitPrice: p,
+        feeAmount: fee,
+        feeLabel: feeLabel.trim() || null,
+        documentRef: documentRef.trim() || null,
+      });
+      toast.success('Achat enregistré');
+      onClose();
+    } catch (err: any) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={o => { if (!o) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-heading">Enregistrer un achat</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">{target.materialLabel} — {target.supplierName}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-medium mb-1 block">Date *</label>
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">N° de facture / BL</label>
+            <Input value={documentRef} onChange={e => setDocumentRef(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Quantité *</label>
+            <Input value={quantity} inputMode="decimal" onChange={e => setQuantity(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Unité *</label>
+            <select className={selectClass} value={unitId} onChange={e => setUnitId(e.target.value)}>
+              <option value="">—</option>
+              {units.filter(u => u.active || u.id === unitId).map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Prix unitaire (DZD) *</label>
+            <Input value={unitPrice} inputMode="decimal" onChange={e => setUnitPrice(e.target.value)} />
+          </div>
+          <div />
+          <div>
+            <label className="text-xs font-medium mb-1 block">Frais de découpe (DZD)</label>
+            <Input value={feeAmount} inputMode="decimal" onChange={e => setFeeAmount(e.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Libellé des frais</label>
+            <Input value={feeLabel} placeholder="Frais de découpe" onChange={e => setFeeLabel(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إلغاء</Button>
+          <Button onClick={() => void submit()} disabled={record.isPending}>حفظ</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/** Fiche d'une matière : identifiant, nuance, format, dimension, unités, masse volumique et fournisseurs habituels. */
+const MaterialSheetDialog: React.FC<{
+  sheet: MaterialSheet | null;
+  canEdit: boolean;
+  priceLevel: AccessLevel;
+  onClose: () => void;
+}> = ({ sheet, canEdit, priceLevel, onClose }) => {
+  const sheets = useMaterialSheets();
+  const gradeDensity = useGradeDensityIds();
+  const prices = useMaterialSupplierPrices();
   const grades = useMaterialReference('grades');
   const formats = useMaterialReference('formats');
   const dimensions = useMaterialReference('dimensions');
-  const combos = useMaterialCombinations();
-  const [search, setSearch] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [gradeId, setGradeId] = useState('');
-  const [formatId, setFormatId] = useState('');
-  const [dimensionId, setDimensionId] = useState('');
+  const units = useMaterialReference('units');
+  const densities = useMaterialReference('densities');
+  const suppliers = useMaterialReference('suppliers');
+  const createGrade = useCreateMaterialReference('grades');
+  const createFormat = useCreateMaterialReference('formats');
+  const createDimension = useCreateMaterialReference('dimensions');
+  const createSupplier = useCreateMaterialReference('suppliers');
+  const save = useSaveMaterialSheet();
+  const addSupplier = useAddMaterialSupplier();
+  const toggleSupplier = useToggleMaterialSupplier();
 
-  const labelOf = (list: { id: string; label: string }[] | undefined, id: string) =>
-    list?.find(o => o.id === id)?.label ?? '—';
+  const [currentId, setCurrentId] = useState<string | null>(sheet?.id ?? null);
+  const [gradeId, setGradeId] = useState(sheet?.gradeId ?? '');
+  const [formatId, setFormatId] = useState(sheet?.formatId ?? '');
+  const [dimensionId, setDimensionId] = useState(sheet?.dimensionId ?? '');
+  const [orderUnitId, setOrderUnitId] = useState(sheet?.orderUnitId ?? '');
+  const [purchaseUnitId, setPurchaseUnitId] = useState(sheet?.purchaseUnitId ?? '');
+  const [densityId, setDensityId] = useState('');
+  const [densityTouched, setDensityTouched] = useState(false);
+  const [purchase, setPurchase] = useState<PurchaseTarget | null>(null);
+
+  const current = currentId ? (sheets.data || []).find(s => s.id === currentId) ?? null : null;
+  const locked = currentId != null;
+  const effectiveDensityId = densityTouched ? densityId : (gradeDensity.data?.get(gradeId) ?? '');
+  const sameGradeCount = (sheets.data || []).filter(s => s.gradeId === gradeId).length;
+  const materialLabel = `${labelOf(grades.data, gradeId)} ${labelOf(formats.data, formatId)} ${labelOf(dimensions.data, dimensionId)}`;
+
+  const supplierRows = useMemo(
+    () => (prices.data || [])
+      .filter(r => r.materialId === currentId)
+      .sort((a, b) => a.supplierName.localeCompare(b.supplierName)),
+    [prices.data, currentId],
+  );
+
+  // Pastille « moins cher » : seulement si au moins 2 fournisseurs ont un prix dans la même unité.
+  const bestSupplierId = useMemo(() => {
+    const priced = supplierRows.filter(r => r.active && r.lastUnitPrice != null);
+    if (priced.length < 2) return null;
+    if (new Set(priced.map(r => r.lastPriceUnitId)).size !== 1) return null;
+    return priced.reduce((m, r) => (r.lastUnitPrice! < m.lastUnitPrice! ? r : m)).supplierId;
+  }, [supplierRows]);
+
+  const makeCreator = (mutate: (label: string) => Promise<MaterialRefOption>) => async (label: string) => {
+    try {
+      return await mutate(label);
+    } catch (err: any) {
+      toast.error(errorMessage(err));
+      throw err;
+    }
+  };
+
+  const onSave = async () => {
+    if (!gradeId || !formatId || !dimensionId) { toast.error('Choisis la nuance, le format et la dimension.'); return; }
+    try {
+      const id = await save.mutateAsync({
+        id: currentId ?? undefined,
+        gradeId,
+        formatId,
+        dimensionId,
+        orderUnitId: orderUnitId || null,
+        purchaseUnitId: purchaseUnitId || null,
+        densityId: densityTouched ? (densityId || null) : undefined,
+      });
+      toast.success(currentId ? 'Fiche enregistrée' : 'Matière créée : tu peux maintenant ajouter ses fournisseurs');
+      setCurrentId(id);
+    } catch (err: any) {
+      toast.error(err?.code === '23505' ? 'Cette matière existe déjà (même nuance, format et dimension).' : errorMessage(err));
+    }
+  };
+
+  const fieldClass = 'h-9 text-sm px-2';
+
+  return (
+    <>
+      <Dialog open onOpenChange={o => { if (!o) onClose(); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">
+              {current ? `${current.code} — ${materialLabel}` : 'Nouvelle matière'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-medium mb-1 block">Nuance *</label>
+              {locked ? (
+                <div className="h-9 flex items-center text-sm font-medium">{labelOf(grades.data, gradeId)}</div>
+              ) : (
+                <ReferenceCombobox
+                  value={gradeId}
+                  options={grades.data || []}
+                  placeholder="— Nuance —"
+                  className={fieldClass}
+                  disabled={!canEdit}
+                  onSelect={o => { setGradeId(o?.id ?? ''); setDensityTouched(false); }}
+                  onCreate={canEdit ? makeCreator(createGrade.mutateAsync) : undefined}
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Format *</label>
+              {locked ? (
+                <div className="h-9 flex items-center text-sm font-medium">{labelOf(formats.data, formatId)}</div>
+              ) : (
+                <ReferenceCombobox
+                  value={formatId}
+                  options={formats.data || []}
+                  placeholder="— Format —"
+                  className={fieldClass}
+                  disabled={!canEdit}
+                  onSelect={o => setFormatId(o?.id ?? '')}
+                  onCreate={canEdit ? makeCreator(createFormat.mutateAsync) : undefined}
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Dimension *</label>
+              {locked ? (
+                <div className="h-9 flex items-center text-sm font-medium">{labelOf(dimensions.data, dimensionId)}</div>
+              ) : (
+                <ReferenceCombobox
+                  value={dimensionId}
+                  options={dimensions.data || []}
+                  placeholder="— Dimension —"
+                  className={fieldClass}
+                  disabled={!canEdit}
+                  onSelect={o => setDimensionId(o?.id ?? '')}
+                  onCreate={canEdit ? makeCreator(createDimension.mutateAsync) : undefined}
+                />
+              )}
+            </div>
+            {locked && (
+              <p className="col-span-3 text-[11px] text-muted-foreground -mt-1">
+                Nuance, format et dimension sont figés une fois la matière créée (ils sont utilisés par les commandes existantes).
+                Pour une autre combinaison, crée une nouvelle matière et désactive celle-ci.
+              </p>
+            )}
+
+            <div>
+              <label className="text-xs font-medium mb-1 block">Unité de commande</label>
+              <ReferenceCombobox
+                value={orderUnitId}
+                options={units.data || []}
+                placeholder="— Unité —"
+                className={fieldClass}
+                disabled={!canEdit}
+                onSelect={o => setOrderUnitId(o?.id ?? '')}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Unité d’achat</label>
+              <ReferenceCombobox
+                value={purchaseUnitId}
+                options={units.data || []}
+                placeholder="— Unité —"
+                className={fieldClass}
+                disabled={!canEdit}
+                onSelect={o => setPurchaseUnitId(o?.id ?? '')}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Masse volumique</label>
+              <select
+                className={selectClass}
+                disabled={!canEdit || !gradeId}
+                value={effectiveDensityId}
+                onChange={e => { setDensityId(e.target.value); setDensityTouched(true); }}
+              >
+                <option value="">—</option>
+                {(densities.data || [])
+                  .filter(o => o.active || o.id === effectiveDensityId)
+                  .map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+              </select>
+            </div>
+            {gradeId && (
+              <p className="col-span-3 text-[11px] text-muted-foreground -mt-1">
+                La masse volumique est portée par la nuance : la modifier s’applique aux {Math.max(sameGradeCount, 1)} matière(s) de cette nuance.
+                Les unités et les masses volumiques se créent dans « Listes de référence ».
+              </p>
+            )}
+          </div>
+
+          {current && (
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold">Fournisseurs habituels</h3>
+                {canEdit && (
+                  <div className="w-64">
+                    <ReferenceCombobox
+                      value=""
+                      options={suppliers.data || []}
+                      placeholder="＋ Ajouter un fournisseur…"
+                      className={fieldClass}
+                      onSelect={o => {
+                        if (!o) return;
+                        addSupplier.mutate(
+                          { materialId: current.id, supplierId: o.id },
+                          { onError: (err: any) => toast.error(errorMessage(err)) },
+                        );
+                      }}
+                      onCreate={makeCreator(createSupplier.mutateAsync)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-auto rounded-lg border bg-card">
+                <table className="w-full caption-bottom text-sm">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fournisseur</TableHead>
+                      <TableHead>Dernier prix d’achat</TableHead>
+                      <TableHead>Derniers frais de découpe</TableHead>
+                      <TableHead className="w-20">Actif</TableHead>
+                      <TableHead className="w-44" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {supplierRows.map(r => (
+                      <TableRow key={r.id} className={cn(!r.active && 'opacity-50')}>
+                        <TableCell className="font-medium">{r.supplierName}</TableCell>
+                        <TableCell>
+                          {priceLevel === 'denied' ? (
+                            <span className="text-xs text-muted-foreground">Confidentiel</span>
+                          ) : r.lastUnitPrice == null ? '—' : (
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div>{fmtMoney(r.lastUnitPrice)} DZD{r.lastPriceUnitLabel ? ` / ${r.lastPriceUnitLabel}` : ''}</div>
+                                <div className="text-[11px] text-muted-foreground">{fmtDate(r.lastPriceDate)}</div>
+                              </div>
+                              {r.supplierId === bestSupplierId && <Badge variant="secondary">Moins cher</Badge>}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {priceLevel === 'denied' ? (
+                            <span className="text-xs text-muted-foreground">Confidentiel</span>
+                          ) : r.lastFeeAmount == null ? '—' : (
+                            <div>
+                              <div>{fmtMoney(r.lastFeeAmount)} DZD</div>
+                              <div className="text-[11px] text-muted-foreground">{fmtDate(r.lastFeeDate)}</div>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {canEdit ? (
+                            <Switch
+                              checked={r.active}
+                              disabled={toggleSupplier.isPending}
+                              onCheckedChange={v => toggleSupplier.mutate(
+                                { id: r.id, active: v },
+                                { onError: (err: any) => toast.error(errorMessage(err)) },
+                              )}
+                              aria-label="Actif"
+                            />
+                          ) : (
+                            <Badge variant={r.active ? 'secondary' : 'outline'}>{r.active ? 'Actif' : 'Désactivé'}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {priceLevel === 'RW' && r.active && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPurchase({
+                                materialId: current.id,
+                                supplierId: r.supplierId,
+                                supplierName: r.supplierName,
+                                materialLabel: `${current.code} — ${materialLabel}`,
+                                defaultUnitId: purchaseUnitId || '',
+                              })}
+                            >
+                              Enregistrer un achat
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {prices.isLoading && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4">Chargement…</TableCell></TableRow>
+                    )}
+                    {!prices.isLoading && supplierRows.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-4">Aucun fournisseur habituel pour cette matière.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>إغلاق</Button>
+            {canEdit && <Button onClick={() => void onSave()} disabled={save.isPending}>حفظ</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {purchase && <PurchaseDialog target={purchase} units={units.data || []} onClose={() => setPurchase(null)} />}
+    </>
+  );
+};
+
+/** Liste des matières : une ligne par identifiant (Id0001…). Un clic ouvre la fiche. */
+const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }> = ({ canEdit, priceLevel }) => {
+  const qc = useQueryClient();
+  const sheets = useMaterialSheets();
+  const grades = useMaterialReference('grades');
+  const formats = useMaterialReference('formats');
+  const dimensions = useMaterialReference('dimensions');
+  const units = useMaterialReference('units');
+  const prices = useMaterialSupplierPrices();
+  const [search, setSearch] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
+  const [formatFilter, setFormatFilter] = useState('');
+  const [dialog, setDialog] = useState<{ sheet: MaterialSheet | null } | null>(null);
+
+  const supplierCount = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of prices.data || []) if (r.active) m.set(r.materialId, (m.get(r.materialId) ?? 0) + 1);
+    return m;
+  }, [prices.data]);
 
   const rows = useMemo(() => {
-    const list = (combos.data || []).map(c => ({
-      ...c,
-      grade: labelOf(grades.data, c.gradeId),
-      format: labelOf(formats.data, c.formatId),
-      dimension: labelOf(dimensions.data, c.dimensionId),
+    const list = (sheets.data || []).map(s => ({
+      ...s,
+      grade: labelOf(grades.data, s.gradeId),
+      format: labelOf(formats.data, s.formatId),
+      dimension: labelOf(dimensions.data, s.dimensionId),
+      orderUnit: labelOf(units.data, s.orderUnitId),
+      purchaseUnit: labelOf(units.data, s.purchaseUnitId),
     }));
     list.sort((a, b) =>
       a.grade.localeCompare(b.grade) || a.format.localeCompare(b.format) || a.dimension.localeCompare(b.dimension, undefined, { numeric: true }));
     const q = norm(search).trim();
-    return q ? list.filter(r => norm(`${r.grade} ${r.format} ${r.dimension}`).includes(q)) : list;
-  }, [combos.data, grades.data, formats.data, dimensions.data, search]);
-
-  const refresh = () => qc.invalidateQueries({ queryKey: ['material-combos'] });
-
-  const activeOptions = (list: { id: string; label: string; active: boolean }[] | undefined) =>
-    (list || []).filter(o => o.active).map(o => ({ value: o.id, label: o.label }));
-
-  const add = useMutation({
-    mutationFn: async () => {
-      if (!gradeId || !formatId || !dimensionId) throw new Error('Choisis la nuance, le format et la dimension.');
-      const { data, error } = await sb
-        .from('materials')
-        .insert({ grade_id: gradeId, format_id: formatId, dimension_id: dimensionId })
-        .select('id');
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error('Ajout refusé : droit d’écriture manquant.');
-    },
-    onSuccess: () => {
-      toast.success('Matière ajoutée');
-      setDialogOpen(false);
-      refresh();
-    },
-    onError: (err: any) =>
-      toast.error(err?.code === '23505' ? 'Cette matière existe déjà (même nuance, format et dimension).' : errorMessage(err)),
-  });
+    return list.filter(r =>
+      (!gradeFilter || r.gradeId === gradeFilter) &&
+      (!formatFilter || r.formatId === formatFilter) &&
+      (!q || norm(`${r.code} ${r.grade} ${r.format} ${r.dimension}`).includes(q)));
+  }, [sheets.data, grades.data, formats.data, dimensions.data, units.data, search, gradeFilter, formatFilter]);
 
   const toggle = useMutation({
     mutationFn: async (row: { id: string; active: boolean }) => {
@@ -387,71 +808,92 @@ const CombinationList: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
     },
     onSuccess: (nowActive: boolean) => {
       toast.success(nowActive ? 'Matière réactivée' : 'Matière désactivée (plus proposée dans les listes)');
-      refresh();
+      qc.invalidateQueries({ queryKey: ['material-sheets'] });
+      qc.invalidateQueries({ queryKey: ['material-combos'] });
     },
     onError: (err: any) => toast.error(errorMessage(err)),
   });
 
-  const openNew = () => {
-    setGradeId('');
-    setFormatId('');
-    setDimensionId('');
-    setDialogOpen(true);
-  };
+  const filterOptions = (list: { id: string; label: string }[] | undefined) =>
+    [...(list || [])].sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex-none flex items-center justify-between gap-3">
-        <div className="relative w-72">
-          <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher…" className="pl-8 h-9" />
+      <div className="flex-none flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-64">
+            <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher (Id, nuance, dimension…)" className="pl-8 h-9" />
+          </div>
+          <select className={cn(selectClass, 'w-44')} value={gradeFilter} onChange={e => setGradeFilter(e.target.value)} aria-label="Filtrer par nuance">
+            <option value="">Toutes les nuances</option>
+            {filterOptions(grades.data).map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </select>
+          <select className={cn(selectClass, 'w-44')} value={formatFilter} onChange={e => setFormatFilter(e.target.value)} aria-label="Filtrer par format">
+            <option value="">Tous les formats</option>
+            {filterOptions(formats.data).map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </select>
         </div>
         {canEdit && (
-          <Button size="sm" variant="outline" onClick={openNew}>
+          <Button size="sm" variant="outline" onClick={() => setDialog({ sheet: null })}>
             <Plus className="w-4 h-4 mr-1" /> Ajouter une matière
           </Button>
         )}
       </div>
-      <p className="flex-none text-xs text-muted-foreground">
-        Une matière = une nuance + un format + une dimension. Dans la sous-fenêtre تحضير الطلبية والموارد, seuls les formats
-        existant pour la nuance choisie, puis les dimensions existant pour cette nuance et ce format, sont proposés.
-      </p>
 
       <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card">
         <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
+              <TableHead className="w-24">Id</TableHead>
               <TableHead>Nuance</TableHead>
               <TableHead>Format</TableHead>
               <TableHead>Dimension</TableHead>
+              <TableHead>Unité de commande</TableHead>
+              <TableHead>Unité d’achat</TableHead>
+              <TableHead className="w-28">Fournisseurs</TableHead>
               <TableHead className="w-24">Actif</TableHead>
+              <TableHead className="w-14" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map(row => (
-              <TableRow key={row.id} className={cn(!row.active && 'opacity-50')}>
+              <TableRow
+                key={row.id}
+                className={cn('cursor-pointer', !row.active && 'opacity-50')}
+                onClick={() => setDialog({ sheet: row })}
+              >
+                <TableCell className="font-mono text-xs">{row.code}</TableCell>
                 <TableCell className="font-medium">{row.grade}</TableCell>
                 <TableCell>{row.format}</TableCell>
                 <TableCell>{row.dimension}</TableCell>
-                <TableCell>
+                <TableCell>{row.orderUnit}</TableCell>
+                <TableCell>{row.purchaseUnit}</TableCell>
+                <TableCell>{supplierCount.get(row.id) ?? 0}</TableCell>
+                <TableCell onClick={e => e.stopPropagation()}>
                   {canEdit ? (
                     <Switch checked={row.active} disabled={toggle.isPending} onCheckedChange={() => toggle.mutate(row)} aria-label="Actif" />
                   ) : (
                     <Badge variant={row.active ? 'secondary' : 'outline'}>{row.active ? 'Actif' : 'Désactivé'}</Badge>
                   )}
                 </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon" aria-label="Ouvrir la fiche">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
-            {combos.isLoading && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Chargement…</TableCell></TableRow>
+            {sheets.isLoading && (
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6">Chargement…</TableCell></TableRow>
             )}
-            {!combos.isLoading && combos.error && (
-              <TableRow><TableCell colSpan={4} className="text-center text-destructive py-6">Lecture impossible.</TableCell></TableRow>
+            {!sheets.isLoading && sheets.error && (
+              <TableRow><TableCell colSpan={9} className="text-center text-destructive py-6">Lecture impossible.</TableCell></TableRow>
             )}
-            {!combos.isLoading && !combos.error && rows.length === 0 && (
+            {!sheets.isLoading && !sheets.error && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                  {(combos.data || []).length === 0 ? 'Aucune matière pour le moment.' : 'Aucun résultat.'}
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+                  {(sheets.data || []).length === 0 ? 'Aucune matière pour le moment.' : 'Aucun résultat.'}
                 </TableCell>
               </TableRow>
             )}
@@ -459,34 +901,15 @@ const CombinationList: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         </table>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-heading">Ajouter une matière</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium mb-1 block">Nuance *</label>
-              <SearchableSelect value={gradeId} onValueChange={setGradeId} options={activeOptions(grades.data)} placeholder="— Nuance —" />
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block">Format *</label>
-              <SearchableSelect value={formatId} onValueChange={setFormatId} options={activeOptions(formats.data)} placeholder="— Format —" />
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block">Dimension *</label>
-              <SearchableSelect value={dimensionId} onValueChange={setDimensionId} options={activeOptions(dimensions.data)} placeholder="— Dimension —" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Les valeurs viennent des onglets Nuances, Formats et Dimensions : ajoute-les d’abord là si elles n’existent pas encore.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={() => add.mutate()} disabled={add.isPending || !gradeId || !formatId || !dimensionId}>حفظ</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {dialog && (
+        <MaterialSheetDialog
+          key={dialog.sheet?.id ?? 'new'}
+          sheet={dialog.sheet}
+          canEdit={canEdit}
+          priceLevel={priceLevel}
+          onClose={() => setDialog(null)}
+        />
+      )}
     </div>
   );
 };
@@ -494,6 +917,8 @@ const CombinationList: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 const MaterialReferencesPage: React.FC = () => {
   const { hasAccess } = useAuth();
   const level = hasAccess(PAGE_RIGHT);
+  const priceLevel = hasAccess(PRICE_RIGHT);
+  const [showLists, setShowLists] = useState(false);
   const [activeId, setActiveId] = useState(LISTS[0].id);
   const def = LISTS.find(l => l.id === activeId) ?? LISTS[0];
 
@@ -502,26 +927,37 @@ const MaterialReferencesPage: React.FC = () => {
       <div className="flex-none bg-background pb-3">
         <PageHeader
           title="مرجعيات المادة الأولية"
-          description="Nuances, formats, dimensions, unités, masses volumiques et fournisseurs utilisés pour la matière première"
+          description="Une fiche par matière (nuance + format + dimension) : unités, masse volumique, fournisseurs habituels et derniers prix"
         />
       </div>
 
       {level === 'denied' ? (
         <div className="text-sm text-muted-foreground">Accès non autorisé.</div>
-      ) : (
+      ) : showLists ? (
         <>
-          <div className="flex-none pb-3">
+          <div className="flex-none flex items-center gap-3 pb-3">
+            <Button size="sm" variant="outline" onClick={() => setShowLists(false)}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Retour aux matières
+            </Button>
             <Tabs value={activeId} onValueChange={setActiveId}>
               <TabsList>
                 {LISTS.map(l => <TabsTrigger key={l.id} value={l.id}>{l.tab}</TabsTrigger>)}
-                <TabsTrigger value={COMBOS_TAB}>Matières</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
-            {activeId === COMBOS_TAB
-              ? <CombinationList canEdit={level === 'RW'} />
-              : <ReferenceList key={def.id} def={def} canEdit={level === 'RW'} />}
+            <ReferenceList key={def.id} def={def} canEdit={level === 'RW'} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex-none flex justify-end pb-2">
+            <Button size="sm" variant="ghost" onClick={() => setShowLists(true)}>
+              Listes de référence (unités, masses volumiques, noms en arabe, fournisseurs…)
+            </Button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <MaterialSheetsList canEdit={level === 'RW'} priceLevel={priceLevel} />
           </div>
         </>
       )}
