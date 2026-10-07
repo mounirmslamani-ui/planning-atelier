@@ -64,6 +64,13 @@
       "when": 1791194693976,
       "tag": "0008_material_sheet_suppliers_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791399975725,
+      "tag": "0009_material_delete_rights",
+      "breakpoints": true
     }
   ]
 }
