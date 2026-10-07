@@ -949,7 +949,7 @@ const MaterialReferencesPage: React.FC = () => {
       ) : (
         <>
           <div className="flex-none flex justify-end pb-2">
-            <Button size="sm" variant="ghost" onClick={() => setShowLists(true)}>
+            <Button size="sm" variant="outline" onClick={() => setShowLists(true)}>
               Listes de référence (unités, masses volumiques, fournisseurs…)
             </Button>
           </div>
