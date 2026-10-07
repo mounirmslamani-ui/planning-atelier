@@ -11,12 +11,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import ReferenceCombobox from '@/components/ui/reference-combobox';
 import {
-  useAddMaterialSupplier, useCreateMaterialReference, useGradeDensityIds, useMaterialReference,
-  useMaterialSheets, useMaterialSupplierPrices, useRecordMaterialPurchase, useSaveMaterialSheet,
-  useToggleMaterialSupplier,
+  useAddMaterialSupplier, useCreateMaterialReference, useDeleteMaterialSheet, useGradeDensityIds,
+  useMaterialReference, useMaterialSheets, useMaterialSupplierPrices, useMaterialUsage,
+  useRecordMaterialPurchase, useSaveMaterialSheet, useToggleMaterialSupplier,
 } from '@/hooks/useMaterialReferences';
 import type { MaterialRefOption, MaterialSheet } from '@/hooks/useMaterialReferences';
 import { SHAPE_OPTIONS } from '@/lib/materialWeight';
@@ -464,8 +468,9 @@ const MaterialSheetDialog: React.FC<{
   const save = useSaveMaterialSheet();
   const addSupplier = useAddMaterialSupplier();
   const toggleSupplier = useToggleMaterialSupplier();
+  const deleteSheet = useDeleteMaterialSheet();
 
-  const [currentId, setCurrentId] = useState<string | null>(sheet?.id ?? null);
+  const [currentId, setCurrentId]
   const [gradeId, setGradeId] = useState(sheet?.gradeId ?? '');
   const [formatId, setFormatId] = useState(sheet?.formatId ?? '');
   const [dimensionId, setDimensionId] = useState(sheet?.dimensionId ?? '');
@@ -474,9 +479,27 @@ const MaterialSheetDialog: React.FC<{
   const [densityId, setDensityId] = useState('');
   const [densityTouched, setDensityTouched] = useState(false);
   const [purchase, setPurchase] = useState<PurchaseTarget | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const current = currentId ? (sheets.data || []).find(s => s.id === currentId) ?? null : null;
-  const locked = currentId != null;
+  const current = currentId
+  const usage = useMaterialUsage(currentId);
+  const usageItems = usage.data ?? [];
+  const used = usageItems.length > 0;
+  // Verrouillé tant que l'usage n'est pas connu (ou en erreur), par prudence
+  const locked = currentId != null && (usage.isPending || usage.isError || used);
+  const usageText = (() => {
+    const list = (kind: string) => {
+      const labels = usageItems.filter(u => u.kind === kind).map(u => u.label);
+      return labels.length === 0 ? '' : labels.slice(0, 10).join(', ') + (labels.length > 10 ? '…' : '');
+    };
+    const parts = [
+      ['commande(s)', list('order')],
+      ['achat(s)', list('purchase')],
+      ['bon(s) de commande fournisseur', list('purchase_order')],
+      ['réception(s)', list('goods_receipt')],
+    ].filter(([, v]) => v).map(([k, v]) => `${k} ${v}`);
+    return parts.length === 0 ? '' : `Cette matière est déjà utilisée par : ${parts.join(' ; ')}.`;
+  })();
   const effectiveDensityId = densityTouched ? densityId : (gradeDensity.data?.get(gradeId) ?? '');
   const sameGradeCount = (sheets.data || []).filter(s => s.gradeId === gradeId).length;
   const materialLabel = `${labelOf(grades.data, gradeId)} ${labelOf(formats.data, formatId)} ${labelOf(dimensions.data, dimensionId)}`;
@@ -521,6 +544,18 @@ const MaterialSheetDialog: React.FC<{
       setCurrentId(id);
     } catch (err: any) {
       toast.error(err?.code === '23505' ? 'Cette matière existe déjà (même nuance, format et dimension).' : errorMessage(err));
+    }
+  };
+
+  const onDelete = async () => {
+    if (!currentId) return;
+    try {
+      await deleteSheet.mutateAsync(currentId);
+      toast.success('Matière supprimée');
+      onClose();
+    } catch (err: any) {
+      setConfirmDelete(false);
+      toast.error(errorMessage(err));
     }
   };
 
@@ -585,9 +620,9 @@ const MaterialSheetDialog: React.FC<{
                 />
               )}
             </div>
-            {locked && (
-              <p className="col-span-3 text-[11px] text-muted-foreground -mt-1">
-                Nuance, format et dimension sont figés une fois la matière créée (ils sont utilisés par les commandes existantes).
+            {used && (
+              <p className="col-span-3 text-[11px] text-amber-600 -mt-1">
+                {usageText} Nuance, format et dimension ne peuvent plus être modifiés et la matière ne peut plus être supprimée.
                 Pour une autre combinaison, crée une nouvelle matière et désactive celle-ci.
               </p>
             )}
@@ -747,11 +782,33 @@ const MaterialSheetDialog: React.FC<{
           )}
 
           <DialogFooter>
+            {current && canEdit && (
+              <Button variant="outline" className="text-destructive sm:mr-auto" onClick={() => setConfirmDelete(true)}>
+                Supprimer
+              </Button>
+            )}
             <Button variant="outline" onClick={onClose}>إغلاق</Button>
             {canEdit && <Button onClick={() => void onSave()} disabled={save.isPending}>حفظ</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{used ? 'Suppression impossible' : 'Supprimer cette matière ?'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {used
+                ? `${usageText} Elle ne peut plus être supprimée : désactive-la à la place.`
+                : `${current?.code ?? ''} — ${materialLabel} sera supprimée définitivement, avec ses fournisseurs habituels.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{used ? 'Fermer' : 'Annuler'}</AlertDialogCancel>
+            {!used && <AlertDialogAction onClick={() => void onDelete()}>Supprimer</AlertDialogAction>}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {purchase && <PurchaseDialog target={purchase} units={units.data || []} onClose={() => setPurchase(null)} />}
     </>
