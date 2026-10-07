@@ -74,7 +74,7 @@ const LISTS: ListDef[] = [
     id: 'units', tab: 'Unités', singular: 'une unité', table: 'material_units', primary: 'libelle_fr',
     fields: [
       { key: 'libelle_fr', label: 'Libellé (français)', required: true },
-      { key: 'mm_per_unit', label: 'Longueur d’une unité (mm)', kind: 'number', hint: 'Pour le calcul du poids : mm = 1, m = 1000, barre de 6 m = 6000. Laisser vide pour une feuille.' },Laisser vide pour une feuille.' },
+      { key: 'mm_per_unit', label: 'Longueur d’une unité (mm)', kind: 'number', hint: 'Pour le calcul du poids : mm = 1, m = 1000, barre de 6 m = 6000. Laisser vide pour une feuille.' },
     ],
     columns: ['libelle_fr', 'mm_per_unit'],
   },
