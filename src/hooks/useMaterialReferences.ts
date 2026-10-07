@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type MaterialRefKind = 'grades' | 'formats' | 'dimensions' | 'units' | 'densities';
+export type MaterialRefKind = 'grades' | 'formats' | 'dimensions' | 'units' | 'densities' | 'suppliers';
 
 export interface MaterialRefOption {
   id: string;
@@ -15,6 +15,7 @@ const CONFIG: Record<MaterialRefKind, { table: string; column: string }> = {
   dimensions: { table: 'material_dimensions', column: 'libelle' },
   units: { table: 'material_units', column: 'libelle_fr' },
   densities: { table: 'material_densities', column: 'libelle' },
+  suppliers: { table: 'suppliers', column: 'name' },
 };
 
 const sb: any = supabase;
@@ -107,7 +108,10 @@ export function useEnsureMaterialCombination() {
         if (upErr) throw upErr;
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: COMBOS_KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: COMBOS_KEY });
+      qc.invalidateQueries({ queryKey: SHEETS_KEY });
+    },
   });
 }
 
@@ -157,5 +161,222 @@ export function useMaterialWeightData() {
       return { gradeDensity, formatShape, unitMm };
     },
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface MaterialSheet {
+  id: string;
+  code: string;
+  gradeId: string;
+  formatId: string;
+  dimensionId: string;
+  orderUnitId: string | null;
+  purchaseUnitId: string | null;
+  active: boolean;
+}
+
+const SHEETS_KEY = ['material-sheets'];
+const SUPPLIER_PRICES_KEY = ['material-supplier-prices'];
+
+/** Fiches matière : une ligne par identifiant (Id0001…), avec nuance, format, dimension et unités. */
+export function useMaterialSheets() {
+  return useQuery({
+    queryKey: SHEETS_KEY,
+    queryFn: async (): Promise<MaterialSheet[]> => {
+      const { data, error } = await sb
+        .from('materials')
+        .select('id, code, grade_id, format_id, dimension_id, order_unit_id, purchase_unit_id, is_active');
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        code: r.code,
+        gradeId: r.grade_id,
+        formatId: r.format_id,
+        dimensionId: r.dimension_id,
+        orderUnitId: r.order_unit_id,
+        purchaseUnitId: r.purchase_unit_id,
+        active: r.is_active !== false,
+      }));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Masse volumique de chaque nuance : id nuance → id de la masse volumique. */
+export function useGradeDensityIds() {
+  return useQuery({
+    queryKey: ['material-grade-density'],
+    queryFn: async (): Promise<Map<string, string>> => {
+      const { data, error } = await sb.from('material_grades').select('id, density_id');
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const r of data || []) if (r.density_id) map.set(r.id, r.density_id);
+      return map;
+    },
+  });
+}
+
+export interface MaterialSheetInput {
+  /** Absent = création d'une nouvelle fiche. */
+  id?: string;
+  gradeId: string;
+  formatId: string;
+  dimensionId: string;
+  orderUnitId: string | null;
+  purchaseUnitId: string | null;
+  /** Masse volumique à appliquer à la nuance (undefined = ne pas toucher à la nuance). */
+  densityId?: string | null;
+}
+
+/** Crée ou modifie une fiche matière ; renvoie son id. La masse volumique est portée par la nuance. */
+export function useSaveMaterialSheet() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (s: MaterialSheetInput): Promise<string> => {
+      const payload = {
+        grade_id: s.gradeId,
+        format_id: s.formatId,
+        dimension_id: s.dimensionId,
+        order_unit_id: s.orderUnitId,
+        purchase_unit_id: s.purchaseUnitId,
+      };
+      let id = s.id;
+      if (id) {
+        const { data, error } = await sb.from('materials').update(payload).eq('id', id).select('id');
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error('Modification refusée : droit d’écriture manquant.');
+      } else {
+        const { data, error } = await sb.from('materials').insert(payload).select('id').single();
+        if (error) throw error;
+        id = data.id as string;
+      }
+      if (s.densityId !== undefined) {
+        const { data, error } = await sb
+          .from('material_grades')
+          .update({ density_id: s.densityId })
+          .eq('id', s.gradeId)
+          .select('id');
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error('Masse volumique refusée : droit d’écriture manquant.');
+      }
+      return id as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SHEETS_KEY });
+      qc.invalidateQueries({ queryKey: COMBOS_KEY });
+      qc.invalidateQueries({ queryKey: ['material-grade-density'] });
+      qc.invalidateQueries({ queryKey: ['material-weight-data'] });
+    },
+  });
+}
+
+export interface MaterialSupplierPrice {
+  /** id du lien matière ↔ fournisseur */
+  id: string;
+  materialId: string;
+  supplierId: string;
+  supplierName: string;
+  active: boolean;
+  lastPriceDate: string | null;
+  lastUnitPrice: number | null;
+  lastPriceUnitId: string | null;
+  lastPriceUnitLabel: string | null;
+  lastFeeDate: string | null;
+  lastFeeAmount: number | null;
+  lastFeeLabel: string | null;
+}
+
+const toNum = (v: unknown): number | null => (v == null ? null : Number(v));
+
+/** Fournisseurs habituels de chaque matière, avec dernier prix d'achat et derniers frais de découpe (vide sans le droit n° 30). */
+export function useMaterialSupplierPrices() {
+  return useQuery({
+    queryKey: SUPPLIER_PRICES_KEY,
+    queryFn: async (): Promise<MaterialSupplierPrice[]> => {
+      const { data, error } = await sb.from('material_supplier_last_prices').select('*');
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        id: r.material_supplier_id,
+        materialId: r.material_id,
+        supplierId: r.supplier_id,
+        supplierName: r.supplier_name ?? '',
+        active: r.is_active !== false,
+        lastPriceDate: r.last_price_date,
+        lastUnitPrice: toNum(r.last_unit_price),
+        lastPriceUnitId: r.last_price_unit_id,
+        lastPriceUnitLabel: r.last_price_unit_label,
+        lastFeeDate: r.last_fee_date,
+        lastFeeAmount: toNum(r.last_fee_amount),
+        lastFeeLabel: r.last_fee_label,
+      }));
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+/** Rattache un fournisseur à une matière (le réactive s'il était désactivé). */
+export function useAddMaterialSupplier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { materialId: string; supplierId: string }) => {
+      const keys = { material_id: v.materialId, supplier_id: v.supplierId };
+      const { error } = await sb.from('material_suppliers').insert(keys);
+      if (error) {
+        if ((error as any).code !== '23505') throw error;
+        const { data, error: upErr } = await sb.from('material_suppliers').update({ is_active: true }).match(keys).select('id');
+        if (upErr) throw upErr;
+        if (!data || data.length === 0) throw new Error('Modification refusée : droit d’écriture manquant.');
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY }),
+  });
+}
+
+/** Active / désactive le lien matière ↔ fournisseur. */
+export function useToggleMaterialSupplier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string; active: boolean }) => {
+      const { data, error } = await sb.from('material_suppliers').update({ is_active: v.active }).eq('id', v.id).select('id');
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Modification refusée : droit d’écriture manquant.');
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY }),
+  });
+}
+
+export interface MaterialPurchaseInput {
+  materialId: string;
+  supplierId: string;
+  /** AAAA-MM-JJ */
+  date: string;
+  quantity: number;
+  unitId: string;
+  unitPrice: number;
+  feeAmount: number | null;
+  feeLabel: string | null;
+  documentRef: string | null;
+}
+
+/** Enregistre un achat (facture + ligne matière + frais de découpe éventuels) en une seule opération. */
+export function useRecordMaterialPurchase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: MaterialPurchaseInput): Promise<string> => {
+      const { data, error } = await sb.rpc('record_material_purchase', {
+        p_material_id: p.materialId,
+        p_supplier_id: p.supplierId,
+        p_purchase_date: p.date,
+        p_quantity: p.quantity,
+        p_unit_id: p.unitId,
+        p_unit_price: p.unitPrice,
+        p_fee_amount: p.feeAmount,
+        p_fee_label: p.feeLabel,
+        p_document_ref: p.documentRef,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY }),
   });
 }
