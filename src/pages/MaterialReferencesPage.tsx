@@ -53,19 +53,17 @@ const LISTS: ListDef[] = [
     id: 'grades', tab: 'Nuances', singular: 'une nuance', table: 'material_grades', primary: 'libelle_fr',
     fields: [
       { key: 'libelle_fr', label: 'Libellé (français)', required: true },
-      { key: 'libelle_ar', label: 'الاسم بالعربية' },
       { key: 'density_id', label: 'Masse volumique', kind: 'select', optionsFrom: 'densities', hint: 'Choisie dans l’onglet Masses volumiques.' },
     ],
-    columns: ['libelle_fr', 'libelle_ar', 'density_id'],
+    columns: ['libelle_fr', 'density_id'],
   },
   {
     id: 'formats', tab: 'Formats', singular: 'un format', table: 'material_formats', primary: 'libelle_fr',
     fields: [
       { key: 'libelle_fr', label: 'Libellé (français)', required: true },
-      { key: 'libelle_ar', label: 'الاسم بالعربية' },
       { key: 'shape', label: 'Forme (pour le calcul du poids)', kind: 'select', options: SHAPE_OPTIONS },
     ],
-    columns: ['libelle_fr', 'libelle_ar', 'shape'],
+    columns: ['libelle_fr', 'shape'],
   },
   {
     id: 'dimensions', tab: 'Dimensions', singular: 'une dimension', table: 'material_dimensions', primary: 'libelle',
@@ -76,10 +74,9 @@ const LISTS: ListDef[] = [
     id: 'units', tab: 'Unités', singular: 'une unité', table: 'material_units', primary: 'libelle_fr',
     fields: [
       { key: 'libelle_fr', label: 'Libellé (français)', required: true },
-      { key: 'libelle_ar', label: 'الاسم بالعربية' },
-      { key: 'mm_per_unit', label: 'Longueur d’une unité (mm)', kind: 'number', hint: 'Pour le calcul du poids : mm = 1, m = 1000, barre de 6 m = 6000. Laisser vide pour une feuille.' },
+      { key: 'mm_per_unit', label: 'Longueur d’une unité (mm)', kind: 'number', hint: 'Pour le calcul du poids : mm = 1, m = 1000, barre de 6 m = 6000. Laisser vide pour une feuille.' },Laisser vide pour une feuille.' },
     ],
-    columns: ['libelle_fr', 'libelle_ar', 'mm_per_unit'],
+    columns: ['libelle_fr', 'mm_per_unit'],
   },
   {
     id: 'densities', tab: 'Masses volumiques', singular: 'une masse volumique', table: 'material_densities', primary: 'libelle',
@@ -953,7 +950,7 @@ const MaterialReferencesPage: React.FC = () => {
         <>
           <div className="flex-none flex justify-end pb-2">
             <Button size="sm" variant="ghost" onClick={() => setShowLists(true)}>
-              Listes de référence (unités, masses volumiques, noms en arabe, fournisseurs…)
+              Listes de référence (unités, masses volumiques, fournisseurs…)
             </Button>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden">
