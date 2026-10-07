@@ -470,7 +470,7 @@ const MaterialSheetDialog: React.FC<{
   const toggleSupplier = useToggleMaterialSupplier();
   const deleteSheet = useDeleteMaterialSheet();
 
-  const [currentId, setCurrentId]
+  const [currentId, setCurrentId] = useState<string | null>(sheet?.id ?? null);
   const [gradeId, setGradeId] = useState(sheet?.gradeId ?? '');
   const [formatId, setFormatId] = useState(sheet?.formatId ?? '');
   const [dimensionId, setDimensionId] = useState(sheet?.dimensionId ?? '');
@@ -481,7 +481,7 @@ const MaterialSheetDialog: React.FC<{
   const [purchase, setPurchase] = useState<PurchaseTarget | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const current = currentId
+  const current = currentId ? (sheets.data || []).find(s => s.id === currentId) ?? null : null;
   const usage = useMaterialUsage(currentId);
   const usageItems = usage.data ?? [];
   const used = usageItems.length > 0;
