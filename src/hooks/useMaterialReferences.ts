@@ -442,3 +442,97 @@ export function useRecordMaterialPurchase() {
     onSuccess: () => qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY }),
   });
 }
+export interface OrderMaterialPurchaseInput extends MaterialPurchaseInput {
+  orderId: string;
+  /** id de la ligne matière dans la commande (ResourceItem.id) */
+  orderItemId: string;
+}
+
+export interface OrderItemPurchase {
+  purchaseId: string;
+  supplierId: string | null;
+  supplierName: string;
+  date: string | null;
+  documentRef: string | null;
+  /** matière + frais de découpe */
+  total: number;
+}
+
+/** Achat déjà enregistré pour une ligne de commande (null = aucun). Évite d'enregistrer deux fois le même achat. */
+export function useOrderItemPurchase(orderItemId: string | null) {
+  return useQuery({
+    queryKey: ['order-item-purchase', orderItemId],
+    enabled: !!orderItemId,
+    staleTime: 0,
+    queryFn: async (): Promise<OrderItemPurchase | null> => {
+      const { data, error } = await sb
+        .from('material_purchase_lines')
+        .select('purchase_id, amount, material_purchases(purchase_date, document_ref, supplier_id, suppliers(name))')
+        .eq('order_item_id', orderItemId)
+        .eq('is_active', true);
+      if (error) throw error;
+      const lines = (data || []) as any[];
+      if (lines.length === 0) return null;
+      const head = lines[0].material_purchases;
+      return {
+        purchaseId: lines[0].purchase_id as string,
+        supplierId: head?.supplier_id ?? null,
+        supplierName: head?.suppliers?.name ?? '',
+        date: head?.purchase_date ?? null,
+        documentRef: head?.document_ref ?? null,
+        total: lines.reduce((sum, l) => sum + Number(l.amount ?? 0), 0),
+      };
+    },
+  });
+}
+
+/**
+ * Enregistre l'achat d'une ligne de commande : même opération que useRecordMaterialPurchase, puis
+ * rattache les lignes de la facture à la commande et lie le fournisseur à la matière (pour que le
+ * dernier prix apparaisse dans la fiche matière).
+ */
+export function useRecordOrderMaterialPurchase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: OrderMaterialPurchaseInput): Promise<{ purchaseId: string; orderLinked: boolean }> => {
+      const { data, error } = await sb.rpc('record_material_purchase', {
+        p_material_id: p.materialId,
+        p_supplier_id: p.supplierId,
+        p_purchase_date: p.date,
+        p_quantity: p.quantity,
+        p_unit_id: p.unitId,
+        p_unit_price: p.unitPrice,
+        p_fee_amount: p.feeAmount,
+        p_fee_label: p.feeLabel,
+        p_document_ref: p.documentRef,
+      });
+      if (error) throw error;
+      const purchaseId = data as string;
+
+      const { data: linked, error: linkErr } = await sb
+        .from('material_purchase_lines')
+        .update({ order_id: p.orderId, order_item_id: p.orderItemId })
+        .eq('purchase_id', purchaseId)
+        .select('id');
+      const orderLinked = !linkErr && !!linked && linked.length > 0;
+
+      // Fournisseur habituel de la matière (au mieux : demande le droit n° 29, sans incidence sur l'achat).
+      try {
+        const keys = { material_id: p.materialId, supplier_id: p.supplierId };
+        const { error: supErr } = await sb.from('material_suppliers').insert(keys);
+        if (supErr && (supErr as any).code === '23505') {
+          await sb.from('material_suppliers').update({ is_active: true }).match(keys);
+        }
+      } catch {
+        /* ignoré */
+      }
+
+      return { purchaseId, orderLinked };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY });
+      qc.invalidateQueries({ queryKey: USAGE_KEY });
+      qc.invalidateQueries({ queryKey: ['order-item-purchase'] });
+    },
+  });
+}
