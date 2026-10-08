@@ -109,6 +109,8 @@ export interface ResourceItem {
   margin?: 30 | 50;
   /** Fournisseur — saisi manuellement */
   supplier?: string;
+    /** Achat enregistré (material_purchases.id) dont proviennent le prix et le fournisseur de cette ligne */
+  purchaseId?: string;
   /** Matière première structurée — id dans material_grades (nuance) */
   gradeId?: string;
   /** id dans material_formats (rond, tôle, hexagone…) */
