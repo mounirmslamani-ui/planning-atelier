@@ -329,7 +329,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   };
 
   /** Comme updateItemStatus, mais fixe aussi le prix d'achat en même temps (fenêtre prix obligatoire). `extra` : fournisseur, achat lié… */
-  const updateItemStatusAndPrice = (rowId: string, field: ItemField, itemId: string, status: ResourceStatus, costPrice: number, extra?: Partial<ResourceItem>) =>
+  const updateItemStatusAndPrice = (rowId: string, field: ItemField, itemId: string, status: ResourceStatus, costPrice: number, extra?: Partial<ResourceItem>) => {
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
       const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status, costPrice, ...extra } : i);
