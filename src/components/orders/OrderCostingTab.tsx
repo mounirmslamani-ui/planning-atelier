@@ -261,15 +261,25 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                     <td className="p-2">{opName(step.operationId)}</td>
                     <td className="p-2">{it.label}</td>
                     <td className="p-2 min-w-40">
-                      <Input
-                        className={cn('h-8 text-xs', supplierClass)}
-                        value={it.supplier || ''}
-                        placeholder="—"
-                        onChange={e => patchItem(step.id, it.id, { supplier: e.target.value })}
-                      />
+                      {it.purchaseId ? (
+                        <div className={cn('h-8 flex items-center px-2 rounded-md border text-xs', supplierClass)}>{it.supplier || '—'}</div>
+                      ) : (
+                        <Input
+                          className={cn('h-8 text-xs', supplierClass)}
+                          value={it.supplier || ''}
+                          placeholder="—"
+                          onChange={e => patchItem(step.id, it.id, { supplier: e.target.value })}
+                        />
+                      )}
                     </td>
                     <td className="p-2 min-w-36">
-                      <MoneyInput value={it.costPrice} onValueChange={v => patchItem(step.id, it.id, { costPrice: v })} currencyPosition="start" currencyLabel="دج" className={costClass} />
+                      {it.purchaseId ? (
+                        <div className={cn('h-8 flex items-center px-2 rounded-md border text-xs whitespace-nowrap', costClass)} dir="ltr" title="Coût issu de l'achat enregistré (matière + frais de découpe)">
+                          {formatDAPrefix(it.costPrice ?? 0)}
+                        </div>
+                      ) : (
+                        <MoneyInput value={it.costPrice} onValueChange={v => patchItem(step.id, it.id, { costPrice: v })} currencyPosition="start" currencyLabel="دج" className={costClass} />
+                      )}
                     </td>
                     <td className="p-2 min-w-28">
                       <SearchableSelect
