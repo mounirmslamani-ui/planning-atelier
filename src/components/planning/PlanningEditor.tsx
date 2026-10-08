@@ -22,6 +22,8 @@ import { useSubFormLock } from '@/components/orders/SubFormLock';
 import SearchableSelect from '@/components/ui/searchable-select';
 import MaterialItemFields from '@/components/planning/MaterialItemFields';
 import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
+import MaterialPurchaseDialog, { isStructuredRawItem } from '@/components/planning/MaterialPurchaseDialog';
+import { useAuth } from '@/context/AuthContext';
 
 export interface OperationRow {
   id: string;
@@ -326,11 +328,11 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }));
   };
 
-  /** Comme updateItemStatus, mais fixe aussi le prix d'achat en même temps (fenêtre prix obligatoire). */
-  const updateItemStatusAndPrice = (rowId: string, field: ItemField, itemId: string, status: ResourceStatus, costPrice: number) => {
+  /** Comme updateItemStatus, mais fixe aussi le prix d'achat en même temps (fenêtre prix obligatoire). `extra` : fournisseur, achat lié… */
+  const updateItemStatusAndPrice = (rowId: string, field: ItemField, itemId: string, status: ResourceStatus, costPrice: number, extra?: Partial<ResourceItem>) =>
     setRows(prev => prev.map(r => {
       if (r.id !== rowId) return r;
-      const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status, costPrice } : i);
+      const arr = (r[field] || []).map(i => i.id === itemId ? { ...i, status, costPrice, ...extra } : i);
       return { ...r, [field]: arr, [rowStatusKeyFor(field)]: computeFieldStatus(r[flagKeyFor(field)], arr) } as OperationRow;
     }));
   };
@@ -1101,6 +1103,9 @@ export const ResourcesEditorTable: React.FC<{
   const [matPricePrompt, setMatPricePrompt] = useState<{ rowId: string; itemId: string; status: ResourceStatus; label: string } | null>(null);
   const [matPriceValue, setMatPriceValue] = useState<number | undefined>(undefined);
   const { updateOrder } = usePlanning();
+  const { hasAccess } = useAuth();
+  const canRecordPurchase = hasAccess({ tableau: 'أسعار شراء المواد الأولية' }) === 'RW';
+  const [purchasePrompt, setPurchasePrompt] = useState<{ rowId: string; itemId: string; status: ResourceStatus } | null>(null);
   const matLock = useSubFormLock(canEditMaterial, open);
   const tooLock = useSubFormLock(canEditTooling, open);
   const stuLock = useSubFormLock(canEditStudy, open);
@@ -1229,6 +1234,10 @@ export const ResourcesEditorTable: React.FC<{
                               value={item.status}
                               onChange={s => {
                                 if ((s === 'disponible' || s === 'partiel') && item.costPrice == null) {
+                                  if (order && canRecordPurchase && isStructuredRawItem(item)) {
+                                    setPurchasePrompt({ rowId: row.id, itemId: item.id, status: s });
+                                    return;
+                                  }
                                   setMatPriceValue(undefined);
                                   setMatPricePrompt({ rowId: row.id, itemId: item.id, status: s, label: item.label });
                                   return;
@@ -1346,6 +1355,24 @@ export const ResourcesEditorTable: React.FC<{
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {purchasePrompt && order && (() => {
+        const promptItem = e.rows.find(r => r.id === purchasePrompt.rowId)?.rawMaterialItems.find(i => i.id === purchasePrompt.itemId);
+        if (!promptItem) return null;
+        return (
+          <MaterialPurchaseDialog
+            orderId={order.id}
+            item={promptItem}
+            onClose={() => setPurchasePrompt(null)}
+            onRecorded={res => {
+              e.updateItemStatusAndPrice(
+                purchasePrompt.rowId, 'rawMaterialItems', purchasePrompt.itemId, purchasePrompt.status, res.totalCost,
+                { supplier: res.supplierName, purchaseId: res.purchaseId },
+              );
+              setPurchasePrompt(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };
