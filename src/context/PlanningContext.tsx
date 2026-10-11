@@ -550,7 +550,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     pushUndo(); setProductionRecords(prev => [...prev, record]); dbInsertRecord(record);
   }, [pushUndo]);
   const updateProductionRecord = useCallback((record: ProductionRecord) => {
-    pushUndo(); setProductionRecords(prev => prev.map(r => r.id === record.id ? record : r)); dbUpdateRecord(record);
+    pushUndo(); setProductionRecords(prev => prev.map(r => r.id === record.id ? record : r));
+    dbUpdateRecord(record).then(billable => {
+      if (billable === undefined) return;
+      setProductionRecords(prev => prev.map(r => r.id === record.id ? { ...r, billableHours: billable } : r));
+      lastLocalWriteAt.current = Date.now();
+    });
   }, [pushUndo]);
   const deleteProductionRecord = useCallback((id: string) => {
     pushUndo(); setProductionRecords(prev => prev.filter(r => r.id !== id)); dbDeleteRecord(id);
