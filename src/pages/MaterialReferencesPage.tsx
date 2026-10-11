@@ -587,7 +587,7 @@ const MaterialSheetDialog: React.FC<{
   return (
     <>
       <Dialog open onOpenChange={o => { if (!o) onClose(); }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[67rem] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">
               {current ? `${current.code} — ${materialLabel}` : copyFrom ? `Nouvelle matière (copie de ${copyFrom.code})` : 'Nouvelle matière'}
