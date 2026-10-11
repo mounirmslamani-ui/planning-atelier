@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Pencil, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Copy, Pencil, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -480,7 +480,7 @@ const MaterialSheetDialog: React.FC<{
   const [densityTouched, setDensityTouched] = useState(false);
   const [purchase, setPurchase] = useState<PurchaseTarget | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-
+  const [copyFrom, setCopyFrom] = useState<{ code: string; supplierIds: string[] } | null>(null);
   const current = currentId ? (sheets.data || []).find(s => s.id === currentId) ?? null : null;
   const usage = useMaterialUsage(currentId);
   const usageItems = usage.data ?? [];
@@ -540,7 +540,17 @@ const MaterialSheetDialog: React.FC<{
         purchaseUnitId: purchaseUnitId || null,
         densityId: densityTouched ? (densityId || null) : undefined,
       });
-      toast.success(currentId ? 'Fiche enregistrée' : 'Matière créée : tu peux maintenant ajouter ses fournisseurs');
+      if (!currentId && copyFrom) {
+        const results = await Promise.allSettled(
+          copyFrom.supplierIds.map(supplierId => addSupplier.mutateAsync({ materialId: id, supplierId })),
+        );
+        const failed = results.filter(r => r.status === 'rejected').length;
+        if (failed > 0) toast.error(`${failed} fournisseur(s) n’ont pas pu être copiés : ajoute-les à la main.`);
+        toast.success(`Matière créée, fournisseurs copiés depuis ${copyFrom.code}`);
+        setCopyFrom(null);
+      } else {
+        toast.success(currentId ? 'Fiche enregistrée' : 'Matière créée : tu peux maintenant ajouter ses fournisseurs');
+      }
       setCurrentId(id);
     } catch (err: any) {
       toast.error(err?.code === '23505' ? 'Cette matière existe déjà (même nuance, format et dimension).' : errorMessage(err));
@@ -559,6 +569,19 @@ const MaterialSheetDialog: React.FC<{
     }
   };
 
+  const onDuplicate = async () => {
+    if (!current) return;
+    const { data, error } = await sb
+      .from('material_suppliers')
+      .select('supplier_id')
+      .eq('material_id', current.id)
+      .eq('is_active', true);
+    if (error) { toast.error(errorMessage(error)); return; }
+    setCopyFrom({ code: current.code, supplierIds: (data || []).map((r: any) => r.supplier_id as string) });
+    setCurrentId(null);
+    setDimensionId('');
+    setDensityTouched(false);
+  };
   const fieldClass = 'h-9 text-sm px-2';
 
   return (
@@ -567,7 +590,7 @@ const MaterialSheetDialog: React.FC<{
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">
-              {current ? `${current.code} — ${materialLabel}` : 'Nouvelle matière'}
+              {current ? `${current.code} — ${materialLabel}` : copyFrom ? `Nouvelle matière (copie de ${copyFrom.code})` : 'Nouvelle matière'}
             </DialogTitle>
           </DialogHeader>
 
@@ -785,6 +808,11 @@ const MaterialSheetDialog: React.FC<{
             {current && canEdit && (
               <Button variant="outline" className="text-destructive sm:mr-auto" onClick={() => setConfirmDelete(true)}>
                 Supprimer
+              </Button>
+            )}
+            {current && canEdit && (
+              <Button variant="outline" onClick={() => void onDuplicate()}>
+                <Copy className="w-4 h-4 mr-1" /> Dupliquer
               </Button>
             )}
             <Button variant="outline" onClick={onClose}>إغلاق</Button>
