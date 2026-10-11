@@ -337,6 +337,30 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     }));
   };
 
+  /**
+   * Achat matière enregistré : met à jour le brouillon ET enregistre tout de suite la ligne dans l'étape,
+   * pour que حساب التكلفة voie fournisseur et coût sans attendre le bouton تأكيد.
+   */
+  const commitItemPurchase = (rowId: string, itemId: string, status: ResourceStatus, costPrice: number, extra: Partial<ResourceItem>) => {
+    updateItemStatusAndPrice(rowId, 'rawMaterialItems', itemId, status, costPrice, extra);
+    const row = rows.find(r => r.id === rowId);
+    const st = row?.stepId ? steps.find(s => s.id === row.stepId) : undefined;
+    const draftItem = row?.rawMaterialItems.find(i => i.id === itemId);
+    if (!row || !st || !draftItem) return;
+    const apply = (i: ResourceItem) => (i.id === itemId ? { ...i, status, costPrice, ...extra } : i);
+    const saved = st.rawMaterialItems || [];
+    const items = saved.some(i => i.id === itemId) ? saved.map(apply) : [...saved, apply(draftItem)];
+    const materialStatus = computeFieldStatus(st.rawMaterialNotApplicable ?? false, items);
+    updateStep({ ...st, rawMaterialItems: items, materialStatus, materialAvailable: materialStatus === 'disponible' });
+    // La part « achat » de la ligne est désormais enregistrée : elle ne compte plus comme modification non enregistrée.
+    setBaselineRows(prev => prev.map(b => {
+      if (b.id !== rowId) return b;
+      const has = b.rawMaterialItems.some(i => i.id === itemId);
+      return { ...b, rawMaterialItems: has ? b.rawMaterialItems.map(apply) : [...b.rawMaterialItems, apply(draftItem)] };
+    }));
+    toast.success('تم تسجيل عملية الشراء');
+  };
+
   /** Row-level "لا حاجة" flag — no material / no tooling needed for this step. */
   const toggleNotApplicable = (rowId: string, field: ItemField, value: boolean) => {
     setRows(prev => prev.map(r => {
@@ -803,7 +827,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
     addRow, duplicateRowForRework, moveRow, updateRow, updateNeedField, updateItemFields, addNeedField, removeNeedField, toggleNotApplicable,
-    handleStatusChange, updateItemStatus, updateItemStatusAndPrice, getAssigneeOptions,
+    handleStatusChange, updateItemStatus, updateItemStatusAndPrice, commitItemPurchase, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
     forcePrompt, setForcePrompt,
@@ -1364,8 +1388,8 @@ export const ResourcesEditorTable: React.FC<{
             item={promptItem}
             onClose={() => setPurchasePrompt(null)}
             onRecorded={res => {
-              e.updateItemStatusAndPrice(
-                purchasePrompt.rowId, 'rawMaterialItems', purchasePrompt.itemId, purchasePrompt.status, res.totalCost,
+              e.commitItemPurchase(
+                purchasePrompt.rowId, purchasePrompt.itemId, purchasePrompt.status, res.totalCost,
                 { supplier: res.supplierName, purchaseId: res.purchaseId },
               );
               setPurchasePrompt(null);
