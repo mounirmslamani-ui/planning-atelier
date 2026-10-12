@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ReferenceCombobox from '@/components/ui/reference-combobox';
 import {
+  useCancelMaterialPurchase,
   useCreateMaterialReference,
   useMaterialCombinations,
   useMaterialReference,
@@ -31,6 +32,8 @@ interface Props {
   item: ResourceItem;
   onClose: () => void;
   onRecorded: (result: RecordedPurchase) => void;
+  /** Appelé après l'annulation de l'achat existant (la ligne doit alors perdre achat, fournisseur et prix). */
+  onCancelled: () => void;
 }
 
 const parseNum = (s: string) => Number(s.trim().replace(',', '.'));
@@ -40,7 +43,7 @@ const fmtMoney = (n: number | null) =>
 const fmtDate = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('fr-FR') : '');
 const selectClass = 'h-9 w-full rounded-md border border-input bg-background px-2 text-sm';
 
-const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRecorded }) => {
+const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRecorded, onCancelled }) => {
   const combos = useMaterialCombinations();
   const sheets = useMaterialSheets();
   const prices = useMaterialSupplierPrices();
@@ -49,6 +52,8 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   const createSupplier = useCreateMaterialReference('suppliers');
   const existing = useOrderItemPurchase(item.id);
   const record = useRecordOrderMaterialPurchase();
+  const cancel = useCancelMaterialPurchase();
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   const materialId = useMemo(
     () => (combos.data || []).find(c =>
@@ -130,6 +135,18 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
     }
   };
 
+  const cancelPurchase = async () => {
+    if (!existing.data) return;
+    try {
+      await cancel.mutateAsync(existing.data.purchaseId);
+      setConfirmingCancel(false);
+      onCancelled();
+      toast.success('Achat annulé : tu peux le ressaisir.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Échec de l’annulation de l’achat.');
+    }
+  };
+
   const loading = combos.isLoading || existing.isLoading;
 
   return (
@@ -150,7 +167,24 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
               (matière + frais de découpe).
             </p>
             <p className="text-xs text-muted-foreground">Il sera repris tel quel, sans en créer un second.</p>
+            {confirmingCancel && (
+              <p className="text-sm text-destructive">
+                Cet achat sera annulé et retiré du coût de la commande. Tu pourras ensuite le ressaisir.
+              </p>
+            )}
             <DialogFooter>
+              {confirmingCancel ? (
+                <>
+                  <Button variant="outline" onClick={() => setConfirmingCancel(false)} disabled={cancel.isPending}>Retour</Button>
+                  <Button variant="destructive" onClick={() => void cancelPurchase()} disabled={cancel.isPending}>
+                    Confirmer l’annulation
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={() => setConfirmingCancel(true)}>
+                  إلغاء الشراء وإعادة التسجيل
+                </Button>
+              )}
               <Button variant="outline" onClick={onClose}>إلغاء</Button>
               <Button
                 onClick={() => onRecorded({
