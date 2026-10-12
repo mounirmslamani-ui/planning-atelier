@@ -536,3 +536,30 @@ export function useRecordOrderMaterialPurchase() {
     },
   });
 }
+/** Annule un achat enregistré (désactivation, pas de suppression) : l'achat disparaît de la commande et des derniers prix. */
+export function useCancelMaterialPurchase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (purchaseId: string) => {
+      const { data: lines, error: lineErr } = await sb
+        .from('material_purchase_lines')
+        .update({ is_active: false })
+        .eq('purchase_id', purchaseId)
+        .select('id');
+      if (lineErr) throw lineErr;
+      if (!lines || lines.length === 0) throw new Error('Annulation refusée : droit d’écriture manquant.');
+      const { data: head, error: headErr } = await sb
+        .from('material_purchases')
+        .update({ is_active: false })
+        .eq('id', purchaseId)
+        .select('id');
+      if (headErr) throw headErr;
+      if (!head || head.length === 0) throw new Error('Annulation refusée : droit d’écriture manquant.');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: SUPPLIER_PRICES_KEY });
+      qc.invalidateQueries({ queryKey: USAGE_KEY });
+      qc.invalidateQueries({ queryKey: ['order-item-purchase'] });
+    },
+  });
+}
