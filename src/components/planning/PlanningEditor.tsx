@@ -361,6 +361,18 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
     toast.success('تم تسجيل عملية الشراء');
   };
 
+  /** Achat annulé : retire achat, fournisseur et prix de la ligne (brouillon + étape) pour permettre de ressaisir. */
+  const clearItemPurchase = (rowId: string, itemId: string) => {
+    const clear = (i: ResourceItem): ResourceItem =>
+      i.id === itemId ? { ...i, costPrice: undefined, supplier: undefined, purchaseId: undefined } : i;
+    setRows(prev => prev.map(r => (r.id === rowId ? { ...r, rawMaterialItems: r.rawMaterialItems.map(clear) } : r)));
+    const row = rows.find(r => r.id === rowId);
+    const st = row?.stepId ? steps.find(s => s.id === row.stepId) : undefined;
+    if (st) updateStep({ ...st, rawMaterialItems: (st.rawMaterialItems || []).map(clear) });
+    setBaselineRows(prev => prev.map(b => (b.id === rowId ? { ...b, rawMaterialItems: b.rawMaterialItems.map(clear) } : b)));
+    toast.success('تم إلغاء عملية الشراء');
+  };
+
   /** Row-level "لا حاجة" flag — no material / no tooling needed for this step. */
   const toggleNotApplicable = (rowId: string, field: ItemField, value: boolean) => {
     setRows(prev => prev.map(r => {
@@ -827,7 +839,7 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
   return {
     rows, setRows, isLocked, lockReason, blockedSet, rowsDirty, stepsDirty, resourcesDirty,
     addRow, duplicateRowForRework, moveRow, updateRow, updateNeedField, updateItemFields, addNeedField, removeNeedField, toggleNotApplicable,
-    handleStatusChange, updateItemStatus, updateItemStatusAndPrice, commitItemPurchase, getAssigneeOptions,
+    handleStatusChange, updateItemStatus, updateItemStatusAndPrice, commitItemPurchase, clearItemPurchase, getAssigneeOptions,
     handlePlanifier, saveResourcesOnly, doSave,
     handleColumnStatusChange, handleProgressStatusChange,
     forcePrompt, setForcePrompt,
@@ -1272,6 +1284,19 @@ export const ResourcesEditorTable: React.FC<{
                               options={['disponible', 'partiel', 'non-disponible']}
                             />
                           )}
+                          {!row.rawMaterialNotApplicable && item.purchaseId && canRecordPurchase && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              title="تصحيح عملية الشراء"
+                              onClick={() => setPurchasePrompt({ rowId: row.id, itemId: item.id, status: item.status })}
+                              disabled={matDisabled}
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                            </Button>
+                          )}
                           <MaterialItemFields
                             item={item}
                             disabled={matDisabled || row.rawMaterialNotApplicable}
@@ -1394,6 +1419,7 @@ export const ResourcesEditorTable: React.FC<{
               );
               setPurchasePrompt(null);
             }}
+            onCancelled={() => e.clearItemPurchase(purchasePrompt.rowId, purchasePrompt.itemId)}
           />
         );
       })()}
