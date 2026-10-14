@@ -1316,13 +1316,14 @@ export const ResourcesEditorTable: React.FC<{
                               options={['disponible', 'partiel', 'non-disponible']}
                             />
                           )}
-                          {!row.rawMaterialNotApplicable && item.purchaseId && canRecordPurchase && (
+                          {!row.rawMaterialNotApplicable && order && canRecordPurchase && isStructuredRawItem(item)
+                            && (item.purchaseId || ((item.status === 'disponible' || item.status === 'partiel') && item.costPrice == null)) && (
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 shrink-0"
-                              title="تصحيح عملية الشراء"
+                              title={item.purchaseId ? 'تصحيح عملية الشراء' : 'تسجيل عملية الشراء'}
                               onClick={() => setPurchasePrompt({ rowId: row.id, itemId: item.id, status: item.status })}
                               disabled={matDisabled}
                             >
@@ -1331,7 +1332,7 @@ export const ResourcesEditorTable: React.FC<{
                           )}
                           <MaterialItemFields
                             item={item}
-                            disabled={matDisabled || row.rawMaterialNotApplicable}
+                            disabled={matDisabled || row.rawMaterialNotApplicable || !!item.purchaseId}
                             onChange={patch => e.updateItemFields(row.id, 'rawMaterialItems', idx, patch)}
                           />
                           {idx === row.rawMaterialItems.length - 1 ? (
