@@ -141,7 +141,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
       await cancel.mutateAsync(existing.data.purchaseId);
       setConfirmingCancel(false);
       onCancelled();
-      toast.success('Achat annulé : tu peux le ressaisir.');
+      toast.success('Achat annulé : ressaisis-le ici, ou ferme pour modifier la ligne puis le réenregistrer.');
     } catch (err: any) {
       toast.error(err?.message || 'Échec de l’annulation de l’achat.');
     }
