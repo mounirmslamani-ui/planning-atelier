@@ -44,10 +44,48 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
     [productionRecords, order.id],
   );
 
-  // Brouillon local — validé en une seule fois
-  const [draftSteps, setDraftSteps] = React.useState<ProductionStep[]>(orderSteps);
+  // Brouillon = étapes du contexte (toujours à jour) + modifications non validées de cet onglet.
+  // Les étapes ne sont plus copiées : achat, fournisseur et prix d'achat saisis dans
+  // تحضير الطلبية والموارد sont lus en direct, et une actualisation des données
+  // n'efface plus les marges en cours de saisie.
+  const [stepPatches, setStepPatches] = React.useState<Record<string, Partial<ProductionStep>>>({});
+  const [itemPatches, setItemPatches] = React.useState<Record<string, Partial<ResourceItem>>>({});
   const [draftSalePrice, setDraftSalePrice] = React.useState<number | undefined>(order.salePricePerUnit);
-  
+
+  const category = inferCategoryFromOrderNumber(order.orderNumber);
+  const draftSteps = React.useMemo<ProductionStep[]>(() => orderSteps.map(s => {
+    let next = s;
+    // On ne touche jamais à un taux déjà renseigné (manuellement ou précédemment) — uniquement le pré-remplissage initial.
+    if (!s.subcontractorId && s.hourlyRate == null) {
+      const defaultRate = getDefaultHourlyRate(category, operations.find(o => o.id === s.operationId));
+      if (defaultRate != null) next = { ...next, hourlyRate: defaultRate };
+    }
+    const stepPatch = stepPatches[s.id];
+    if (stepPatch) next = { ...next, ...stepPatch };
+    if ((next.rawMaterialItems || []).some(it => itemPatches[`${s.id}:${it.id}`])) {
+      next = {
+        ...next,
+        rawMaterialItems: (next.rawMaterialItems || []).map(it => {
+          const patch = itemPatches[`${s.id}:${it.id}`];
+          if (!patch) return it;
+          // Fournisseur et coût d'une ligne issue d'un achat enregistré : jamais écrasés par ce brouillon.
+          if (it.purchaseId) {
+            const { supplier: _supplier, costPrice: _costPrice, ...rest } = patch;
+            return { ...it, ...rest };
+          }
+          return { ...it, ...patch };
+        }),
+      };
+    }
+    return next;
+  }), [orderSteps, stepPatches, itemPatches, operations, category]);
+
+  // Nouvelle ouverture ou autre commande : on repart sans modification en attente.
+  React.useEffect(() => {
+    setStepPatches({});
+    setItemPatches({});
+  }, [open, order.id]);
+
   // Confirmation de ثمن بيع الوحدة une fois toutes les rubriques finalisées (vertes) :
   // salePriceConfirmed passe à true après validation dans la boîte de dialogue, ce qui
   // colore toute la sous-fenêtre SYNTHÈSE en vert. Toute nouvelle saisie invalide la
@@ -57,19 +95,11 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
   const priceBeforeEditRef = React.useRef<number | undefined>(order.salePricePerUnit);
 
   React.useEffect(() => {
-    const category = inferCategoryFromOrderNumber(order.orderNumber);
-    setDraftSteps(orderSteps.map(s => {
-      // On ne touche jamais à un taux déjà renseigné (manuellement ou précédemment) — uniquement le pré-remplissage initial.
-      if (s.subcontractorId || s.hourlyRate != null) return s;
-      const operation = operations.find(o => o.id === s.operationId);
-      const defaultRate = getDefaultHourlyRate(category, operation);
-      return defaultRate != null ? { ...s, hourlyRate: defaultRate } : s;
-    }));
     setDraftSalePrice(order.salePricePerUnit);
     setSalePriceConfirmed(order.salePricePerUnit != null);
     priceBeforeEditRef.current = order.salePricePerUnit;
-    setConfirmDialogValue(undefined);   
-  }, [orderSteps, order.salePricePerUnit, order.orderNumber, open, operations]);
+    setConfirmDialogValue(undefined);
+  }, [order.salePricePerUnit, order.orderNumber, open]);
 
   const opName = (id: string) => operations.find(o => o.id === id)?.name || '—';
   const resourceName = (s: ProductionStep) =>
@@ -78,12 +108,10 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
       : (operators.find(x => x.id === s.operatorId)?.name || '—');
 
   const patchStep = (stepId: string, patch: Partial<ProductionStep>) =>
-    setDraftSteps(prev => prev.map(s => (s.id === stepId ? { ...s, ...patch } : s)));
+    setStepPatches(prev => ({ ...prev, [stepId]: { ...prev[stepId], ...patch } }));
 
   const patchItem = (stepId: string, itemId: string, patch: Partial<ResourceItem>) =>
-    setDraftSteps(prev => prev.map(s => s.id === stepId
-      ? { ...s, rawMaterialItems: (s.rawMaterialItems || []).map(it => it.id === itemId ? { ...it, ...patch } : it) }
-      : s));
+    setItemPatches(prev => ({ ...prev, [`${stepId}:${itemId}`]: { ...prev[`${stepId}:${itemId}`], ...patch } }));
 
   const breakdown = React.useMemo(
     () => computeOrderCosting({ ...order, salePricePerUnit: draftSalePrice }, draftSteps, orderRecords, operations),
@@ -223,12 +251,15 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
       updateOrder({ ...order, salePricePerUnit: draftSalePrice });
     }
     priceBeforeEditRef.current = draftSalePrice;
+    setStepPatches({});
+    setItemPatches({});
     lock.lock();
     toast.success('تم تسجيل حساب التكلفة');
   };
 
   const handleCancel = () => {
-    setDraftSteps(orderSteps);
+    setStepPatches({});
+    setItemPatches({});
     setDraftSalePrice(order.salePricePerUnit);
     setSalePriceConfirmed(order.salePricePerUnit != null);
     priceBeforeEditRef.current = order.salePricePerUnit;
