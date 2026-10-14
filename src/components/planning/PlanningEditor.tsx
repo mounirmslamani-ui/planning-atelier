@@ -163,6 +163,38 @@ export function usePlanningEditor(order: Order | null, open: boolean) {
 
   }, [open, order?.id, steps, absenceOperationId]);
 
+  // Champs « coût » d'une ligne matière (achat, fournisseur, prix d'achat, marge) : leur source de vérité
+  // est l'étape enregistrée — modifiée par le dialogue d'achat et par حساب التكلفة. La copie de travail de
+  // cet éditeur (prise à l'ouverture) en reçoit ici toute modification extérieure, sans déclencher de
+  // « modification non enregistrée ». Sinon تأكيد réécrirait l'étape avec d'anciennes valeurs.
+  const costingSigRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    const seen = costingSigRef.current;
+    const changed = new Map<string, Pick<ResourceItem, 'costPrice' | 'supplier' | 'purchaseId' | 'margin'>>();
+    steps.forEach(s => (s.rawMaterialItems || []).forEach(i => {
+      const key = `${s.id}:${i.id}`;
+      const sig = JSON.stringify([i.costPrice ?? null, i.supplier ?? null, i.purchaseId ?? null, i.margin ?? null]);
+      if (seen.has(key) && seen.get(key) !== sig) {
+        changed.set(key, { costPrice: i.costPrice, supplier: i.supplier, purchaseId: i.purchaseId, margin: i.margin });
+      }
+      seen.set(key, sig);
+    }));
+    if (changed.size === 0) return;
+    const apply = (list: OperationRow[]) => list.map(r => {
+      if (!r.stepId) return r;
+      let touched = false;
+      const items = r.rawMaterialItems.map(i => {
+        const c = changed.get(`${r.stepId}:${i.id}`);
+        if (!c) return i;
+        touched = true;
+        return { ...i, ...c };
+      });
+      return touched ? { ...r, rawMaterialItems: items } : r;
+    });
+    setRows(apply);
+    setBaselineRows(apply);
+  }, [steps]);
+
 
   const blockedSet = useMemo(() => {
     const set = new Set<string>();
