@@ -1302,7 +1302,7 @@ export const ResourcesEditorTable: React.FC<{
                               value={item.status}
                               onChange={s => {
                                 if ((s === 'disponible' || s === 'partiel') && item.costPrice == null) {
-                                  if (order && canRecordPurchase && isPurchasableItem(item) {
+                                 if (order && canRecordPurchase && isPurchasableItem(item)) {
                                     setPurchasePrompt({ rowId: row.id, itemId: item.id, status: s });
                                     return;
                                   }
