@@ -563,3 +563,52 @@ export function useCancelMaterialPurchase() {
     },
   });
 }
+
+export interface OrderComponentPurchaseInput {
+  supplierId: string;
+  /** AAAA-MM-JJ */
+  date: string;
+  documentRef: string | null;
+  componentKind: 'fasteners' | 'bearings' | 'other';
+  designation: string;
+  /** nombre de pièces achetées */
+  quantity: number;
+  unitPrice: number;
+  orderId: string;
+  /** id de la ligne dans la commande (ResourceItem.id) */
+  orderItemId: string;
+}
+
+/** Enregistre l'achat d'un composant (visserie, roulements, autre) rattaché à une ligne de commande. */
+export function useRecordOrderComponentPurchase() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: OrderComponentPurchaseInput): Promise<{ purchaseId: string }> => {
+      const { data: head, error: headErr } = await sb
+        .from('material_purchases')
+        .insert({ purchase_date: p.date, supplier_id: p.supplierId, document_ref: p.documentRef })
+        .select('id')
+        .single();
+      if (headErr) throw headErr;
+      const purchaseId = head.id as string;
+      const { error: lineErr } = await sb.from('material_purchase_lines').insert({
+        purchase_id: purchaseId,
+        line_type: 'component',
+        component_kind: p.componentKind,
+        designation: p.designation,
+        quantity: p.quantity,
+        unit_price: p.unitPrice,
+        amount: Math.round(p.quantity * p.unitPrice * 100) / 100,
+        order_id: p.orderId,
+        order_item_id: p.orderItemId,
+      });
+      if (lineErr) {
+        // Pas d'achat « vide » : l'en-tête créé est désactivé si la ligne n'a pas pu être enregistrée.
+        await sb.from('material_purchases').update({ is_active: false }).eq('id', purchaseId);
+        throw lineErr;
+      }
+      return { purchaseId };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['order-item-purchase'] }),
+  });
+}
