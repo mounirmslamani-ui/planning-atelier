@@ -22,7 +22,7 @@ import { useSubFormLock } from '@/components/orders/SubFormLock';
 import SearchableSelect from '@/components/ui/searchable-select';
 import MaterialItemFields from '@/components/planning/MaterialItemFields';
 import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
-import MaterialPurchaseDialog, { isStructuredRawItem } from '@/components/planning/MaterialPurchaseDialog';
+import MaterialPurchaseDialog, { isPurchasableItem } from '@/components/planning/MaterialPurchaseDialog';
 import { useAuth } from '@/context/AuthContext';
 
 export interface OperationRow {
@@ -1302,7 +1302,7 @@ export const ResourcesEditorTable: React.FC<{
                               value={item.status}
                               onChange={s => {
                                 if ((s === 'disponible' || s === 'partiel') && item.costPrice == null) {
-                                  if (order && canRecordPurchase && isStructuredRawItem(item)) {
+                                  if (order && canRecordPurchase && isPurchasableItem(item) {
                                     setPurchasePrompt({ rowId: row.id, itemId: item.id, status: s });
                                     return;
                                   }
@@ -1316,7 +1316,7 @@ export const ResourcesEditorTable: React.FC<{
                               options={['disponible', 'partiel', 'non-disponible']}
                             />
                           )}
-                          {!row.rawMaterialNotApplicable && order && canRecordPurchase && isStructuredRawItem(item)
+                          {!row.rawMaterialNotApplicable && order && canRecordPurchase && isPurchasableItem(item)
                             && (item.purchaseId || ((item.status === 'disponible' || item.status === 'partiel') && item.costPrice == null)) && (
                             <Button
                               type="button"
