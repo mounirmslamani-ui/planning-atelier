@@ -13,12 +13,20 @@ import {
   useMaterialSupplierPrices,
   useOrderItemPurchase,
   useRecordOrderMaterialPurchase,
+    useRecordOrderComponentPurchase,
 } from '@/hooks/useMaterialReferences';
 import type { ResourceItem } from '@/types/planning';
 
 /** Ligne matière première structurée (nuance + format + dimension choisis) : seule éligible à un achat enregistré. */
 export const isStructuredRawItem = (item: ResourceItem): boolean =>
   (item.kind ?? 'raw') === 'raw' && !!item.gradeId && !!item.formatId && !!item.dimensionId;
+/** Composant acheté tel quel (visserie, roulements, autre) : désignation et nombre de pièces renseignés. */
+export const isComponentItem = (item: ResourceItem): boolean =>
+  (item.kind ?? 'raw') !== 'raw' && !!item.designation?.trim() && (item.componentQuantity ?? 0) > 0;
+
+/** Ligne éligible à un achat enregistré : matière première structurée ou composant. */
+export const isPurchasableItem = (item: ResourceItem): boolean =>
+  isStructuredRawItem(item) || isComponentItem(item);
 
 export interface RecordedPurchase {
   purchaseId: string;
@@ -53,6 +61,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   const existing = useOrderItemPurchase(item.id);
   const record = useRecordOrderMaterialPurchase();
   const cancel = useCancelMaterialPurchase();
+    const recordComponent = useRecordOrderComponentPurchase();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   const materialId = useMemo(
@@ -79,7 +88,10 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
 
   const effectiveUnitId = unitId ?? defaultUnitId;
   // Quantité proposée : celle de la commande, tant que l'unité d'achat est la même que l'unité de la ligne.
-  const effectiveQuantity = quantity ?? (effectiveUnitId && effectiveUnitId === item.unitId && item.quantity != null ? String(item.quantity) : '');
+    const isComponent = (item.kind ?? 'raw') !== 'raw';
+  const effectiveQuantity = quantity ?? (isComponent
+    ? (item.componentQuantity != null ? String(item.componentQuantity) : '')
+    : (effectiveUnitId && effectiveUnitId === item.unitId && item.quantity != null ? String(item.quantity) : ''));
 
   const q = parseNum(effectiveQuantity);
   const p = parseNum(unitPrice);
@@ -107,6 +119,29 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   };
 
   const submit = async () => {
+        if (isComponent) {
+      if (!supplierId) { toast.error('Choisis le fournisseur.'); return; }
+      if (!date) { toast.error('Choisis la date de l’achat.'); return; }
+      if (!Number.isFinite(q) || q <= 0) { toast.error('Quantité : saisis un nombre supérieur à 0.'); return; }
+      if (unitPrice.trim() === '' || !Number.isFinite(p) || p < 0) { toast.error('Prix unitaire : saisis un nombre valide.'); return; }
+      try {
+        const res = await recordComponent.mutateAsync({
+          supplierId,
+          date,
+          documentRef: documentRef.trim() || null,
+          componentKind: item.kind as 'fasteners' | 'bearings' | 'other',
+          designation: (item.designation ?? '').trim(),
+          quantity: q,
+          unitPrice: p,
+          orderId,
+          orderItemId: item.id,
+        });
+        onRecorded({ purchaseId: res.purchaseId, supplierName, totalCost: total ?? 0 });
+      } catch (err: any) {
+        toast.error(err?.message || 'Échec de l’enregistrement de l’achat.');
+      }
+      return;
+    }
     if (!materialId) { toast.error('Matière introuvable dans le catalogue.'); return; }
     if (!supplierId) { toast.error('Choisis le fournisseur.'); return; }
     if (!date) { toast.error('Choisis la date de l’achat.'); return; }
@@ -197,7 +232,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
               </Button>
             </DialogFooter>
           </div>
-        ) : !materialId ? (
+        ) : !isComponent && !materialId ? (
           <div className="space-y-3" dir="ltr">
             <p className="text-sm text-destructive">Cette matière (nuance + format + dimension) n’existe pas dans le catalogue.</p>
             <DialogFooter><Button variant="outline" onClick={onClose}>إغلاق</Button></DialogFooter>
@@ -251,7 +286,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                 <label className="text-xs font-medium mb-1 block">Quantité achetée *</label>
                 <Input value={effectiveQuantity} inputMode="decimal" onChange={e => setQuantity(e.target.value)} />
               </div>
-              <div>
+              <div hidden={isComponent}>
                 <label className="text-xs font-medium mb-1 block">Unité d’achat *</label>
                 <select className={selectClass} value={effectiveUnitId} onChange={e => setUnitId(e.target.value)}>
                   <option value="">—</option>
@@ -264,12 +299,12 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                 <label className="text-xs font-medium mb-1 block">Prix unitaire (DZD) *</label>
                 <Input value={unitPrice} inputMode="decimal" onChange={e => setUnitPrice(e.target.value)} />
               </div>
-              <div />
-              <div>
+              <div hidden={isComponent} />
+              <div hidden={isComponent}>
                 <label className="text-xs font-medium mb-1 block">Frais de découpe (DZD)</label>
                 <Input value={feeAmount} inputMode="decimal" onChange={e => setFeeAmount(e.target.value)} />
               </div>
-              <div>
+              <div hidden={isComponent}>
                 <label className="text-xs font-medium mb-1 block">Libellé des frais</label>
                 <Input value={feeLabel} placeholder="Frais de découpe" onChange={e => setFeeLabel(e.target.value)} />
               </div>
