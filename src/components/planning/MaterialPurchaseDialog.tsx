@@ -13,13 +13,14 @@ import {
   useMaterialSupplierPrices,
   useOrderItemPurchase,
   useRecordOrderMaterialPurchase,
-    useRecordOrderComponentPurchase,
+  useRecordOrderComponentPurchase,
 } from '@/hooks/useMaterialReferences';
 import type { ResourceItem } from '@/types/planning';
 
 /** Ligne matière première structurée (nuance + format + dimension choisis) : seule éligible à un achat enregistré. */
 export const isStructuredRawItem = (item: ResourceItem): boolean =>
   (item.kind ?? 'raw') === 'raw' && !!item.gradeId && !!item.formatId && !!item.dimensionId;
+
 /** Composant acheté tel quel (visserie, roulements, autre) : désignation et nombre de pièces renseignés. */
 export const isComponentItem = (item: ResourceItem): boolean =>
   (item.kind ?? 'raw') !== 'raw' && !!item.designation?.trim() && (item.componentQuantity ?? 0) > 0;
@@ -61,7 +62,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   const existing = useOrderItemPurchase(item.id);
   const record = useRecordOrderMaterialPurchase();
   const cancel = useCancelMaterialPurchase();
-    const recordComponent = useRecordOrderComponentPurchase();
+  const recordComponent = useRecordOrderComponentPurchase();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   const materialId = useMemo(
@@ -88,7 +89,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
 
   const effectiveUnitId = unitId ?? defaultUnitId;
   // Quantité proposée : celle de la commande, tant que l'unité d'achat est la même que l'unité de la ligne.
-    const isComponent = (item.kind ?? 'raw') !== 'raw';
+  const isComponent = (item.kind ?? 'raw') !== 'raw';
   const effectiveQuantity = quantity ?? (isComponent
     ? (item.componentQuantity != null ? String(item.componentQuantity) : '')
     : (effectiveUnitId && effectiveUnitId === item.unitId && item.quantity != null ? String(item.quantity) : ''));
@@ -118,7 +119,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
     setFeeLabel(row.lastFeeLabel ?? '');
   };
 
-  const submit = async () => {
+    if (isComponent) {
         if (isComponent) {
       if (!supplierId) { toast.error('Choisis le fournisseur.'); return; }
       if (!date) { toast.error('Choisis la date de l’achat.'); return; }
