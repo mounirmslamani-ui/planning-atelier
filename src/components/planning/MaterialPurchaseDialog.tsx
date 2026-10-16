@@ -21,9 +21,9 @@ import type { ResourceItem } from '@/types/planning';
 export const isStructuredRawItem = (item: ResourceItem): boolean =>
   (item.kind ?? 'raw') === 'raw' && !!item.gradeId && !!item.formatId && !!item.dimensionId;
 
-/** Composant acheté tel quel (visserie, roulements, autre) : désignation et nombre de pièces renseignés. */
+/** Composant acheté tel quel (visserie, roulements, autre) : désignation renseignée. */
 export const isComponentItem = (item: ResourceItem): boolean =>
-  (item.kind ?? 'raw') !== 'raw' && !!item.designation?.trim() && (item.componentQuantity ?? 0) > 0;
+  (item.kind ?? 'raw') !== 'raw' && !!item.designation?.trim();
 
 /** Ligne éligible à un achat enregistré : matière première structurée ou composant. */
 export const isPurchasableItem = (item: ResourceItem): boolean =>
