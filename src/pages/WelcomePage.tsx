@@ -74,7 +74,7 @@ const WelcomePage: React.FC = () => {
       if (deliveredOrders.some(d => d.orderId === o.id && afterReintegration(d.createdAt ?? d.deliveryDate))) {
         ids.add(o.id); return;
       }
-      if (cancelledOrders.some(c => c.orderId === o.id && afterReintegration((c as any).createdAt ?? (c as any).cancelledAt))) {
+      if (cancelledOrders.some(c => c.orderId === o.id)) {
         ids.add(o.id); return;
       }
       if (qcEntries.some(q =>
