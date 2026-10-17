@@ -6,7 +6,7 @@ import {
   UserX, SearchCheck, PackageCheck, Handshake, Drill,
   PackagePlus, Hammer, FileSearch, Cog, TableProperties, Archive, Receipt,
   DownloadCloud, FileText, Ban, BookOpen, PanelLeftOpen, PanelLeftClose, LogOut,
-  UserCog, Home, FileSpreadsheet, Layers,
+  UserCog, Home, FileSpreadsheet, Layers, Calculator,
 } from 'lucide-react';
 
 import { usePlanning } from '@/context/PlanningContext';
@@ -44,6 +44,7 @@ const sidebarGroups = [
     items: [
       { to: '/delivery', label: 'طلبيات جاهزة للتسليم', icon: PackageCheck, dropTarget: false as DropTargetType },
       { to: '/delivered-orders', label: 'طلبيات مسلمة', icon: Archive, dropTarget: false as DropTargetType },
+      { to: '/pricing', label: 'تسعير', icon: Calculator, dropTarget: false as DropTargetType, right: { tableau: '', formulaire: '', sous_formulaire: 'حساب التكلفة/ثمن البيع', champ_bouton: 'Tous' } },
       { to: '/billing-followup', label: 'متابعة فوترة الطلبيات', icon: FileSpreadsheet, dropTarget: false as DropTargetType, right: { tableau: 'متابعة فوترة الطلبيات' } },
       { to: '/cancelled-orders', label: 'طلبيات ملغاة', icon: Ban, dropTarget: false as DropTargetType },
     ],
