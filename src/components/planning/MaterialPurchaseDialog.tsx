@@ -119,8 +119,8 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
     setFeeLabel(row.lastFeeLabel ?? '');
   };
 
+  const submit = async () => {
     if (isComponent) {
-        if (isComponent) {
       if (!supplierId) { toast.error('Choisis le fournisseur.'); return; }
       if (!date) { toast.error('Choisis la date de l’achat.'); return; }
       if (!Number.isFinite(q) || q <= 0) { toast.error('Quantité : saisis un nombre supérieur à 0.'); return; }
