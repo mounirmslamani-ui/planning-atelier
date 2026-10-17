@@ -19,6 +19,8 @@ import { ORDER_CATEGORY_LABEL } from '@/types/planning';
 const PAGE_TITLE = 'تسعير';
 // Même droit que l'onglet حساب التكلفة/ثمن البيع de la fiche de suivi (aucune migration nécessaire).
 const PRICING_RIGHT = { tableau: '', formulaire: '', sous_formulaire: 'حساب التكلفة/ثمن البيع', champ_bouton: 'Tous' };
+// Commandes livrées avant cette date : antérieures au calcul des prix, ignorées par la page.
+const PRICING_CUTOFF_DATE = '2026-09-15';
 
 type PricingCategory = Extract<OrderCategory, 'fabrication' | 'prestation' | 'divers'>;
 const PRICING_CATEGORIES: PricingCategory[] = ['fabrication', 'prestation', 'divers'];
@@ -166,6 +168,14 @@ const PricingPage: React.FC = () => {
       if (list) list.push(r); else recordsByOrder.set(r.orderId, [r]);
     }
     const cancelledOrderIds = new Set(cancelledOrders.map(c => c.orderId));
+    // Dernière date de livraison de chaque commande (ISO yyyy-mm-dd).
+    const lastDeliveryByOrder = new Map<string, string>();
+    for (const d of deliveredOrders) {
+      if (!d.deliveryDate) continue;
+      const day = d.deliveryDate.slice(0, 10);
+      const prev = lastDeliveryByOrder.get(d.orderId);
+      if (!prev || day > prev) lastDeliveryByOrder.set(d.orderId, day);
+    }
 
     const sortedOrders = [...orders].sort((a, b) =>
       (b.orderDate || '').localeCompare(a.orderDate || '')
@@ -173,6 +183,8 @@ const PricingPage: React.FC = () => {
 
     for (const order of sortedOrders) {
       if (order.id === absenceOrderId || cancelledOrderIds.has(order.id)) continue;
+      const lastDelivery = lastDeliveryByOrder.get(order.id);
+      if (lastDelivery && lastDelivery < PRICING_CUTOFF_DATE) continue; // livrée avant la mise en place du calcul des prix
       const category = inferCategoryFromOrderNumber(order.orderNumber);
       if (category === 'slamani') continue;
 
