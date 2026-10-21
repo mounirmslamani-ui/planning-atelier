@@ -19,6 +19,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/use-confirm';
 import ColumnHeader, { type SortDirection } from '@/components/orders/ColumnHeader';
 import { applyFilters, computeAllValuesByKey } from '@/hooks/useTableSortFilter';
+import type { ProductionRecord } from '@/types/planning';
 
 // Date affichée = workDate (saisi) si présent, sinon date de validatedAt (rétrocompat).
 const recordDisplayDate = (rec: { workDate?: string; validatedAt: string }): Date => {
@@ -63,7 +64,7 @@ const formatTimeTyping = (raw: string): string => {
 };
 
 const ProductionRegisterPage: React.FC = () => {
-  const { productionRecords, operators, operations, orders, clients, steps, deliveredOrders, cancelledOrders, qcEntries, updateProductionRecord, deleteProductionRecord } = usePlanning();
+  const { productionRecords, operators, operations, orders, clients, steps, deliveredOrders, cancelledOrders, qcEntries, updateProductionRecord, addProductionRecord, deleteProductionRecord } = usePlanning();
   const { selectedClientName } = useGlobalClientFilter();
   const { isAdmin, hasAccess } = useAuth();
   const canEditRecord = isAdmin || hasAccess({ tableau: 'سجل الأعمال المنجزة', formulaire: '', sous_formulaire: '', champ_bouton: 'تعديل التسجيل' }) === 'RW';
@@ -89,6 +90,8 @@ const ProductionRegisterPage: React.FC = () => {
     nonBillableTime: string; // HH:mm
     nonBillableReason: string;
     nonBillableReasonMode: 'preset' | 'custom';
+    isNew?: boolean;
+    operatorId?: string;
   } | null>(null);
 
   const parseHHMM = (s: string): number | null => {
@@ -119,6 +122,28 @@ const ProductionRegisterPage: React.FC = () => {
       nonBillableTime: `${String(Math.floor(nbMin / 60)).padStart(2, '0')}:${String(nbMin % 60).padStart(2, '0')}`,
       nonBillableReason: rec.nonBillableReason ?? '',
       nonBillableReasonMode: NON_BILLABLE_PRESETS.includes(rec.nonBillableReason ?? '') ? 'preset' : 'custom',
+    });
+    }, []);
+
+  const openAddDialog = useCallback((operatorId: string) => {
+    const now = new Date();
+    const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    setEditRecord({
+      id: crypto.randomUUID(),
+      isNew: true,
+      operatorId,
+      orderId: '',
+      operationId: '',
+      stepId: '',
+      workDate: dateStr,
+      startTime: '',
+      endTime: '',
+      pauseHHMM: '00:00',
+      actualDuration: '00:00',
+      pauseItems: [],
+      nonBillableTime: '00:00',
+      nonBillableReason: '',
+      nonBillableReasonMode: 'preset',
     });
   }, []);
 
@@ -153,7 +178,21 @@ const ProductionRegisterPage: React.FC = () => {
 
   // Enregistrement source (non modifié) — sert à retrouver l'opérateur concerné.
   const editingRecord = useMemo(
-    () => editRecord ? productionRecords.find(r => r.id === editRecord.id) ?? null : null,
+    () => {
+      if (!editRecord) return null;
+      if (editRecord.isNew) {
+        return {
+          id: editRecord.id,
+          stepId: '',
+          orderId: '',
+          operatorId: editRecord.operatorId ?? '',
+          operationId: '',
+          actualDuration: 0,
+          validatedAt: '',
+        } as typeof productionRecords[0];
+      }
+      return productionRecords.find(r => r.id === editRecord.id) ?? null;
+    },
     [editRecord, productionRecords]
   );
 
@@ -231,8 +270,8 @@ const ProductionRegisterPage: React.FC = () => {
 
   const saveEdit = useCallback(() => {
     if (!editRecord) return;
-    const rec = productionRecords.find(r => r.id === editRecord.id);
-    if (!rec) return;
+    const rec = editRecord.isNew ? null : productionRecords.find(r => r.id === editRecord.id);
+    if (!editRecord.isNew && !rec) return;
     if (!editRecord.stepId) return;
     const isoWorkDate = ddmmyyyyToISO(editRecord.workDate);
     if (!isoWorkDate) return;
@@ -246,6 +285,7 @@ const ProductionRegisterPage: React.FC = () => {
       dur = Math.max(0, endMin - startMin - pauseMin);
     }
     if (dur <= 0) return;
+    if (editRecord.isNew && (startMin === null || endMin === null || endMin <= startMin)) return;
     const nonBillableMinutes = parseHHMM(editRecord.nonBillableTime) ?? 0;
     if (nonBillableMinutes > dur) return;
     if (nonBillableMinutes > 0 && !editRecord.nonBillableReason.trim()) return;
@@ -254,8 +294,18 @@ const ProductionRegisterPage: React.FC = () => {
     // aucun calcul séparé n'est stocké par commande, tout est dérivé de stepId à la volée.
     const targetOrder = orders.find(o => o.id === editRecord.orderId);
     const targetOperationName = getOperationName(editRecord.operationId);
-    updateProductionRecord({
-      ...rec,
+    const base: ProductionRecord = rec ?? {
+      id: editRecord.id,
+      stepId: editRecord.stepId,
+      orderId: editRecord.orderId,
+      operatorId: editRecord.operatorId ?? '',
+      operationId: editRecord.operationId,
+      actualDuration: dur,
+      validatedAt: new Date().toISOString(),
+      workStatus: 'continue',
+    };
+    const payload: ProductionRecord = {
+      ...base,
       orderId: editRecord.orderId,
       operationId: editRecord.operationId,
       stepId: editRecord.stepId,
@@ -267,14 +317,16 @@ const ProductionRegisterPage: React.FC = () => {
       actualDuration: dur,
       nonBillableHours: nonBillableMinutes > 0 ? Number((nonBillableMinutes / 60).toFixed(2)) : 0,
       nonBillableReason: nonBillableMinutes > 0 ? editRecord.nonBillableReason.trim() : undefined,
-      orderNumberSnapshot: targetOrder?.orderNumber ?? rec.orderNumberSnapshot,
-      clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : rec.clientNameSnapshot,
-      designationSnapshot: targetOrder?.designation ?? rec.designationSnapshot,
-      quantitySnapshot: targetOrder?.quantity ?? rec.quantitySnapshot,
-      operationNameSnapshot: targetOperationName !== '—' ? targetOperationName : rec.operationNameSnapshot,
-    });
+      orderNumberSnapshot: targetOrder?.orderNumber ?? base.orderNumberSnapshot,
+      clientNameSnapshot: targetOrder ? getClientName(targetOrder.clientId) : base.clientNameSnapshot,
+      designationSnapshot: targetOrder?.designation ?? base.designationSnapshot,
+      quantitySnapshot: targetOrder?.quantity ?? base.quantitySnapshot,
+      operationNameSnapshot: targetOperationName !== '—' ? targetOperationName : base.operationNameSnapshot,
+    };
+    if (editRecord.isNew) addProductionRecord(payload);
+    else updateProductionRecord(payload);
     setEditRecord(null);
-  }, [editRecord, productionRecords, updateProductionRecord, orders]);
+  }, [editRecord, productionRecords, updateProductionRecord, addProductionRecord, orders]);
 
   const getRecordInfo = (rec: typeof productionRecords[0]) => {
     const order = getOrder(rec.orderId);
@@ -412,7 +464,12 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
       <div className="flex-none bg-background pb-3">
         <PageHeader title="سجل الأعمال المنجزة" description="الأعمال المنجزة مصنفة حسب العامل" />
         <div className="flex items-center gap-2 mb-2 justify-end" dir="ltr">
-          <Button onClick={handleExportExcel} variant="outline" size="sm">
+  {canEditRecord && validTab && (
+    <Button onClick={() => openAddDialog(validTab)} variant="outline" size="sm">
+      <Plus className="w-4 h-4 mr-1" /> إضافة تسجيل
+    </Button>
+  )}
+  <Button onClick={handleExportExcel} variant="outline" size="sm">
             <Download className="w-4 h-4 mr-1" /> تصدير Excel
           </Button>
         </div>
@@ -580,13 +637,13 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
       <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
         <DialogContent className="max-w-6xl">
           <DialogHeader>
-            <DialogTitle className="text-sm">تعديل التسجيل</DialogTitle>
+            <DialogTitle className="text-sm">{editRecord?.isNew ? 'إضافة تسجيل' : 'تعديل التسجيل'}</DialogTitle>
           </DialogHeader>
           {editRecord && (
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground">رقم الطلبية</label>
-                {assignableOrders.length > 1 ? (
+                {(assignableOrders.length > 1 || editRecord.isNew) ? (
                   <SearchableSelect
                     className="h-8 text-xs px-2"
                     value={editRecord.orderId}
@@ -791,7 +848,7 @@ const OPERATOR_NAME_ORDER = ['عادل', 'محمود العيشي', 'بلال', 
           )}
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setEditRecord(null)}>إلغاء</Button>
-            <Button size="sm" onClick={saveEdit} disabled={editNonBillableExceeds || editNonBillableReasonMissing}>حفظ</Button>
+            <Button size="sm" onClick={saveEdit} disabled={editNonBillableExceeds || editNonBillableReasonMissing || (!!editRecord?.isNew && (!editRecord.stepId || editComputedDuration === null))}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
