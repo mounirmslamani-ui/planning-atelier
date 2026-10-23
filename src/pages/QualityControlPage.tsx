@@ -18,6 +18,7 @@ import { Download } from 'lucide-react';
 import { exportTableToExcel } from '@/lib/excelExport';
 import { toast } from 'sonner';
 import { OrderNumberLink } from '@/context/OrderSheetContext';
+import { isOrderAwaitingPricing, AWAITING_PRICING_ROW_CLASS, AWAITING_PRICING_TITLE } from '@/lib/pricingHighlight';
 
 const decisionLabels: Record<QCDecision, string> = {
   'conforme': 'مطابق للمواصفات',
@@ -192,7 +193,7 @@ const QualityControlPage: React.FC = () => {
               const order = getOrder(entry.orderId);
               if (!order) return null;
               return (
-                <TableRow key={entry.id}>
+                <TableRow key={entry.id} className={isOrderAwaitingPricing(order) ? AWAITING_PRICING_ROW_CLASS : ''} title={isOrderAwaitingPricing(order) ? AWAITING_PRICING_TITLE : undefined}>
                   <TableCell className="font-heading text-sm">
                     <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />
                   </TableCell>
