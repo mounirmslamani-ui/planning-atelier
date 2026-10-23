@@ -32,6 +32,7 @@ import { useGlobalClientFilter } from '@/context/GlobalClientFilterContext';
 import { computeAllValuesByKey } from '@/hooks/useTableSortFilter';
 import { TC_LEVELS, TC_LONG, tcShort } from '@/lib/technicalComplexity';
 import { isReintegratedOrder } from '@/lib/reintegration';
+import { isOrderAwaitingPricing, AWAITING_PRICING_ROW_CLASS, AWAITING_PRICING_TITLE } from '@/lib/pricingHighlight';
 
 const priorityRank: Record<OrderPriority | 'undetermined', number> = { P1: 0, P2: 1, P3: 2, P4: 3, P5: 4, undetermined: 5 };
 
@@ -762,10 +763,12 @@ const OrdersPage: React.FC = () => {
           <TableBody>
             {displayOrders.map((o, index) => {
               const blocked = isOrderBlocked(o.id, steps, orders);
+              const awaitingPricing = !blocked && !reworkOrderIds.has(o.id) && hasStepsMap.get(o.id) === true && remainingStepsMap.get(o.id) === 0 && isOrderAwaitingPricing(o);
               return (
               <ContextMenu key={o.id}>
                 <ContextMenuTrigger asChild>
                   <TableRow
+                    title={awaitingPricing ? AWAITING_PRICING_TITLE : undefined}
                     draggable={!hasActiveFilters && canReorderCn}
                     onDragStart={canReorderCn ? e => handleDragStart(e, index) : undefined}
                     onDragOver={canReorderCn ? e => handleDragOver(e, index) : undefined}
@@ -776,6 +779,7 @@ const OrdersPage: React.FC = () => {
                       !hasActiveFilters ? 'cursor-grab active:cursor-grabbing' : ''
                     } ${blocked ? `${BLOCKED_TABLE_ROW_CLASS} [&_td:not(.preserve-status-color)_*]:!text-blocked-table-foreground` : ''
                     } ${!blocked && reworkOrderIds.has(o.id) ? 'bg-destructive/10 hover:bg-destructive/15 border-l-4 border-l-destructive' : ''
+                    } ${awaitingPricing ? AWAITING_PRICING_ROW_CLASS : ''
                     } ${!blocked && dragOverIndex === index ? 'bg-accent/50 border-t-2 border-accent' : ''
                     } ${isDragging(index) ? 'opacity-40' : ''
                     } ${!blocked && selectedIds.has(o.id) ? 'bg-primary/5' : ''}`}
