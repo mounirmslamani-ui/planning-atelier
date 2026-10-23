@@ -1,4 +1,4 @@
-import type { Order } from '@/types/planning';
+import type { Order, DeliveredOrder } from '@/types/planning';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
 
 /** Couleur « en attente de chiffrage » : violet, distinct du blanc, de l'orange (matière bloquée), du rouge (reprise), du jaune (QC) et du vert/bleu (statuts). */
