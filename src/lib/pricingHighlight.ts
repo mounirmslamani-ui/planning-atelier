@@ -13,6 +13,7 @@ export function isOrderAwaitingPricing(order: Order | undefined): boolean {
   if (order.salePricePerUnit != null) return false;
   return inferCategoryFromOrderNumber(order.orderNumber) !== 'slamani';
 }
+
 // Même valeur que PRICING_CUTOFF_DATE dans PricingPage : livraisons antérieures au calcul des prix, ignorées.
 const PRICING_CUTOFF_DATE = '2026-09-15';
 
@@ -20,4 +21,5 @@ const PRICING_CUTOFF_DATE = '2026-09-15';
 export function isDeliveredEntryAwaitingPricing(order: Order | undefined, entry: DeliveredOrder): boolean {
   if (entry.salePriceStatus === 'gratuit') return false;
   if (entry.deliveryDate && entry.deliveryDate.slice(0, 10) < PRICING_CUTOFF_DATE) return false;
-  return isOrderAwaitingPricing(order);
+   return isOrderAwaitingPricing(order);
+}
