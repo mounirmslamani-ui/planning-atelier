@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { isReintegratedOrder } from '@/lib/reintegration';
+import { isDeliveredEntryAwaitingPricing, AWAITING_PRICING_ROW_CLASS, AWAITING_PRICING_TITLE } from '@/lib/pricingHighlight';
 
 const PRICE_META: Record<SalePriceStatus, { emoji: string; label: string }> = {
   'gratuit': { emoji: '⚪', label: 'Gratuit' },
@@ -185,7 +186,7 @@ const DeliveredOrdersPage: React.FC = () => {
                 ? observationDrafts[entry.id]
                 : (entry.observation || '');
               return (
-                <TableRow key={entry.id}>
+                <TableRow key={entry.id} className={isDeliveredEntryAwaitingPricing(order, entry) ? AWAITING_PRICING_ROW_CLASS : ''} title={isDeliveredEntryAwaitingPricing(order, entry) ? AWAITING_PRICING_TITLE : undefined}>
                   <TableCell><PriorityBadge priority={order.priority} className="" /></TableCell>
                   <TableCell className="font-heading text-sm">
                     <OrderNumberLink orderId={order.id} orderNumber={order.orderNumber} />
