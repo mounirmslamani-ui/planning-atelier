@@ -25,6 +25,9 @@ import {
 import type { MaterialRefOption, MaterialSheet } from '@/hooks/useMaterialReferences';
 import { SHAPE_OPTIONS } from '@/lib/materialWeight';
 import { useAuth } from '@/context/AuthContext';
+import ColumnHeader from '@/components/orders/ColumnHeader';
+import { useTableSortFilter } from '@/hooks/useTableSortFilter';
+import type { Accessors } from '@/hooks/useTableSortFilter';
 import type { AccessLevel } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -222,6 +225,16 @@ const ReferenceList: React.FC<{ def: ListDef; canEdit: boolean }> = ({ def, canE
     return String(v);
   };
 
+  const accessors: Accessors<Row> = {
+    ...Object.fromEntries(def.columns.map(c => [c, (row: Row) => {
+      const text = cell(row, c);
+      if (text === '—') return null;
+      return fieldByKey(c).kind === 'number' ? Number(row[c]) : text;
+    }])),
+    active: (row: Row) => (row.is_active ? 'Actif' : 'Désactivé'),
+  };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(filtered, accessors);
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex-none flex items-center justify-between gap-3">
@@ -240,13 +253,19 @@ const ReferenceList: React.FC<{ def: ListDef; canEdit: boolean }> = ({ def, canE
         <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
-              {def.columns.map(c => <TableHead key={c}>{fieldByKey(c).label}</TableHead>)}
-              <TableHead className="w-24">Actif</TableHead>
+              {def.columns.map(c => (
+                <TableHead key={c}>
+                  <ColumnHeader label={fieldByKey(c).label} columnKey={c} sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters[c] || ''} onFilter={handleFilter} allValues={allValuesByKey[c]} />
+                </TableHead>
+              ))}
+              <TableHead className="w-24">
+                <ColumnHeader label="Actif" columnKey="active" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.active || ''} onFilter={handleFilter} allValues={allValuesByKey.active} />
+              </TableHead>
               {canEdit && <TableHead className="w-20" />}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(row => (
+            {processed.map(row => (
               <TableRow key={row.id} className={cn(!row.is_active && 'opacity-50')}>
                 {def.columns.map((c, i) => (
                   <TableCell key={c} className={i === 0 ? 'font-medium' : undefined}>{cell(row, c)}</TableCell>
@@ -278,7 +297,7 @@ const ReferenceList: React.FC<{ def: ListDef; canEdit: boolean }> = ({ def, canE
             {!isLoading && error && (
               <TableRow><TableCell colSpan={def.columns.length + 2} className="text-center text-destructive py-6">Lecture impossible.</TableCell></TableRow>
             )}
-            {!isLoading && !error && filtered.length === 0 && (
+            {!isLoading && !error && processed.length === 0 && (
               <TableRow>
                 <TableCell colSpan={def.columns.length + 2} className="text-center text-muted-foreground py-6">
                   {rows.length === 0 ? 'Aucune valeur pour le moment.' : 'Aucun résultat.'}
@@ -519,6 +538,19 @@ const MaterialSheetDialog: React.FC<{
     return priced.reduce((m, r) => (r.lastUnitPrice! < m.lastUnitPrice! ? r : m)).supplierId;
   }, [supplierRows]);
 
+  type SupplierPriceRow = (typeof supplierRows)[number];
+  const supplierAccessors = {
+    supplier: (r: SupplierPriceRow) => r.supplierName,
+    price: (r: SupplierPriceRow) => (priceLevel === 'denied' ? null : r.lastUnitPrice),
+    fee: (r: SupplierPriceRow) => (priceLevel === 'denied' ? null : r.lastFeeAmount),
+    active: (r: SupplierPriceRow) => (r.active ? 'Actif' : 'Désactivé'),
+  };
+  const {
+    processed: supplierProcessed, sortKey: supplierSortKey, sortDir: supplierSortDir,
+    filters: supplierFilters, handleSort: handleSupplierSort, handleFilter: handleSupplierFilter,
+    allValuesByKey: supplierValuesByKey,
+  } = useTableSortFilter(supplierRows, supplierAccessors);
+
   const makeCreator = (mutate: (label: string) => Promise<MaterialRefOption>) => async (label: string) => {
     try {
       return await mutate(label);
@@ -722,15 +754,15 @@ const MaterialSheetDialog: React.FC<{
                 <table className="w-full caption-bottom text-sm">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Fournisseur</TableHead>
-                      <TableHead>Dernier prix d’achat</TableHead>
-                      <TableHead>Derniers frais de découpe</TableHead>
-                      <TableHead className="w-20">Actif</TableHead>
+                      <TableHead><ColumnHeader label="Fournisseur" columnKey="supplier" sortKey={supplierSortKey} sortDir={supplierSortDir} onSort={handleSupplierSort} filterValue={supplierFilters.supplier || ''} onFilter={handleSupplierFilter} allValues={supplierValuesByKey.supplier} /></TableHead>
+                      <TableHead><ColumnHeader label="Dernier prix d’achat" columnKey="price" sortKey={supplierSortKey} sortDir={supplierSortDir} onSort={handleSupplierSort} filterValue={supplierFilters.price || ''} onFilter={handleSupplierFilter} allValues={supplierValuesByKey.price} /></TableHead>
+                      <TableHead><ColumnHeader label="Derniers frais de découpe" columnKey="fee" sortKey={supplierSortKey} sortDir={supplierSortDir} onSort={handleSupplierSort} filterValue={supplierFilters.fee || ''} onFilter={handleSupplierFilter} allValues={supplierValuesByKey.fee} /></TableHead>
+                      <TableHead className="w-20"><ColumnHeader label="Actif" columnKey="active" sortKey={supplierSortKey} sortDir={supplierSortDir} onSort={handleSupplierSort} filterValue={supplierFilters.active || ''} onFilter={handleSupplierFilter} allValues={supplierValuesByKey.active} /></TableHead>
                       <TableHead className="w-44" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {supplierRows.map(r => (
+                    {supplierProcessed.map(r => (
                       <TableRow key={r.id} className={cn(!r.active && 'opacity-50')}>
                         <TableCell className="font-medium">{r.supplierName}</TableCell>
                         <TableCell>
@@ -793,9 +825,9 @@ const MaterialSheetDialog: React.FC<{
                     {prices.isLoading && (
                       <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4">Chargement…</TableCell></TableRow>
                     )}
-                    {!prices.isLoading && supplierRows.length === 0 && (
+                    {!prices.isLoading && supplierProcessed.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-4">Aucun fournisseur habituel pour cette matière.</TableCell>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-4">{supplierRows.length === 0 ? 'Aucun fournisseur habituel pour cette matière.' : 'Aucun résultat.'}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -853,8 +885,6 @@ const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }
   const units = useMaterialReference('units');
   const prices = useMaterialSupplierPrices();
   const [search, setSearch] = useState('');
-  const [gradeFilter, setGradeFilter] = useState('');
-  const [formatFilter, setFormatFilter] = useState('');
   const [dialog, setDialog] = useState<{ sheet: MaterialSheet | null } | null>(null);
 
   const supplierCount = useMemo(() => {
@@ -871,16 +901,27 @@ const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }
       dimension: labelOf(dimensions.data, s.dimensionId),
       orderUnit: labelOf(units.data, s.orderUnitId),
       purchaseUnit: labelOf(units.data, s.purchaseUnitId),
+      suppliers: supplierCount.get(s.id) ?? 0,
+      activeLabel: s.active ? 'Actif' : 'Désactivé',
     }));
     list.sort((a, b) =>
       a.grade.localeCompare(b.grade) || a.format.localeCompare(b.format) || a.dimension.localeCompare(b.dimension, undefined, { numeric: true }));
     const q = norm(search).trim();
-    return list.filter(r =>
-      (!gradeFilter || r.gradeId === gradeFilter) &&
-      (!formatFilter || r.formatId === formatFilter) &&
-      (!q || norm(`${r.code} ${r.grade} ${r.format} ${r.dimension}`).includes(q)));
-  }, [sheets.data, grades.data, formats.data, dimensions.data, units.data, search, gradeFilter, formatFilter]);
+    return list.filter(r => !q || norm(`${r.code} ${r.grade} ${r.format} ${r.dimension}`).includes(q));
+  }, [sheets.data, grades.data, formats.data, dimensions.data, units.data, supplierCount, search]);
 
+  type SheetRow = (typeof rows)[number];
+  const accessors = {
+    code: (r: SheetRow) => r.code,
+    grade: (r: SheetRow) => r.grade,
+    format: (r: SheetRow) => r.format,
+    dimension: (r: SheetRow) => r.dimension,
+    orderUnit: (r: SheetRow) => r.orderUnit,
+    purchaseUnit: (r: SheetRow) => r.purchaseUnit,
+    suppliers: (r: SheetRow) => r.suppliers,
+    active: (r: SheetRow) => r.activeLabel,
+  };
+  const { processed, sortKey, sortDir, filters, handleSort, handleFilter, allValuesByKey } = useTableSortFilter(rows, accessors);
   const toggle = useMutation({
     mutationFn: async (row: { id: string; active: boolean }) => {
       const { data, error } = await sb.from('materials').update({ is_active: !row.active }).eq('id', row.id).select('id');
@@ -896,9 +937,6 @@ const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }
     onError: (err: any) => toast.error(errorMessage(err)),
   });
 
-  const filterOptions = (list: { id: string; label: string }[] | undefined) =>
-    [...(list || [])].sort((a, b) => a.label.localeCompare(b.label));
-
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex-none flex flex-wrap items-center justify-between gap-3">
@@ -907,14 +945,7 @@ const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }
             <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher (Id, nuance, dimension…)" className="pl-8 h-9" />
           </div>
-          <select className={cn(selectClass, 'w-44')} value={gradeFilter} onChange={e => setGradeFilter(e.target.value)} aria-label="Filtrer par nuance">
-            <option value="">Toutes les nuances</option>
-            {filterOptions(grades.data).map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-          </select>
-          <select className={cn(selectClass, 'w-44')} value={formatFilter} onChange={e => setFormatFilter(e.target.value)} aria-label="Filtrer par format">
-            <option value="">Tous les formats</option>
-            {filterOptions(formats.data).map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-          </select>
+
         </div>
         {canEdit && (
           <Button size="sm" variant="outline" onClick={() => setDialog({ sheet: null })}>
@@ -927,19 +958,19 @@ const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }
         <table className="w-full caption-bottom text-sm">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-24">Id</TableHead>
-              <TableHead>Nuance</TableHead>
-              <TableHead>Format</TableHead>
-              <TableHead>Dimension</TableHead>
-              <TableHead>Unité de commande</TableHead>
-              <TableHead>Unité d’achat</TableHead>
-              <TableHead className="w-28">Fournisseurs</TableHead>
-              <TableHead className="w-24">Actif</TableHead>
+              <TableHead className="w-24"><ColumnHeader label="Id" columnKey="code" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.code || ''} onFilter={handleFilter} allValues={allValuesByKey.code} /></TableHead>
+              <TableHead><ColumnHeader label="Nuance" columnKey="grade" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.grade || ''} onFilter={handleFilter} allValues={allValuesByKey.grade} /></TableHead>
+              <TableHead><ColumnHeader label="Format" columnKey="format" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.format || ''} onFilter={handleFilter} allValues={allValuesByKey.format} /></TableHead>
+              <TableHead><ColumnHeader label="Dimension" columnKey="dimension" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.dimension || ''} onFilter={handleFilter} allValues={allValuesByKey.dimension} /></TableHead>
+              <TableHead><ColumnHeader label="Unité de commande" columnKey="orderUnit" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.orderUnit || ''} onFilter={handleFilter} allValues={allValuesByKey.orderUnit} /></TableHead>
+              <TableHead><ColumnHeader label="Unité d’achat" columnKey="purchaseUnit" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.purchaseUnit || ''} onFilter={handleFilter} allValues={allValuesByKey.purchaseUnit} /></TableHead>
+              <TableHead className="w-28"><ColumnHeader label="Fournisseurs" columnKey="suppliers" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.suppliers || ''} onFilter={handleFilter} allValues={allValuesByKey.suppliers} /></TableHead>
+              <TableHead className="w-24"><ColumnHeader label="Actif" columnKey="active" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} filterValue={filters.active || ''} onFilter={handleFilter} allValues={allValuesByKey.active} /></TableHead>
               <TableHead className="w-14" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map(row => (
+            {processed.map(row => (
               <TableRow
                 key={row.id}
                 className={cn('cursor-pointer', !row.active && 'opacity-50')}
@@ -972,7 +1003,7 @@ const MaterialSheetsList: React.FC<{ canEdit: boolean; priceLevel: AccessLevel }
             {!sheets.isLoading && sheets.error && (
               <TableRow><TableCell colSpan={9} className="text-center text-destructive py-6">Lecture impossible.</TableCell></TableRow>
             )}
-            {!sheets.isLoading && !sheets.error && rows.length === 0 && (
+            {!sheets.isLoading && !sheets.error && processed.length === 0 && (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
                   {(sheets.data || []).length === 0 ? 'Aucune matière pour le moment.' : 'Aucun résultat.'}
