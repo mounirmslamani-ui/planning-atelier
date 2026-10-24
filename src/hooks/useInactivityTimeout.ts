@@ -7,8 +7,8 @@ export function useInactivityTimeout(opts: {
   warningBeforeMs?: number;
   onTimeout: () => void;
 }) {
-  const totalMs = opts.totalMs ?? 20 * 60 * 1000;
-  const warningBeforeMs = opts.warningBeforeMs ?? 2 * 60 * 1000;
+  const totalMs = opts.totalMs ?? 60 * 60 * 1000;
+  const warningBeforeMs = opts.warningBeforeMs ?? 5 * 60 * 1000;
   const [warning, setWarning] = useState(false);
   const warnTimer = useRef<number | null>(null);
   const expireTimer = useRef<number | null>(null);
