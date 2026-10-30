@@ -302,13 +302,16 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // ───────────────────── Periodic Data Refresh (every 60s) ─────────────────────
   useEffect(() => {
     if (loading) return;
-    const interval = window.setInterval(async () => {
-      // Ne pas lancer de rafraîchissement si une modification locale vient d'avoir lieu :
-      // fetchAllData peut prendre plusieurs secondes (pagination des grosses tables) et
-      // lire un état antérieur à une écriture en cours, ce qui écraserait ensuite la
-      // modification locale de l'utilisateur. On saute simplement ce cycle, le suivant
-      // aura lieu 60 secondes plus tard.
+    let lastRefreshAt = Date.now();
+    let refreshInFlight = false;
+    const refresh = async () => {
+      // Pas de rafraîchissement si l'onglet est masqué, si un rafraîchissement est déjà
+      // en cours, ou si une modification locale vient d'avoir lieu (fetchAllData peut
+      // lire un état antérieur à une écriture en cours et l'écraser).
+      if (document.visibilityState !== 'visible') return;
+      if (refreshInFlight) return;
       if (Date.now() - lastLocalWriteAt.current < 8000) return;
+      refreshInFlight = true;
       const fetchStartedAt = Date.now();
       try {
         const data = await fetchAllData();
@@ -338,12 +341,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setDeliveryEntries(data.deliveryEntries);
         setDeliveredOrders(data.deliveredOrders);
         setCancelledOrders((data as any).cancelledOrders || []);
+        lastRefreshAt = Date.now();
       } catch (err) {
         console.error('[PlanningContext] Periodic refresh failed:', err);
+      } finally {
+        refreshInFlight = false;
       }
-    }, 60_000);
+    };
+    const interval = window.setInterval(refresh, 120_000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastRefreshAt > 60_000) void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [loading]);
 
