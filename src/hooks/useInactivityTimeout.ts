@@ -7,9 +7,10 @@ export function useInactivityTimeout(opts: {
   warningBeforeMs?: number;
   onTimeout: () => void;
 }) {
-  const totalMs = opts.totalMs ?? 60 * 60 * 1000;
+  const totalMs = opts.totalMs ?? 15 * 60 * 1000;
   const warningBeforeMs = opts.warningBeforeMs ?? 5 * 60 * 1000;
   const [warning, setWarning] = useState(false);
+  const warningRef = useRef(false);
   const warnTimer = useRef<number | null>(null);
   const expireTimer = useRef<number | null>(null);
 
@@ -20,9 +21,14 @@ export function useInactivityTimeout(opts: {
 
   const reset = () => {
     clear();
+    warningRef.current = false;
     setWarning(false);
-    warnTimer.current = window.setTimeout(() => setWarning(true), totalMs - warningBeforeMs);
+    warnTimer.current = window.setTimeout(() => {
+      warningRef.current = true;
+      setWarning(true);
+    }, totalMs - warningBeforeMs);
     expireTimer.current = window.setTimeout(() => {
+      warningRef.current = false;
       setWarning(false);
       opts.onTimeout();
     }, totalMs);
@@ -30,7 +36,7 @@ export function useInactivityTimeout(opts: {
 
   useEffect(() => {
     reset();
-    const handler = () => { if (!warning) reset(); };
+    const handler = () => { if (!warningRef.current) reset(); };
     ACTIVITY_EVENTS.forEach(ev => document.addEventListener(ev, handler, { passive: true }));
     return () => {
       ACTIVITY_EVENTS.forEach(ev => document.removeEventListener(ev, handler));
