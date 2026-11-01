@@ -13,6 +13,7 @@ import {
   useMaterialSupplierPrices,
   useOrderItemPurchases,
   useRecordOrderMaterialPurchase,
+  useRecordOrderComponentPurchase,
   useStockSupplierId,
 } from '@/hooks/useMaterialReferences';
 import type { OrderItemPurchase } from '@/hooks/useMaterialReferences';
@@ -21,6 +22,14 @@ import type { ResourceItem } from '@/types/planning';
 /** Ligne matière première structurée (nuance + format + dimension choisis) : seule éligible à un achat enregistré. */
 export const isStructuredRawItem = (item: ResourceItem): boolean =>
   (item.kind ?? 'raw') === 'raw' && !!item.gradeId && !!item.formatId && !!item.dimensionId;
+
+/** Composant acheté tel quel (visserie, roulements, autre) : désignation renseignée. */
+export const isComponentItem = (item: ResourceItem): boolean =>
+  (item.kind ?? 'raw') !== 'raw' && !!item.designation?.trim();
+
+/** Ligne éligible à un achat enregistré : matière première structurée ou composant. */
+export const isPurchasableItem = (item: ResourceItem): boolean =>
+  isStructuredRawItem(item) || isComponentItem(item);
 
 /** Cumul de toutes les sources enregistrées pour la ligne (une ligne peut avoir plusieurs sources). */
 export interface RecordedPurchase {
@@ -67,11 +76,13 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   const existing = useOrderItemPurchases(item.id);
   const stockQ = useStockSupplierId();
   const record = useRecordOrderMaterialPurchase();
+  const recordComponent = useRecordOrderComponentPurchase();
   const cancel = useCancelMaterialPurchase();
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [isStock, setIsStock] = useState(false);
 
+  const isComponent = (item.kind ?? 'raw') !== 'raw';
   const stockId = stockQ.data ?? null;
   const stockName = (suppliers.data || []).find(s => s.id === stockId)?.label ?? 'Stock magasin';
   const recorded: OrderItemPurchase[] = existing.data ?? [];
@@ -89,15 +100,17 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
     [prices.data, materialId],
   );
 
-  // Ce qui est déjà couvert par les sources enregistrées (uniquement celles exprimées dans l'unité de la ligne).
+  // Ce qui est déjà couvert par les sources enregistrées (matière : uniquement celles exprimées dans l'unité de la ligne ; composant : en pièces).
+  const needQty = isComponent ? (item.componentQuantity ?? null) : (item.quantity ?? null);
   const recordedTotal = round2(recorded.reduce((sum, p) => sum + p.total, 0));
-  const recordedSameUnitQty = recorded.reduce(
-    (sum, p) => (p.unitId && p.unitId === item.unitId && p.quantity != null ? sum + p.quantity : sum), 0);
-  const remainingQty = item.quantity != null ? Math.max(0, Math.round((item.quantity - recordedSameUnitQty) * 1000) / 1000) : null;
+  const coveredQty = recorded.reduce(
+    (sum, p) => (p.quantity != null && (isComponent || (p.unitId && p.unitId === item.unitId)) ? sum + p.quantity : sum), 0);
+  const remainingQty = needQty != null ? Math.max(0, Math.round((needQty - coveredQty) * 1000) / 1000) : null;
   const proposeQty = (uid: string) =>
-    (uid && uid === item.unitId && remainingQty != null && remainingQty > 0 ? String(remainingQty) : '');
+    (remainingQty != null && remainingQty > 0 && (isComponent || (uid && uid === item.unitId)) ? String(remainingQty) : '');
   const allSameUnit = !!item.unitId && recorded.length > 0 && recorded.every(p => p.unitId === item.unitId);
-  const itemUnitLabel = (units.data || []).find(u => u.id === item.unitId)?.label ?? '';
+  const showCoverage = needQty != null && recorded.length > 0 && (isComponent || allSameUnit);
+  const coverageUnitLabel = isComponent ? 'pièce(s)' : ((units.data || []).find(u => u.id === item.unitId)?.label ?? '');
 
   const defaultUnitId = sheet?.purchaseUnitId || item.unitId || '';
   const [supplierId, setSupplierId] = useState('');
@@ -115,7 +128,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
 
   const q = parseNum(effectiveQuantity);
   const p = parseNum(unitPrice);
-  const fee = isStock || feeAmount.trim() === '' ? 0 : parseNum(feeAmount);
+  const fee = isStock || isComponent || feeAmount.trim() === '' ? 0 : parseNum(feeAmount);
   const total = Number.isFinite(q) && Number.isFinite(p) && Number.isFinite(fee)
     ? Math.round(q * p * 100) / 100 + fee
     : null;
@@ -153,30 +166,47 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   /** Enregistre la source saisie. closeAfter = false : la fenêtre reste ouverte pour ajouter une autre source. */
   const submit = async (closeAfter: boolean) => {
     const sid = isStock ? stockId : supplierId;
-    if (!materialId) { toast.error('Matière introuvable dans le catalogue.'); return; }
+    if (!isComponent && !materialId) { toast.error('Matière introuvable dans le catalogue.'); return; }
     if (!sid) { toast.error(isStock ? 'Source « Stock magasin » indisponible.' : 'Choisis le fournisseur.'); return; }
     if (!date) { toast.error('Choisis la date de l’achat.'); return; }
     if (!Number.isFinite(q) || q <= 0) { toast.error('Quantité : saisis un nombre supérieur à 0.'); return; }
-    if (!effectiveUnitId) { toast.error('Choisis l’unité.'); return; }
+    if (!isComponent && !effectiveUnitId) { toast.error('Choisis l’unité.'); return; }
     if (unitPrice.trim() === '' || !Number.isFinite(p) || p < 0) { toast.error('Prix unitaire : saisis un nombre valide.'); return; }
-    if (!Number.isFinite(fee) || fee < 0) { toast.error('Frais de découpe : saisis un nombre valide.'); return; }
+    if (!isComponent && (!Number.isFinite(fee) || fee < 0)) { toast.error('Frais de découpe : saisis un nombre valide.'); return; }
     try {
-      const res = await record.mutateAsync({
-        materialId,
-        supplierId: sid,
-        date,
-        quantity: q,
-        unitId: effectiveUnitId,
-        unitPrice: p,
-        feeAmount: fee > 0 ? fee : null,
-        feeLabel: isStock ? null : feeLabel.trim() || null,
-        documentRef: documentRef.trim() || null,
-        orderId,
-        orderItemId: item.id,
-        linkSupplier: !isStock,
-      });
-      if (!res.orderLinked) toast.warning('Achat enregistré, mais non rattaché à la commande.');
-      const entry = { purchaseId: res.purchaseId, supplierName: isStock ? stockName : supplierName, total: total ?? 0 };
+      let purchaseId: string;
+      if (isComponent) {
+        const res = await recordComponent.mutateAsync({
+          supplierId: sid,
+          date,
+          documentRef: documentRef.trim() || null,
+          componentKind: item.kind as 'fasteners' | 'bearings' | 'other',
+          designation: (item.designation ?? '').trim(),
+          quantity: q,
+          unitPrice: p,
+          orderId,
+          orderItemId: item.id,
+        });
+        purchaseId = res.purchaseId;
+      } else {
+        const res = await record.mutateAsync({
+          materialId: materialId as string,
+          supplierId: sid,
+          date,
+          quantity: q,
+          unitId: effectiveUnitId,
+          unitPrice: p,
+          feeAmount: fee > 0 ? fee : null,
+          feeLabel: isStock ? null : feeLabel.trim() || null,
+          documentRef: documentRef.trim() || null,
+          orderId,
+          orderItemId: item.id,
+          linkSupplier: !isStock,
+        });
+        if (!res.orderLinked) toast.warning('Achat enregistré, mais non rattaché à la commande.');
+        purchaseId = res.purchaseId;
+      }
+      const entry = { purchaseId, supplierName: isStock ? stockName : supplierName, total: total ?? 0 };
       onRecorded(aggregate([...recorded, entry]));
       if (closeAfter) onClose();
       else resetForm();
@@ -213,7 +243,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
 
         {loading ? (
           <p className="text-sm text-muted-foreground py-4 text-center">Chargement…</p>
-        ) : !materialId ? (
+        ) : !isComponent && !materialId ? (
           <div className="space-y-3" dir="ltr">
             <p className="text-sm text-destructive">Cette matière (nuance + format + dimension) n’existe pas dans le catalogue.</p>
             <DialogFooter><Button variant="outline" onClick={onClose}>إغلاق</Button></DialogFooter>
@@ -250,9 +280,9 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                     )}
                   </div>
                 ))}
-                {allSameUnit && item.quantity != null && (
-                  <p className={`text-xs ${recordedSameUnitQty >= item.quantity ? 'text-green-600' : 'text-amber-600'}`}>
-                    Quantité couverte : {fmtQty(recordedSameUnitQty)} / {fmtQty(item.quantity)} {itemUnitLabel}
+                {showCoverage && needQty != null && (
+                  <p className={`text-xs ${coveredQty >= needQty ? 'text-green-600' : 'text-amber-600'}`}>
+                    Quantité couverte : {fmtQty(coveredQty)} / {fmtQty(needQty)} {coverageUnitLabel}
                   </p>
                 )}
                 <p className="text-sm font-medium">Coût matière de la ligne : {fmtMoney(recordedTotal)} DZD</p>
@@ -321,21 +351,23 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                     <label className="text-xs font-medium mb-1 block">{isStock ? 'Quantité prélevée *' : 'Quantité achetée *'}</label>
                     <Input value={effectiveQuantity} inputMode="decimal" onChange={e => setQuantity(e.target.value)} />
                   </div>
-                  <div>
-                    <label className="text-xs font-medium mb-1 block">Unité {isStock ? '' : 'd’achat '}*</label>
-                    <select className={selectClass} value={effectiveUnitId} onChange={e => setUnitId(e.target.value)}>
-                      <option value="">—</option>
-                      {(units.data || []).filter(u => u.active || u.id === effectiveUnitId).map(u => (
-                        <option key={u.id} value={u.id}>{u.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {!isComponent && (
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Unité {isStock ? '' : 'd’achat '}*</label>
+                      <select className={selectClass} value={effectiveUnitId} onChange={e => setUnitId(e.target.value)}>
+                        <option value="">—</option>
+                        {(units.data || []).filter(u => u.active || u.id === effectiveUnitId).map(u => (
+                          <option key={u.id} value={u.id}>{u.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs font-medium mb-1 block">{isStock ? 'Prix unitaire du stock (DZD) *' : 'Prix unitaire (DZD) *'}</label>
                     <Input value={unitPrice} inputMode="decimal" onChange={e => setUnitPrice(e.target.value)} />
                   </div>
-                  <div />
-                  {!isStock && (
+                  {!isComponent && <div />}
+                  {!isStock && !isComponent && (
                     <>
                       <div>
                         <label className="text-xs font-medium mb-1 block">Frais de découpe (DZD)</label>
@@ -355,10 +387,10 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                 </p>
                 <DialogFooter>
                   <Button variant="outline" onClick={onClose}>{recorded.length > 0 ? 'إغلاق' : 'إلغاء'}</Button>
-                  <Button variant="outline" onClick={() => void submit(false)} disabled={record.isPending}>
+                  <Button variant="outline" onClick={() => void submit(false)} disabled={record.isPending || recordComponent.isPending}>
                     تسجيل وإضافة مصدر آخر
                   </Button>
-                  <Button onClick={() => void submit(true)} disabled={record.isPending}>تأكيد</Button>
+                  <Button onClick={() => void submit(true)} disabled={record.isPending || recordComponent.isPending}>تأكيد</Button>
                 </DialogFooter>
               </>
             ) : (
@@ -378,10 +410,6 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
         )}
       </DialogContent>
     </Dialog>
-  );
-};
-
-export default MaterialPurchaseDialog;
   );
 };
 
