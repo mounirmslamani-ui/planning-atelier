@@ -511,7 +511,7 @@ export function useOrderItemPurchases(orderItemId: string | null) {
           byPurchase.set(l.purchase_id, p);
         }
         p.total = Math.round((p.total + Number(l.amount ?? 0)) * 100) / 100;
-        if (l.line_type === 'material') {
+        if (l.line_type === 'material' || l.line_type === 'component') {
           p.quantity = toNum(l.quantity);
           p.unitId = l.unit_id ?? null;
           p.unitLabel = l.material_units?.libelle_fr ?? '';
