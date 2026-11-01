@@ -16,6 +16,7 @@ import {
   useRecordOrderComponentPurchase,
   useStockSupplierId,
 } from '@/hooks/useMaterialReferences';
+import { useUploadPurchaseFiles } from '@/hooks/usePurchaseDocuments';
 import type { OrderItemPurchase } from '@/hooks/useMaterialReferences';
 import type { ResourceItem } from '@/types/planning';
 
@@ -78,6 +79,7 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   const record = useRecordOrderMaterialPurchase();
   const recordComponent = useRecordOrderComponentPurchase();
   const cancel = useCancelMaterialPurchase();
+  const uploadDocs = useUploadPurchaseFiles();
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [isStock, setIsStock] = useState(false);
@@ -121,6 +123,8 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
   const [unitPrice, setUnitPrice] = useState('');
   const [feeAmount, setFeeAmount] = useState('');
   const [feeLabel, setFeeLabel] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileKey, setFileKey] = useState(0);
 
   const effectiveUnitId = unitId ?? defaultUnitId;
   // Quantité proposée : ce qu'il reste à couvrir, tant que l'unité d'achat est la même que l'unité de la ligne.
@@ -160,6 +164,8 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
     setUnitPrice('');
     setFeeAmount('');
     setFeeLabel('');
+    setFiles([]);
+    setFileKey(k => k + 1);
     setAdding(true);
   };
 
@@ -205,6 +211,14 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
         });
         if (!res.orderLinked) toast.warning('Achat enregistré, mais non rattaché à la commande.');
         purchaseId = res.purchaseId;
+      }
+      if (!isStock && files.length > 0) {
+        try {
+          const up = await uploadDocs.mutateAsync({ purchaseId, files });
+          if (up.failed.length > 0) toast.warning(`Achat enregistré, mais ces fichiers n’ont pas pu être joints : ${up.failed.join(', ')}`);
+        } catch {
+          toast.warning('Achat enregistré, mais les fichiers n’ont pas pu être joints (tu peux les ajouter depuis le titre de la facture).');
+        }
       }
       const entry = { purchaseId, supplierName: isStock ? stockName : supplierName, total: total ?? 0 };
       onRecorded(aggregate([...recorded, entry]));
@@ -347,6 +361,12 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                     <label className="text-xs font-medium mb-1 block">{isStock ? 'Réf. bon de sortie / observation' : 'N° de facture / BL'}</label>
                     <Input value={documentRef} onChange={e => setDocumentRef(e.target.value)} />
                   </div>
+                  {!isStock && (
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium mb-1 block">Pièce jointe : facture / BL (photo ou PDF)</label>
+                      <Input key={fileKey} type="file" multiple accept="image/*,application/pdf" onChange={e => setFiles(Array.from(e.target.files ?? []))} />
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs font-medium mb-1 block">{isStock ? 'Quantité prélevée *' : 'Quantité achetée *'}</label>
                     <Input value={effectiveQuantity} inputMode="decimal" onChange={e => setQuantity(e.target.value)} />
@@ -387,10 +407,10 @@ const MaterialPurchaseDialog: React.FC<Props> = ({ orderId, item, onClose, onRec
                 </p>
                 <DialogFooter>
                   <Button variant="outline" onClick={onClose}>{recorded.length > 0 ? 'إغلاق' : 'إلغاء'}</Button>
-                  <Button variant="outline" onClick={() => void submit(false)} disabled={record.isPending || recordComponent.isPending}>
+                  <Button variant="outline" onClick={() => void submit(false)} disabled={record.isPending || recordComponent.isPending || uploadDocs.isPending}>
                     تسجيل وإضافة مصدر آخر
                   </Button>
-                  <Button onClick={() => void submit(true)} disabled={record.isPending || recordComponent.isPending}>تأكيد</Button>
+                  <Button onClick={() => void submit(true)} disabled={record.isPending || recordComponent.isPending || uploadDocs.isPending}>تأكيد</Button>
                 </DialogFooter>
               </>
             ) : (
