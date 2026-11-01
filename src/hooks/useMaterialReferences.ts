@@ -446,6 +446,21 @@ export interface OrderMaterialPurchaseInput extends MaterialPurchaseInput {
   orderId: string;
   /** id de la ligne matière dans la commande (ResourceItem.id) */
   orderItemId: string;
+  /** false = ne pas rattacher le fournisseur à la matière (cas du stock magasin). Défaut : true. */
+  linkSupplier?: boolean;
+}
+
+/** Id du faux fournisseur « Stock magasin » (suppliers.is_internal_stock = true) ; null tant que la migration 0010 n'est pas appliquée. */
+export function useStockSupplierId() {
+  return useQuery({
+    queryKey: ['material-stock-supplier'],
+    staleTime: 60 * 60 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await sb.from('suppliers').select('id').eq('is_internal_stock', true).limit(1);
+      if (error) return null;
+      return (data?.[0]?.id as string | undefined) ?? null;
+    },
+  });
 }
 
 export interface OrderItemPurchase {
@@ -454,34 +469,58 @@ export interface OrderItemPurchase {
   supplierName: string;
   date: string | null;
   documentRef: string | null;
-  /** matière + frais de découpe */
+  quantity: number | null;
+  unitId: string | null;
+  unitLabel: string;
+  unitPrice: number | null;
+  /** matière + frais de découpe de cet achat */
   total: number;
 }
 
-/** Achat déjà enregistré pour une ligne de commande (null = aucun). Évite d'enregistrer deux fois le même achat. */
-export function useOrderItemPurchase(orderItemId: string | null) {
+/** Achats (sources) déjà enregistrés pour une ligne de commande : liste vide = aucun. Une ligne peut avoir plusieurs sources. */
+export function useOrderItemPurchases(orderItemId: string | null) {
   return useQuery({
     queryKey: ['order-item-purchase', orderItemId],
     enabled: !!orderItemId,
     staleTime: 0,
-    queryFn: async (): Promise<OrderItemPurchase | null> => {
+    queryFn: async (): Promise<OrderItemPurchase[]> => {
       const { data, error } = await sb
         .from('material_purchase_lines')
-        .select('purchase_id, amount, material_purchases(purchase_date, document_ref, supplier_id, suppliers(name))')
+        .select('purchase_id, line_type, quantity, unit_id, unit_price, amount, created_at, material_units(libelle_fr), material_purchases(purchase_date, document_ref, supplier_id, suppliers(name))')
         .eq('order_item_id', orderItemId)
         .eq('is_active', true);
       if (error) throw error;
-      const lines = (data || []) as any[];
-      if (lines.length === 0) return null;
-      const head = lines[0].material_purchases;
-      return {
-        purchaseId: lines[0].purchase_id as string,
-        supplierId: head?.supplier_id ?? null,
-        supplierName: head?.suppliers?.name ?? '',
-        date: head?.purchase_date ?? null,
-        documentRef: head?.document_ref ?? null,
-        total: lines.reduce((sum, l) => sum + Number(l.amount ?? 0), 0),
-      };
+      const byPurchase = new Map<string, OrderItemPurchase & { createdAt: string }>();
+      for (const l of (data || []) as any[]) {
+        const head = l.material_purchases;
+        let p = byPurchase.get(l.purchase_id);
+        if (!p) {
+          p = {
+            purchaseId: l.purchase_id as string,
+            supplierId: head?.supplier_id ?? null,
+            supplierName: head?.suppliers?.name ?? '',
+            date: head?.purchase_date ?? null,
+            documentRef: head?.document_ref ?? null,
+            quantity: null,
+            unitId: null,
+            unitLabel: '',
+            unitPrice: null,
+            total: 0,
+            createdAt: String(l.created_at ?? ''),
+          };
+          byPurchase.set(l.purchase_id, p);
+        }
+        p.total = Math.round((p.total + Number(l.amount ?? 0)) * 100) / 100;
+        if (l.line_type === 'material') {
+          p.quantity = toNum(l.quantity);
+          p.unitId = l.unit_id ?? null;
+          p.unitLabel = l.material_units?.libelle_fr ?? '';
+          p.unitPrice = toNum(l.unit_price);
+        }
+      }
+      return [...byPurchase.values()]
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        .map(({ createdAt: _c, ...rest }) => rest);
     },
   });
 }
@@ -517,14 +556,17 @@ export function useRecordOrderMaterialPurchase() {
       const orderLinked = !linkErr && !!linked && linked.length > 0;
 
       // Fournisseur habituel de la matière (au mieux : demande le droit n° 29, sans incidence sur l'achat).
-      try {
-        const keys = { material_id: p.materialId, supplier_id: p.supplierId };
-        const { error: supErr } = await sb.from('material_suppliers').insert(keys);
-        if (supErr && (supErr as any).code === '23505') {
-          await sb.from('material_suppliers').update({ is_active: true }).match(keys);
+      // Jamais pour le stock magasin, qui n'est pas un fournisseur.
+      if (p.linkSupplier !== false) {
+        try {
+          const keys = { material_id: p.materialId, supplier_id: p.supplierId };
+          const { error: supErr } = await sb.from('material_suppliers').insert(keys);
+          if (supErr && (supErr as any).code === '23505') {
+            await sb.from('material_suppliers').update({ is_active: true }).match(keys);
+          }
+        } catch {
+          /* ignoré */
         }
-      } catch {
-        /* ignoré */
       }
 
       return { purchaseId, orderLinked };
