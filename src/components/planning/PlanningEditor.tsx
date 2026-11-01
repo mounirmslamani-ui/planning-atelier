@@ -1323,7 +1323,7 @@ export const ResourcesEditorTable: React.FC<{
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 shrink-0"
-                              title={item.purchaseId ? 'تصحيح عملية الشراء' : 'تسجيل عملية الشراء'}
+                              title={item.purchaseId ? 'عمليات الشراء (إضافة مصدر أو تصحيح)' : 'تسجيل عملية الشراء'}
                               onClick={() => setPurchasePrompt({ rowId: row.id, itemId: item.id, status: item.status })}
                               disabled={matDisabled}
                             >
@@ -1450,7 +1450,6 @@ export const ResourcesEditorTable: React.FC<{
                 purchasePrompt.rowId, purchasePrompt.itemId, purchasePrompt.status, res.totalCost,
                 { supplier: res.supplierName, purchaseId: res.purchaseId },
               );
-              setPurchasePrompt(null);
             }}
             onCancelled={() => e.clearItemPurchase(purchasePrompt.rowId, purchasePrompt.itemId)}
           />
