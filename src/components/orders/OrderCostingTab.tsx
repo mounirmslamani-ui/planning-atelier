@@ -16,6 +16,7 @@ import {
   computeOrderCosting, getStepBillableHours, getDefaultHourlyRate, HOURLY_RATE_STEP, MARGIN_OPTIONS,
 } from '@/lib/orderCosting';
 import { inferCategoryFromOrderNumber } from '@/lib/orderRegistry';
+import PurchaseDocumentLinks from '@/components/planning/PurchaseDocumentLinks';
 import type { Order, ProductionStep, ResourceItem } from '@/types/planning';
 
 interface Props {
@@ -293,7 +294,10 @@ const OrderCostingTab: React.FC<Props> = ({ order, open }) => {
                     <td className="p-2">{it.label}</td>
                     <td className="p-2 min-w-40">
                       {it.purchaseId ? (
-                        <div className={cn('h-8 flex items-center px-2 rounded-md border text-xs', supplierClass)}>{it.supplier || '—'}</div>
+                        <div className="space-y-0.5">
+                          <div className={cn('h-8 flex items-center px-2 rounded-md border text-xs', supplierClass)}>{it.supplier || '—'}</div>
+                          <PurchaseDocumentLinks orderItemId={it.id} />
+                        </div>
                       ) : (
                         <Input
                           className={cn('h-8 text-xs', supplierClass)}
