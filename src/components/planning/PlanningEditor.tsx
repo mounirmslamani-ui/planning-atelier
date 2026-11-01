@@ -23,6 +23,7 @@ import SearchableSelect from '@/components/ui/searchable-select';
 import MaterialItemFields from '@/components/planning/MaterialItemFields';
 import LastStepQCWarningDialog from '@/components/LastStepQCWarningDialog';
 import MaterialPurchaseDialog, { isPurchasableItem } from '@/components/planning/MaterialPurchaseDialog';
+import PurchaseDocumentLinks from '@/components/planning/PurchaseDocumentLinks';
 import { useAuth } from '@/context/AuthContext';
 
 export interface OperationRow {
@@ -1296,7 +1297,8 @@ export const ResourcesEditorTable: React.FC<{
                         {row.rawMaterialNotApplicable && <span>⚪</span>}
                       </label>
                       {(row.rawMaterialItems.length > 0 ? row.rawMaterialItems : [{ id: 'placeholder', label: '', status: 'non-disponible' as const }]).map((item, idx) => (
-                        <div key={item.id} className={`flex items-center gap-1 ${row.rawMaterialNotApplicable ? 'opacity-50' : ''}`}>
+                        <div key={item.id} className="flex flex-col gap-0.5">
+                        <div className={`flex items-center gap-1 ${row.rawMaterialNotApplicable ? 'opacity-50' : ''}`}>
                           {!row.rawMaterialNotApplicable && (
                             <ResourceStatusPill
                               value={item.status}
@@ -1344,6 +1346,10 @@ export const ResourcesEditorTable: React.FC<{
                               <Trash2 className="w-3 h-3 text-destructive" />
                             </Button>
                           )}
+                        </div>
+                        {!row.rawMaterialNotApplicable && item.purchaseId && (
+                          <PurchaseDocumentLinks orderItemId={item.id} />
+                        )}
                         </div>
                       ))}
                     </div>
