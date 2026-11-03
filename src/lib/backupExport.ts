@@ -28,7 +28,7 @@ function jsonDownload(data: unknown, name: string) {
   download(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' }), name);
 }
 export function manifestCsv(bucket: string, files: Omit<StoredFile, 'url'>[]): string {
-  const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+  const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
   return '\uFEFF' + ['bucket,chemin,taille,type MIME,date de création', ...files.map(f =>
     [bucket, f.path, f.size, f.mime, f.created_at].map(escape).join(','))].join('\r\n');
 }
