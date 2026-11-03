@@ -37,6 +37,7 @@ import PlanningTableauPage from "./pages/PlanningTableauPage";
 import UsersAdminPage from "./pages/UsersAdminPage";
 import MaterialReferencesPage from "./pages/MaterialReferencesPage";
 import NotFound from "./pages/NotFound";
+import BackupExportPage from "./pages/BackupExportPage";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
                 <Route path="/absences" element={<AbsencesPage />} />
                 <Route path="/planning-tableau" element={<PlanningTableauPage />} />
                 <Route path="/users" element={<UsersAdminPage />} />
+                <Route path="/backup-export" element={<BackupExportPage />} />
                 <Route path="/material-references" element={<MaterialReferencesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
