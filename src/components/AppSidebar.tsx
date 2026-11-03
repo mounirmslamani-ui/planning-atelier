@@ -210,6 +210,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isOpen = false, onToggle, onPro
           </div>
         </div>
       </nav>
+      {isAdmin && <NavLink to="/backup-export" className="mx-3 mb-3 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"><DownloadCloud className="h-4 w-4 shrink-0" /><span>تصدير النسخة الاحتياطية</span></NavLink>}
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <NavLink
           to="/home"
