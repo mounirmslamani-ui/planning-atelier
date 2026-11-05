@@ -20,7 +20,7 @@ Tout ce qui n'est pas évident à la lecture du code. Pour chaque point : la rè
 
 - Le filtrage RLS est **silencieux** : une requête peut renvoyer 0 ligne sans erreur si les policies bloquent. Avant de conclure à un bug métier, vérifier `can_read`/`can_write` et le rôle de l'utilisateur.
 - Les fonctions `can_read`, `can_write`, `is_admin` sont `security definer` : elles lisent `profiles`/`user_rights` sans être elles-mêmes bloquées par RLS.
-- **Court-circuit admin** : `is_admin(uid) = true` rend `can_read`/`can_write` vrais sans ligne `user_rights`. Un admin peut donc ne having aucune ligne dans `user_rights` et tout faire.
+- **Court-circuit admin** : `is_admin(uid) = true` rend `can_read`/`can_write` vrais sans ligne `user_rights`. Un admin peut donc n'avoir aucune ligne dans `user_rights` et tout faire.
 - **Droits confidentiels** (migration drizzle `0003_confidential_rights_no_auto_grant.sql`) : les droits marqués `is_confidential = true` (n° 30, 31, 35, 36, 37, 38) ne sont **pas** accordés automatiquement à la création d'un profil ; ils doivent être accordés explicitement.
 - `document_sequences` n'a **aucune policy** (SELECT/INSERT/UPDATE/DELETE refusés à tous) : elle n'est accessible que via la fonction `security definer` `next_document_number`. C'est voulu (compteurs de numérotation inviolables).
 - Un `REVOKE DELETE` global a été appliqué sur les tables de documents commerciaux (migration `0007`) + trigger `forbid_delete` : ces documents ne se suppriment jamais, ils s'**annulent** (statut + `cancelled_at` + `cancel_reason`).
